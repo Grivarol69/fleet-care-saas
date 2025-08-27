@@ -1,0 +1,72 @@
+import { prisma } from "@/lib/prisma";
+import { createClient } from '@/utils/supabase/server';
+import { NextResponse } from "next/server";
+
+const TENANT_ID = 'mvp-default-tenant'; // Tenant hardcodeado para MVP
+
+export async function GET() {
+    try {
+        const vehicles = await prisma.vehicle.findMany({
+            where: { 
+                tenantId: TENANT_ID,
+                status: "ACTIVE" 
+            },
+            include: {
+                brand: true,
+                line: true,
+                type: true,
+            },
+            orderBy: {
+                createdAt: 'desc'
+            }
+        });
+
+        return NextResponse.json(vehicles);
+    } catch (error) {
+        console.error("[VEHICLES_GET]", error);
+        return new NextResponse("Internal Error", { status: 500 });
+    }
+}
+
+export async function POST(req: Request) {
+    try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+            return new NextResponse("Unauthorized", { status: 401 });
+        }
+
+        const body = await req.json();
+        const { licensePlate, brandId, lineId, typeId, year, color, mileage } = body;
+
+        if (!licensePlate || !brandId || !lineId || !typeId || !year || !color || mileage === undefined) {
+            return new NextResponse("Missing required fields", { status: 400 });
+        }
+
+        const existingVehicle = await prisma.vehicle.findUnique({
+            where: {
+                tenantId_licensePlate: {
+                    tenantId: TENANT_ID,
+                    licensePlate: licensePlate,
+                }
+            }
+        });
+
+        if (existingVehicle) {
+            return new NextResponse("Vehicle with this license plate already exists", { status: 409 });
+        }
+
+        const vehicle = await prisma.vehicle.create({
+            data: {
+                ...body,
+                tenantId: TENANT_ID,
+            },
+        });
+
+        return NextResponse.json(vehicle);
+    } catch (error) {
+        console.error("[VEHICLES_POST]", error);
+        return new NextResponse("Internal Error", { status: 500 });
+    }
+}

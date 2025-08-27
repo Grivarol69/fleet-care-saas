@@ -1,0 +1,588 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========================================
+// MULTI-TENANCY & BILLING CORE
+// ========================================
+
+model Tenant {
+  id                String              @id @default(uuid())
+  name              String
+  slug              String              @unique // Para subdominios
+  domain            String?             @unique // Dominio personalizado opcional
+  logo              String?
+  settings          Json?               // Configuraciones específicas del tenant
+  subscriptionId    String?             @unique
+  subscriptionStatus SubscriptionStatus @default(TRIAL)
+  trialEndsAt       DateTime?
+  billingEmail      String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  
+  // Relaciones
+  users             User[]
+  vehicles          Vehicle[]
+  vehicleBrands     VehicleBrand[]
+  vehicleLines      VehicleLine[]
+  vehicleTypes      VehicleType[]
+  mantCategories    MantCategory[]
+  mantItems         MantItem[]
+  mantPlans         MantPlan[]
+  vehicleMantPlans  VehicleMantPlan[]
+  workOrders        WorkOrder[]
+  technicians       Technician[]
+  providers         Provider[]
+  documents         Document[]
+  subscriptions     Subscription[]
+
+  @@index([slug])
+  @@index([subscriptionStatus])
+}
+
+model User {
+  id        String   @id @default(uuid())
+  tenantId  String
+  email     String
+  firstName String?
+  lastName  String?
+  role      UserRole @default(USER)
+  avatar    String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([email])
+  @@unique([tenantId, email])
+}
+
+// ========================================
+// BILLING & SUBSCRIPTIONS
+// ========================================
+
+model Subscription {
+  id                    String             @id @default(uuid())
+  tenantId              String
+  mercadoPagoUserId     String?            // ID del usuario en MercadoPago
+  preapprovalId         String?            @unique // ID de la suscripción recurrente
+  planId                String             // ID del plan de precios
+  status                SubscriptionStatus
+  currentPeriodStart    DateTime
+  currentPeriodEnd      DateTime
+  cancelAtPeriodEnd     Boolean            @default(false)
+  lastPaymentId         String?            // Último pago procesado
+  failedPaymentAttempts Int                @default(0)
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@index([tenantId])
+  @@index([mercadoPagoUserId])
+  @@index([preapprovalId])
+}
+
+model Payment {
+  id               String        @id @default(uuid())
+  subscriptionId   String
+  mercadoPagoId    String        @unique // ID del pago en MercadoPago
+  amount           Decimal       @db.Decimal(10, 2)
+  currency         String        @default("COP") // Peso colombiano
+  status           PaymentStatus
+  paymentMethod    String?       // Tarjeta, PSE, etc.
+  description      String?
+  failureReason    String?
+  processedAt      DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId])
+  @@index([mercadoPagoId])
+  @@index([status])
+}
+
+// ========================================
+// VEHICLE MANAGEMENT
+// ========================================
+
+model VehicleBrand {
+  id        Int      @id @default(autoincrement())
+  tenantId  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  lines     VehicleLine[]
+  vehicles  Vehicle[]
+  mantPlans MantPlan[]
+
+  @@index([tenantId])
+  @@unique([tenantId, name])
+}
+
+model VehicleLine {
+  id        Int      @id @default(autoincrement())
+  tenantId  String
+  name      String
+  brandId   Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  tenant    Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  brand     VehicleBrand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  vehicles  Vehicle[]
+  mantPlans MantPlan[]
+
+  @@index([tenantId])
+  @@index([brandId])
+  @@unique([tenantId, brandId, name])
+}
+
+model VehicleType {
+  id        Int      @id @default(autoincrement())
+  tenantId  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicles Vehicle[]
+
+  @@index([tenantId])
+  @@unique([tenantId, name])
+}
+
+model Vehicle {
+  id             Int      @id @default(autoincrement())
+  tenantId       String
+  licensePlate   String
+  brandId        Int
+  lineId         Int
+  typeId         Int
+  year           Int
+  color          String
+  mileage        Int      @default(0)
+  status         VehicleStatus @default(ACTIVE)
+  situation      VehicleSituation @default(AVAILABLE)
+  photo          String?
+  cylinder       Int?
+  bodyWork       String?
+  engineNumber   String?
+  chasisNumber   String?
+  ownerCard      String?
+  owner          VehicleOwner @default(OWN)
+  typePlate      PlateType    @default(PARTICULAR)
+  lastKilometers Int?
+  lastRecorder   DateTime? @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  tenant            Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  brand             VehicleBrand        @relation(fields: [brandId], references: [id])
+  line              VehicleLine         @relation(fields: [lineId], references: [id])
+  type              VehicleType         @relation(fields: [typeId], references: [id])
+  documents         Document[]
+  workOrders        WorkOrder[]
+  odometerLogs      OdometerLog[]
+  vehicleMantPlans  VehicleMantPlan[]
+  maintenanceAlerts MaintenanceAlert[]
+
+  @@index([tenantId])
+  @@index([licensePlate])
+  @@index([brandId])
+  @@index([lineId])
+  @@index([typeId])
+  @@unique([tenantId, licensePlate])
+}
+
+// ========================================
+// MAINTENANCE SYSTEM
+// ========================================
+
+model MantCategory {
+  id          Int      @id @default(autoincrement())
+  tenantId    String
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  mantItems MantItem[]
+
+  @@index([tenantId])
+  @@unique([tenantId, name])
+}
+
+model MantItem {
+  id                  Int      @id @default(autoincrement())
+  tenantId            String
+  name                String
+  description         String?
+  mantType            MantType
+  estimatedTime       Decimal  @db.Decimal(5, 2) // Horas
+  categoryId          Int
+  status              Status   @default(ACTIVE)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  tenant              Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category            MantCategory          @relation(fields: [categoryId], references: [id])
+  planTasks           PlanTask[]
+  workOrderItems      WorkOrderItem[]
+  vehicleMantPlanItem VehicleMantPlanItem[]
+
+  @@index([tenantId])
+  @@index([categoryId])
+  @@unique([tenantId, name])
+}
+
+model MantPlan {
+  id             Int      @id @default(autoincrement())
+  tenantId       String
+  name           String
+  description    String?
+  vehicleBrandId Int
+  vehicleLineId  Int
+  status         Status   @default(ACTIVE)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  brand           VehicleBrand      @relation(fields: [vehicleBrandId], references: [id])
+  line            VehicleLine       @relation(fields: [vehicleLineId], references: [id])
+  planTasks       PlanTask[]
+  vehicleMantPlan VehicleMantPlan[]
+
+  @@index([tenantId])
+  @@index([vehicleBrandId])
+  @@index([vehicleLineId])
+  @@unique([tenantId, vehicleBrandId, vehicleLineId, name])
+}
+
+model PlanTask {
+  id         Int      @id @default(autoincrement())
+  planId     Int
+  mantItemId Int
+  triggerKm  Int      // Cada cuántos km se ejecuta
+  createdAt  DateTime @default(now())
+  
+  mantPlan MantPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  mantItem MantItem @relation(fields: [mantItemId], references: [id])
+
+  @@index([planId])
+  @@index([mantItemId])
+  @@unique([planId, mantItemId])
+}
+
+model VehicleMantPlan {
+  id                  Int      @id @default(autoincrement())
+  tenantId            String
+  vehicleId           Int
+  mantPlanId          Int
+  assignedAt          DateTime @default(now())
+  lastKmCheck         Int?
+  status              Status   @default(ACTIVE)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  tenant              Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicle             Vehicle               @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  mantPlan            MantPlan              @relation(fields: [mantPlanId], references: [id])
+  vehicleMantPlanItem VehicleMantPlanItem[]
+
+  @@index([tenantId])
+  @@index([vehicleId])
+  @@index([mantPlanId])
+  @@unique([vehicleId, mantPlanId])
+}
+
+model VehicleMantPlanItem {
+  id                Int      @id @default(autoincrement())
+  vehicleMantPlanId Int
+  mantItemId        Int
+  executionMileage  Int      // Km específico en que debe ejecutarse
+  technicianId      Int?
+  providerId        Int?
+  startDate         DateTime?
+  endDate           DateTime?
+  cost              Decimal? @db.Decimal(10, 2)
+  notes             String?
+  status            WorkOrderStatus @default(PENDING)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  vehicleMantPlan VehicleMantPlan @relation(fields: [vehicleMantPlanId], references: [id], onDelete: Cascade)
+  mantItem        MantItem        @relation(fields: [mantItemId], references: [id])
+  technician      Technician?     @relation(fields: [technicianId], references: [id])
+  provider        Provider?       @relation(fields: [providerId], references: [id])
+
+  @@index([vehicleMantPlanId])
+  @@index([mantItemId])
+  @@unique([vehicleMantPlanId, mantItemId])
+}
+
+// ========================================
+// WORK ORDERS
+// ========================================
+
+model WorkOrder {
+  id              Int      @id @default(autoincrement())
+  tenantId        String
+  vehicleId       Int
+  title           String
+  description     String?
+  mantType        MantType
+  priority        Priority
+  status          WorkOrderStatus @default(PENDING)
+  technicianId    Int?
+  providerId      Int?
+  creationMileage Int
+  plannedAmount   Decimal?        @db.Decimal(10, 2)
+  realAmount      Decimal?        @db.Decimal(10, 2)
+  startDate       DateTime?
+  endDate         DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicle        Vehicle         @relation(fields: [vehicleId], references: [id])
+  technician     Technician?     @relation(fields: [technicianId], references: [id])
+  provider       Provider?       @relation(fields: [providerId], references: [id])
+  workOrderItems WorkOrderItem[]
+
+  @@index([tenantId])
+  @@index([vehicleId])
+  @@index([status])
+}
+
+model WorkOrderItem {
+  id               Int      @id @default(autoincrement())
+  workOrderId      Int
+  mantItemId       Int
+  quantity         Int      @default(1)
+  cost             Decimal? @db.Decimal(10, 2)
+  executionMileage Int?
+  notes            String?
+  status           WorkOrderStatus @default(PENDING)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  mantItem  MantItem  @relation(fields: [mantItemId], references: [id])
+
+  @@index([workOrderId])
+  @@index([mantItemId])
+}
+
+// ========================================
+// PEOPLE & PROVIDERS
+// ========================================
+
+model Technician {
+  id                  Int      @id @default(autoincrement())
+  tenantId            String
+  name                String
+  email               String?
+  phone               String?
+  specialty           String?
+  status              Status   @default(ACTIVE)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  tenant              Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  workOrders          WorkOrder[]
+  vehicleMantPlanItem VehicleMantPlanItem[]
+
+  @@index([tenantId])
+  @@unique([tenantId, name])
+}
+
+model Provider {
+  id                  Int      @id @default(autoincrement())
+  tenantId            String
+  name                String
+  email               String?
+  phone               String?
+  address             String?
+  specialty           String?
+  status              Status   @default(ACTIVE)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  tenant              Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  workOrders          WorkOrder[]
+  vehicleMantPlanItem VehicleMantPlanItem[]
+
+  @@index([tenantId])
+  @@unique([tenantId, name])
+}
+
+// ========================================
+// MONITORING & ALERTS
+// ========================================
+
+model OdometerLog {
+  id         Int      @id @default(autoincrement())
+  vehicleId  Int
+  kilometers Int
+  recordedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId])
+  @@index([recordedAt])
+}
+
+model MaintenanceAlert {
+  id                  Int        @id @default(autoincrement())
+  vehicleId           Int
+  mantItemDescription String
+  currentKm           Int
+  executionKm         Int
+  kmToMaintenance     Int
+  alertLevel          AlertLevel
+  status              Status     @default(ACTIVE)
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId])
+  @@index([alertLevel])
+  @@index([status])
+}
+
+model Document {
+  id           String         @id @default(uuid())
+  tenantId     String
+  vehicleId    Int
+  type         DocumentType
+  fileName     String
+  fileUrl      String
+  expiryDate   DateTime?
+  status       DocumentStatus @default(ACTIVE)
+  uploadedAt   DateTime       @default(now())
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([vehicleId])
+  @@index([type])
+  @@index([expiryDate])
+}
+
+// ========================================
+// ENUMS
+// ========================================
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  USER
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PENDING_PAYMENT
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  REFUNDED
+  IN_PROCESS
+}
+
+enum VehicleStatus {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
+  SOLD
+}
+
+enum VehicleSituation {
+  AVAILABLE
+  IN_USE
+  MAINTENANCE
+}
+
+enum VehicleOwner {
+  OWN
+  LEASED
+  RENTED
+}
+
+enum PlateType {
+  PARTICULAR
+  PUBLICO
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+}
+
+enum MantType {
+  PREVENTIVE
+  PREDICTIVE
+  CORRECTIVE
+  EMERGENCY
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum WorkOrderStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum AlertLevel {
+  LOW      // > 1000 km
+  MEDIUM   // 500-1000 km  
+  HIGH     // < 500 km
+  CRITICAL // Vencido
+}
+
+enum DocumentType {
+  SOAT
+  TECNOMECANICA
+  INSURANCE
+  REGISTRATION
+  OTHER
+}
+
+enum DocumentStatus {
+  ACTIVE
+  EXPIRED
+  EXPIRING_SOON
+}
