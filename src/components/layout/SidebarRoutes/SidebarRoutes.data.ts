@@ -8,16 +8,6 @@ import {
     ShoppingBag,
     BarChart2,
     Settings,
-    Info,
-    Map,
-    List,
-    PlusCircle,
-    Package,
-    CheckSquare,
-    History,
-    UserPlus,
-    FileText,
-    TrendingUp,
 } from "lucide-react";
 
 export const dataAdminSidebar = [

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { SidebarItemsProps } from "./SidebarItems.types";
 import { cn } from "@/lib/utils";
-import { Icon } from "lucide-react";
+
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 

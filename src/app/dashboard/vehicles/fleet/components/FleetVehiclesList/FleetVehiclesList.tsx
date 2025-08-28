@@ -412,7 +412,7 @@ export function FleetVehiclesList() {
           isOpen={isEditDialogOpen}
           setIsOpen={setIsEditDialogOpen}
           fleetVehicle={editingFleetVehicle}
-          onEditFleetVehicle={(_editedFleetVehicle) => {
+          onEditFleetVehicle={() => {
             // Refrescar los datos desde el servidor en lugar de hacer merge manual
             fetchFleetVehicles();
           }}

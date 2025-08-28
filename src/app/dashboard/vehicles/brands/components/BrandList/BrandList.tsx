@@ -1,6 +1,5 @@
 "use client";
 
-
 import { useState, useEffect, useCallback } from "react";
 import {
   useReactTable,
@@ -20,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { FormAddBrand } from "../FormAddBrand";
 import { FormEditBrand } from "../FormEditBrand";
 import axios from "axios";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/hooks/use-toast";
 import { BrandListProps } from "./BrandList.types";
 
 export function BrandList() {

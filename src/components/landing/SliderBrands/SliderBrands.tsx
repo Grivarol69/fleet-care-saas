@@ -1,6 +1,5 @@
 "use client";
 
-import { SliderBrandsProps } from "./SliderBrands.type";
 import {
   Carousel,
   CarouselContent,
@@ -13,9 +12,8 @@ import Autoplay from "embla-carousel-autoplay";
 
 import { dataBrands } from "./SliderBrands.data";
 import { Reveal } from "@/components/shared/Reveal";
-import { delay } from "framer-motion";
 
-export default function SliderBrands(props: SliderBrandsProps) {
+export default function SliderBrands() {
   return (
     <Reveal
       position="bottom"

@@ -21,7 +21,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import axios from "axios";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { formSchema } from "./FormEditType.form";
 import { FormEditTypeProps } from "./FormEditType.types";

@@ -581,7 +581,7 @@ export function FormEditFleetVehicle({
                     <FormField
                       control={form.control}
                       name="photo"
-                      render={({ field: _field }) => (
+                      render={() => (
                         <FormItem>
                           <FormLabel>Imagen del Vehículo *</FormLabel>
                           <FormControl>

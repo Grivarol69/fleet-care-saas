@@ -11,7 +11,7 @@ export const ourFileRouter = {
             maxFileCount: 1
         }
     })
-        .middleware(async ({ req: _req }) => {
+        .middleware(async () => {
             // Verificar autenticación usando nuestro cliente Supabase
             const supabase = await createClient();
             const { data: { user }, error } = await supabase.auth.getUser();
@@ -48,7 +48,7 @@ export const ourFileRouter = {
             maxFileCount: 1
         }
     })
-        .middleware(async ({ req: _req }) => {
+        .middleware(async () => {
             const supabase = await createClient();
             const { data: { user }, error } = await supabase.auth.getUser();
 

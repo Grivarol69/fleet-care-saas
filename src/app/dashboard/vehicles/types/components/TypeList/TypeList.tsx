@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { FormAddType } from "../FormAddType";
 import { FormEditType } from "../FormEditType";
 import axios from "axios";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/hooks/use-toast";
 import { TypeListProps } from "./TypeList.types";
 
 export function TypeList() {

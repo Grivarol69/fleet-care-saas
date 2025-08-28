@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -15,11 +15,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import axios from "axios";
 import { useToast } from "@/components/hooks/use-toast";
 import Image from "next/image";
-import { AlertCircle, AlertTriangle } from "lucide-react";
 
 type MaintenanceAlerts = {
   id: number;
@@ -147,26 +145,25 @@ export function MaintenanceStats() {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchMaintenanceAlerts = async () => {
+  const fetchMaintenanceAlerts = useCallback(async () => {
     try {
       const response = await axios.get(`/api/mantenaince/maintenance-alerts`);
       setData(response.data);
-      setIsLoading(false);
-      console.log("response.data: ", response.data);
     } catch (error) {
       console.error("Error fetching Maintenance Alerts: ", error);
-      setIsLoading(false);
       toast({
         title: "Error fetching Maintenance Alerts",
         description: "Please try again later",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchMaintenanceAlerts();
-  }, []);
+  }, [fetchMaintenanceAlerts]);
 
   const columns: ColumnDef<MaintenanceAlerts>[] = [
     {
