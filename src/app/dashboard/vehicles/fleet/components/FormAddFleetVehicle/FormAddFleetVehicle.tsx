@@ -72,11 +72,7 @@ type VehicleType = {
   name: string;
 };
 
-// Definición local del tipo FleetVehicle para claridad
-type FleetVehicle = {
-  id: number;
-  // Agrega aquí otros campos que devuelve tu API
-};
+import { FleetVehicle } from "../SharedTypes/sharedTypes";
 
 interface FormAddFleetVehicleProps {
   isOpen: boolean;
