@@ -3,18 +3,19 @@ import { prisma } from "@/lib/prisma";
 import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from "next/server";
 
-const TENANT_ID = 'mvp-default-tenant'; // Tenant hardcodeado para MVP
-
+const TENANT_ID = 'mvp-default-tenant';
 
 // GET - Obtener marca específica por ID
 export async function GET(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
+
         const brand = await prisma.vehicleBrand.findUnique({
             where: {
-                id: parseInt(params.id),
+                id: parseInt(id),
                 tenantId: TENANT_ID
             }
         });
@@ -33,10 +34,11 @@ export async function GET(
 // PUT - Actualizar marca específica
 export async function PUT(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        // Verificar autenticación con Supabase SSR (método actualizado)
+
+        const { id } = await params;
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
 
@@ -50,10 +52,10 @@ export async function PUT(
             return new NextResponse("Name is required", { status: 400 });
         }
 
-        // Verificar que la marca existe y pertenece al tenant
+        // Verificar que la marca existe
         const existingBrand = await prisma.vehicleBrand.findUnique({
             where: {
-                id: parseInt(params.id),
+                id: parseInt(id),
                 tenantId: TENANT_ID
             }
         });
@@ -62,13 +64,13 @@ export async function PUT(
             return new NextResponse("Brand not found", { status: 404 });
         }
 
-        // Verificar que no exista otra marca con el mismo nombre
+        // Verificar duplicados
         const duplicateBrand = await prisma.vehicleBrand.findFirst({
             where: {
                 tenantId: TENANT_ID,
                 name: name.trim(),
                 id: {
-                    not: parseInt(params.id)
+                    not: parseInt(id)
                 }
             }
         });
@@ -79,7 +81,8 @@ export async function PUT(
 
         const updatedBrand = await prisma.vehicleBrand.update({
             where: {
-                id: parseInt(params.id)
+                id: parseInt(id),
+                tenantId: TENANT_ID
             },
             data: {
                 name: name.trim(),
@@ -96,10 +99,10 @@ export async function PUT(
 // DELETE - Eliminar marca específica
 export async function DELETE(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        // Verificar autenticación con Supabase SSR (método actualizado)
+        const { id } = await params;
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
 
@@ -107,10 +110,9 @@ export async function DELETE(
             return new NextResponse("Unauthorized", { status: 401 });
         }
 
-        // Verificar que la marca existe y pertenece al tenant
         const existingBrand = await prisma.vehicleBrand.findUnique({
             where: {
-                id: parseInt(params.id),
+                id: parseInt(id),
                 tenantId: TENANT_ID
             }
         });
@@ -119,22 +121,11 @@ export async function DELETE(
             return new NextResponse("Brand not found", { status: 404 });
         }
 
-        // Verificar que no tenga relaciones dependientes
-        const hasLines = await prisma.vehicleLine.findFirst({
-            where: { brandId: parseInt(params.id) }
-        });
-
-        const hasVehicles = await prisma.vehicle.findFirst({
-            where: { brandId: parseInt(params.id) }
-        });
-
-        if (hasLines || hasVehicles) {
-            return new NextResponse("Cannot delete brand with existing lines or vehicles", { status: 409 });
-        }
-
+        // ✅ CORREGIDO: Usar vehicleBrand.delete en lugar de vehicleType.delete
         await prisma.vehicleBrand.delete({
             where: {
-                id: parseInt(params.id)
+                id: parseInt(id),
+                tenantId: TENANT_ID
             }
         });
 

@@ -36,7 +36,6 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import axios from "axios";
 import { useToast } from "@/components/hooks/use-toast";
-import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { FormEditDocumentProps } from "../SharedTypes/SharedTypes";
@@ -93,11 +92,15 @@ export function FormEditDocument({
         description: "El documento ha sido actualizado exitosamente.",
       });
 
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error updating document:", error);
+      let description = "No se pudo actualizar el documento";
+      if (axios.isAxiosError(error) && error.response?.data) {
+        description = error.response.data;
+      }
       toast({
         title: "Error",
-        description: error.response?.data || "No se pudo actualizar el documento",
+        description,
         variant: "destructive",
       });
     } finally {

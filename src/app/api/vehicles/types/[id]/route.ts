@@ -1,7 +1,6 @@
 // src/app/api/vehicles/Types/[id]/route.ts
 import { prisma } from "@/lib/prisma";
 import { createClient } from '@/utils/supabase/server';
-import { cookies } from 'next/headers';
 import { NextResponse } from "next/server";
 
 const TENANT_ID = 'mvp-default-tenant'; // Tenant hardcodeado para MVP
@@ -10,12 +9,13 @@ const TENANT_ID = 'mvp-default-tenant'; // Tenant hardcodeado para MVP
 // GET - Obtener marca específica por ID
 export async function GET(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const type = await prisma.vehicleType.findUnique({
             where: {
-                id: parseInt(params.id),
+                id: parseInt(id),
                 tenantId: TENANT_ID
             }
         });
@@ -34,9 +34,10 @@ export async function GET(
 // PUT - Actualizar marca específica
 export async function PUT(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         // Verificar autenticación con Supabase SSR (método actualizado)
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
@@ -54,7 +55,7 @@ export async function PUT(
         // Verificar que el tipo existe y pertenece al tenant
         const existingType = await prisma.vehicleType.findUnique({
             where: {
-                id: parseInt(params.id),
+                id: parseInt(id),
                 tenantId: TENANT_ID
             }
         });
@@ -69,7 +70,7 @@ export async function PUT(
                 tenantId: TENANT_ID,
                 name: name.trim(),
                 id: {
-                    not: parseInt(params.id)
+                    not: parseInt(id)
                 }
             }
         });
@@ -80,7 +81,7 @@ export async function PUT(
 
         const updatedType = await prisma.vehicleType.update({
             where: {
-                id: parseInt(params.id)
+                id: parseInt(id)
             },
             data: {
                 name: name.trim(),
@@ -97,9 +98,10 @@ export async function PUT(
 // DELETE - Eliminar Tipo específico
 export async function DELETE(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         // Verificar autenticación con Supabase SSR (método actualizado)
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
@@ -111,7 +113,7 @@ export async function DELETE(
         // Verificar que la marca existe y pertenece al tenant
         const existingType = await prisma.vehicleType.findUnique({
             where: {
-                id: parseInt(params.id),
+                id: parseInt(id),
                 tenantId: TENANT_ID
             }
         });
@@ -122,7 +124,7 @@ export async function DELETE(
 
         await prisma.vehicleType.delete({
             where: {
-                id: parseInt(params.id)
+                id: parseInt(id)
             }
         });
 

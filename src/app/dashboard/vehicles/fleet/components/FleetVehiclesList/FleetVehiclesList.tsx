@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -20,10 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  FleetVehicle,
-  FormEditFleetVehicleProps,
-} from "../SharedTypes/sharedTypes";
+import { FleetVehicle } from "../SharedTypes/sharedTypes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormAddFleetVehicle } from "../FormAddFleetVehicle";
@@ -46,15 +43,15 @@ export function FleetVehiclesList() {
 
   const { toast } = useToast();
 
-  const fetchFleetVehicles = async () => {
+  const fetchFleetVehicles = useCallback(async () => {
     try {
       setLoading(true);
       const response = await axios.get("/api/vehicles/vehicles");
       setData(response.data);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error fetching Vehicles: ", error);
 
-      if (error.response?.status === 401) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
         toast({
           title: "No autorizado",
           description: "Debes iniciar sesión para ver los vehículos",
@@ -71,33 +68,33 @@ export function FleetVehiclesList() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchFleetVehicles();
-  }, []);
+  }, [fetchFleetVehicles]);
 
-  const handleEdit = (fleetVehicle: FleetVehicle) => {
+  const handleEdit = useCallback((fleetVehicle: FleetVehicle) => {
     setEditingFleetVehicle(fleetVehicle);
     setIsEditDialogOpen(true);
-  };
+  }, []);
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = useCallback(async (id: number) => {
     if (!confirm("¿Estás seguro de que quieres eliminar este vehículo?")) {
       return;
     }
 
     try {
       await axios.delete(`/api/vehicles/vehicles/${id}`);
-      setData(data.filter((vehicle) => vehicle.id !== id));
+      setData((prevData) => prevData.filter((vehicle) => vehicle.id !== id));
       toast({
         title: "Vehículo eliminado",
         description: "El vehículo ha sido eliminado exitosamente",
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error deleting Vehicle:", error);
 
-      if (error.response?.status === 409) {
+      if (axios.isAxiosError(error) && error.response?.status === 409) {
         toast({
           title: "No se puede eliminar",
           description: "El vehículo tiene registros asociados",
@@ -112,7 +109,7 @@ export function FleetVehiclesList() {
         variant: "destructive",
       });
     }
-  };
+  }, [toast]);
 
   const columns = useMemo<ColumnDef<FleetVehicle>[]>(
     () => [
@@ -262,7 +259,7 @@ export function FleetVehiclesList() {
         ),
       },
     ],
-    []
+    [handleDelete, handleEdit]
   );
 
   const table = useReactTable({
@@ -415,7 +412,7 @@ export function FleetVehiclesList() {
           isOpen={isEditDialogOpen}
           setIsOpen={setIsEditDialogOpen}
           fleetVehicle={editingFleetVehicle}
-          onEditFleetVehicle={(editedFleetVehicle) => {
+          onEditFleetVehicle={(_editedFleetVehicle) => {
             // Refrescar los datos desde el servidor en lugar de hacer merge manual
             fetchFleetVehicles();
           }}

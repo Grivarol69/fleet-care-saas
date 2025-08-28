@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -31,16 +31,14 @@ export function TypeList() {
 
   const { toast } = useToast();
 
-  const fetchTypes = async () => {
+  const fetchTypes = useCallback(async () => {
     try {
       setLoading(true);
       const response = await axios.get(`/api/vehicles/types`);
       setData(response.data);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error fetching Types: ", error);
-
-      // Manejo específico de errores de autenticación
-      if (error.response?.status === 401) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
         toast({
           title: "No autorizado",
           description: "Debes iniciar sesión para ver las marcas",
@@ -48,7 +46,6 @@ export function TypeList() {
         });
         return;
       }
-
       toast({
         title: "Error al cargar marcas",
         description: "Por favor intenta de nuevo más tarde",
@@ -57,11 +54,11 @@ export function TypeList() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchTypes();
-  }, []);
+  }, [fetchTypes]);
 
   const handleEdit = (type: TypeListProps) => {
     setEditingType(type);
@@ -71,16 +68,14 @@ export function TypeList() {
   const handleDelete = async (id: number) => {
     try {
       await axios.delete(`/api/vehicles/types/${id}`);
-      setData(data.filter((type) => type.id !== id));
+      setData((prevData) => prevData.filter((type) => type.id !== id));
       toast({
         title: "Tipo eliminado",
         description: "El tipo ha sido eliminado exitosamente",
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error deleting Type:", error);
-
-      // Manejo específico de errores
-      if (error.response?.status === 409) {
+      if (axios.isAxiosError(error) && error.response?.status === 409) {
         toast({
           title: "No se puede eliminar",
           description: "La marca tiene vehículos o líneas asociadas",
@@ -88,7 +83,6 @@ export function TypeList() {
         });
         return;
       }
-
       toast({
         title: "Error al eliminar tipo",
         description: "Por favor intenta de nuevo más tarde",

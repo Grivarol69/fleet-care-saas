@@ -7,9 +7,10 @@ const TENANT_ID = 'mvp-default-tenant';
 // GET a single vehicle by ID
 export async function GET(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
 
@@ -19,7 +20,7 @@ export async function GET(
 
         const vehicle = await prisma.vehicle.findUnique({
             where: {
-                id: parseInt(params.id),
+                id: parseInt(id),
                 tenantId: TENANT_ID,
             },
             include: {
@@ -43,9 +44,10 @@ export async function GET(
 // DELETE a vehicle by ID
 export async function DELETE(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
 
@@ -55,7 +57,7 @@ export async function DELETE(
 
         const vehicleToDelete = await prisma.vehicle.findUnique({
             where: {
-                id: parseInt(params.id),
+                id: parseInt(id),
                 tenantId: TENANT_ID,
             }
         });
@@ -66,7 +68,7 @@ export async function DELETE(
 
         await prisma.vehicle.delete({
             where: {
-                id: parseInt(params.id),
+                id: parseInt(id),
                 tenantId: TENANT_ID,
             },
         });
@@ -81,9 +83,10 @@ export async function DELETE(
 // PATCH (update) a vehicle by ID
 export async function PATCH(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
 
@@ -96,7 +99,7 @@ export async function PATCH(
 
         const vehicleToUpdate = await prisma.vehicle.findUnique({
             where: {
-                id: parseInt(params.id),
+                id: parseInt(id),
                 tenantId: TENANT_ID,
             }
         });
@@ -123,7 +126,7 @@ export async function PATCH(
 
         const updatedVehicle = await prisma.vehicle.update({
             where: {
-                id: parseInt(params.id),
+                id: parseInt(id),
                 tenantId: TENANT_ID,
             },
             data: {

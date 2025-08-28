@@ -8,12 +8,13 @@ const TENANT_ID = 'mvp-default-tenant'; // Tenant hardcodeado para MVP
 // GET - Obtener línea específica por ID
 export async function GET(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const line = await prisma.vehicleLine.findUnique({
             where: {
-                id: parseInt(params.id),
+                id: parseInt(id),
                 tenantId: TENANT_ID
             },
             include: {
@@ -39,9 +40,10 @@ export async function GET(
 // PUT - Actualizar línea específica
 export async function PUT(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         // Verificar autenticación con Supabase SSR (método actualizado)
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
@@ -63,7 +65,7 @@ export async function PUT(
         // Verificar que la línea existe y pertenece al tenant
         const existingLine = await prisma.vehicleLine.findUnique({
             where: {
-                id: parseInt(params.id),
+                id: parseInt(id),
                 tenantId: TENANT_ID
             }
         });
@@ -92,7 +94,7 @@ export async function PUT(
                 brandId: parseInt(brandId),
                 name: name.trim(),
                 id: {
-                    not: parseInt(params.id)
+                    not: parseInt(id)
                 }
             }
         });
@@ -103,7 +105,7 @@ export async function PUT(
 
         const updatedLine = await prisma.vehicleLine.update({
             where: {
-                id: parseInt(params.id),
+                id: parseInt(id),
                 tenantId: TENANT_ID
             },
             data: {
@@ -129,9 +131,10 @@ export async function PUT(
 // DELETE - Eliminar línea específica
 export async function DELETE(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         // Verificar autenticación con Supabase SSR (método actualizado)
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
@@ -143,7 +146,7 @@ export async function DELETE(
         // Verificar que la línea existe y pertenece al tenant
         const existingLine = await prisma.vehicleLine.findUnique({
             where: {
-                id: parseInt(params.id),
+                id: parseInt(id),
                 tenantId: TENANT_ID
             }
         });
@@ -156,7 +159,7 @@ export async function DELETE(
         // Una línea no puede eliminarse si hay vehículos que la usan
         const hasVehicles = await prisma.vehicle.findFirst({
             where: {
-                lineId: parseInt(params.id), // ← Cambié de brandId a lineId
+                lineId: parseInt(id), // ← Cambié de brandId a lineId
                 tenantId: TENANT_ID
             }
         });
@@ -164,7 +167,7 @@ export async function DELETE(
         // ✅ CORREGIDO: Verificar planes de mantenimiento que usan esta línea
         const hasMantPlans = await prisma.mantPlan.findFirst({
             where: {
-                vehicleLineId: parseInt(params.id), // ← Cambié de brandId a vehicleLineId
+                vehicleLineId: parseInt(id), // ← Cambié de brandId a vehicleLineId
                 tenantId: TENANT_ID
             }
         });
@@ -175,7 +178,7 @@ export async function DELETE(
 
         await prisma.vehicleLine.delete({
             where: {
-                id: parseInt(params.id),
+                id: parseInt(id),
                 tenantId: TENANT_ID
             }
         });

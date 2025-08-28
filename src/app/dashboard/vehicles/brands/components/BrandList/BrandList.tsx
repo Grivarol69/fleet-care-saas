@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useCallback } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -31,16 +32,15 @@ export function BrandList() {
 
   const { toast } = useToast();
 
-  const fetchBrands = async () => {
+  const fetchBrands = useCallback(async () => {
     try {
       setLoading(true);
       const response = await axios.get(`/api/vehicles/brands`);
       setData(response.data);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error fetching Brands: ", error);
 
-      // Manejo específico de errores de autenticación
-      if (error.response?.status === 401) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
         toast({
           title: "No autorizado",
           description: "Debes iniciar sesión para ver las marcas",
@@ -57,11 +57,11 @@ export function BrandList() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchBrands();
-  }, []);
+  }, [fetchBrands]);
 
   const handleEdit = (brand: BrandListProps) => {
     setEditingBrand(brand);
@@ -76,11 +76,10 @@ export function BrandList() {
         title: "Marca eliminada",
         description: "La marca ha sido eliminada exitosamente",
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error deleting brand:", error);
 
-      // Manejo específico de errores
-      if (error.response?.status === 409) {
+      if (axios.isAxiosError(error) && error.response?.status === 409) {
         toast({
           title: "No se puede eliminar",
           description: "La marca tiene vehículos o líneas asociadas",

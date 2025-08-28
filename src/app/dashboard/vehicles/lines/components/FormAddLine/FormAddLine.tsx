@@ -9,7 +9,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -130,15 +129,17 @@ export function FormAddLine({
       });
 
       router.refresh();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error creating line:", error);
 
       // ✅ Manejo mejorado de errores
       let errorMessage = "Algo salió mal";
-      if (error.response?.status === 409) {
-        errorMessage = "Esta línea ya existe para la marca seleccionada";
-      } else if (error.response?.data) {
-        errorMessage = error.response.data;
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 409) {
+          errorMessage = "Esta línea ya existe para la marca seleccionada";
+        } else if (error.response?.data) {
+          errorMessage = error.response.data;
+        }
       }
 
       toast({

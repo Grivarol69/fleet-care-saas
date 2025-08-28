@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -57,18 +57,16 @@ export function DocumentsList({ vehiclePlate }: DocumentsListProps) {
 
   const { toast } = useToast();
 
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
     try {
       setLoading(true);
-      // Obtener documentos filtrados por placa del vehículo
       const response = await axios.get(
         `/api/vehicles/documents?vehiclePlate=${vehiclePlate}`
       );
       setData(response.data);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error fetching Documents: ", error);
-
-      if (error.response?.status === 401) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
         toast({
           title: "No autorizado",
           description: "Debes iniciar sesión para ver los documentos",
@@ -76,7 +74,6 @@ export function DocumentsList({ vehiclePlate }: DocumentsListProps) {
         });
         return;
       }
-
       toast({
         title: "Error cargando documentos",
         description: "Por favor intenta de nuevo más tarde",
@@ -85,11 +82,11 @@ export function DocumentsList({ vehiclePlate }: DocumentsListProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [vehiclePlate, toast]);
 
   useEffect(() => {
     fetchDocuments();
-  }, [vehiclePlate]);
+  }, [fetchDocuments]);
 
   const handleEdit = (document: DocumentProps) => {
     setEditingDocument(document);
@@ -103,12 +100,12 @@ export function DocumentsList({ vehiclePlate }: DocumentsListProps) {
 
     try {
       await axios.delete(`/api/vehicles/documents/${id}`);
-      setData(data.filter((doc) => doc.id !== id));
+      setData((prevData) => prevData.filter((doc) => doc.id !== id));
       toast({
         title: "Documento eliminado",
         description: "El documento ha sido eliminado exitosamente",
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error deleting document:", error);
       toast({
         title: "Error eliminando documento",

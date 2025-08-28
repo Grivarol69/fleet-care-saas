@@ -4,12 +4,38 @@ import { NextResponse } from "next/server";
 
 const TENANT_ID = 'mvp-default-tenant'; // Tenant hardcodeado para MVP
 
+// GET - Obtener Document específica por ID
+export async function GET(
+    req: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { id } = await params;
+        const document = await prisma.document.findUnique({
+            where: {
+                id,
+                tenantId: TENANT_ID
+            }
+        });
+
+        if (!document) {
+            return new NextResponse("Document not found", { status: 404 });
+        }
+
+        return NextResponse.json(document);
+    } catch (error) {
+        console.error("[DOCUMENT_GET]", error);
+        return new NextResponse("Internal Error", { status: 500 });
+    }
+}
+
 // PATCH (update) a document by ID
 export async function PATCH(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
 
@@ -19,7 +45,7 @@ export async function PATCH(
 
         const documentToUpdate = await prisma.document.findFirst({
             where: {
-                id: params.id,
+                id,
                 tenantId: TENANT_ID,
             }
         });
@@ -33,7 +59,7 @@ export async function PATCH(
 
         const updatedDocument = await prisma.document.update({
             where: {
-                id: params.id,
+                id,
             },
             data: {
                 ...otherData,
@@ -52,9 +78,10 @@ export async function PATCH(
 // DELETE a document by ID
 export async function DELETE(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
 
@@ -64,7 +91,7 @@ export async function DELETE(
 
         const documentToDelete = await prisma.document.findFirst({
             where: {
-                id: params.id,
+                id,
                 tenantId: TENANT_ID,
             }
         });
@@ -75,7 +102,7 @@ export async function DELETE(
 
         await prisma.document.delete({
             where: {
-                id: params.id,
+                id,
             }
         });
 

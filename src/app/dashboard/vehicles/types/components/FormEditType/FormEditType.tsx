@@ -63,44 +63,45 @@ export function FormEditType({
       });
 
       router.refresh();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error updating Type:", error);
 
-      // Manejo específico de errores
-      if (error.response?.status === 401) {
-        toast({
-          title: "No autorizado",
-          description: "Debes iniciar sesión para editar tipos",
-          variant: "destructive",
-        });
-        return;
-      }
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          toast({
+            title: "No autorizado",
+            description: "Debes iniciar sesión para editar tipos",
+            variant: "destructive",
+          });
+          return;
+        }
 
-      if (error.response?.status === 409) {
-        toast({
-          title: "Tipo duplicada",
-          description: "Ya existe un tipo con ese nombre",
-          variant: "destructive",
-        });
-        return;
-      }
+        if (error.response?.status === 409) {
+          toast({
+            title: "Tipo duplicada",
+            description: "Ya existe un tipo con ese nombre",
+            variant: "destructive",
+          });
+          return;
+        }
 
-      if (error.response?.status === 400) {
-        toast({
-          title: "Datos inválidos",
-          description: "Por favor verifica los datos ingresados",
-          variant: "destructive",
-        });
-        return;
-      }
+        if (error.response?.status === 400) {
+          toast({
+            title: "Datos inválidos",
+            description: "Por favor verifica los datos ingresados",
+            variant: "destructive",
+          });
+          return;
+        }
 
-      if (error.response?.status === 404) {
-        toast({
-          title: "Tipo no encontrado",
-          description: "Ell tipo que intentas editar no existe",
-          variant: "destructive",
-        });
-        return;
+        if (error.response?.status === 404) {
+          toast({
+            title: "Tipo no encontrado",
+            description: "Ell tipo que intentas editar no existe",
+            variant: "destructive",
+          });
+          return;
+        }
       }
 
       toast({

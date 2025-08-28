@@ -1,0 +1,17 @@
+{
+  "buildCommand": "prisma generate && next build",
+  "installCommand": "npm ci",
+  "framework": "nextjs",
+  "regions": ["cle1"],
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/uploadthing/:path*",
+      "destination": "/api/uploadthing/:path*"
+    }
+  ]
+}

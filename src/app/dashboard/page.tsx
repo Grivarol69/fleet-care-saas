@@ -4,11 +4,11 @@
 import { DocumentStats } from "@/components/layout/DocumentStats";
 import { MaintenanceStats } from "@/components/layout/MaintenanceStats";
 
-const maintenanceStats = [
-  { name: "Al día", value: 65, color: "#22c55e" },
-  { name: "Próximos", value: 25, color: "#eab308" },
-  { name: "Vencidos", value: 10, color: "#ef4444" },
-];
+// const maintenanceStats = [
+//   { name: "Al día", value: 65, color: "#22c55e" },
+//   { name: "Próximos", value: 25, color: "#eab308" },
+//   { name: "Vencidos", value: 10, color: "#ef4444" },
+// ];
 
 export default function DashboardPage() {
   // const { user, loading } = useAuth();

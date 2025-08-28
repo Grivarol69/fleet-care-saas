@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -31,16 +31,14 @@ export function LineList() {
 
   const { toast } = useToast();
 
-  const fetchLines = async () => {
+  const fetchLines = useCallback(async () => {
     try {
       setLoading(true);
       const response = await axios.get(`/api/vehicles/lines`);
       setData(response.data);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error fetching Lines: ", error);
-
-      // Manejo específico de errores de autenticación
-      if (error.response?.status === 401) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
         toast({
           title: "No autorizado",
           description: "Debes iniciar sesión para ver las marcas",
@@ -48,7 +46,6 @@ export function LineList() {
         });
         return;
       }
-
       toast({
         title: "Error fetching Lines",
         description: "Please try again later",
@@ -57,11 +54,11 @@ export function LineList() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchLines();
-  }, []);
+  }, [fetchLines]);
 
   const handleEdit = (line: LineListProps) => {
     setEditingLine(line);
@@ -71,16 +68,14 @@ export function LineList() {
   const handleDelete = async (id: number) => {
     try {
       await axios.delete(`/api/vehicles/lines/${id}`);
-      setData(data.filter((line) => line.id !== id));
+      setData((prevData) => prevData.filter((line) => line.id !== id));
       toast({
         title: "Line deleted!",
         description: "The line has been successfully deleted.",
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error deleting line:", error);
-
-      // Manejo específico de errores
-      if (error.response?.status === 409) {
+      if (axios.isAxiosError(error) && error.response?.status === 409) {
         toast({
           title: "No se puede eliminar",
           description: "La marca tiene vehículos o líneas asociadas",
@@ -88,7 +83,6 @@ export function LineList() {
         });
         return;
       }
-
       toast({
         title: "Error deleting line",
         description: "Please try again later.",

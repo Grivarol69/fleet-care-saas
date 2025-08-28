@@ -59,35 +59,36 @@ export function FormAddType({
       });
 
       router.refresh();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error creating Type:", error);
 
-      // Manejo específico de errores
-      if (error.response?.status === 401) {
-        toast({
-          title: "No autorizado",
-          description: "Debes iniciar sesión para crear tipos de vehiculos",
-          variant: "destructive",
-        });
-        return;
-      }
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          toast({
+            title: "No autorizado",
+            description: "Debes iniciar sesión para crear tipos de vehiculos",
+            variant: "destructive",
+          });
+          return;
+        }
 
-      if (error.response?.status === 409) {
-        toast({
-          title: "Tipo de Vehiculo duplicado",
-          description: "Ya existe un tipo con ese nombre",
-          variant: "destructive",
-        });
-        return;
-      }
+        if (error.response?.status === 409) {
+          toast({
+            title: "Tipo de Vehiculo duplicado",
+            description: "Ya existe un tipo con ese nombre",
+            variant: "destructive",
+          });
+          return;
+        }
 
-      if (error.response?.status === 400) {
-        toast({
-          title: "Datos inválidos",
-          description: "Por favor verifica los datos ingresados",
-          variant: "destructive",
-        });
-        return;
+        if (error.response?.status === 400) {
+          toast({
+            title: "Datos inválidos",
+            description: "Por favor verifica los datos ingresados",
+            variant: "destructive",
+          });
+          return;
+        }
       }
 
       toast({

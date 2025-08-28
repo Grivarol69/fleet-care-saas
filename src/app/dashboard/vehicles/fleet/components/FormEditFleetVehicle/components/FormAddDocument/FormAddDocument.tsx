@@ -96,11 +96,15 @@ export function FormAddDocument({
       });
 
       router.refresh();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error creating document:", error);
+      let description = "No se pudo crear el documento";
+      if (axios.isAxiosError(error) && error.response?.data) {
+        description = error.response.data;
+      }
       toast({
         title: "Error",
-        description: error.response?.data || "No se pudo crear el documento",
+        description,
         variant: "destructive",
       });
     } finally {

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Image from "next/image";
 import {
   Dialog,
   DialogContent,
@@ -71,10 +72,16 @@ type VehicleType = {
   name: string;
 };
 
+// Definición local del tipo FleetVehicle para claridad
+type FleetVehicle = {
+  id: number;
+  // Agrega aquí otros campos que devuelve tu API
+};
+
 interface FormAddFleetVehicleProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  onAddFleetVehicle: (vehicle: any) => void;
+  onAddFleetVehicle: (vehicle: FleetVehicle) => void;
 }
 
 export function FormAddFleetVehicle({
@@ -114,8 +121,7 @@ export function FormAddFleetVehicle({
   const router = useRouter();
   const { toast } = useToast();
 
-  // Fetch data functions
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [brandsRes, linesRes, typesRes] = await Promise.all([
         axios.get("/api/vehicles/brands"),
@@ -134,13 +140,13 @@ export function FormAddFleetVehicle({
         variant: "destructive",
       });
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     if (isOpen) {
       fetchData();
     }
-  }, [isOpen]);
+  }, [isOpen, fetchData]);
 
   const handleRemoveImage = () => {
     setPreviewImage(null);
@@ -173,11 +179,15 @@ export function FormAddFleetVehicle({
       });
 
       router.refresh();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error creando vehículo:", error);
+      let description = "No se pudo crear el vehículo";
+      if (axios.isAxiosError(error) && error.response?.data) {
+        description = error.response.data;
+      }
       toast({
         title: "Error",
-        description: error.response?.data || "No se pudo crear el vehículo",
+        description,
         variant: "destructive",
       });
     } finally {
@@ -509,7 +519,7 @@ export function FormAddFleetVehicle({
                 <FormField
                   control={form.control}
                   name="photo"
-                  render={({ field }) => (
+                  render={({ field: _field }) => (
                     <FormItem>
                       <FormLabel>Imagen del Vehículo *</FormLabel>
                       <FormControl>
@@ -543,10 +553,11 @@ export function FormAddFleetVehicle({
                           ) : (
                             <div className="relative">
                               <div className="relative w-full h-48 rounded-lg overflow-hidden bg-gray-100">
-                                <img
+                                <Image
                                   src={previewImage}
                                   alt="Preview"
-                                  className="w-full h-full object-cover"
+                                  fill
+                                  className="object-cover"
                                 />
                                 <Button
                                   type="button"

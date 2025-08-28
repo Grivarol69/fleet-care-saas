@@ -1,5 +1,5 @@
 import { prisma } from './prisma'
-import { UserRole, Tenant, User as AppUser } from '@prisma/client'
+import { Prisma, UserRole } from '@prisma/client'
 
 export interface CreateTenantData {
     name: string
@@ -134,7 +134,7 @@ export const tenantService = {
     /**
      * Crear datos iniciales del tenant (roles, tipos base, etc.)
      */
-    async createInitialTenantData(tx: any, tenantId: string) {
+    async createInitialTenantData(tx: Prisma.TransactionClient, tenantId: string) {
         // Crear tipos de vehículos básicos
         await tx.vehicleType.createMany({
             data: [

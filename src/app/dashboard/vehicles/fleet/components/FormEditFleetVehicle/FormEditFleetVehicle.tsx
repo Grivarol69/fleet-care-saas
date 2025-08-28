@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Image from "next/image";
 import {
   Dialog,
   DialogContent,
@@ -31,7 +32,7 @@ import { UploadButton } from "@/lib/uploadthing";
 import axios from "axios";
 import { useToast } from "@/components/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { DocumentsList } from "./components/DocumentsList";
 import { Loader2, X } from "lucide-react";
 
@@ -142,8 +143,7 @@ export function FormEditFleetVehicle({
   const router = useRouter();
   const { toast } = useToast();
 
-  // Fetch data
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [brandsRes, linesRes, typesRes] = await Promise.all([
         axios.get("/api/vehicles/brands"),
@@ -162,7 +162,7 @@ export function FormEditFleetVehicle({
         variant: "destructive",
       });
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     if (isOpen) {
@@ -188,7 +188,7 @@ export function FormEditFleetVehicle({
         situation: fleetVehicle.situation,
       });
     }
-  }, [isOpen, fleetVehicle, form]);
+  }, [isOpen, fleetVehicle, form, fetchData]);
 
   const handleRemoveImage = () => {
     setPreviewImage(null);
@@ -219,12 +219,15 @@ export function FormEditFleetVehicle({
       });
 
       router.refresh();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error updating vehicle:", error);
+      let description = "No se pudo actualizar el vehículo";
+      if (axios.isAxiosError(error) && error.response?.data) {
+        description = error.response.data;
+      }
       toast({
         title: "Error",
-        description:
-          error.response?.data || "No se pudo actualizar el vehículo",
+        description,
         variant: "destructive",
       });
     } finally {
@@ -578,7 +581,7 @@ export function FormEditFleetVehicle({
                     <FormField
                       control={form.control}
                       name="photo"
-                      render={({ field }) => (
+                      render={({ field: _field }) => (
                         <FormItem>
                           <FormLabel>Imagen del Vehículo *</FormLabel>
                           <FormControl>
@@ -612,11 +615,14 @@ export function FormEditFleetVehicle({
                               ) : (
                                 <div className="relative">
                                   <div className="relative w-full h-48 rounded-lg overflow-hidden bg-gray-100">
-                                    <img
-                                      src={previewImage}
-                                      alt="Preview"
-                                      className="w-full h-full object-cover"
-                                    />
+                                    {previewImage && (
+                                      <Image
+                                        src={previewImage}
+                                        alt="Preview"
+                                        fill
+                                        className="object-cover"
+                                      />
+                                    )}
                                     <Button
                                       type="button"
                                       variant="destructive"

@@ -28,7 +28,7 @@ export const DocumentStats = () => {
     },
   ];
 
-  const getStatusColor = (status: any) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case "danger":
         return "bg-red-100 text-red-800";
