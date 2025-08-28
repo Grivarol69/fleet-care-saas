@@ -1,36 +1,20 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
-
-const supabase = createClient();
+import { DriveToday } from "@/components/landing/DriveToday";
+import { Features } from "@/components/landing/Features";
+import { FirstBlock } from "@/components/landing/FirstBlock";
+import { OurFleet } from "@/components/landing/OurFleet";
+import SliderBrands from "@/components/landing/SliderBrands/SliderBrands";
 
 export default function Home() {
-  const router = useRouter();
-
-  useEffect(() => {
-    const checkUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user) {
-        router.push("/dashboard");
-      } else {
-        router.push("/login");
-      }
-    };
-
-    checkUser();
-  }, [router]);
-
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold mb-4">Fleet Care SaaS</h1>
-        <p>Redirecting...</p>
-      </div>
+    <div>
+      {/* <Navbar /> */}
+      <FirstBlock />
+      <SliderBrands />
+      <Features />
+      <OurFleet />
+      <DriveToday />
     </div>
   );
 }
