@@ -7,7 +7,7 @@ const TENANT_ID = 'mvp-default-tenant'; // Tenant hardcodeado para MVP
 
 // GET - Obtener línea específica por ID
 export async function GET(
-    req: Request,
+    _req: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
@@ -130,7 +130,7 @@ export async function PUT(
 
 // DELETE - Eliminar línea específica
 export async function DELETE(
-    req: Request,
+    _req: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {

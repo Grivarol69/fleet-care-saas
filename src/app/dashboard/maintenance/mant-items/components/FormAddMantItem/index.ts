@@ -1,0 +1,1 @@
+export { FormAddMantItem, type FormAddMantItemProps } from './FormAddMantItem';

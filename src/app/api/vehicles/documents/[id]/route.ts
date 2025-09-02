@@ -6,7 +6,7 @@ const TENANT_ID = 'mvp-default-tenant'; // Tenant hardcodeado para MVP
 
 // GET - Obtener Document específica por ID
 export async function GET(
-    req: Request,
+    _req: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
@@ -77,7 +77,7 @@ export async function PATCH(
 
 // DELETE a document by ID
 export async function DELETE(
-    req: Request,
+    _req: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {

@@ -19,7 +19,7 @@ async function main() {
 
     console.log('Tenant por defecto creado:', defaultTenant.name)
 
-    const vehicleTypes = await prisma.vehicleType.createMany({
+    void await prisma.vehicleType.createMany({
         data: [
             { tenantId: defaultTenant.id, name: 'Camion' },
             { tenantId: defaultTenant.id, name: 'Camioneta' },
@@ -32,7 +32,7 @@ async function main() {
 
     console.log('Tipos de vehiculos creados')
 
-    const brands = await prisma.vehicleBrand.createMany({
+    void await prisma.vehicleBrand.createMany({
         data: [
             { tenantId: defaultTenant.id, name: 'Toyota' },
             { tenantId: defaultTenant.id, name: 'Chevrolet' },

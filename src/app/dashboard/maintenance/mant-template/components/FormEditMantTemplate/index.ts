@@ -1,0 +1,1 @@
+export { FormEditMantTemplate } from './FormEditMantTemplate';

@@ -46,9 +46,9 @@ export const dataAdminSidebar = [
         icon: Wrench,
         label: "Mantenimiento",
         subItems: [
-            { label: "Master Items", href: "/dashboard/maintenance/master-items" },
-            { label: "Categorías", href: "/dashboard/maintenance/categories" },
-            { label: "Templates", href: "/dashboard/maintenance/templates" },
+            { label: "Master Items", href: "/dashboard/maintenance/mant-items" },
+            { label: "Categorías", href: "/dashboard/maintenance/mant-categories" },
+            { label: "Templates", href: "/dashboard/maintenance/mant-template" },
             { label: "Planes Vehículos", href: "/dashboard/maintenance/vehicle-plans" },
             { label: "Órdenes de Trabajo", href: "/dashboard/maintenance/work-orders" },
             { label: "Alertas", href: "/dashboard/maintenance/alerts" },

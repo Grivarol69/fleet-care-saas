@@ -1,0 +1,1 @@
+export { MantTemplatesList } from './MantTemplatesList';
