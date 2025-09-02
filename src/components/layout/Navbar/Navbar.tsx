@@ -1,13 +1,9 @@
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
-import { Menu } from "lucide-react";
-import { SidebarRoutes } from "../SidebarRoutes";
-import Link from "next/link";
-import Image from "next/image";
+import { Menu } from 'lucide-react';
+import { SidebarRoutes } from '../SidebarRoutes';
+import Link from 'next/link';
+import Image from 'next/image';
 
 export function Navbar() {
   return (
@@ -28,10 +24,13 @@ export function Navbar() {
             <Image src="/logo.svg" alt="logo" width={50} height={50} />
             {/* <span className="text-xl font-bold">Fleet-Care</span> */}
           </Link>
-          <Link href="/vehicles/odometer" className="text-1xl font-bold">
+          <Link
+            href="/dashboard/vehicles/odometer"
+            className="text-1xl font-bold"
+          >
             Odómetro
           </Link>
-          <Link href="/vehicles/fleet" className="text-1xl font-bold">
+          <Link href="/dashboard/vehicles/fleet" className="text-1xl font-bold">
             Lista de Vehículos
           </Link>
           <Link href="/dashboard" className="text-1xl font-bold">

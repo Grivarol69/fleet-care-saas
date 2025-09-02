@@ -1,0 +1,22 @@
+# Ignore artifacts:
+build
+coverage
+dist
+.next
+*.tsbuildinfo
+node_modules
+
+# Ignore generated content:
+.next/
+.prisma/
+prisma/migrations/
+
+# Ignore configuration files:
+*.config.js
+*.config.ts
+next-env.d.ts
+
+# Ignore lock files:
+package-lock.json
+pnpm-lock.yaml
+yarn.lock

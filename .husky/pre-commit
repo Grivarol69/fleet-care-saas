@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Ejecutar lint-staged para validar archivos en staging
+npx lint-staged
+
+# Ejecutar type checking
+npm run type-check

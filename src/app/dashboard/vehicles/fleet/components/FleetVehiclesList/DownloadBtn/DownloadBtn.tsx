@@ -1,7 +1,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowDownNarrowWide } from "lucide-react";
-import * as XLSX from "xlsx";
+import * as ExcelJS from "exceljs";
 
 interface FleetVehicle {
   id: number;
@@ -25,66 +25,90 @@ type DownloadBtnProps = {
 };
 
 export function DownloadBtn({ data = [], fileName }: DownloadBtnProps) {
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!data.length) {
       alert("No hay datos para descargar");
       return;
     }
 
-    // Formatear datos para Excel
-    const formattedData = data.map((vehicle) => ({
-      ID: vehicle.id,
-      Placa: vehicle.licensePlate,
-      "Tipo Placa": vehicle.typePlate === "PARTICULAR" ? "Particular" : "Público",
-      Marca: vehicle.brand?.name || "N/A",
-      Línea: vehicle.line?.name || "N/A",
-      Tipo: vehicle.type?.name || "N/A",
-      Año: vehicle.year,
-      Color: vehicle.color,
-      Kilometraje: vehicle.mileage,
-      Cilindraje: vehicle.cylinder || "N/A",
-      Carrocería: vehicle.bodyWork || "N/A",
-      Propietario:
-        vehicle.owner === "OWN"
-          ? "Propio"
-          : vehicle.owner === "LEASED"
-          ? "Arrendado"
-          : "Rentado",
-      Estado:
-        vehicle.situation === "AVAILABLE"
-          ? "Disponible"
-          : vehicle.situation === "IN_USE"
-          ? "En uso"
-          : "Mantenimiento",
-    }));
-
     try {
-      const worksheet = XLSX.utils.json_to_sheet(formattedData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Vehículos");
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Vehículos");
 
-      // Ajustar ancho de columnas
-      const colWidths = [
-        { wch: 8 }, // ID
-        { wch: 12 }, // Placa
-        { wch: 12 }, // Tipo Placa
-        { wch: 15 }, // Marca
-        { wch: 15 }, // Línea
-        { wch: 12 }, // Tipo
-        { wch: 8 }, // Año
-        { wch: 12 }, // Color
-        { wch: 12 }, // Kilometraje
-        { wch: 12 }, // Cilindraje
-        { wch: 15 }, // Carrocería
-        { wch: 12 }, // Propietario
-        { wch: 15 }, // Estado
+      // Definir columnas con formato
+      worksheet.columns = [
+        { header: "ID", key: "id", width: 8 },
+        { header: "Placa", key: "licensePlate", width: 12 },
+        { header: "Tipo Placa", key: "typePlate", width: 12 },
+        { header: "Marca", key: "brand", width: 15 },
+        { header: "Línea", key: "line", width: 15 },
+        { header: "Tipo", key: "type", width: 12 },
+        { header: "Año", key: "year", width: 8 },
+        { header: "Color", key: "color", width: 12 },
+        { header: "Kilometraje", key: "mileage", width: 12 },
+        { header: "Cilindraje", key: "cylinder", width: 12 },
+        { header: "Carrocería", key: "bodyWork", width: 15 },
+        { header: "Propietario", key: "owner", width: 12 },
+        { header: "Estado", key: "situation", width: 15 },
       ];
-      worksheet["!cols"] = colWidths;
 
-      XLSX.writeFile(
-        workbook,
-        `${fileName}_${new Date().toISOString().split("T")[0]}.xlsx`
-      );
+      // Formatear y agregar datos
+      const formattedData = data.map((vehicle) => ({
+        id: vehicle.id,
+        licensePlate: vehicle.licensePlate,
+        typePlate: vehicle.typePlate === "PARTICULAR" ? "Particular" : "Público",
+        brand: vehicle.brand?.name || "N/A",
+        line: vehicle.line?.name || "N/A",
+        type: vehicle.type?.name || "N/A",
+        year: vehicle.year,
+        color: vehicle.color,
+        mileage: vehicle.mileage,
+        cylinder: vehicle.cylinder || "N/A",
+        bodyWork: vehicle.bodyWork || "N/A",
+        owner:
+          vehicle.owner === "OWN"
+            ? "Propio"
+            : vehicle.owner === "LEASED"
+            ? "Arrendado"
+            : "Rentado",
+        situation:
+          vehicle.situation === "AVAILABLE"
+            ? "Disponible"
+            : vehicle.situation === "IN_USE"
+            ? "En uso"
+            : "Mantenimiento",
+      }));
+
+      worksheet.addRows(formattedData);
+
+      // Aplicar estilos al header
+      worksheet.getRow(1).eachCell((cell) => {
+        cell.font = { bold: true };
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFE6F3FF" }
+        };
+        cell.border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" }
+        };
+      });
+
+      // Generar buffer y descargar
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      });
+      
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${fileName}_${new Date().toISOString().split("T")[0]}.xlsx`;
+      link.click();
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error al generar archivo Excel:", error);
       alert("Error al generar el archivo Excel");
