@@ -205,7 +205,7 @@ async function main() {
                     tenantId: defaultTenant.id,
                     name: item.name,
                     description: item.description,
-                    mantType: item.mantType as any,
+                    mantType: item.mantType as MaintenanceType,
                     estimatedTime: item.estimatedTime,
                     categoryId
                 }

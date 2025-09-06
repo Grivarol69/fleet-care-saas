@@ -3,7 +3,6 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
 import { SidebarRoutes } from '../SidebarRoutes';
 import Link from 'next/link';
-import Image from 'next/image';
 
 export function Navbar() {
   return (
