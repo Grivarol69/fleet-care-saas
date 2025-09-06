@@ -51,6 +51,7 @@ export function FormEditLine({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: line.name,
+      brandId: line.brandId,
     },
   });
 
@@ -58,7 +59,6 @@ export function FormEditLine({
   const { toast } = useToast();
 
   //* fetch Brands of Vehicles from Database
-
   useEffect(() => {
     const fetchingBrands = async () => {
       try {
@@ -71,6 +71,16 @@ export function FormEditLine({
 
     fetchingBrands();
   }, []);
+
+  //* Reset form when line changes
+  useEffect(() => {
+    if (line) {
+      form.reset({
+        name: line.name,
+        brandId: line.brandId,
+      });
+    }
+  }, [line, form]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {

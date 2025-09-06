@@ -20,10 +20,6 @@ export function Navbar() {
       </div>
       <div className="flex items-center justify-end w-full gap-x-2">
         <div className="flex items-center justify-between w-full max-w-5xl py-5 mx-auto gap-x-2">
-          <Link href="/" className="flex items-center justify-center gap-x-2">
-            <Image src="/logo.svg" alt="logo" width={50} height={50} />
-            {/* <span className="text-xl font-bold">Fleet-Care</span> */}
-          </Link>
           <Link
             href="/dashboard/vehicles/odometer"
             className="text-1xl font-bold"

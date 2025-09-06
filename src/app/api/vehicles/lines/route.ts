@@ -23,7 +23,16 @@ export async function GET() {
                 },
             },
         });
-        return NextResponse.json(lines);
+
+        // Mapear los datos para incluir brandName directamente
+        const mappedLines = lines.map(line => ({
+            id: line.id,
+            name: line.name,
+            brandId: line.brandId,
+            brandName: line.brand?.name || 'Sin marca'
+        }));
+
+        return NextResponse.json(mappedLines);
     } catch (error) {
         console.error("[LINE_GET]", error);
         return new NextResponse("Internal Error", { status: 500 });
@@ -94,7 +103,15 @@ export async function POST(req: Request) {
             }
         });
 
-        return NextResponse.json(line);
+        // Mapear para incluir brandName
+        const mappedLine = {
+            id: line.id,
+            name: line.name,
+            brandId: line.brandId,
+            brandName: line.brand?.name || 'Sin marca'
+        };
+
+        return NextResponse.json(mappedLine);
     } catch (error) {
         console.log("[LINE_POST]", error);
         return new NextResponse("Internal Error", { status: 500 });
