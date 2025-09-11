@@ -23,15 +23,6 @@
     "format:check": "prettier --check .",
     "prepare": "husky"
   },
-  "lint-staged": {
-    "*.{ts,tsx,js,jsx}": [
-      "eslint --fix --max-warnings=10",
-      "prettier --write"
-    ],
-    "*.{json,md,yml,yaml}": [
-      "prettier --write"
-    ]
-  },
   "dependencies": {
     "@hookform/resolvers": "^3.6.0",
     "@prisma/client": "^6.15.0",
