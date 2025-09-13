@@ -41,6 +41,7 @@ model Tenant {
   providers         Provider[]
   documents         Document[]
   subscriptions     Subscription[]
+  drivers           Driver[]
 
   @@index([slug])
   @@index([subscriptionStatus])
