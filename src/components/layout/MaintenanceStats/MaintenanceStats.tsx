@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/table";
 import axios from "axios";
 import { useToast } from "@/components/hooks/use-toast";
-import Image from "next/image";
 
 type MaintenanceAlerts = {
   id: number;
@@ -33,112 +32,6 @@ type MaintenanceAlerts = {
   status: "ACTIVE" | "INACTIVE"; // Agregado status ya que viene en los datos
 };
 
-const mantAlerts: MaintenanceAlerts[] = [
-  {
-    id: 1,
-    vehiclePlate: "ABC123",
-    photo: "https://utfs.io/f/ed8f2e8a-1265-4310-b086-1385aa133fc8-zbbdk9.jpg",
-    brandName: "Ford",
-    lineName: "Ranger",
-    mantItemDescription: "Cambio Aceite Motor",
-    currentKm: 88000,
-    executionKm: 88100,
-    kmToMaintenance: 88120,
-    state: "YELLOW",
-    status: "ACTIVE",
-  },
-  {
-    id: 2,
-    vehiclePlate: "ZID234",
-    photo: "https://utfs.io/f/5fc9e64d-e7f0-4320-a5be-3ef46bbd8308-zbbdj8.jpg",
-    brandName: "Chevrolet",
-    lineName: "Colorado",
-    mantItemDescription: "Cambio Filtro Aceite Motor",
-    currentKm: 88000,
-    executionKm: 88100,
-    kmToMaintenance: 88120,
-    state: "RED",
-    status: "ACTIVE",
-  },
-  {
-    id: 3,
-    vehiclePlate: "HJO125",
-    photo: "https://utfs.io/f/d3519253-287d-4309-8da2-ddd02aa4731f-zbv05e.jpg",
-    brandName: "Toyota",
-    lineName: "Hilux",
-    mantItemDescription: "Revisión Presión Motor",
-    currentKm: 88000,
-    executionKm: 88100,
-    kmToMaintenance: 88120,
-    state: "YELLOW",
-    status: "ACTIVE",
-  },
-  {
-    id: 4,
-    vehiclePlate: "HJK789",
-    photo: "https://utfs.io/f/5a7e64aa-98fa-47b6-8720-1dc1f6d985cb-zbbdk6.jpg",
-    brandName: "Ino",
-    lineName: "Turbo",
-    mantItemDescription: "Cambio Aceite Motor",
-    currentKm: 88000,
-    executionKm: 88100,
-    kmToMaintenance: 88120,
-    state: "YELLOW",
-    status: "ACTIVE",
-  },
-  {
-    id: 5,
-    vehiclePlate: "KLJ675",
-    photo: "https://utfs.io/f/ed8f2e8a-1265-4310-b086-1385aa133fc8-zbbdk9.jpg",
-    brandName: "VolksWagen",
-    lineName: "Volqueta",
-    mantItemDescription: "Cambio Filtros",
-    currentKm: 88000,
-    executionKm: 88100,
-    kmToMaintenance: 88120,
-    state: "RED",
-    status: "ACTIVE",
-  },
-  {
-    id: 6,
-    vehiclePlate: "GHF456",
-    photo: "https://utfs.io/f/5fc9e64d-e7f0-4320-a5be-3ef46bbd8308-zbbdj8.jpg",
-    brandName: "Ford",
-    lineName: "Ranger",
-    mantItemDescription: "Cambio Aceite Motor",
-    currentKm: 88000,
-    executionKm: 88100,
-    kmToMaintenance: 88120,
-    state: "YELLOW",
-    status: "ACTIVE",
-  },
-  {
-    id: 7,
-    vehiclePlate: "JKY654",
-    photo: "https://utfs.io/f/d3519253-287d-4309-8da2-ddd02aa4731f-zbv05e.jpg",
-    brandName: "Chevrolet",
-    lineName: "Colorado",
-    mantItemDescription: "Cambio Aceite Motor",
-    currentKm: 88000,
-    executionKm: 88100,
-    kmToMaintenance: 88120,
-    state: "YELLOW",
-    status: "ACTIVE",
-  },
-  {
-    id: 8,
-    vehiclePlate: "DFE567",
-    photo: "https://utfs.io/f/5a7e64aa-98fa-47b6-8720-1dc1f6d985cb-zbbdk6.jpg",
-    brandName: "Dongfeng",
-    lineName: "Rich6",
-    mantItemDescription: "Cambio Neumáticos",
-    currentKm: 88000,
-    executionKm: 88100,
-    kmToMaintenance: 88120,
-    state: "RED",
-    status: "ACTIVE",
-  },
-];
 
 export function MaintenanceStats() {
   const [data, setData] = useState<MaintenanceAlerts[]>([]);
@@ -147,7 +40,7 @@ export function MaintenanceStats() {
 
   const fetchMaintenanceAlerts = useCallback(async () => {
     try {
-      const response = await axios.get(`/api/mantenaince/maintenance-alerts`);
+      const response = await axios.get(`/api/maintenance/alerts`);
       setData(response.data);
     } catch (error) {
       console.error("Error fetching Maintenance Alerts: ", error);
@@ -169,37 +62,24 @@ export function MaintenanceStats() {
     {
       accessorKey: "photo",
       header: "Imagen",
-      cell: ({ row }) => (
-        <div className="relative h-16 w-16">
-          {row.original.photo ? (
-            <Image
-              src={row.original.photo}
-              alt={`Imagen de ${row.original.vehiclePlate}`}
-              fill
-              className="rounded-full object-cover"
-            />
-          ) : (
-            <div className="h-full w-full rounded-full bg-gray-200" />
-          )}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const state = row.original.state;
+        const bgColor = state === "RED" ? "bg-red-400" : "bg-green-400";
+        return (
+          <div className={`relative h-12 w-12 ${bgColor} rounded-full flex items-center justify-center text-white font-bold text-sm`}>
+            H2
+          </div>
+        );
+      },
     },
     {
       accessorKey: "state",
-      header: "Estado",
+      header: "Estado", 
       cell: ({ row }) => {
         const state = row.original.state;
         return (
           <div className="flex items-center justify-center">
-            {state === "YELLOW" ? (
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-full bg-yellow-400" />
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-full bg-red-500" />
-              </div>
-            )}
+            <div className={`h-6 w-6 rounded-full ${state === "YELLOW" ? "bg-yellow-400" : "bg-red-500"}`} />
           </div>
         );
       },
@@ -255,7 +135,7 @@ export function MaintenanceStats() {
   ];
 
   const table = useReactTable({
-    data: mantAlerts,
+    data: data, // Usar datos reales de la API
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
@@ -267,26 +147,35 @@ export function MaintenanceStats() {
   const getRowColor = (state: "YELLOW" | "RED") => {
     switch (state) {
       case "YELLOW":
-        return "bg-yellow-100 hover:bg-yellow-200";
+        return "bg-yellow-50 hover:bg-yellow-100 border-l-4 border-yellow-400";
       case "RED":
-        return "bg-red-100 hover:bg-red-200";
+        return "bg-red-50 hover:bg-red-100 border-l-4 border-red-500";
       default:
-        return "";
+        return "bg-white hover:bg-gray-50";
     }
   };
 
   // Si no hay datos después de cargar, mostramos un mensaje
   if (!isLoading && data.length === 0) {
     return (
-      <div className="flex items-center justify-center p-4">
-        No hay alertas de mantenimiento disponibles
+      <div className="space-y-4 rounded-md border p-8">
+        <h3 className="text-lg font-semibold">Alertas de Mantenimiento</h3>
+        <div className="flex items-center justify-center p-8 text-gray-500">
+          <div className="text-center">
+            <p className="text-lg font-medium">¡Todo al día!</p>
+            <p className="text-sm">No hay alertas de mantenimiento pendientes</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 rounded-md border ">
-      <div className="rounded-md border ">
+    <div className="space-y-4 rounded-md border">
+      <div className="p-6 border-b">
+        <h3 className="text-lg font-semibold">Alertas de Mantenimiento</h3>
+      </div>
+      <div className="rounded-md">
         <div className="h-[500px] overflow-auto">
           <Table>
             <TableHeader className="sticky top-0 bg-white">

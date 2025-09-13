@@ -3,6 +3,7 @@
 
 import { DocumentStats } from "@/components/layout/DocumentStats";
 import { MaintenanceStats } from "@/components/layout/MaintenanceStats";
+import { MaintenanceMetrics } from "@/components/layout/MaintenanceMetrics";
 
 // const maintenanceStats = [
 //   { name: "Al día", value: 65, color: "#22c55e" },
@@ -30,14 +31,13 @@ export default function DashboardPage() {
         </h1>
       </div>
 
-      {/* Grid principal de estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 lg:gap-x-20">
-        {/* Aquí irían componentes adicionales si los tienes */}
-      </div>
-
       {/* Grid de gráficos y estadísticas */}
-      <div className="grid grid-cols-1 mt-12 xl:grid-cols-2 md:gap-x-10">
-        <MaintenanceStats />
+      <div className="grid grid-cols-1 mt-8 xl:grid-cols-2 gap-6">
+        <div className="space-y-6">
+          {/* Métricas de mantenimiento - solo en la columna izquierda */}
+          <MaintenanceMetrics />
+          <MaintenanceStats />
+        </div>
         <DocumentStats />
       </div>
 
