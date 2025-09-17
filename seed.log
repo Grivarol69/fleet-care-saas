@@ -1,0 +1,27 @@
+🌱 Iniciando seed completo de la base de datos...
+✅ Tenant por defecto creado: Fleet Care MVP
+✅ Tipos de vehículos creados
+✅ Marcas y líneas de vehículos creadas
+✅ Categorías de mantenimiento creadas
+✅ Items de mantenimiento creados
+✅ Técnicos y proveedores creados
+✅ Vehículos creados con imágenes
+✅ Planes de mantenimiento creados
+✅ Planes asignados a vehículos e items de mantenimiento creados
+✅ Documentos de vehículos creados
+🎉 Seed completo finalizado exitosamente!
+📊 Estadísticas finales:
+   - 1 tenant
+   - 25 vehículos con imágenes
+   - 7 tipos de vehículos
+   - 9 marcas de vehículos
+   - 52 líneas de vehículos
+   - 10 categorías de mantenimiento
+   - 32 items de mantenimiento
+   - 14 planes de mantenimiento
+   - 96 tareas de plan
+   - 11 asignaciones vehículo-plan
+   - 76 items de mantenimiento programados
+   - 5 técnicos
+   - 5 proveedores
+   - 50 documentos de vehículos
