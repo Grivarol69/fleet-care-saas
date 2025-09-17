@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import { Truck } from "lucide-react";
 
 export function Logo() {
   return (
@@ -7,8 +7,7 @@ export function Logo() {
       href="/"
       className="flex items-center h-20 gap-2 border-b cursor-pointer min-h-20 px-6"
     >
-      {/* <Image src="/logo.svg" alt="Logo" height={30} width={30} priority /> */}
-      <Image src="/logo.svg" alt="Logo" height={50} width={50} priority />
+      <Truck className="h-8 w-8 text-primary" />
       <h1 className="text-xl font-bold">Fleet Care</h1>
     </Link>
   );

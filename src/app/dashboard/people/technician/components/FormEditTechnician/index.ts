@@ -1,0 +1,1 @@
+export { FormEditTechnician } from "./FormEditTechnician";

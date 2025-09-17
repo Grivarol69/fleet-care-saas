@@ -44,7 +44,12 @@ export const DocumentStats = () => {
         axios.post(`/api/vehicles/documents/expiring`) // POST para obtener estadísticas
       ]);
       
-      setDocumentAlerts(alertsResponse.data);
+      // Filtrar solo documentos que necesitan atención (no mostrar los que están "Al día")
+      const filteredAlerts = alertsResponse.data.filter((alert: DocumentAlert) => 
+        alert.status === 'danger' || alert.status === 'warning'
+      );
+      
+      setDocumentAlerts(filteredAlerts);
       setStats(statsResponse.data);
     } catch (error) {
       console.error("Error fetching Document Alerts: ", error);
@@ -130,8 +135,8 @@ export const DocumentStats = () => {
       <CardContent>
         {documentAlerts.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            <p className="text-lg font-medium">¡Todos los documentos al día!</p>
-            <p className="text-sm">No hay documentos próximos a vencer</p>
+            <p className="text-lg font-medium">¡No hay alertas de documentos!</p>
+            <p className="text-sm">Todos los documentos están al día o en estado normal</p>
           </div>
         ) : (
           <Table>
@@ -148,13 +153,11 @@ export const DocumentStats = () => {
                 <TableRow key={alert.id} className={`border-l-4 ${
                   alert.status === 'danger' 
                     ? 'bg-red-50/50 border-l-red-400 hover:bg-red-50' 
-                    : alert.status === 'warning' 
-                      ? 'bg-yellow-50/50 border-l-yellow-400 hover:bg-yellow-50' 
-                      : 'bg-green-50/50 border-l-green-400 hover:bg-green-50'
+                    : 'bg-yellow-50/50 border-l-yellow-400 hover:bg-yellow-50'
                 } transition-colors`}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full ${alert.status === 'danger' ? 'bg-red-500' : alert.status === 'warning' ? 'bg-yellow-500' : 'bg-green-500'}`}></span>
+                      <span className={`w-2 h-2 rounded-full ${alert.status === 'danger' ? 'bg-red-500' : 'bg-yellow-500'}`}></span>
                       {alert.plate}
                     </div>
                   </TableCell>
@@ -172,9 +175,7 @@ export const DocumentStats = () => {
                           ? 'bg-red-100 text-red-700' 
                           : alert.status === 'danger'
                             ? 'bg-red-100 text-red-700'
-                            : alert.status === 'warning'
-                              ? 'bg-yellow-100 text-yellow-700'
-                              : 'bg-green-100 text-green-700'
+                            : 'bg-yellow-100 text-yellow-700'
                       }`}>
                         {alert.isExpired ? '⚠️ Vencido' : `En ${alert.daysLeft} días`}
                       </span>
@@ -190,13 +191,9 @@ export const DocumentStats = () => {
                         <span className="flex items-center gap-1">
                           🔺 Crítico
                         </span>
-                      ) : alert.status === "warning" ? (
-                        <span className="flex items-center gap-1">
-                          ⚠️ Atención
-                        </span>
                       ) : (
                         <span className="flex items-center gap-1">
-                          ✅ Al día
+                          ⚠️ Atención
                         </span>
                       )}
                     </div>
