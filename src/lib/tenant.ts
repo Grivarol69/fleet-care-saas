@@ -186,7 +186,7 @@ export const tenantService = {
                 name: 'Técnico General',
                 phone: null,
                 email: null,
-                specialty: 'General'
+                specialty: 'GENERAL'
             }
         })
     },
