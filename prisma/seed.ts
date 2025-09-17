@@ -1,4 +1,4 @@
-import { PrismaClient, MantType } from '@prisma/client';
+import { PrismaClient, MantType, TechnicianSpecialty, ProviderSpecialty } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -428,31 +428,31 @@ async function main() {
       name: 'Carlos Rodríguez',
       email: 'carlos@email.com',
       phone: '3001234567',
-      specialty: 'Motor y Transmisión',
+      specialty: 'MOTOR' as TechnicianSpecialty,
     },
     {
       name: 'María González',
       email: 'maria@email.com',
       phone: '3007654321',
-      specialty: 'Sistema Eléctrico',
+      specialty: 'ELECTRICO' as TechnicianSpecialty,
     },
     {
       name: 'Luis Martínez',
       email: 'luis@email.com',
       phone: '3009876543',
-      specialty: 'Frenos y Suspensión',
+      specialty: 'FRENOS' as TechnicianSpecialty,
     },
     {
       name: 'Ana López',
       email: 'ana@email.com',
       phone: '3005432109',
-      specialty: 'Carrocería y Pintura',
+      specialty: 'CARROCERIA' as TechnicianSpecialty,
     },
     {
       name: 'José Pérez',
       email: 'jose@email.com',
       phone: '3002468135',
-      specialty: 'Mantenimiento General',
+      specialty: 'GENERAL' as TechnicianSpecialty,
     },
   ];
 
@@ -476,35 +476,35 @@ async function main() {
       email: 'taller@central.com',
       phone: '6015551234',
       address: 'Calle 123 #45-67',
-      specialty: 'Mantenimiento General',
+      specialty: 'SERVICIOS_GENERALES' as ProviderSpecialty,
     },
     {
       name: 'Frenos Especialistas',
       email: 'frenos@esp.com',
       phone: '6015555678',
       address: 'Carrera 80 #12-34',
-      specialty: 'Sistema de Frenos',
+      specialty: 'FRENOS' as ProviderSpecialty,
     },
     {
       name: 'Electro Auto',
       email: 'electro@auto.com',
       phone: '6015559876',
       address: 'Avenida 68 #45-12',
-      specialty: 'Sistema Eléctrico',
+      specialty: 'ELECTRICO' as ProviderSpecialty,
     },
     {
       name: 'Pintura Express',
       email: 'pintura@express.com',
       phone: '6015554321',
       address: 'Calle 85 #23-45',
-      specialty: 'Pintura y Carrocería',
+      specialty: 'PINTURA' as ProviderSpecialty,
     },
     {
       name: 'Motor Tech',
       email: 'motor@tech.com',
       phone: '6015558765',
       address: 'Carrera 15 #78-90',
-      specialty: 'Motor y Transmisión',
+      specialty: 'REPUESTOS' as ProviderSpecialty,
     },
   ];
 

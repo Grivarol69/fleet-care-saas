@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { SidebarItemsProps } from "./SidebarItems.types";
 import { cn } from "@/lib/utils";
+import { ChevronRight, ChevronDown } from "lucide-react";
 
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -34,7 +35,15 @@ export function SidebarItems(props: SidebarItemsProps) {
       >
         <Icon className="h-5 w-5" strokeWidth={1} />
         {label}
-        {subItems && <span className="ml-auto">{isOpen ? "▼" : "▶"}</span>}
+        {subItems && (
+          <span className="ml-auto">
+            {isOpen ? (
+              <ChevronDown className="h-4 w-4 text-slate-700" />
+            ) : (
+              <ChevronRight className="h-4 w-4 text-slate-700" />
+            )}
+          </span>
+        )}
       </div>
       {subItems && isOpen && (
         <div className="ml-6 mt-2">

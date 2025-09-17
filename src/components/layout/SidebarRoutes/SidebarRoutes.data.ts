@@ -5,7 +5,6 @@ import {
     Wrench,
     ClipboardCheck,
     Users,
-    ShoppingBag,
     BarChart2,
     Settings,
 } from "lucide-react";
@@ -67,18 +66,9 @@ export const dataAdminSidebar = [
         icon: Users,
         label: "Personal",
         subItems: [
-            { label: "Técnicos", href: "/dashboard/people/technicians" },
-            { label: "Conductores", href: "/dashboard/people/drivers" },
-            { label: "Agregar", href: "/dashboard/people/add" },
-        ],
-    },
-    {
-        icon: ShoppingBag,
-        label: "Proveedores",
-        subItems: [
-            { label: "Listado", href: "/dashboard/people/providers" },
-            { label: "Agregar", href: "/dashboard/people/providers/add" },
-            { label: "Categorías", href: "/dashboard/people/provider-categories" },
+            { label: "Técnicos", href: "/dashboard/people/technician" },
+            { label: "Conductores", href: "/dashboard/people/driver" },
+            { label: "Proveedores", href: "/dashboard/people/provider" },
         ],
     },
     {

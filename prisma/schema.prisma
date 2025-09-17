@@ -394,15 +394,15 @@ model WorkOrderItem {
 // ========================================
 
 model Technician {
-  id                  Int      @id @default(autoincrement())
+  id                  Int                   @id @default(autoincrement())
   tenantId            String
   name                String
   email               String?
   phone               String?
-  specialty           String?
-  status              Status   @default(ACTIVE)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  specialty           TechnicianSpecialty?
+  status              Status                @default(ACTIVE)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
   
   tenant              Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   workOrders          WorkOrder[]
@@ -413,16 +413,16 @@ model Technician {
 }
 
 model Provider {
-  id                  Int      @id @default(autoincrement())
+  id                  Int                 @id @default(autoincrement())
   tenantId            String
   name                String
   email               String?
   phone               String?
   address             String?
-  specialty           String?
-  status              Status   @default(ACTIVE)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  specialty           ProviderSpecialty?
+  status              Status              @default(ACTIVE)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
   
   tenant              Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   workOrders          WorkOrder[]
@@ -432,20 +432,44 @@ model Provider {
   @@unique([tenantId, name])
 }
 
+model Driver {
+  id            Int      @id @default(autoincrement())
+  tenantId      String
+  name          String
+  email         String?
+  phone         String?
+  licenseNumber String?
+  licenseExpiry DateTime?
+  status        Status   @default(ACTIVE)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  odometerLogs OdometerLog[]
+
+  @@index([tenantId])
+  @@unique([tenantId, licenseNumber])
+}
+
 // ========================================
 // MONITORING & ALERTS
 // ========================================
 
 model OdometerLog {
-  id         Int      @id @default(autoincrement())
-  vehicleId  Int
-  kilometers Int
-  recordedAt DateTime @default(now())
-  createdAt  DateTime @default(now())
+  id           Int                   @id @default(autoincrement())
+  vehicleId    Int
+  driverId     Int?
+  kilometers   Int?
+  hours        Int?
+  measureType  OdometerMeasureType   @default(KILOMETERS)
+  recordedAt   DateTime              @default(now())
+  createdAt    DateTime              @default(now())
   
   vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  driver  Driver? @relation(fields: [driverId], references: [id])
 
   @@index([vehicleId])
+  @@index([driverId])
   @@index([recordedAt])
 }
 
@@ -587,4 +611,40 @@ enum DocumentStatus {
   ACTIVE
   EXPIRED
   EXPIRING_SOON
+}
+
+enum OdometerMeasureType {
+  KILOMETERS
+  HOURS
+}
+
+enum TechnicianSpecialty {
+  MOTOR
+  TRANSMISION
+  FRENOS
+  SUSPENSION
+  ELECTRICO
+  ELECTRONICO
+  AIRE_ACONDICIONADO
+  PINTURA
+  CARROCERIA
+  SOLDADURA
+  GENERAL
+}
+
+enum ProviderSpecialty {
+  REPUESTOS
+  LUBRICANTES
+  NEUMATICOS
+  BATERIAS
+  FILTROS
+  FRENOS
+  SUSPENSION
+  ELECTRICO
+  PINTURA
+  CARROCERIA
+  SOLDADURA
+  SERVICIOS_GENERALES
+  GRUA
+  SEGUROS
 }
