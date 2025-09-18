@@ -7,6 +7,7 @@ import {
     Users,
     BarChart2,
     Settings,
+    Gauge,
 } from "lucide-react";
 
 export const dataAdminSidebar = [
@@ -38,7 +39,7 @@ export const dataAdminSidebar = [
             { label: "Tipos", href: "/dashboard/vehicles/types" },
             { label: "Vehículos de la Empresa", href: "/dashboard/vehicles/vehicles" },
             { label: "Documentos Obligatorios", href: "/dashboard/vehicles/documents" },
-            { label: "Odómetro", href: "/dashboard/vehicles/odometer" },
+            { label: "Odómetro", icon: Gauge, href: "/dashboard/vehicles/odometer" },
         ],
     },
     {
