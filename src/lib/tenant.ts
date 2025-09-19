@@ -1,5 +1,6 @@
 import { prisma } from './prisma'
 import { Prisma, UserRole } from '@prisma/client'
+import type { InputJsonValue } from '@prisma/client/runtime/library'
 
 export interface CreateTenantData {
     name: string
@@ -7,6 +8,7 @@ export interface CreateTenantData {
     userEmail: string
     firstName?: string
     lastName?: string
+    industryPreset?: string
 }
 
 export const tenantService = {
@@ -14,10 +16,13 @@ export const tenantService = {
      * Crear tenant automáticamente al registrarse
      */
     async createTenantForUser(data: CreateTenantData) {
-        const { name, userId, userEmail, firstName, lastName } = data
+        const { name, userId, userEmail, firstName, lastName, industryPreset } = data
 
         // Generar slug único
         const slug = await this.generateUniqueSlug(name)
+        
+        // Obtener configuración del preset si existe
+        const presetConfig = industryPreset ? this.getIndustryPreset(industryPreset) : null
 
         try {
             // Transacción para crear tenant + usuario admin
@@ -28,7 +33,13 @@ export const tenantService = {
                         name: name.trim(),
                         slug: slug,
                         billingEmail: userEmail,
-                        // Los demás campos opcionales se pueden completar después
+                        industryPreset: industryPreset || null,
+                        businessType: presetConfig?.businessType || null,
+                        industrySettings: (presetConfig?.industrySettings as InputJsonValue) || null,
+                        checklistPresets: (presetConfig?.checklistPresets as InputJsonValue) || null,
+                        maintenancePresets: (presetConfig?.maintenancePresets as InputJsonValue) || null,
+                        onboardingCompleted: !!presetConfig, // Si hay preset, onboarding automático
+                        onboardingStep: presetConfig ? 4 : 0, // Completado si hay preset
                     }
                 })
 
@@ -209,5 +220,164 @@ export const tenantService = {
             console.error('Error getting tenant by slug:', error)
             return { success: false, error: 'Error al obtener tenant' }
         }
+    },
+
+    /**
+     * Obtener configuración de preset por industria
+     */
+    getIndustryPreset(industryPreset: string) {
+        const presets: Record<string, {
+            businessType: string
+            industrySettings: object
+            checklistPresets: object[]
+            maintenancePresets: object
+        }> = {
+            construction: {
+                businessType: 'Construcción y maquinaria pesada',
+                industrySettings: {
+                    inspectionFrequency: 'EVERY_USE',
+                    maintenanceType: 'HOUR_BASED',
+                    maintenanceIntervals: {
+                        preventive: 250, // horas
+                        oilChange: 100,
+                        filters: 150,
+                        tires: 2000
+                    },
+                    alertThresholds: {
+                        maintenance: 7,
+                        inspection: 2,
+                        costLimit: 1000000
+                    }
+                },
+                checklistPresets: [
+                    {
+                        name: 'Inspección Pre-Uso Volqueta',
+                        items: [
+                            'Sistema hidráulico de volcado',
+                            'Presión neumáticos (alta carga)',
+                            'Frenos principales y auxiliares',
+                            'Luces y señalización',
+                            'Nivel aceite motor',
+                            'Nivel aceite hidráulico',
+                            'Estado carrocería y compuertas'
+                        ]
+                    }
+                ],
+                maintenancePresets: {
+                    vehicleTypes: ['Volqueta', 'Excavadora', 'Bulldozer', 'Retroexcavadora'],
+                    maintenanceCategories: ['Motor Pesado', 'Sistema Hidráulico', 'Transmisión Pesada']
+                }
+            },
+            passenger_transport: {
+                businessType: 'Transporte de pasajeros',
+                industrySettings: {
+                    inspectionFrequency: 'DAILY',
+                    maintenanceType: 'KM_BASED',
+                    maintenanceIntervals: {
+                        preventive: 15000,
+                        oilChange: 5000,
+                        filters: 10000,
+                        tires: 40000
+                    },
+                    alertThresholds: {
+                        maintenance: 3,
+                        inspection: 1,
+                        costLimit: 800000
+                    }
+                },
+                checklistPresets: [
+                    {
+                        name: 'Inspección Diaria Bus Pasajeros',
+                        items: [
+                            'Sistema de frenos (crítico)',
+                            'Funcionamiento puertas',
+                            'Cinturones de seguridad',
+                            'Luces internas y externas',
+                            'Sistema de emergencia',
+                            'Asientos en buen estado',
+                            'Limpieza general'
+                        ]
+                    }
+                ],
+                maintenancePresets: {
+                    vehicleTypes: ['Bus', 'Microbus', 'Van Pasajeros'],
+                    maintenanceCategories: ['Frenos', 'Seguridad Pasajeros', 'Sistemas Eléctricos']
+                }
+            },
+            logistics: {
+                businessType: 'Logística y carga pesada',
+                industrySettings: {
+                    inspectionFrequency: 'PRE_TRIP',
+                    maintenanceType: 'HYBRID',
+                    maintenanceIntervals: {
+                        preventive: 20000,
+                        oilChange: 8000,
+                        filters: 12000,
+                        tires: 50000
+                    },
+                    alertThresholds: {
+                        maintenance: 5,
+                        inspection: 4,
+                        costLimit: 1200000
+                    }
+                },
+                checklistPresets: [
+                    {
+                        name: 'Pre-Trip Camión Carga',
+                        items: [
+                            'Presión y estado neumáticos',
+                            'Sistema de frenos',
+                            'Luces de carretera',
+                            'Documentación vehicular',
+                            'Equipo de carretera',
+                            'Aseguramiento de carga',
+                            'Nivel combustible'
+                        ]
+                    }
+                ],
+                maintenancePresets: {
+                    vehicleTypes: ['Camión', 'Tractomula', 'Camión Articulado'],
+                    maintenanceCategories: ['Motor Diesel', 'Transmisión Pesada', 'Frenos Aire']
+                }
+            },
+            rental: {
+                businessType: 'Alquiler de vehículos',
+                industrySettings: {
+                    inspectionFrequency: 'RENTAL_RETURN',
+                    maintenanceType: 'KM_BASED',
+                    maintenanceIntervals: {
+                        preventive: 10000,
+                        oilChange: 5000,
+                        filters: 8000,
+                        tires: 30000
+                    },
+                    alertThresholds: {
+                        maintenance: 7,
+                        inspection: 1,
+                        costLimit: 600000
+                    }
+                },
+                checklistPresets: [
+                    {
+                        name: 'Inspección Entrega/Devolución',
+                        items: [
+                            'Estado general carrocería',
+                            'Funcionamiento de luces',
+                            'Limpieza interior/exterior',
+                            'Accesorios completos',
+                            'Nivel combustible',
+                            'Documentos del vehículo',
+                            'Kit de herramientas'
+                        ]
+                    }
+                ],
+                maintenancePresets: {
+                    vehicleTypes: ['Camioneta', 'Automóvil', 'SUV'],
+                    maintenanceCategories: ['Mantenimiento General', 'Estética', 'Mecánica Básica']
+                }
+            }
+        }
+
+        return presets[industryPreset] || null
     }
 }
