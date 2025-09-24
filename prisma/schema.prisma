@@ -42,6 +42,7 @@ model Tenant {
   documents         Document[]
   subscriptions     Subscription[]
   drivers           Driver[]
+  vehicleDrivers    VehicleDriver[]
 
   @@index([slug])
   @@index([subscriptionStatus])
@@ -55,6 +56,7 @@ model User {
   lastName  String?
   role      UserRole @default(USER)
   avatar    String?
+  phone     String?
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -200,6 +202,7 @@ model Vehicle {
   odometerLogs      OdometerLog[]
   vehicleMantPlans  VehicleMantPlan[]
   maintenanceAlerts MaintenanceAlert[]
+  vehicleDrivers    VehicleDriver[]
 
   @@index([tenantId])
   @@index([licensePlate])
@@ -352,41 +355,137 @@ model WorkOrder {
   technicianId    Int?
   providerId      Int?
   creationMileage Int
+
+  // Campos de trazabilidad financiera
+  requestedBy     String          // User ID solicitante
+  authorizedBy    String?         // User ID autorizador
+  estimatedCost   Decimal?        @db.Decimal(10, 2) // Costo estimado
+  actualCost      Decimal?        @db.Decimal(10, 2) // Costo real final
+  costCenter      String?         // Centro de costos
+  budgetCode      String?         // Código presupuestario
+
+  // Campos legacy (mantener compatibilidad)
   plannedAmount   Decimal?        @db.Decimal(10, 2)
   realAmount      Decimal?        @db.Decimal(10, 2)
+
   startDate       DateTime?
   endDate         DateTime?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
-  
-  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  vehicle        Vehicle         @relation(fields: [vehicleId], references: [id])
-  technician     Technician?     @relation(fields: [technicianId], references: [id])
-  provider       Provider?       @relation(fields: [providerId], references: [id])
-  workOrderItems WorkOrderItem[]
+
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicle           Vehicle            @relation(fields: [vehicleId], references: [id])
+  technician        Technician?        @relation(fields: [technicianId], references: [id])
+  provider          Provider?          @relation(fields: [providerId], references: [id])
+  workOrderItems    WorkOrderItem[]
+  workOrderExpenses WorkOrderExpense[]
+  approvals         WorkOrderApproval[]
+  auditLogs         ExpenseAuditLog[]
 
   @@index([tenantId])
   @@index([vehicleId])
   @@index([status])
+  @@index([requestedBy])
+  @@index([authorizedBy])
 }
 
 model WorkOrderItem {
   id               Int      @id @default(autoincrement())
   workOrderId      Int
   mantItemId       Int
+
+  // Detalles del item/repuesto
+  description      String
+  partNumber       String?
+  brand            String?
+  supplier         String
+
+  // Costos detallados
+  unitPrice        Decimal  @db.Decimal(10, 2)
   quantity         Int      @default(1)
+  totalCost        Decimal  @db.Decimal(10, 2)
+
+  // Trazabilidad
+  purchasedBy      String   // User ID quien compró
+  invoiceNumber    String?
+  receiptUrl       String?  // URL del recibo escaneado
+
+  // Campos legacy
   cost             Decimal? @db.Decimal(10, 2)
   executionMileage Int?
   notes            String?
   status           WorkOrderStatus @default(PENDING)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
-  
+
   workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
   mantItem  MantItem  @relation(fields: [mantItemId], references: [id])
 
   @@index([workOrderId])
   @@index([mantItemId])
+  @@index([supplier])
+  @@index([purchasedBy])
+}
+
+model WorkOrderExpense {
+  id            String         @id @default(cuid())
+  workOrderId   Int
+  expenseType   ExpenseType
+  description   String
+  amount        Decimal        @db.Decimal(10, 2)
+  vendor        String         // Proveedor/Taller
+  invoiceNumber String?
+  receiptUrl    String?        // URL del recibo escaneado
+  expenseDate   DateTime       @default(now())
+  recordedBy    String         // User ID quien registró
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  @@index([workOrderId])
+  @@index([expenseType])
+  @@index([vendor])
+  @@index([recordedBy])
+}
+
+model WorkOrderApproval {
+  id            String              @id @default(cuid())
+  workOrderId   Int
+  approverLevel Int                 // 1=supervisor, 2=manager, 3=admin
+  approvedBy    String              // User ID
+  approvedAt    DateTime            @default(now())
+  amount        Decimal             @db.Decimal(10, 2)
+  notes         String?
+  status        ApprovalStatus      @default(PENDING)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  @@index([workOrderId])
+  @@index([approverLevel])
+  @@index([approvedBy])
+  @@index([status])
+}
+
+model ExpenseAuditLog {
+  id              String      @id @default(cuid())
+  workOrderId     Int
+  action          AuditAction // CREATED, APPROVED, MODIFIED, PAID
+  previousValue   Json?
+  newValue        Json
+  performedBy     String      // User ID
+  performedAt     DateTime    @default(now())
+  ipAddress       String?
+  userAgent       String?     // Para mejor trazabilidad
+  createdAt       DateTime    @default(now())
+
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  @@index([workOrderId])
+  @@index([performedBy])
+  @@index([performedAt])
 }
 
 // ========================================
@@ -444,11 +543,38 @@ model Driver {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   
-  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  odometerLogs OdometerLog[]
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  odometerLogs   OdometerLog[]
+  vehicleDrivers VehicleDriver[]
 
   @@index([tenantId])
   @@unique([tenantId, licenseNumber])
+}
+
+model VehicleDriver {
+  id         Int      @id @default(autoincrement())
+  tenantId   String   // Multi-tenant support
+  vehicleId  Int
+  driverId   Int
+  status     Status   @default(ACTIVE) // ACTIVE/INACTIVE
+  isPrimary  Boolean  @default(false)  // Conductor principal del vehículo
+  startDate  DateTime @default(now())  // Fecha inicio de asignación
+  endDate    DateTime?                 // Fecha fin de asignación (opcional)
+  notes      String?                   // Notas sobre la asignación
+  assignedBy String?                   // ID del usuario que asignó
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  driver  Driver  @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, vehicleId, driverId]) // No duplicados por tenant
+  @@index([tenantId])
+  @@index([vehicleId])
+  @@index([driverId])
+  @@index([status])
+  @@index([startDate])
 }
 
 // ========================================
@@ -590,6 +716,32 @@ enum WorkOrderStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
+}
+
+enum ExpenseType {
+  PARTS
+  LABOR
+  TRANSPORT
+  TOOLS
+  MATERIALS
+  OTHER
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum AuditAction {
+  CREATED
+  APPROVED
+  REJECTED
+  MODIFIED
+  PAID
+  CANCELLED
+  COMPLETED
 }
 
 enum AlertLevel {

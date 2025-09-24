@@ -20,7 +20,166 @@ async function main() {
 
   console.log('✅ Tenant por defecto creado:', defaultTenant.name);
 
-  // 2. TIPOS DE VEHÍCULOS
+  // 2. USUARIOS CON TELÉFONOS (SUPERVISORES Y USUARIOS)
+  const usersData = [
+    {
+      email: 'admin@fleetcare.com',
+      firstName: 'Carlos',
+      lastName: 'Administrador',
+      role: 'ADMIN',
+      phone: '+573001234567',
+      avatar: null,
+    },
+    {
+      email: 'supervisor1@fleetcare.com',
+      firstName: 'María',
+      lastName: 'Supervisora',
+      role: 'MANAGER',
+      phone: '+573002549199', // Tu número para pruebas
+      avatar: null,
+    },
+    {
+      email: 'supervisor2@fleetcare.com',
+      firstName: 'Luis',
+      lastName: 'Supervisor',
+      role: 'MANAGER',
+      phone: '+573102301717', // Segundo número para pruebas
+      avatar: null,
+    },
+    {
+      email: 'supervisor3@fleetcare.com',
+      firstName: 'Ana',
+      lastName: 'Coordinadora',
+      role: 'MANAGER',
+      phone: '+573007654321',
+      avatar: null,
+    },
+    {
+      email: 'user1@fleetcare.com',
+      firstName: 'Pedro',
+      lastName: 'Usuario',
+      role: 'USER',
+      phone: '+573009876543',
+      avatar: null,
+    },
+    {
+      email: 'user2@fleetcare.com',
+      firstName: 'Carmen',
+      lastName: 'Operadora',
+      role: 'USER',
+      phone: '+573005432109',
+      avatar: null,
+    },
+  ];
+
+  for (const userData of usersData) {
+    await prisma.user.upsert({
+      where: {
+        tenantId_email: {
+          tenantId: defaultTenant.id,
+          email: userData.email,
+        },
+      },
+      update: {},
+      create: {
+        tenantId: defaultTenant.id,
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        role: userData.role as any,
+        phone: userData.phone,
+        avatar: userData.avatar,
+        isActive: true,
+      },
+    });
+  }
+
+  console.log('✅ Usuarios con teléfonos creados');
+
+  // 3. CONDUCTORES CON TELÉFONOS
+  const driversData = [
+    {
+      name: 'Juan Carlos Ruiz',
+      email: 'juan.ruiz@conductor.com',
+      phone: '+573001111111',
+      licenseNumber: 'DRV001234567',
+      licenseExpiry: new Date('2025-12-31'),
+    },
+    {
+      name: 'Martha Elena Gómez',
+      email: 'martha.gomez@conductor.com',
+      phone: '+573002222222',
+      licenseNumber: 'DRV002345678',
+      licenseExpiry: new Date('2026-06-15'),
+    },
+    {
+      name: 'Diego Alejandro Silva',
+      email: 'diego.silva@conductor.com',
+      phone: '+573003333333',
+      licenseNumber: 'DRV003456789',
+      licenseExpiry: new Date('2025-09-30'),
+    },
+    {
+      name: 'Patricia Morales',
+      email: 'patricia.morales@conductor.com',
+      phone: '+573004444444',
+      licenseNumber: 'DRV004567890',
+      licenseExpiry: new Date('2026-03-20'),
+    },
+    {
+      name: 'Roberto Castro',
+      email: 'roberto.castro@conductor.com',
+      phone: '+573005555555',
+      licenseNumber: 'DRV005678901',
+      licenseExpiry: new Date('2025-11-10'),
+    },
+    {
+      name: 'Claudia Ramírez',
+      email: 'claudia.ramirez@conductor.com',
+      phone: '+573006666666',
+      licenseNumber: 'DRV006789012',
+      licenseExpiry: new Date('2026-08-05'),
+    },
+    {
+      name: 'Fernando López',
+      email: 'fernando.lopez@conductor.com',
+      phone: '+573007777777',
+      licenseNumber: 'DRV007890123',
+      licenseExpiry: new Date('2025-10-25'),
+    },
+    {
+      name: 'Sandra Jiménez',
+      email: 'sandra.jimenez@conductor.com',
+      phone: '+573008888888',
+      licenseNumber: 'DRV008901234',
+      licenseExpiry: new Date('2026-01-15'),
+    },
+  ];
+
+  for (const driverData of driversData) {
+    await prisma.driver.upsert({
+      where: {
+        tenantId_licenseNumber: {
+          tenantId: defaultTenant.id,
+          licenseNumber: driverData.licenseNumber,
+        },
+      },
+      update: {},
+      create: {
+        tenantId: defaultTenant.id,
+        name: driverData.name,
+        email: driverData.email,
+        phone: driverData.phone,
+        licenseNumber: driverData.licenseNumber,
+        licenseExpiry: driverData.licenseExpiry,
+        status: 'ACTIVE',
+      },
+    });
+  }
+
+  console.log('✅ Conductores con teléfonos creados');
+
+  // 4. TIPOS DE VEHÍCULOS
   const vehicleTypes = [
     { name: 'Camión' },
     { name: 'Camioneta' },
@@ -825,7 +984,108 @@ async function main() {
 
   console.log('✅ Vehículos creados con imágenes');
 
-  // 9. PLANES DE MANTENIMIENTO
+  // 9. RELACIONES VEHÍCULO-CONDUCTOR (VehicleDriver)
+  const drivers = await prisma.driver.findMany({
+    where: { tenantId: defaultTenant.id },
+  });
+
+  const vehiclesForDrivers = await prisma.vehicle.findMany({
+    where: { tenantId: defaultTenant.id },
+  });
+
+  // Asignar conductores a vehículos de manera realista
+  // Algunos vehículos tendrán conductor principal, otros compartido
+  for (let i = 0; i < Math.min(vehiclesForDrivers.length, drivers.length); i++) {
+    const vehicle = vehiclesForDrivers[i];
+    const driver = drivers[i];
+    
+    if (vehicle && driver) {
+      // Conductor principal
+      await prisma.vehicleDriver.upsert({
+        where: {
+          tenantId_vehicleId_driverId: {
+            tenantId: defaultTenant.id,
+            vehicleId: vehicle.id,
+            driverId: driver.id,
+          },
+        },
+        update: {},
+        create: {
+          tenantId: defaultTenant.id,
+          vehicleId: vehicle.id,
+          driverId: driver.id,
+          status: 'ACTIVE',
+          isPrimary: true,
+          startDate: new Date(Date.now() - Math.random() * 180 * 24 * 60 * 60 * 1000), // Hasta 6 meses atrás
+          notes: `Conductor principal asignado a ${vehicle.licensePlate}`,
+          assignedBy: 'admin@fleetcare.com',
+        },
+      });
+    }
+  }
+
+  // Asignar algunos conductores secundarios (vehículos compartidos)
+  for (let i = 0; i < Math.min(5, vehiclesForDrivers.length - 1, drivers.length - 1); i++) {
+    const vehicle = vehiclesForDrivers[i];
+    const secondaryDriver = drivers[i + 1];
+    
+    if (vehicle && secondaryDriver) {
+      await prisma.vehicleDriver.upsert({
+        where: {
+          tenantId_vehicleId_driverId: {
+            tenantId: defaultTenant.id,
+            vehicleId: vehicle.id,
+            driverId: secondaryDriver.id,
+          },
+        },
+        update: {},
+        create: {
+          tenantId: defaultTenant.id,
+          vehicleId: vehicle.id,
+          driverId: secondaryDriver.id,
+          status: 'ACTIVE',
+          isPrimary: false,
+          startDate: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000), // Hasta 3 meses atrás
+          notes: `Conductor secundario para ${vehicle.licensePlate}`,
+          assignedBy: 'admin@fleetcare.com',
+        },
+      });
+    }
+  }
+
+  // Crear algunas asignaciones inactivas (conductores que ya no manejan ciertos vehículos)
+  for (let i = 0; i < Math.min(3, vehiclesForDrivers.length - 2, drivers.length - 2); i++) {
+    const vehicle = vehiclesForDrivers[vehiclesForDrivers.length - 1 - i];
+    const formerDriver = drivers[drivers.length - 1 - i];
+    
+    if (vehicle && formerDriver) {
+      const startDate = new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000); // Hasta 1 año atrás
+      const endDate = new Date(startDate.getTime() + Math.random() * 90 * 24 * 60 * 60 * 1000); // Duración de hasta 3 meses
+      
+      try {
+        await prisma.vehicleDriver.create({
+          data: {
+            tenantId: defaultTenant.id,
+            vehicleId: vehicle.id,
+            driverId: formerDriver.id,
+            status: 'INACTIVE',
+            isPrimary: false,
+            startDate: startDate,
+            endDate: endDate,
+            notes: `Conductor anterior de ${vehicle.licensePlate} - Transferido`,
+            assignedBy: 'admin@fleetcare.com',
+          },
+        });
+      } catch (error) {
+        // Skip if combination already exists
+        console.log(`⚠️ Skipping duplicate VehicleDriver for ${vehicle.licensePlate}`);
+      }
+    }
+  }
+
+  console.log('✅ Relaciones Vehículo-Conductor creadas');
+
+  // 10. PLANES DE MANTENIMIENTO
   const mantItems = await prisma.mantItem.findMany({
     where: { tenantId: defaultTenant.id },
   });
@@ -1174,13 +1434,321 @@ async function main() {
 
   console.log('✅ Documentos de vehículos creados');
 
-  // 12. ESTADÍSTICAS FINALES
+  // 12. ÓRDENES DE TRABAJO CON CONTROL FINANCIERO (NUEVO MÓDULO)
+  const users = await prisma.user.findMany({
+    where: { tenantId: defaultTenant.id },
+  });
+
+  const supervisors = users.filter(u => u.role === 'MANAGER');
+  const admins = users.filter(u => u.role === 'ADMIN');
+
+  // Crear órdenes de trabajo de ejemplo con diferentes estados y complejidad financiera
+  const workOrdersData = [
+    {
+      vehicleLicensePlate: 'ABC-123',
+      title: 'Mantenimiento 15,000km - Toyota Hilux',
+      description: 'Mantenimiento preventivo programado a los 15,000 kilómetros',
+      mantType: 'PREVENTIVE',
+      priority: 'MEDIUM',
+      estimatedCost: 450000,
+      costCenter: 'FLOTA_PICKUP',
+      budgetCode: 'MANT-2024-Q1-001',
+      status: 'COMPLETED',
+      items: [
+        {
+          description: 'Cambio aceite motor 15W40',
+          partNumber: 'SHELL-15W40-5L',
+          brand: 'Shell',
+          supplier: 'Lubricantes Medellín',
+          unitPrice: 12000,
+          quantity: 5,
+          purchasedBy: 'supervisor1@fleetcare.com',
+          invoiceNumber: 'LM-2024-001',
+        },
+        {
+          description: 'Filtro de aceite Original',
+          partNumber: 'TOYOTA-90915-YZZD2',
+          brand: 'Toyota',
+          supplier: 'Toyota Repuestos',
+          unitPrice: 35000,
+          quantity: 1,
+          purchasedBy: 'supervisor1@fleetcare.com',
+          invoiceNumber: 'TR-2024-123',
+        }
+      ],
+      expenses: [
+        {
+          expenseType: 'LABOR',
+          description: 'Mano de obra mecánico 2 horas',
+          amount: 80000,
+          vendor: 'Taller Central',
+          invoiceNumber: 'TC-2024-045',
+          recordedBy: 'supervisor1@fleetcare.com',
+        }
+      ],
+      approvals: [
+        {
+          approverLevel: 1,
+          amount: 195000,
+          notes: 'Mantenimiento programado aprobado',
+          status: 'APPROVED',
+        }
+      ]
+    },
+    {
+      vehicleLicensePlate: 'DEF-456',
+      title: 'Reparación Sistema de Frenos',
+      description: 'Cambio de pastillas y discos de freno delanteros por desgaste',
+      mantType: 'CORRECTIVE',
+      priority: 'HIGH',
+      estimatedCost: 650000,
+      costCenter: 'FLOTA_PICKUP',
+      budgetCode: 'REP-2024-Q1-005',
+      status: 'IN_PROGRESS',
+      items: [
+        {
+          description: 'Pastillas de freno delanteras',
+          partNumber: 'BRAKE-PAD-D-MAX-F',
+          brand: 'Brembo',
+          supplier: 'Frenos Especialistas',
+          unitPrice: 180000,
+          quantity: 1,
+          purchasedBy: 'supervisor2@fleetcare.com',
+          invoiceNumber: 'FE-2024-078',
+        },
+        {
+          description: 'Discos de freno delanteros',
+          partNumber: 'BRAKE-DISC-D-MAX-F',
+          brand: 'Brembo',
+          supplier: 'Frenos Especialistas',
+          unitPrice: 280000,
+          quantity: 2,
+          purchasedBy: 'supervisor2@fleetcare.com',
+          invoiceNumber: 'FE-2024-079',
+        }
+      ],
+      expenses: [
+        {
+          expenseType: 'LABOR',
+          description: 'Mano de obra especializada frenos 4 horas',
+          amount: 160000,
+          vendor: 'Frenos Especialistas',
+          invoiceNumber: 'FE-2024-080',
+          recordedBy: 'supervisor2@fleetcare.com',
+        },
+        {
+          expenseType: 'TRANSPORT',
+          description: 'Transporte vehículo al taller',
+          amount: 45000,
+          vendor: 'Grúas Express',
+          invoiceNumber: 'GE-2024-012',
+          recordedBy: 'supervisor2@fleetcare.com',
+        }
+      ],
+      approvals: [
+        {
+          approverLevel: 2,
+          amount: 650000,
+          notes: 'Reparación urgente de seguridad aprobada',
+          status: 'APPROVED',
+        }
+      ]
+    },
+    {
+      vehicleLicensePlate: 'GHI-789',
+      title: 'Revisión Eléctrica Completa',
+      description: 'Diagnóstico y reparación sistema eléctrico - Problemas arranque',
+      mantType: 'CORRECTIVE',
+      priority: 'URGENT',
+      estimatedCost: 850000,
+      costCenter: 'FLOTA_PICKUP',
+      budgetCode: 'EMG-2024-Q1-003',
+      status: 'PENDING',
+      items: [
+        {
+          description: 'Batería 12V 75Ah',
+          partNumber: 'BATT-12V-75AH',
+          brand: 'MAC',
+          supplier: 'Electro Auto',
+          unitPrice: 320000,
+          quantity: 1,
+          purchasedBy: 'admin@fleetcare.com',
+          invoiceNumber: 'EA-2024-156',
+        }
+      ],
+      expenses: [
+        {
+          expenseType: 'LABOR',
+          description: 'Diagnóstico eléctrico especializado',
+          amount: 120000,
+          vendor: 'Electro Auto',
+          invoiceNumber: 'EA-2024-157',
+          recordedBy: 'admin@fleetcare.com',
+        }
+      ],
+      approvals: [
+        {
+          approverLevel: 3,
+          amount: 850000,
+          notes: 'Reparación urgente - vehículo inoperativo',
+          status: 'PENDING',
+        }
+      ]
+    }
+  ];
+
+  for (const workOrderData of workOrdersData) {
+    const vehicle = await prisma.vehicle.findFirst({
+      where: { licensePlate: workOrderData.vehicleLicensePlate },
+    });
+
+    if (!vehicle) continue;
+
+    const supervisor = supervisors[Math.floor(Math.random() * supervisors.length)];
+    const admin = admins[0]; // Primer admin para autorización
+
+    if (!supervisor) continue;
+
+    // Crear la orden de trabajo
+    const workOrder = await prisma.workOrder.create({
+      data: {
+        tenantId: defaultTenant.id,
+        vehicleId: vehicle.id,
+        title: workOrderData.title,
+        description: workOrderData.description,
+        mantType: workOrderData.mantType as any,
+        priority: workOrderData.priority as any,
+        status: workOrderData.status as any,
+        requestedBy: supervisor.email,
+        authorizedBy: admin?.email,
+        estimatedCost: workOrderData.estimatedCost,
+        actualCost: workOrderData.status === 'COMPLETED' ?
+          workOrderData.items.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0) +
+          workOrderData.expenses.reduce((sum, exp) => sum + exp.amount, 0) : null,
+        costCenter: workOrderData.costCenter,
+        budgetCode: workOrderData.budgetCode,
+        creationMileage: vehicle.mileage,
+        startDate: workOrderData.status !== 'PENDING' ? new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000) : null,
+        endDate: workOrderData.status === 'COMPLETED' ? new Date() : null,
+      },
+    });
+
+    // Crear items de la orden
+    for (const itemData of workOrderData.items) {
+      const mantItem = mantItems.find(mi => mi.name.includes('Aceite') || mi.name.includes('Filtro') || mi.name.includes('Batería'));
+      if (!mantItem) continue;
+
+      await prisma.workOrderItem.create({
+        data: {
+          workOrderId: workOrder.id,
+          mantItemId: mantItem.id,
+          description: itemData.description,
+          partNumber: itemData.partNumber,
+          brand: itemData.brand,
+          supplier: itemData.supplier,
+          unitPrice: itemData.unitPrice,
+          quantity: itemData.quantity,
+          totalCost: itemData.unitPrice * itemData.quantity,
+          purchasedBy: itemData.purchasedBy,
+          invoiceNumber: itemData.invoiceNumber,
+          receiptUrl: `/receipts/${itemData.invoiceNumber}.pdf`,
+          status: workOrderData.status as any,
+        },
+      });
+    }
+
+    // Crear gastos adicionales
+    for (const expenseData of workOrderData.expenses) {
+      await prisma.workOrderExpense.create({
+        data: {
+          workOrderId: workOrder.id,
+          expenseType: expenseData.expenseType as any,
+          description: expenseData.description,
+          amount: expenseData.amount,
+          vendor: expenseData.vendor,
+          invoiceNumber: expenseData.invoiceNumber,
+          receiptUrl: `/receipts/${expenseData.invoiceNumber}.pdf`,
+          recordedBy: expenseData.recordedBy,
+        },
+      });
+    }
+
+    // Crear aprobaciones
+    for (const approvalData of workOrderData.approvals) {
+      const approver = approvalData.approverLevel === 1 ? supervisor : admin;
+      if (!approver) continue;
+
+      await prisma.workOrderApproval.create({
+        data: {
+          workOrderId: workOrder.id,
+          approverLevel: approvalData.approverLevel,
+          approvedBy: approver.email,
+          amount: approvalData.amount,
+          notes: approvalData.notes,
+          status: approvalData.status as any,
+          approvedAt: approvalData.status === 'APPROVED' ? new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000) : new Date(),
+        },
+      });
+    }
+
+    // Crear auditoría de ejemplo
+    await prisma.expenseAuditLog.create({
+      data: {
+        workOrderId: workOrder.id,
+        action: 'CREATED',
+        previousValue: null,
+        newValue: {
+          workOrderId: workOrder.id,
+          status: 'PENDING',
+          estimatedCost: workOrderData.estimatedCost,
+        },
+        performedBy: supervisor.email,
+        ipAddress: '192.168.1.100',
+        userAgent: 'Mozilla/5.0 (Fleet Care Admin)',
+      },
+    });
+
+    if (workOrderData.status !== 'PENDING') {
+      await prisma.expenseAuditLog.create({
+        data: {
+          workOrderId: workOrder.id,
+          action: 'APPROVED',
+          previousValue: { status: 'PENDING' },
+          newValue: { status: 'APPROVED' },
+          performedBy: admin?.email || supervisor.email,
+          ipAddress: '192.168.1.101',
+          userAgent: 'Mozilla/5.0 (Fleet Care Admin)',
+        },
+      });
+    }
+
+    if (workOrderData.status === 'COMPLETED') {
+      await prisma.expenseAuditLog.create({
+        data: {
+          workOrderId: workOrder.id,
+          action: 'COMPLETED',
+          previousValue: { status: 'IN_PROGRESS' },
+          newValue: { status: 'COMPLETED', actualCost: workOrder.actualCost },
+          performedBy: supervisor.email,
+          ipAddress: '192.168.1.102',
+          userAgent: 'Mozilla/5.0 (Fleet Care Admin)',
+        },
+      });
+    }
+  }
+
+  console.log('✅ Órdenes de trabajo con control financiero creadas');
+
+  // 13. ESTADÍSTICAS FINALES
   const finalStats = {
     tenants: await prisma.tenant.count(),
+    users: await prisma.user.count(),
+    drivers: await prisma.driver.count(),
     vehicles: await prisma.vehicle.count(),
     vehicleTypes: await prisma.vehicleType.count(),
     vehicleBrands: await prisma.vehicleBrand.count(),
     vehicleLines: await prisma.vehicleLine.count(),
+    vehicleDrivers: await prisma.vehicleDriver.count(),
     mantCategories: await prisma.mantCategory.count(),
     mantItems: await prisma.mantItem.count(),
     mantPlans: await prisma.mantPlan.count(),
@@ -1190,15 +1758,24 @@ async function main() {
     technicians: await prisma.technician.count(),
     providers: await prisma.provider.count(),
     documents: await prisma.document.count(),
+    // NUEVOS MODELOS FINANCIEROS
+    workOrders: await prisma.workOrder.count(),
+    workOrderItems: await prisma.workOrderItem.count(),
+    workOrderExpenses: await prisma.workOrderExpense.count(),
+    workOrderApprovals: await prisma.workOrderApproval.count(),
+    expenseAuditLogs: await prisma.expenseAuditLog.count(),
   };
 
   console.log('🎉 Seed completo finalizado exitosamente!');
   console.log(`📊 Estadísticas finales:`);
   console.log(`   - ${finalStats.tenants} tenant`);
+  console.log(`   - ${finalStats.users} usuarios`);
+  console.log(`   - ${finalStats.drivers} conductores`);
   console.log(`   - ${finalStats.vehicles} vehículos con imágenes`);
   console.log(`   - ${finalStats.vehicleTypes} tipos de vehículos`);
   console.log(`   - ${finalStats.vehicleBrands} marcas de vehículos`);
   console.log(`   - ${finalStats.vehicleLines} líneas de vehículos`);
+  console.log(`   - ${finalStats.vehicleDrivers} asignaciones vehículo-conductor`);
   console.log(`   - ${finalStats.mantCategories} categorías de mantenimiento`);
   console.log(`   - ${finalStats.mantItems} items de mantenimiento`);
   console.log(`   - ${finalStats.mantPlans} planes de mantenimiento`);
@@ -1208,6 +1785,12 @@ async function main() {
   console.log(`   - ${finalStats.technicians} técnicos`);
   console.log(`   - ${finalStats.providers} proveedores`);
   console.log(`   - ${finalStats.documents} documentos de vehículos`);
+  console.log(`\n💰 MÓDULO FINANCIERO (NUEVO):`);
+  console.log(`   - ${finalStats.workOrders} órdenes de trabajo`);
+  console.log(`   - ${finalStats.workOrderItems} items de órdenes`);
+  console.log(`   - ${finalStats.workOrderExpenses} gastos adicionales`);
+  console.log(`   - ${finalStats.workOrderApprovals} aprobaciones`);
+  console.log(`   - ${finalStats.expenseAuditLogs} registros de auditoría`);
 }
 
 main()
