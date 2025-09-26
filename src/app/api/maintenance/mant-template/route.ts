@@ -6,7 +6,7 @@ const TENANT_ID = 'mvp-default-tenant'; // Tenant hardcodeado para MVP
 
 export async function GET() {
     try {
-        const mantTemplates = await prisma.mantPlan.findMany({
+        const mantTemplates = await prisma.maintenanceTemplate.findMany({
             where: {
                 tenantId: TENANT_ID,
                 status: 'ACTIVE'
@@ -24,14 +24,21 @@ export async function GET() {
                         name: true
                     }
                 },
-                planTasks: {
+                packages: {
                     include: {
-                        mantItem: {
-                            select: {
-                                id: true,
-                                name: true,
-                                mantType: true,
-                                estimatedTime: true
+                        packageItems: {
+                            include: {
+                                mantItem: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        mantType: true,
+                                        estimatedTime: true
+                                    }
+                                }
+                            },
+                            orderBy: {
+                                order: 'asc'
                             }
                         }
                     },
@@ -76,7 +83,7 @@ export async function POST(req: Request) {
         }
 
         // Verificar que la marca existe y pertenece al tenant
-        const brand = await prisma.vehicleBrand.findUnique({
+        const brand = await prisma.vehicleBrand.findFirst({
             where: {
                 id: vehicleBrandId,
                 tenantId: TENANT_ID
@@ -88,7 +95,7 @@ export async function POST(req: Request) {
         }
 
         // Verificar que la línea existe, pertenece al tenant y a la marca
-        const line = await prisma.vehicleLine.findUnique({
+        const line = await prisma.vehicleLine.findFirst({
             where: {
                 id: vehicleLineId,
                 tenantId: TENANT_ID,
@@ -101,14 +108,13 @@ export async function POST(req: Request) {
         }
 
         // Verificar que no exista un template con el mismo nombre para la misma marca/línea
-        const existingTemplate = await prisma.mantPlan.findUnique({
+        const existingTemplate = await prisma.maintenanceTemplate.findFirst({
             where: {
-                tenantId_vehicleBrandId_vehicleLineId_name: {
-                    tenantId: TENANT_ID,
-                    vehicleBrandId,
-                    vehicleLineId,
-                    name: name.trim()
-                }
+                tenantId: TENANT_ID,
+                vehicleBrandId,
+                vehicleLineId,
+                name: name.trim(),
+                status: 'ACTIVE'
             }
         });
 
@@ -116,14 +122,16 @@ export async function POST(req: Request) {
             return new NextResponse("Template with this name already exists for this brand/line combination", { status: 409 });
         }
 
-        const mantTemplate = await prisma.mantPlan.create({
+        const mantTemplate = await prisma.maintenanceTemplate.create({
             data: {
                 name: name.trim(),
                 description: description?.trim() || null,
                 vehicleBrandId,
                 vehicleLineId,
                 tenantId: TENANT_ID,
-                status: 'ACTIVE'
+                status: 'ACTIVE',
+                version: '1.0',
+                isDefault: false
             },
             include: {
                 brand: {
@@ -138,14 +146,18 @@ export async function POST(req: Request) {
                         name: true
                     }
                 },
-                planTasks: {
+                packages: {
                     include: {
-                        mantItem: {
-                            select: {
-                                id: true,
-                                name: true,
-                                mantType: true,
-                                estimatedTime: true
+                        packageItems: {
+                            include: {
+                                mantItem: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        mantType: true,
+                                        estimatedTime: true
+                                    }
+                                }
                             }
                         }
                     }

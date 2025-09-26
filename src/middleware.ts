@@ -27,7 +27,12 @@ export async function middleware(request: NextRequest) {
         
         console.log('🔄 URL final:', url.pathname, 'Query:', url.searchParams.toString())
     } else {
-        console.log('⏭️ No es subdomain, procediendo normal')
+        console.log('⏭️ No es subdomain, aplicando tenant por defecto para desarrollo')
+        // Para localhost sin subdomain, usar tenant por defecto
+        if (hostname.includes('localhost')) {
+            url.searchParams.set('tenant', 'mvp-default-tenant')
+            console.log('🔧 Tenant por defecto aplicado: mvp-default-tenant')
+        }
     }
 
     let supabaseResponse = NextResponse.rewrite(url)
@@ -56,6 +61,8 @@ export async function middleware(request: NextRequest) {
     // Add tenant to response headers
     if (subdomain) {
         supabaseResponse.headers.set('x-tenant', subdomain)
+    } else if (hostname.includes('localhost')) {
+        supabaseResponse.headers.set('x-tenant', 'mvp-default-tenant')
     }
 
     // IMPORTANTE: No remover esta línea

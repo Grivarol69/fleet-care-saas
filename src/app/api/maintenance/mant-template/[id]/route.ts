@@ -15,7 +15,7 @@ export async function GET(
             return new NextResponse("Invalid ID", { status: 400 });
         }
 
-        const mantTemplate = await prisma.mantPlan.findUnique({
+        const mantTemplate = await prisma.maintenanceTemplate.findFirst({
             where: {
                 id: mantTemplateId,
                 tenantId: TENANT_ID
@@ -33,21 +33,28 @@ export async function GET(
                         name: true
                     }
                 },
-                planTasks: {
+                packages: {
                     include: {
-                        mantItem: {
-                            select: {
-                                id: true,
-                                name: true,
-                                description: true,
-                                mantType: true,
-                                estimatedTime: true,
-                                category: {
+                        packageItems: {
+                            include: {
+                                mantItem: {
                                     select: {
                                         id: true,
-                                        name: true
+                                        name: true,
+                                        description: true,
+                                        mantType: true,
+                                        estimatedTime: true,
+                                        category: {
+                                            select: {
+                                                id: true,
+                                                name: true
+                                            }
+                                        }
                                     }
                                 }
+                            },
+                            orderBy: {
+                                order: 'asc'
                             }
                         }
                     },
@@ -102,7 +109,7 @@ export async function PATCH(
         }
 
         // Verificar que el template existe y pertenece al tenant
-        const existingTemplate = await prisma.mantPlan.findUnique({
+        const existingTemplate = await prisma.maintenanceTemplate.findFirst({
             where: {
                 id: mantTemplateId,
                 tenantId: TENANT_ID
@@ -114,7 +121,7 @@ export async function PATCH(
         }
 
         // Verificar que la marca existe y pertenece al tenant
-        const brand = await prisma.vehicleBrand.findUnique({
+        const brand = await prisma.vehicleBrand.findFirst({
             where: {
                 id: vehicleBrandId,
                 tenantId: TENANT_ID
@@ -126,7 +133,7 @@ export async function PATCH(
         }
 
         // Verificar que la línea existe, pertenece al tenant y a la marca
-        const line = await prisma.vehicleLine.findUnique({
+        const line = await prisma.vehicleLine.findFirst({
             where: {
                 id: vehicleLineId,
                 tenantId: TENANT_ID,
@@ -139,7 +146,7 @@ export async function PATCH(
         }
 
         // Verificar que no exista otro template con el mismo nombre para la misma marca/línea (excluyendo el actual)
-        const duplicateTemplate = await prisma.mantPlan.findFirst({
+        const duplicateTemplate = await prisma.maintenanceTemplate.findFirst({
             where: {
                 tenantId: TENANT_ID,
                 vehicleBrandId,
@@ -155,7 +162,7 @@ export async function PATCH(
             return new NextResponse("Template with this name already exists for this brand/line combination", { status: 409 });
         }
 
-        const updatedTemplate = await prisma.mantPlan.update({
+        const updatedTemplate = await prisma.maintenanceTemplate.update({
             where: {
                 id: mantTemplateId
             },
@@ -178,14 +185,21 @@ export async function PATCH(
                         name: true
                     }
                 },
-                planTasks: {
+                packages: {
                     include: {
-                        mantItem: {
-                            select: {
-                                id: true,
-                                name: true,
-                                mantType: true,
-                                estimatedTime: true
+                        packageItems: {
+                            include: {
+                                mantItem: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        mantType: true,
+                                        estimatedTime: true
+                                    }
+                                }
+                            },
+                            orderBy: {
+                                order: 'asc'
                             }
                         }
                     },
@@ -221,7 +235,7 @@ export async function DELETE(
         }
 
         // Verificar que el template existe y pertenece al tenant
-        const existingTemplate = await prisma.mantPlan.findUnique({
+        const existingTemplate = await prisma.maintenanceTemplate.findUnique({
             where: {
                 id: mantTemplateId,
                 tenantId: TENANT_ID
@@ -233,10 +247,12 @@ export async function DELETE(
         }
 
         // Verificar si hay vehículos asignados a este plan antes de eliminar
-        const vehiclePlansCount = await prisma.vehicleMantPlan.count({
+        const vehiclePlansCount = await prisma.vehicleMaintenanceSchedule.count({
             where: {
-                mantPlanId: mantTemplateId,
                 tenantId: TENANT_ID,
+                generatedFrom: {
+                    contains: existingTemplate.name
+                },
                 status: 'ACTIVE'
             }
         });
@@ -246,7 +262,7 @@ export async function DELETE(
         }
 
         // Usar soft delete cambiando el status a INACTIVE
-        await prisma.mantPlan.update({
+        await prisma.maintenanceTemplate.update({
             where: {
                 id: mantTemplateId
             },

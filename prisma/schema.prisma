@@ -27,22 +27,25 @@ model Tenant {
   updatedAt         DateTime            @updatedAt
   
   // Relaciones
-  users             User[]
-  vehicles          Vehicle[]
-  vehicleBrands     VehicleBrand[]
-  vehicleLines      VehicleLine[]
-  vehicleTypes      VehicleType[]
-  mantCategories    MantCategory[]
-  mantItems         MantItem[]
-  mantPlans         MantPlan[]
-  vehicleMantPlans  VehicleMantPlan[]
-  workOrders        WorkOrder[]
-  technicians       Technician[]
-  providers         Provider[]
-  documents         Document[]
-  subscriptions     Subscription[]
-  drivers           Driver[]
-  vehicleDrivers    VehicleDriver[]
+  users                       User[]
+  vehicles                    Vehicle[]
+  vehicleBrands               VehicleBrand[]
+  vehicleLines                VehicleLine[]
+  vehicleTypes                VehicleType[]
+  mantCategories              MantCategory[]
+  mantItems                   MantItem[]
+  mantPlans                   MantPlan[]
+  vehicleMantPlans            VehicleMantPlan[]
+  vehicleMantPackages         VehicleMantPackage[]
+  maintenanceTemplates        MaintenanceTemplate[]      // NUEVO
+  vehicleMaintenanceSchedules VehicleMaintenanceSchedule[] // NUEVO
+  workOrders                  WorkOrder[]
+  technicians                 Technician[]
+  providers                   Provider[]
+  documents                   Document[]
+  subscriptions               Subscription[]
+  drivers                     Driver[]
+  vehicleDrivers              VehicleDriver[]
 
   @@index([slug])
   @@index([subscriptionStatus])
@@ -127,10 +130,11 @@ model VehicleBrand {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
-  tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  lines     VehicleLine[]
-  vehicles  Vehicle[]
-  mantPlans MantPlan[]
+  tenant               Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  lines                VehicleLine[]
+  vehicles             Vehicle[]
+  mantPlans            MantPlan[]
+  maintenanceTemplates MaintenanceTemplate[] // NUEVO
 
   @@index([tenantId])
   @@unique([tenantId, name])
@@ -144,10 +148,11 @@ model VehicleLine {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
-  tenant    Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  brand     VehicleBrand @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  vehicles  Vehicle[]
-  mantPlans MantPlan[]
+  tenant               Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  brand                VehicleBrand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  vehicles             Vehicle[]
+  mantPlans            MantPlan[]
+  maintenanceTemplates MaintenanceTemplate[] // NUEVO
 
   @@index([tenantId])
   @@index([brandId])
@@ -193,16 +198,17 @@ model Vehicle {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   
-  tenant            Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  brand             VehicleBrand        @relation(fields: [brandId], references: [id])
-  line              VehicleLine         @relation(fields: [lineId], references: [id])
-  type              VehicleType         @relation(fields: [typeId], references: [id])
-  documents         Document[]
-  workOrders        WorkOrder[]
-  odometerLogs      OdometerLog[]
-  vehicleMantPlans  VehicleMantPlan[]
-  maintenanceAlerts MaintenanceAlert[]
-  vehicleDrivers    VehicleDriver[]
+  tenant                    Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  brand                     VehicleBrand               @relation(fields: [brandId], references: [id])
+  line                      VehicleLine                @relation(fields: [lineId], references: [id])
+  type                      VehicleType                @relation(fields: [typeId], references: [id])
+  documents                 Document[]
+  workOrders                WorkOrder[]
+  odometerLogs              OdometerLog[]
+  vehicleMantPlans          VehicleMantPlan[]
+  maintenanceAlerts         MaintenanceAlert[]
+  vehicleDrivers            VehicleDriver[]
+  vehicleMaintenanceSchedule VehicleMaintenanceSchedule? // NUEVO: Un vehículo puede tener un programa
 
   @@index([tenantId])
   @@index([licensePlate])
@@ -238,14 +244,16 @@ model MantItem {
   description         String?
   mantType            MantType
   estimatedTime       Decimal  @db.Decimal(5, 2) // Horas
+  estimatedCost       Decimal? @db.Decimal(10, 2) // Costo estimado del item
   categoryId          Int
   status              Status   @default(ACTIVE)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
-  
+
   tenant              Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   category            MantCategory          @relation(fields: [categoryId], references: [id])
   planTasks           PlanTask[]
+  packageItems        PackageItem[]         // NUEVO: Items que pertenecen a paquetes de template
   workOrderItems      WorkOrderItem[]
   vehicleMantPlanItem VehicleMantPlanItem[]
 
@@ -307,6 +315,7 @@ model VehicleMantPlan {
   vehicle             Vehicle               @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
   mantPlan            MantPlan              @relation(fields: [mantPlanId], references: [id])
   vehicleMantPlanItem VehicleMantPlanItem[]
+  vehicleMantPackages VehicleMantPackage[]  // NUEVO: Paquetes que pertenecen a este plan
 
   @@index([tenantId])
   @@index([vehicleId])
@@ -318,6 +327,7 @@ model VehicleMantPlanItem {
   id                Int      @id @default(autoincrement())
   vehicleMantPlanId Int
   mantItemId        Int
+  vehicleMantPackageId Int?   // NUEVO: opcional para items que pertenecen a paquetes
   executionMileage  Int      // Km específico en que debe ejecutarse
   technicianId      Int?
   providerId        Int?
@@ -333,14 +343,210 @@ model VehicleMantPlanItem {
   mantItem        MantItem        @relation(fields: [mantItemId], references: [id])
   technician      Technician?     @relation(fields: [technicianId], references: [id])
   provider        Provider?       @relation(fields: [providerId], references: [id])
+  vehicleMantPackage VehicleMantPackage? @relation(fields: [vehicleMantPackageId], references: [id])  // NUEVO: Items pueden pertenecer a un paquete
 
   @@index([vehicleMantPlanId])
   @@index([mantItemId])
   @@unique([vehicleMantPlanId, mantItemId])
 }
 
+model VehicleMantPackage {
+  id                    Int      @id @default(autoincrement())
+  tenantId              String
+  vehicleMantPlanId     Int
+  // INFORMACIÓN COPIADA DEL TEMPLATE PACKAGE (independiente)
+  packageName           String   // "Mantenimiento 5,000 km" (copiado del MaintenancePackage)
+  packageDescription    String?  // Descripción copiada
+  originalTriggerKm     Int      // Km original del template (5000, 15000, etc.)
+  // KILOMETRAJES ESPECÍFICOS DEL VEHÍCULO
+  scheduledExecutionKm  Int      // Km programado REAL para este vehículo (ej: 32000)
+  actualExecutionKm     Int?     // Km REAL cuando se ejecutó (null si no ejecutado)
+  // MÉTRICAS DE DESVIACIÓN
+  deviationKm           Int?     // actualExecutionKm - scheduledExecutionKm
+  onTimeExecution       Boolean? // true si a tiempo, false si tarde, null si no ejecutado
+  // COSTOS
+  estimatedCost         Decimal? @db.Decimal(10, 2) // Costo estimado total del paquete
+  actualCost            Decimal? @db.Decimal(10, 2) // Costo real total (suma de items)
+  // ESTADO Y TRACKING
+  status                WorkOrderStatus @default(PENDING)
+  priority              Priority @default(MEDIUM)
+  executedAt            DateTime? // Fecha real de ejecución del paquete
+  workOrderId           Int?     // WorkOrder generada para este paquete
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // RELACIONES
+  tenant              Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicleMantPlan     VehicleMantPlan     @relation(fields: [vehicleMantPlanId], references: [id], onDelete: Cascade)
+  workOrder           WorkOrder?          @relation(fields: [workOrderId], references: [id])
+  vehicleMantPlanItems VehicleMantPlanItem[] // Items que pertenecen a este paquete
+
+  @@index([tenantId])
+  @@index([vehicleMantPlanId])
+  @@index([scheduledExecutionKm])
+  @@index([status])
+  @@index([onTimeExecution]) // Para ranking
+  @@unique([vehicleMantPlanId, originalTriggerKm]) // No duplicar paquetes del mismo km
+}
+
 // ========================================
-// WORK ORDERS
+// MAINTENANCE TEMPLATES & PACKAGES SYSTEM
+// ========================================
+
+model MaintenanceTemplate {
+  id              Int      @id @default(autoincrement())
+  tenantId        String
+  name            String   // "Toyota Hilux Standard", "Ford Ranger Heavy Duty"
+  description     String?
+  vehicleBrandId  Int?     // Opcional: específico para una marca
+  vehicleLineId   Int?     // Opcional: específico para una línea
+  version         String   @default("1.0") // Para tracking de versiones
+  isDefault       Boolean  @default(false) // Template por defecto para esta marca/línea
+  status          Status   @default(ACTIVE)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tenant          Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  brand           VehicleBrand?       @relation(fields: [vehicleBrandId], references: [id])
+  line            VehicleLine?        @relation(fields: [vehicleLineId], references: [id])
+  packages        MaintenancePackage[]
+
+  @@index([tenantId])
+  @@index([vehicleBrandId])
+  @@index([vehicleLineId])
+  @@index([isDefault])
+  @@unique([tenantId, name])
+}
+
+model MaintenancePackage {
+  id              Int      @id @default(autoincrement())
+  templateId      Int
+  name            String   // "Mantenimiento 5,000 km", "Mantenimiento 15,000 km"
+  triggerKm       Int      // 5000, 15000, 30000, 50000, etc.
+  description     String?
+  estimatedCost   Decimal? @db.Decimal(10, 2) // Costo estimado total del paquete
+  estimatedTime   Decimal? @db.Decimal(5, 2) // Tiempo estimado total en horas
+  priority        Priority @default(MEDIUM)
+  packageType     MantType @default(PREVENTIVE)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  template        MaintenanceTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  packageItems    PackageItem[]
+
+  @@index([templateId])
+  @@index([triggerKm])
+  @@unique([templateId, triggerKm]) // Un template no puede tener 2 paquetes para el mismo km
+}
+
+model PackageItem {
+  id         Int      @id @default(autoincrement())
+  packageId  Int
+  mantItemId Int
+  isOptional Boolean  @default(false) // Si el item es opcional en el paquete
+  order      Int      @default(0)     // Orden de ejecución dentro del paquete
+  notes      String?  // Notas específicas para este item en este paquete
+  createdAt  DateTime @default(now())
+
+  package  MaintenancePackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  mantItem MantItem           @relation(fields: [mantItemId], references: [id])
+
+  @@index([packageId])
+  @@index([mantItemId])
+  @@unique([packageId, mantItemId]) // Un paquete no puede tener el mismo item duplicado
+}
+
+// ========================================
+// VEHICLE-SPECIFIC MAINTENANCE PROGRAMS
+// ========================================
+
+model VehicleMaintenanceSchedule {
+  id                    Int      @id @default(autoincrement())
+  tenantId              String
+  vehicleId             Int
+
+  // INFORMACIÓN DE ORIGEN (solo referencial - NO referencia FK)
+  generatedFrom         String?  // "Template: Toyota Hilux Standard v1.2"
+  generatedAt           DateTime @default(now())
+  generatedBy           String   // User ID quien generó el programa
+
+  // KILOMETRAJE INICIAL AL MOMENTO DE CREAR PROGRAMA
+  assignmentKm          Int      // Km del vehículo cuando se asignó el programa
+  nextMaintenanceKm     Int      // Próximo vencimiento REAL conocido por usuario
+  nextMaintenanceDesc   String?  // "Cambio aceite 30,000 km" - descripción del próximo
+
+  // MÉTRICAS DE DESVIACIÓN PARA RANKING
+  totalMaintenances     Int      @default(0)     // Cantidad total de mantenimientos completados
+  avgDeviationKm        Int      @default(0)     // Desviación promedio (+ tarde, - temprano)
+  maintenanceScore      Int      @default(100)   // Score 0-100 para ranking (100 = perfecto)
+  lastScoreUpdate       DateTime @default(now()) // Última actualización del score
+
+  // CONFIGURACIÓN
+  alertOffsetKm         Int      @default(1000)  // Alertar X km antes del vencimiento
+  isActive              Boolean  @default(true)  // Programa activo o pausado
+  notes                 String?  // Notas del usuario sobre este programa
+
+  status                Status   @default(ACTIVE)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  tenant                Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicle               Vehicle              @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  scheduledPackages     ScheduledPackage[]
+
+  @@unique([vehicleId])   // Un vehículo solo puede tener un programa activo
+  @@index([tenantId])
+  @@index([maintenanceScore]) // Para ranking
+  @@index([avgDeviationKm])   // Para análisis de patrones
+}
+
+model ScheduledPackage {
+  id                    Int      @id @default(autoincrement())
+  scheduleId            Int
+
+  // INFORMACIÓN DEL PAQUETE (copiada independientemente)
+  packageName           String   // "Mantenimiento 15,000 km" (copiado del template)
+  packageDescription    String?  // Descripción copiada
+
+  // KILOMETRAJES - La clave del sistema
+  idealExecutionKm      Int      // Km ideal según template original (15000, 30000, etc.)
+  scheduledExecutionKm  Int      // Km programado REAL para este vehículo específico
+  actualExecutionKm     Int?     // Km REAL cuando se ejecutó (null si no ejecutado)
+
+  // DESVIACIÓN Y MÉTRICAS PARA RANKING
+  deviationKm           Int?     // actualExecutionKm - scheduledExecutionKm (calculado al completar)
+  onTimeExecution       Boolean? // true si se hizo a tiempo, false si tarde, null si no ejecutado
+
+  // COSTOS
+  estimatedCost         Decimal? @db.Decimal(10, 2) // Costo estimado del paquete
+  actualCost            Decimal? @db.Decimal(10, 2) // Costo real (suma de WorkOrderExpenses)
+
+  // ESTADO Y TRACKING
+  status                ScheduleStatus @default(SCHEDULED)
+  workOrderId           Int?     // WorkOrder generada para este paquete (cuando se ejecuta)
+  executedAt            DateTime? // Fecha real de ejecución
+  alertLevel            AlertLevel @default(LOW) // Nivel de alerta actual
+
+  // AUDITORÍA
+  adjustedBy            String?  // User ID o "SYSTEM_AUTO" si fue ajuste automático
+  adjustmentReason      String?  // Razón del ajuste de programación
+  lastAlertSent         DateTime? // Última alerta enviada
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  schedule              VehicleMaintenanceSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  workOrder             WorkOrder?                 @relation(fields: [workOrderId], references: [id])
+
+  @@index([scheduleId])
+  @@index([scheduledExecutionKm])
+  @@index([alertLevel])
+  @@index([deviationKm])        // Para análisis de patrones
+  @@index([onTimeExecution])    // Para ranking
+}
+
+// ========================================
+// WORK ORDERS (EXTENDIDO)
 // ========================================
 
 model WorkOrder {
@@ -355,6 +561,11 @@ model WorkOrder {
   technicianId    Int?
   providerId      Int?
   creationMileage Int
+
+  // CONEXIÓN CON PAQUETES DE MANTENIMIENTO
+  isPackageWork   Boolean         @default(false) // true si es WorkOrder de paquete completo
+  packageName     String?         // Nombre del paquete si aplica
+  scheduledPackageId Int?         // Referencia al ScheduledPackage que generó esta WorkOrder
 
   // Campos de trazabilidad financiera
   requestedBy     String          // User ID solicitante
@@ -381,12 +592,15 @@ model WorkOrder {
   workOrderExpenses WorkOrderExpense[]
   approvals         WorkOrderApproval[]
   auditLogs         ExpenseAuditLog[]
+  scheduledPackages ScheduledPackage[] // Paquetes que generaron esta WorkOrder
+  vehicleMantPackages VehicleMantPackage[] // NUEVO: Paquetes del nuevo sistema
 
   @@index([tenantId])
   @@index([vehicleId])
   @@index([status])
   @@index([requestedBy])
   @@index([authorizedBy])
+  @@index([isPackageWork]) // Para separar WorkOrders de paquetes vs individuales
 }
 
 model WorkOrderItem {
@@ -799,4 +1013,14 @@ enum ProviderSpecialty {
   SERVICIOS_GENERALES
   GRUA
   SEGUROS
+}
+
+enum ScheduleStatus {
+  SCHEDULED    // Programado, esperando llegar al kilometraje
+  DUE          // Vencido, debe hacerse ya
+  OVERDUE      // Atrasado, debería haberse hecho
+  IN_PROGRESS  // En ejecución (WorkOrder creada)
+  COMPLETED    // Completado exitosamente
+  SKIPPED      // Saltado/omitido por el usuario
+  CANCELLED    // Cancelado
 }

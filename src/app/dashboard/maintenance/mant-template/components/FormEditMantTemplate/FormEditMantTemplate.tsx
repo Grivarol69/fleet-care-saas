@@ -35,6 +35,7 @@ import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { FormEditMantTemplateProps, VehicleBrand, VehicleLine } from './FormEditMantTemplate.types';
 import { TemplateItemsList } from './components/TemplateItemsList';
+import { PackageList } from './components/PackageList';
 
 // Schema para MantTemplate
 const formSchema = z.object({
@@ -186,9 +187,10 @@ export function FormEditMantTemplate({
         </DialogHeader>
 
         <Tabs defaultValue="details" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="details">Detalles del Template</TabsTrigger>
-            <TabsTrigger value="tasks">Tareas del Template</TabsTrigger>
+            <TabsTrigger value="packages">Paquetes</TabsTrigger>
+            <TabsTrigger value="tasks">Items Individuales</TabsTrigger>
           </TabsList>
 
           <TabsContent value="details" className="mt-6">
@@ -331,6 +333,12 @@ export function FormEditMantTemplate({
                 </div>
               </form>
             </Form>
+          </TabsContent>
+
+          <TabsContent value="packages" className="mt-6">
+            <div className="min-h-[600px]">
+              <PackageList templateId={template.id} />
+            </div>
           </TabsContent>
 
           <TabsContent value="tasks" className="mt-6">
