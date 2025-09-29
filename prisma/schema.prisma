@@ -398,8 +398,8 @@ model MaintenanceTemplate {
   tenantId        String
   name            String   // "Toyota Hilux Standard", "Ford Ranger Heavy Duty"
   description     String?
-  vehicleBrandId  Int?     // Opcional: específico para una marca
-  vehicleLineId   Int?     // Opcional: específico para una línea
+  vehicleBrandId  Int      // Requerido: específico para una marca
+  vehicleLineId   Int      // Requerido: específico para una línea
   version         String   @default("1.0") // Para tracking de versiones
   isDefault       Boolean  @default(false) // Template por defecto para esta marca/línea
   status          Status   @default(ACTIVE)
@@ -428,6 +428,7 @@ model MaintenancePackage {
   estimatedTime   Decimal? @db.Decimal(5, 2) // Tiempo estimado total en horas
   priority        Priority @default(MEDIUM)
   packageType     MantType @default(PREVENTIVE)
+  status          Status   @default(ACTIVE)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -440,19 +441,28 @@ model MaintenancePackage {
 }
 
 model PackageItem {
-  id         Int      @id @default(autoincrement())
-  packageId  Int
-  mantItemId Int
-  isOptional Boolean  @default(false) // Si el item es opcional en el paquete
-  order      Int      @default(0)     // Orden de ejecución dentro del paquete
-  notes      String?  // Notas específicas para este item en este paquete
-  createdAt  DateTime @default(now())
+  id            Int      @id @default(autoincrement())
+  packageId     Int
+  mantItemId    Int
+  triggerKm     Int      // Km en que se ejecuta este item específico
+  priority      Priority @default(MEDIUM) // Prioridad específica del item en este paquete
+  estimatedCost Decimal? @db.Decimal(10, 2) // Costo estimado específico
+  estimatedTime Decimal? @db.Decimal(5, 2)  // Tiempo estimado específico
+  isOptional    Boolean  @default(false) // Si el item es opcional en el paquete
+  order         Int      @default(0)     // Orden de ejecución dentro del paquete
+  notes         String?  // Notas específicas para este item en este paquete
+  status        Status   @default(ACTIVE) // Estado del item en este paquete
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   package  MaintenancePackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
   mantItem MantItem           @relation(fields: [mantItemId], references: [id])
 
   @@index([packageId])
   @@index([mantItemId])
+  @@index([triggerKm])
+  @@index([priority])
+  @@index([status])
   @@unique([packageId, mantItemId]) // Un paquete no puede tener el mismo item duplicado
 }
 
@@ -853,6 +863,7 @@ model Document {
   @@index([type])
   @@index([expiryDate])
 }
+
 
 // ========================================
 // ENUMS
