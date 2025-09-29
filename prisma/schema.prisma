@@ -38,7 +38,10 @@ model Tenant {
   vehicleMantPlans            VehicleMantPlan[]
   vehicleMantPackages         VehicleMantPackage[]
   maintenanceTemplates        MaintenanceTemplate[]      // NUEVO
-  vehicleMaintenanceSchedules VehicleMaintenanceSchedule[] // NUEVO
+  vehicleMaintenanceMetrics   VehicleMaintenanceMetrics[] // NUEVO
+  vehicleMantPrograms         VehicleMantProgram[]        // NUEVA ARQUITECTURA
+  vehicleProgramPackages      VehicleProgramPackage[]     // NUEVA ARQUITECTURA
+  vehicleProgramItems         VehicleProgramItem[]        // NUEVA ARQUITECTURA
   workOrders                  WorkOrder[]
   technicians                 Technician[]
   providers                   Provider[]
@@ -208,7 +211,8 @@ model Vehicle {
   vehicleMantPlans          VehicleMantPlan[]
   maintenanceAlerts         MaintenanceAlert[]
   vehicleDrivers            VehicleDriver[]
-  vehicleMaintenanceSchedule VehicleMaintenanceSchedule? // NUEVO: Un vehículo puede tener un programa
+  vehicleMaintenanceMetrics  VehicleMaintenanceMetrics? // NUEVO: Un vehículo puede tener métricas
+  vehicleMantProgram         VehicleMantProgram?        // NUEVA ARQUITECTURA: Un vehículo puede tener un programa
 
   @@index([tenantId])
   @@index([licensePlate])
@@ -256,6 +260,7 @@ model MantItem {
   packageItems        PackageItem[]         // NUEVO: Items que pertenecen a paquetes de template
   workOrderItems      WorkOrderItem[]
   vehicleMantPlanItem VehicleMantPlanItem[]
+  vehicleProgramItems VehicleProgramItem[]  // NUEVA ARQUITECTURA
 
   @@index([tenantId])
   @@index([categoryId])
@@ -470,7 +475,7 @@ model PackageItem {
 // VEHICLE-SPECIFIC MAINTENANCE PROGRAMS
 // ========================================
 
-model VehicleMaintenanceSchedule {
+model VehicleMaintenanceMetrics {
   id                    Int      @id @default(autoincrement())
   tenantId              String
   vehicleId             Int
@@ -545,7 +550,7 @@ model ScheduledPackage {
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
-  schedule              VehicleMaintenanceSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  schedule              VehicleMaintenanceMetrics @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
   workOrder             WorkOrder?                 @relation(fields: [workOrderId], references: [id])
 
   @@index([scheduleId])
@@ -604,6 +609,7 @@ model WorkOrder {
   auditLogs         ExpenseAuditLog[]
   scheduledPackages ScheduledPackage[] // Paquetes que generaron esta WorkOrder
   vehicleMantPackages VehicleMantPackage[] // NUEVO: Paquetes del nuevo sistema
+  vehicleProgramPackages VehicleProgramPackage[] // NUEVA ARQUITECTURA
 
   @@index([tenantId])
   @@index([vehicleId])
@@ -717,39 +723,43 @@ model ExpenseAuditLog {
 // ========================================
 
 model Technician {
-  id                  Int                   @id @default(autoincrement())
-  tenantId            String
-  name                String
-  email               String?
-  phone               String?
-  specialty           TechnicianSpecialty?
-  status              Status                @default(ACTIVE)
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
-  
-  tenant              Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  workOrders          WorkOrder[]
-  vehicleMantPlanItem VehicleMantPlanItem[]
+  id                    Int                     @id @default(autoincrement())
+  tenantId              String
+  name                  String
+  email                 String?
+  phone                 String?
+  specialty             TechnicianSpecialty?
+  status                Status                  @default(ACTIVE)
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+
+  tenant                Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  workOrders            WorkOrder[]
+  vehicleMantPlanItem   VehicleMantPlanItem[]
+  vehicleProgramPackages VehicleProgramPackage[] // NUEVA ARQUITECTURA
+  vehicleProgramItems   VehicleProgramItem[]    // NUEVA ARQUITECTURA
 
   @@index([tenantId])
   @@unique([tenantId, name])
 }
 
 model Provider {
-  id                  Int                 @id @default(autoincrement())
-  tenantId            String
-  name                String
-  email               String?
-  phone               String?
-  address             String?
-  specialty           ProviderSpecialty?
-  status              Status              @default(ACTIVE)
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
-  
-  tenant              Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  workOrders          WorkOrder[]
-  vehicleMantPlanItem VehicleMantPlanItem[]
+  id                    Int                     @id @default(autoincrement())
+  tenantId              String
+  name                  String
+  email                 String?
+  phone                 String?
+  address               String?
+  specialty             ProviderSpecialty?
+  status                Status                  @default(ACTIVE)
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+
+  tenant                Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  workOrders            WorkOrder[]
+  vehicleMantPlanItem   VehicleMantPlanItem[]
+  vehicleProgramPackages VehicleProgramPackage[] // NUEVA ARQUITECTURA
+  vehicleProgramItems   VehicleProgramItem[]    // NUEVA ARQUITECTURA
 
   @@index([tenantId])
   @@unique([tenantId, name])
@@ -864,6 +874,148 @@ model Document {
   @@index([expiryDate])
 }
 
+// ========================================
+// NUEVA ARQUITECTURA: VEHICLE MAINTENANCE PROGRAMS
+// Arquitectura simplificada para mantenimiento preventivo/correctivo
+// ========================================
+
+model VehicleMantProgram {
+  id                    Int      @id @default(autoincrement())
+  tenantId              String
+  vehicleId             Int
+  name                  String   // "Programa Toyota Hilux ABC-123"
+  description           String?  // Descripción del programa
+
+  // INFORMACIÓN DE ORIGEN
+  generatedFrom         String?  // "Template: Toyota Hilux Standard v1.2"
+  generatedAt           DateTime @default(now())
+  generatedBy           String   // User ID quien generó el programa
+
+  // KILOMETRAJE INICIAL
+  assignmentKm          Int      // Km del vehículo cuando se asignó
+  nextMaintenanceKm     Int?     // Próximo vencimiento calculado
+  nextMaintenanceDesc   String?  // Descripción del próximo mantenimiento
+
+  // CONFIGURACIÓN Y ESTADO
+  isActive              Boolean  @default(true)
+  notes                 String?
+  status                Status   @default(ACTIVE)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // RELACIONES
+  tenant                Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicle               Vehicle                  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  packages              VehicleProgramPackage[]
+
+  @@unique([vehicleId]) // Un vehículo solo puede tener un programa activo
+  @@index([tenantId])
+  @@index([vehicleId])
+  @@index([isActive])
+  @@index([nextMaintenanceKm])
+}
+
+model VehicleProgramPackage {
+  id              Int      @id @default(autoincrement())
+  tenantId        String
+  programId       Int
+  name            String   // "Mantenimiento 15,000 km" | "Items Correctivos"
+  description     String?
+
+  // CONFIGURACIÓN DEL PAQUETE
+  triggerKm       Int?     // 15000, 30000, etc. | NULL para correctivos
+  packageType     MantType @default(PREVENTIVE) // PREVENTIVE, CORRECTIVE, PREDICTIVE
+  priority        Priority @default(MEDIUM)
+
+  // COSTOS Y TIEMPO
+  estimatedCost   Decimal? @db.Decimal(10, 2)
+  estimatedTime   Decimal? @db.Decimal(5, 2) // Horas
+  actualCost      Decimal? @db.Decimal(10, 2)
+  actualTime      Decimal? @db.Decimal(5, 2)
+
+  // ESTADO Y EJECUCIÓN
+  status          WorkOrderStatus @default(PENDING)
+  scheduledKm     Int?     // Km programado específico para este vehículo
+  executedKm      Int?     // Km real de ejecución
+  startDate       DateTime?
+  endDate         DateTime?
+
+  // ASIGNACIONES
+  technicianId    Int?
+  providerId      Int?
+  workOrderId     Int?     // WorkOrder asociada
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // RELACIONES
+  tenant          Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  program         VehicleMantProgram    @relation(fields: [programId], references: [id], onDelete: Cascade)
+  technician      Technician?           @relation(fields: [technicianId], references: [id])
+  provider        Provider?             @relation(fields: [providerId], references: [id])
+  workOrder       WorkOrder?            @relation(fields: [workOrderId], references: [id])
+  items           VehicleProgramItem[]
+
+  @@index([tenantId])
+  @@index([programId])
+  @@index([triggerKm])
+  @@index([status])
+  @@index([scheduledKm])
+  @@index([packageType])
+}
+
+model VehicleProgramItem {
+  id                    Int      @id @default(autoincrement())
+  tenantId              String
+  packageId             Int      // NUNCA NULL - siempre tiene package padre
+  mantItemId            Int      // Referencia al MantItem base
+
+  // TIPO Y CONFIGURACIÓN
+  mantType              MantType // PREVENTIVE, CORRECTIVE, PREDICTIVE
+  priority              Priority @default(MEDIUM)
+  order                 Int      @default(0) // Orden dentro del package
+
+  // KILOMETRAJE Y FECHAS
+  scheduledKm           Int?     // Km programado
+  detectedKm            Int?     // Km cuando se detectó (correctivos)
+  executedKm            Int?     // Km real de ejecución
+  scheduledDate         DateTime?
+  detectedDate          DateTime? // Para correctivos
+  executedDate          DateTime?
+
+  // COSTOS Y TIEMPO
+  estimatedCost         Decimal? @db.Decimal(10, 2) // Del MantItem original
+  estimatedTime         Decimal? @db.Decimal(5, 2)
+  actualCost            Decimal? @db.Decimal(10, 2) // Real ejecutado
+  actualTime            Decimal? @db.Decimal(5, 2)
+
+  // ASIGNACIONES Y ESTADO
+  technicianId          Int?
+  providerId            Int?
+  status                WorkOrderStatus @default(PENDING)
+  urgency               Boolean  @default(false) // Para correctivos urgentes
+  notes                 String?
+  description           String?  // Descripción específica del problema
+  isOptional            Boolean  @default(false) // Si el item es opcional
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // RELACIONES
+  tenant                Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  package               VehicleProgramPackage   @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  mantItem              MantItem                @relation(fields: [mantItemId], references: [id])
+  technician            Technician?             @relation(fields: [technicianId], references: [id])
+  provider              Provider?               @relation(fields: [providerId], references: [id])
+
+  @@index([tenantId])
+  @@index([packageId])
+  @@index([mantItemId])
+  @@index([mantType])
+  @@index([status])
+  @@index([scheduledKm])
+  @@index([urgency])
+  @@unique([packageId, mantItemId]) // Un package no puede tener el mismo item duplicado
+}
 
 // ========================================
 // ENUMS
