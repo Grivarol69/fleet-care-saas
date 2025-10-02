@@ -1,1 +1,0 @@
-export { FormEditVehicleTemplate } from './FormEditVehicleTemplate';

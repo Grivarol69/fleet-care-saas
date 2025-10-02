@@ -49,7 +49,7 @@ export const dataAdminSidebar = [
             { label: "Master Items", href: "/dashboard/maintenance/mant-items" },
             { label: "Categorías", href: "/dashboard/maintenance/mant-categories" },
             { label: "Plantillas Planes Mantenimiento", href: "/dashboard/maintenance/mant-template" },
-            { label: "Planes Vehículos", href: "/dashboard/maintenance/vehicle-template" },
+            { label: "Programas Vehículos", href: "/dashboard/maintenance/vehicle-programs" },
             { label: "Órdenes de Trabajo", href: "/dashboard/maintenance/work-orders" },
             { label: "Alertas", href: "/dashboard/maintenance/alerts" },
         ],

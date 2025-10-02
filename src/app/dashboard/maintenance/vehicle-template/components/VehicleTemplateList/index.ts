@@ -1,1 +1,0 @@
-export { VehicleTemplateList } from './VehicleTemplateList';
