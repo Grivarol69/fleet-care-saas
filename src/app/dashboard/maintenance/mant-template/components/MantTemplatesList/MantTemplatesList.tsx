@@ -52,38 +52,38 @@ import {
   PackageItem
 } from './MantTemplatesList.types';
 
-// Componente de métricas animadas
-interface MetricsCardProps {
-  title: string;
-  value: number;
-  icon: React.ReactNode;
-  color: string;
-  bgColor: string;
-  description?: string;
-}
+// Componente de métricas animadas (no usado actualmente)
+// interface MetricsCardProps {
+//   title: string;
+//   value: number;
+//   icon: React.ReactNode;
+//   color: string;
+//   bgColor: string;
+//   description?: string;
+// }
 
-function MetricsCard({ title, value, icon, color, bgColor, description }: MetricsCardProps) {
-  return (
-    <Card className="hover:shadow-lg transition-all duration-200 hover:scale-105">
-      <CardContent className="flex items-center p-6">
-        <div className={`p-3 rounded-full ${bgColor} mr-4`}>
-          <div className={`w-6 h-6 ${color}`}>
-            {icon}
-          </div>
-        </div>
-        <div className="flex-1">
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <div className="flex items-center">
-            <p className={`text-2xl font-bold ${color}`}>{value}</p>
-            {description && (
-              <p className="text-xs text-gray-500 ml-2">{description}</p>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+// function MetricsCard({ title, value, icon, color, bgColor, description }: MetricsCardProps) {
+//   return (
+//     <Card className="hover:shadow-lg transition-all duration-200 hover:scale-105">
+//       <CardContent className="flex items-center p-6">
+//         <div className={`p-3 rounded-full ${bgColor} mr-4`}>
+//           <div className={`w-6 h-6 ${color}`}>
+//             {icon}
+//           </div>
+//         </div>
+//         <div className="flex-1">
+//           <p className="text-sm font-medium text-gray-600">{title}</p>
+//           <div className="flex items-center">
+//             <p className={`text-2xl font-bold ${color}`}>{value}</p>
+//             {description && (
+//               <p className="text-xs text-gray-500 ml-2">{description}</p>
+//             )}
+//           </div>
+//         </div>
+//       </CardContent>
+//     </Card>
+//   );
+// }
 
 // Componente de card compacta para templates
 interface TemplateCardProps {
@@ -419,92 +419,92 @@ export function MantTemplatesList() {
     critical: packageItems.filter(i => i.priority === 'CRITICAL').length
   } : null;
 
-  // Columnas para templates
-  const templateColumns: ColumnDef<MantTemplatesListProps>[] = [
-    {
-      accessorKey: 'name',
-      header: 'Nombre del Template',
-      cell: ({ row }) => (
-        <div>
-          <div className="font-semibold text-gray-900">{row.getValue('name')}</div>
-          <div className="text-sm text-gray-500">{row.original.description || 'Sin descripción'}</div>
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'brand',
-      header: 'Marca / Línea',
-      cell: ({ row }) => (
-        <div className="space-y-1">
-          <Badge variant="outline" className="bg-blue-50 text-blue-700">
-            {row.original.brand.name}
-          </Badge>
-          <br />
-          <Badge variant="outline" className="bg-purple-50 text-purple-700">
-            {row.original.line.name}
-          </Badge>
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'packages',
-      header: 'Paquetes',
-      cell: ({ row }) => {
-        const packageCount = row.original.packages?.length || 0;
-        return (
-          <div className="flex items-center gap-2">
-            <Package className="h-4 w-4 text-blue-500" />
-            <span className="font-semibold">{packageCount}</span>
-            <span className="text-sm text-gray-500">paquetes</span>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: 'status',
-      header: 'Estado',
-      cell: ({ row }) => {
-        const isActive = row.getValue('status') === 'ACTIVE';
-        return (
-          <Badge variant={isActive ? "default" : "secondary"}
-                 className={isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
-            {isActive ? 'Activo' : 'Inactivo'}
-          </Badge>
-        );
-      },
-    },
-    {
-      id: 'actions',
-      header: 'Acciones',
-      cell: ({ row }) => (
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleSelectTemplate(row.original)}
-            className="text-blue-600 hover:text-blue-700"
-          >
-            <ChevronRight className="h-4 w-4 mr-1" />
-            Seleccionar
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleEditTemplate(row.original)}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => handleDeleteTemplate(row.original.id)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      ),
-    },
-  ];
+  // Columnas para templates (no usado - usando grid de cards en su lugar)
+  // const templateColumns: ColumnDef<MantTemplatesListProps>[] = [
+  //   {
+  //     accessorKey: 'name',
+  //     header: 'Nombre del Template',
+  //     cell: ({ row }) => (
+  //       <div>
+  //         <div className="font-semibold text-gray-900">{row.getValue('name')}</div>
+  //         <div className="text-sm text-gray-500">{row.original.description || 'Sin descripción'}</div>
+  //       </div>
+  //     ),
+  //   },
+  //   {
+  //     accessorKey: 'brand',
+  //     header: 'Marca / Línea',
+  //     cell: ({ row }) => (
+  //       <div className="space-y-1">
+  //         <Badge variant="outline" className="bg-blue-50 text-blue-700">
+  //           {row.original.brand.name}
+  //         </Badge>
+  //         <br />
+  //         <Badge variant="outline" className="bg-purple-50 text-purple-700">
+  //           {row.original.line.name}
+  //         </Badge>
+  //       </div>
+  //     ),
+  //   },
+  //   {
+  //     accessorKey: 'packages',
+  //     header: 'Paquetes',
+  //     cell: ({ row }) => {
+  //       const packageCount = row.original.packages?.length || 0;
+  //       return (
+  //         <div className="flex items-center gap-2">
+  //           <Package className="h-4 w-4 text-blue-500" />
+  //           <span className="font-semibold">{packageCount}</span>
+  //           <span className="text-sm text-gray-500">paquetes</span>
+  //         </div>
+  //       );
+  //     },
+  //   },
+  //   {
+  //     accessorKey: 'status',
+  //     header: 'Estado',
+  //     cell: ({ row }) => {
+  //       const isActive = row.getValue('status') === 'ACTIVE';
+  //       return (
+  //         <Badge variant={isActive ? "default" : "secondary"}
+  //                className={isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+  //           {isActive ? 'Activo' : 'Inactivo'}
+  //         </Badge>
+  //       );
+  //     },
+  //   },
+  //   {
+  //     id: 'actions',
+  //     header: 'Acciones',
+  //     cell: ({ row }) => (
+  //       <div className="flex gap-2">
+  //         <Button
+  //           variant="outline"
+  //           size="sm"
+  //           onClick={() => handleSelectTemplate(row.original)}
+  //           className="text-blue-600 hover:text-blue-700"
+  //         >
+  //           <ChevronRight className="h-4 w-4 mr-1" />
+  //           Seleccionar
+  //         </Button>
+  //         <Button
+  //           variant="outline"
+  //           size="sm"
+  //           onClick={() => handleEditTemplate(row.original)}
+  //         >
+  //           <Edit className="h-4 w-4" />
+  //         </Button>
+  //         <Button
+  //           variant="destructive"
+  //           size="sm"
+  //           onClick={() => handleDeleteTemplate(row.original.id)}
+  //         >
+  //           <Trash2 className="h-4 w-4" />
+  //         </Button>
+  //       </div>
+  //     ),
+  //   },
+  // ];
 
   // Columnas para packages
   const packageColumns: ColumnDef<MaintenancePackage>[] = [

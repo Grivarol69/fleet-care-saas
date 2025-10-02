@@ -27,7 +27,7 @@ export class WhatsAppTemplates {
     const header = `🚨 *Resumen de Alertas de Mantenimiento para ${summary.tenantName}:*\n\n`;
     
     let alertsList = "";
-    summary.alerts.forEach((alert, index) => {
+    summary.alerts.forEach((alert) => {
       const emoji = alert.state === "RED" ? "🔴" : "🟡";
       const urgency = alert.state === "RED" ? `(URGENTE - ${alert.kmToMaintenance} km)` : `(${alert.kmToMaintenance} km)`;
       

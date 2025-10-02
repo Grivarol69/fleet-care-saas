@@ -5,7 +5,7 @@ import { NextRequest } from "next/server";
 const TENANT_ID = 'mvp-default-tenant'; // Tenant hardcodeado para MVP
 
 export async function GET(
-    request: NextRequest,
+    _request: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
@@ -140,7 +140,7 @@ export async function PUT(
 }
 
 export async function DELETE(
-    request: NextRequest,
+    _request: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {

@@ -5,7 +5,7 @@ const TENANT_ID = 'mvp-default-tenant';
 
 // GET - Obtener programa específico por ID
 export async function GET(
-  req: Request,
+  _req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -131,7 +131,7 @@ export async function PUT(
 
 // DELETE - Eliminar programa de mantenimiento
 export async function DELETE(
-  req: Request,
+  _req: Request,
   { params }: { params: { id: string } }
 ) {
   try {

@@ -14,18 +14,13 @@ import {
   Edit,
   Trash2,
   Search,
-  ChevronRight,
-  AlertTriangle,
-  CheckCircle
+  ChevronRight
 } from 'lucide-react';
 import axios from 'axios';
 import { useToast } from '@/components/hooks/use-toast';
 import {
   VehicleProgramsListProps,
-  VehicleProgramPackage,
-  VehicleProgramItem,
-  VehicleOption,
-  TemplateOption
+  VehicleProgramPackage
 } from './VehicleProgramsList.types';
 
 // Componente de card ultra-compacta para programs

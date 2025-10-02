@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 
 // GET /api/tenants/[id] - Obtener tenant específico
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -69,7 +69,7 @@ export async function PUT(
 
 // DELETE /api/tenants/[id] - Eliminar tenant
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {

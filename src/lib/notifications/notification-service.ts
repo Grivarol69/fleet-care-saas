@@ -237,7 +237,6 @@ export class NotificationService {
 
       // 5. Preparar mensajes
       const messages: WhatsAppMessage[] = [];
-      const errors: string[] = [];
 
       const criticalAlerts = alerts.filter(a => a.state === "RED").length;
       const alertSummary: AlertSummary = {
