@@ -34,7 +34,7 @@ import { useToast } from '@/components/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { FormEditMantTemplateProps, VehicleBrand, VehicleLine } from './FormEditMantTemplate.types';
-import { TemplateItemsList } from './components/TemplateItemsList';
+// import { TemplateItemsList } from './components/TemplateItemsList'; // Componente eliminado en migración
 import { PackageList } from './components/PackageList';
 
 // Schema para MantTemplate
@@ -342,8 +342,11 @@ export function FormEditMantTemplate({
           </TabsContent>
 
           <TabsContent value="tasks" className="mt-6">
-            <div className="min-h-[600px]">
-              <TemplateItemsList templateId={template.id} />
+            <div className="min-h-[600px] flex items-center justify-center">
+              <div className="text-center text-gray-500">
+                <p className="text-lg">Funcionalidad migrada al nuevo sistema</p>
+                <p className="text-sm">Use la pantalla principal de Templates para gestionar items por paquetes</p>
+              </div>
             </div>
           </TabsContent>
         </Tabs>

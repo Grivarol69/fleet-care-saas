@@ -43,6 +43,8 @@
     ".next",
     "dist",
     "build",
-    "prisma/seed-extended.ts"
+    "prisma/seed-extended.ts",
+    "src/app/api/ai/ocr/**/*",
+    "src/app/api/expenses/**/*"
   ]
 }

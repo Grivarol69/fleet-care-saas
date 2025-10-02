@@ -74,6 +74,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "critters": "^0.0.25",
+    "dotenv": "^17.2.3",
     "eslint": "^9",
     "eslint-config-next": "15.4.7",
     "husky": "^9.1.7",

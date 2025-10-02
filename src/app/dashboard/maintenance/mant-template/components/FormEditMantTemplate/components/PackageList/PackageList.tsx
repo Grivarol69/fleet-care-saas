@@ -33,6 +33,7 @@ import { useToast } from '@/components/hooks/use-toast';
 
 import { PackageListProps, MaintenancePackage } from './PackageList.types';
 import { FormAddPackage } from '../FormAddPackage';
+import { FormEditPackage } from '../FormEditPackage';
 
 export function PackageList({ templateId }: PackageListProps) {
   const [data, setData] = useState<MaintenancePackage[]>([]);
@@ -82,14 +83,22 @@ export function PackageList({ templateId }: PackageListProps) {
     if (!confirm('¿Está seguro de eliminar este paquete?')) return;
 
     try {
-      // TODO: API call
-      // await axios.delete(`/api/maintenance/packages/${id}`);
+      await axios.delete(`/api/maintenance/packages/${id}`);
       toast({
         title: 'Paquete eliminado',
         description: 'El paquete ha sido eliminado exitosamente.',
       });
       fetchPackages();
     } catch (error) {
+      console.error('Error deleting package:', error);
+      if (axios.isAxiosError(error) && error.response?.status === 409) {
+        toast({
+          title: 'No se puede eliminar',
+          description: 'El paquete tiene items activos asociados',
+          variant: 'destructive',
+        });
+        return;
+      }
       toast({
         title: 'Error',
         description: 'Error al eliminar el paquete.',
@@ -322,16 +331,14 @@ export function PackageList({ templateId }: PackageListProps) {
         onAddPackage={() => fetchPackages()}
       />
 
-      {/* TODO: Implementar FormEditPackage
       {editingPackage && (
         <FormEditPackage
           isOpen={isEditDialogOpen}
           setIsOpen={setIsEditDialogOpen}
-          package={editingPackage}
+          packageData={editingPackage}
           onEditPackage={() => fetchPackages()}
         />
       )}
-      */}
     </div>
   );
 }

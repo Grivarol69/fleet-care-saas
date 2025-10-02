@@ -29,22 +29,30 @@ export class NotificationService {
   async getMaintenanceAlerts(tenantId: string, urgentOnly: boolean = false): Promise<MaintenanceAlert[]> {
     try {
       const whereClause = {
-        vehicleMantPlan: {
-          tenantId: tenantId,
-          status: 'ACTIVE'
+        tenantId: tenantId,
+        status: 'PENDING' as const,
+        package: {
+          program: {
+            status: 'ACTIVE' as const,
+            isActive: true
+          }
         },
-        status: 'PENDING'
+        scheduledKm: { not: null }
       };
 
-      const maintenanceItems = await prisma.vehicleMantPlanItem.findMany({
+      const maintenanceItems = await prisma.vehicleMantItem.findMany({
         where: whereClause,
         include: {
-          vehicleMantPlan: {
+          package: {
             include: {
-              vehicle: {
+              program: {
                 include: {
-                  brand: true,
-                  line: true
+                  vehicle: {
+                    include: {
+                      brand: true,
+                      line: true
+                    }
+                  }
                 }
               }
             }
@@ -52,14 +60,14 @@ export class NotificationService {
           mantItem: true
         },
         orderBy: {
-          executionMileage: 'asc'
+          scheduledKm: 'asc'
         }
       });
 
       const alerts: MaintenanceAlert[] = maintenanceItems.map((item) => {
-        const vehicle = item.vehicleMantPlan.vehicle;
+        const vehicle = item.package.program.vehicle;
         const currentKm = vehicle.mileage;
-        const executionKm = item.executionMileage;
+        const executionKm = item.scheduledKm!;
         const kmToMaintenance = executionKm - currentKm;
         
         let state: "YELLOW" | "RED" = "YELLOW";

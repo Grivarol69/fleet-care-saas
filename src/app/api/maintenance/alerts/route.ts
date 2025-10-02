@@ -5,17 +5,19 @@ const TENANT_ID = 'mvp-default-tenant';
 
 export async function GET() {
   try {
-    // Obtener items de mantenimiento con sus vehículos, marcas, líneas e items
-    const maintenanceItems = await prisma.vehicleMantPlanItem.findMany({
+    // Obtener items de mantenimiento con la nueva arquitectura VehicleMantProgram
+    const maintenanceItems = await prisma.vehicleMantProgramItem.findMany({
       where: {
-        vehicleMantPlan: {
-          tenantId: TENANT_ID,
-          status: 'ACTIVE'
+        tenantId: TENANT_ID,
+        status: 'PENDING',
+        program: {
+          status: 'ACTIVE',
+          isActive: true
         },
-        status: 'PENDING'
+        scheduledKm: { not: null } // Solo items con kilómetraje programado
       },
       include: {
-        vehicleMantPlan: {
+        program: {
           include: {
             vehicle: {
               include: {
@@ -28,15 +30,15 @@ export async function GET() {
         mantItem: true
       },
       orderBy: {
-        executionMileage: 'asc'
+        scheduledKm: 'asc'
       }
     });
 
     // Transformar datos para el formato esperado por el componente
-    const alerts = maintenanceItems.map((item) => {
-      const vehicle = item.vehicleMantPlan.vehicle;
+    const alerts = maintenanceItems.map((item: any) => {
+      const vehicle = item.program.vehicle;
       const currentKm = vehicle.mileage;
-      const executionKm = item.executionMileage;
+      const executionKm = item.scheduledKm!; // Ya filtramos que no sea null
       const kmToMaintenance = executionKm - currentKm;
       
       // Determinar el estado basado en kilómetros restantes

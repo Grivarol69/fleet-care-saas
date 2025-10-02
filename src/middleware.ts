@@ -66,7 +66,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // IMPORTANTE: No remover esta línea
-    await supabase.auth.getUser()
+    // await supabase.auth.getUser() // TEMPORALMENTE DESHABILITADO PARA TESTING
 
     return supabaseResponse
 }

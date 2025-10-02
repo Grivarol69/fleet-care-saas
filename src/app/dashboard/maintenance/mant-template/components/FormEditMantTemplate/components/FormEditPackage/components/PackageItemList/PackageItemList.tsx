@@ -17,32 +17,33 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FormAddTemplateItem } from '../FormAddTemplateItem';
-import { FormEditTemplateItem } from '../FormEditTemplateItem';
+import { FormAddPackageItem } from '../FormAddPackageItem';
+import { FormEditPackageItem } from '../FormEditPackageItem';
 import axios from 'axios';
 import { useToast } from '@/components/hooks/use-toast';
-import { TemplateItemsListProps, TemplateItem } from './TemplateItemsList.types';
+import { PackageItemListProps, PackageItem } from './PackageItemList.types';
+import { Wrench, Plus, Edit, Trash2 } from 'lucide-react';
 
-export function TemplateItemsList({ templateId }: TemplateItemsListProps) {
-  const [data, setData] = useState<TemplateItem[]>([]);
+export function PackageItemList({ packageId }: PackageItemListProps) {
+  const [data, setData] = useState<PackageItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<TemplateItem | null>(null);
+  const [editingItem, setEditingItem] = useState<PackageItem | null>(null);
 
   const { toast } = useToast();
 
-  const fetchTemplateItems = useCallback(async () => {
+  const fetchPackageItems = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/maintenance/template-items?planId=${templateId}`);
+      const response = await axios.get(`/api/maintenance/package-items?packageId=${packageId}`);
       setData(response.data);
     } catch (error) {
-      console.error('Error fetching Template Items: ', error);
+      console.error('Error fetching Package Items: ', error);
       if (axios.isAxiosError(error) && error.response?.status === 401) {
         toast({
           title: 'No autorizado',
-          description: 'Debes iniciar sesión para ver los items del template',
+          description: 'Debes iniciar sesión para ver los items del paquete',
           variant: 'destructive',
         });
         return;
@@ -55,31 +56,31 @@ export function TemplateItemsList({ templateId }: TemplateItemsListProps) {
     } finally {
       setLoading(false);
     }
-  }, [templateId, toast]);
+  }, [packageId, toast]);
 
   useEffect(() => {
-    fetchTemplateItems();
-  }, [fetchTemplateItems]);
+    fetchPackageItems();
+  }, [fetchPackageItems]);
 
-  const handleEdit = (item: TemplateItem) => {
+  const handleEdit = (item: PackageItem) => {
     setEditingItem(item);
     setIsEditDialogOpen(true);
   };
 
   const handleDelete = async (id: number) => {
     try {
-      await axios.delete(`/api/maintenance/template-items/${id}`);
+      await axios.delete(`/api/maintenance/package-items/${id}`);
       setData(prevData => prevData.filter(item => item.id !== id));
       toast({
         title: 'Item eliminado',
-        description: 'El item del template ha sido eliminado exitosamente.',
+        description: 'El item del paquete ha sido eliminado exitosamente.',
       });
     } catch (error) {
-      console.error('Error deleting Template Item:', error);
+      console.error('Error deleting Package Item:', error);
       if (axios.isAxiosError(error) && error.response?.status === 409) {
         toast({
           title: 'No se puede eliminar',
-          description: 'El item tiene planes de vehículos activos asociados',
+          description: 'El item tiene órdenes de trabajo activas asociadas',
           variant: 'destructive',
         });
         return;
@@ -122,7 +123,37 @@ export function TemplateItemsList({ templateId }: TemplateItemsListProps) {
     }
   };
 
-  const columns: ColumnDef<TemplateItem>[] = [
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'LOW':
+        return 'bg-gray-100 text-gray-800';
+      case 'MEDIUM':
+        return 'bg-blue-100 text-blue-800';
+      case 'HIGH':
+        return 'bg-orange-100 text-orange-800';
+      case 'CRITICAL':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const formatPriority = (priority: string) => {
+    switch (priority) {
+      case 'LOW':
+        return 'Baja';
+      case 'MEDIUM':
+        return 'Media';
+      case 'HIGH':
+        return 'Alta';
+      case 'CRITICAL':
+        return 'Crítica';
+      default:
+        return priority;
+    }
+  };
+
+  const columns: ColumnDef<PackageItem>[] = [
     {
       accessorKey: 'mantItem.name',
       header: 'Item de Mantenimiento',
@@ -152,11 +183,26 @@ export function TemplateItemsList({ templateId }: TemplateItemsListProps) {
       cell: ({ row }) => {
         const mantType = row.original.mantItem.mantType;
         return (
-          <Badge 
-            variant="secondary" 
+          <Badge
+            variant="secondary"
             className={`${getMantTypeColor(mantType)}`}
           >
             {formatMantType(mantType)}
+          </Badge>
+        );
+      },
+    },
+    {
+      accessorKey: 'priority',
+      header: 'Prioridad',
+      cell: ({ row }) => {
+        const priority = row.original.priority;
+        return (
+          <Badge
+            variant="secondary"
+            className={`${getPriorityColor(priority)}`}
+          >
+            {formatPriority(priority)}
           </Badge>
         );
       },
@@ -171,11 +217,26 @@ export function TemplateItemsList({ templateId }: TemplateItemsListProps) {
       ),
     },
     {
-      accessorKey: 'mantItem.estimatedTime',
+      accessorKey: 'estimatedTime',
       header: 'Tiempo Est.',
       cell: ({ row }) => (
         <div className="text-center font-mono">
-          {Number(row.original.mantItem.estimatedTime).toFixed(1)}h
+          {row.original.estimatedTime ?
+            `${Number(row.original.estimatedTime).toFixed(1)}h` :
+            '-'
+          }
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'estimatedCost',
+      header: 'Costo Est.',
+      cell: ({ row }) => (
+        <div className="text-center font-mono">
+          {row.original.estimatedCost ?
+            `$${Number(row.original.estimatedCost).toLocaleString()}` :
+            '-'
+          }
         </div>
       ),
     },
@@ -188,15 +249,17 @@ export function TemplateItemsList({ templateId }: TemplateItemsListProps) {
             variant="outline"
             size="sm"
             onClick={() => handleEdit(row.original)}
+            className="h-8 w-8 p-0"
           >
-            Editar
+            <Edit className="h-4 w-4" />
           </Button>
           <Button
             variant="destructive"
             size="sm"
             onClick={() => handleDelete(row.original.id)}
+            className="h-8 w-8 p-0"
           >
-            Eliminar
+            <Trash2 className="h-4 w-4" />
           </Button>
         </div>
       ),
@@ -222,13 +285,17 @@ export function TemplateItemsList({ templateId }: TemplateItemsListProps) {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h3 className="text-lg font-semibold">Tareas del Template</h3>
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <Wrench className="h-5 w-5 text-blue-500" />
+            Items del Paquete
+          </h3>
           <p className="text-sm text-gray-600">
-            Gestiona los items de mantenimiento y su frecuencia en kilómetros
+            Gestiona los items de mantenimiento específicos de este paquete
           </p>
         </div>
-        <Button onClick={() => setIsAddDialogOpen(true)}>
-          Agregar Tarea
+        <Button onClick={() => setIsAddDialogOpen(true)} className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          Agregar Item
         </Button>
       </div>
 
@@ -269,13 +336,16 @@ export function TemplateItemsList({ templateId }: TemplateItemsListProps) {
                   className="h-24 text-center"
                 >
                   <div className="flex flex-col items-center justify-center space-y-2">
-                    <p className="text-gray-500">No hay tareas configuradas en este template</p>
-                    <Button 
-                      variant="outline" 
+                    <Wrench className="h-8 w-8 text-gray-400" />
+                    <p className="text-gray-500">No hay items configurados en este paquete</p>
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => setIsAddDialogOpen(true)}
+                      className="flex items-center gap-2"
                     >
-                      Agregar primera tarea
+                      <Plus className="h-4 w-4" />
+                      Agregar primer item
                     </Button>
                   </div>
                 </TableCell>
@@ -285,24 +355,28 @@ export function TemplateItemsList({ templateId }: TemplateItemsListProps) {
         </Table>
       </div>
 
-      <FormAddTemplateItem
+      <FormAddPackageItem
         isOpen={isAddDialogOpen}
         setIsOpen={setIsAddDialogOpen}
-        templateId={templateId}
-        onAddItem={(newItem: TemplateItem) => setData([...data, newItem])}
+        packageId={packageId}
+        onAddItem={(newItem: PackageItem) => {
+          setData([...data, newItem]);
+          fetchPackageItems(); // Refrescar para obtener relaciones completas
+        }}
       />
 
       {editingItem && (
-        <FormEditTemplateItem
+        <FormEditPackageItem
           isOpen={isEditDialogOpen}
           setIsOpen={setIsEditDialogOpen}
           item={editingItem}
-          onEditItem={(editedItem: TemplateItem) => {
+          onEditItem={(editedItem: PackageItem) => {
             setData(
               data.map(item =>
                 item.id === editedItem.id ? editedItem : item
               )
             );
+            fetchPackageItems(); // Refrescar para obtener relaciones completas
           }}
         />
       )}

@@ -32,7 +32,11 @@ import axios from 'axios';
 import { useToast } from '@/components/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { FormAddMantTemplateProps, VehicleBrand, VehicleLine } from './FormAddMantTemplate.types';
+import {
+  FormAddMantTemplateProps,
+  VehicleBrand,
+  VehicleLine,
+} from './FormAddMantTemplate.types';
 
 // Schema para MantTemplate
 const formSchema = z.object({
@@ -129,12 +133,16 @@ export function FormAddMantTemplate({
   // Filter lines by selected brand
   useEffect(() => {
     if (selectedBrandId && selectedBrandId > 0) {
-      const filtered = vehicleLines.filter(line => line.brandId === selectedBrandId);
+      const filtered = vehicleLines.filter(
+        line => line.brandId === selectedBrandId
+      );
       setFilteredLines(filtered);
-      
+
       // Reset line selection if current selected line doesn't belong to new brand
       const currentLineId = form.getValues('vehicleLineId');
-      const isCurrentLineValid = filtered.some(line => line.id === currentLineId);
+      const isCurrentLineValid = filtered.some(
+        line => line.id === currentLineId
+      );
       if (currentLineId > 0 && !isCurrentLineValid) {
         form.setValue('vehicleLineId', 0);
       }
@@ -148,7 +156,10 @@ export function FormAddMantTemplate({
     try {
       setIsLoading(true);
 
-      const response = await axios.post('/api/maintenance/mant-template', values);
+      const response = await axios.post(
+        '/api/maintenance/mant-template',
+        values
+      );
       const newTemplate = response.data;
 
       onAddTemplate(newTemplate);
@@ -167,7 +178,8 @@ export function FormAddMantTemplate({
       let errorMessage = 'Algo salió mal al crear el template de mantenimiento';
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 409) {
-          errorMessage = 'Ya existe un template con este nombre para esta marca/línea';
+          errorMessage =
+            'Ya existe un template con este nombre para esta marca/línea';
         } else if (error.response?.status === 400) {
           errorMessage = 'Datos inválidos, por favor revise los campos';
         } else if (error.response?.status === 401) {
@@ -300,7 +312,12 @@ export function FormAddMantTemplate({
                   <Select
                     onValueChange={value => field.onChange(Number(value))}
                     value={field.value > 0 ? field.value.toString() : ''}
-                    disabled={isLoading || isLoadingLines || !selectedBrandId || selectedBrandId === 0}
+                    disabled={
+                      isLoading ||
+                      isLoadingLines ||
+                      !selectedBrandId ||
+                      selectedBrandId === 0
+                    }
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -309,23 +326,22 @@ export function FormAddMantTemplate({
                             !selectedBrandId || selectedBrandId === 0
                               ? 'Primero seleccione una marca'
                               : isLoadingLines
-                              ? 'Cargando líneas...'
-                              : 'Seleccione una línea'
+                                ? 'Cargando líneas...'
+                                : 'Seleccione una línea'
                           }
                         />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {filteredLines.length === 0 && !isLoadingLines && selectedBrandId > 0 ? (
+                      {filteredLines.length === 0 &&
+                      !isLoadingLines &&
+                      selectedBrandId > 0 ? (
                         <SelectItem value="no-lines" disabled>
                           No hay líneas disponibles para esta marca
                         </SelectItem>
                       ) : (
                         filteredLines.map((line: VehicleLine) => (
-                          <SelectItem
-                            key={line.id}
-                            value={line.id.toString()}
-                          >
+                          <SelectItem key={line.id} value={line.id.toString()}>
                             {line.name}
                           </SelectItem>
                         ))
@@ -346,7 +362,10 @@ export function FormAddMantTemplate({
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isLoading || isLoadingBrands || isLoadingLines}>
+              <Button
+                type="submit"
+                disabled={isLoading || isLoadingBrands || isLoadingLines}
+              >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isLoading ? 'Creando...' : 'Crear Template'}
               </Button>

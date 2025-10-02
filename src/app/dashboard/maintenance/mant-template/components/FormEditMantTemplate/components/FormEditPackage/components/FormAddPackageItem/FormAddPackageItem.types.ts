@@ -1,22 +1,3 @@
-export interface MaintenancePackage {
-  id: number;
-  name: string;
-  description?: string;
-  triggerKm: number;
-  estimatedCost?: number;
-  estimatedTime?: number;
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-  packageType: 'PREVENTIVE' | 'CORRECTIVE' | 'PREDICTIVE';
-  templateId: number;
-  status: 'ACTIVE' | 'INACTIVE';
-  packageItems?: PackageItem[];
-  createdAt: string;
-  updatedAt: string;
-  _count?: {
-    packageItems: number;
-  };
-}
-
 export interface PackageItem {
   id: number;
   packageId: number;
@@ -47,6 +28,9 @@ export interface MantItem {
   status: 'ACTIVE' | 'INACTIVE';
 }
 
-export interface PackageListProps {
-  templateId: number;
+export interface FormAddPackageItemProps {
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+  packageId: number;
+  onAddItem: (item: PackageItem) => void;
 }

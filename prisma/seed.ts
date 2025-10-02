@@ -1620,7 +1620,7 @@ async function main() {
         priority: workOrderData.priority as any,
         status: workOrderData.status as any,
         requestedBy: supervisor.email,
-        authorizedBy: admin?.email,
+        authorizedBy: admin?.email || null,
         estimatedCost: workOrderData.estimatedCost,
         actualCost: workOrderData.status === 'COMPLETED' ?
           workOrderData.items.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0) +
@@ -1696,7 +1696,7 @@ async function main() {
       data: {
         workOrderId: workOrder.id,
         action: 'CREATED',
-        previousValue: null,
+        previousValue: JSON.parse('null'),
         newValue: {
           workOrderId: workOrder.id,
           status: 'PENDING',

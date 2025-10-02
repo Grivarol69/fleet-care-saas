@@ -12,9 +12,6 @@ export interface MaintenancePackage {
   packageItems?: PackageItem[];
   createdAt: string;
   updatedAt: string;
-  _count?: {
-    packageItems: number;
-  };
 }
 
 export interface PackageItem {
@@ -47,6 +44,9 @@ export interface MantItem {
   status: 'ACTIVE' | 'INACTIVE';
 }
 
-export interface PackageListProps {
-  templateId: number;
+export interface FormEditPackageProps {
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+  packageData: MaintenancePackage | null;
+  onEditPackage: () => void;
 }
