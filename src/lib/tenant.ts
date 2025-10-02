@@ -33,13 +33,13 @@ export const tenantService = {
                         name: name.trim(),
                         slug: slug,
                         billingEmail: userEmail,
-                        industryPreset: industryPreset || null,
-                        businessType: presetConfig?.businessType || null,
-                        industrySettings: (presetConfig?.industrySettings as InputJsonValue) || null,
-                        checklistPresets: (presetConfig?.checklistPresets as InputJsonValue) || null,
-                        maintenancePresets: (presetConfig?.maintenancePresets as InputJsonValue) || null,
-                        onboardingCompleted: !!presetConfig, // Si hay preset, onboarding automático
-                        onboardingStep: presetConfig ? 4 : 0, // Completado si hay preset
+                        ...(presetConfig && {
+                            settings: {
+                                industrySettings: presetConfig.industrySettings,
+                                checklistPresets: presetConfig.checklistPresets,
+                                maintenancePresets: presetConfig.maintenancePresets
+                            } as InputJsonValue
+                        })
                     }
                 })
 

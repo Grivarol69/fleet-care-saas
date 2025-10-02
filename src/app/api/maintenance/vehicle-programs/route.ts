@@ -118,7 +118,7 @@ export async function POST(req: Request) {
         // Calcular kilómetraje programado específico para este vehículo
         const scheduledKm = assignmentKm + templatePackage.triggerKm;
 
-        const vehiclePackage = await tx.vehicleMantPackage.create({
+        const vehiclePackage = await tx.vehicleProgramPackage.create({
           data: {
             tenantId: TENANT_ID,
             programId: program.id,
@@ -136,7 +136,7 @@ export async function POST(req: Request) {
 
         // 3. Crear VehicleMantItems para cada item del package
         for (const packageItem of templatePackage.packageItems) {
-          await tx.vehicleMantItem.create({
+          await tx.vehicleProgramItem.create({
             data: {
               tenantId: TENANT_ID,
               packageId: vehiclePackage.id,
@@ -156,7 +156,7 @@ export async function POST(req: Request) {
       }
 
       // 4. Crear package para mantenimientos correctivos
-      await tx.vehicleMantPackage.create({
+      await tx.vehicleProgramPackage.create({
         data: {
           tenantId: TENANT_ID,
           programId: program.id,

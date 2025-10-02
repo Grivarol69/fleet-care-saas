@@ -292,16 +292,16 @@ export async function DELETE(
             }
         });
 
-        // ✅ CORREGIDO: Verificar planes de mantenimiento que usan esta línea
-        const hasMantPlans = await prisma.mantPlan.findFirst({
+        // ✅ CORREGIDO: Verificar templates de mantenimiento que usan esta línea
+        const hasMantTemplates = await prisma.maintenanceTemplate.findFirst({
             where: {
                 vehicleLineId: parseInt(id), // ← Cambié de brandId a vehicleLineId
                 tenantId: TENANT_ID
             }
         });
 
-        if (hasVehicles || hasMantPlans) {
-            return new NextResponse("Cannot delete line with existing vehicles or maintenance plans", { status: 409 });
+        if (hasVehicles || hasMantTemplates) {
+            return new NextResponse("Cannot delete line with existing vehicles or maintenance templates", { status: 409 });
         }
 
         await prisma.vehicleLine.delete({

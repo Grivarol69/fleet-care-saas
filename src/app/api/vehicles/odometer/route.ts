@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@supabase/ssr";
 import { prisma } from "@/lib/prisma";
 
 // GET - Fetch all odometer logs for tenant
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // TODO: Get tenant from auth session
     // For now, we'll use the hardcoded tenant for MVP
@@ -148,31 +147,41 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Helper function to check and create maintenance alerts
-async function checkMaintenanceAlerts(vehicleId: number, kilometers: number | null) {
-  if (!kilometers) return;
+// TODO: Refactorizar checkMaintenanceAlerts para usar VehicleMantProgram/VehicleProgramPackage/VehicleProgramItem
+// Esta función está temporalmente deshabilitada hasta migrar a la nueva arquitectura
+async function checkMaintenanceAlerts(_vehicleId: number, _kilometers: number | null) {
+  if (!_kilometers) return;
 
+  // TODO: Implementar con nueva arquitectura VehicleMantProgram
+  return;
+
+  /* DEPRECATED - Usar VehicleMantProgram en vez de vehicleMantPlan
   try {
     // Get active maintenance plans for this vehicle
-    const vehicleMaintPlans = await prisma.vehicleMantPlan.findMany({
+    const vehicleMaintPlans = await prisma.vehicleMantProgram.findMany({
       where: {
         vehicleId: vehicleId,
         status: "ACTIVE",
       },
       include: {
-        vehicleMantPlanItem: {
+        packages: {
           include: {
-            mantItem: true,
-          },
-          where: {
-            status: "PENDING",
-          },
-        },
+            items: {
+              include: {
+                mantItem: true,
+              },
+              where: {
+                status: "PENDING",
+              },
+            }
+          }
+        }
       },
     });
 
     for (const plan of vehicleMaintPlans) {
-      for (const item of plan.vehicleMantPlanItem) {
+      for (const pkg of plan.packages) {
+        for (const item of pkg.items) {
         const kmToMaintenance = item.executionMileage - kilometers;
 
         // Determine alert level
@@ -223,16 +232,18 @@ async function checkMaintenanceAlerts(vehicleId: number, kilometers: number | nu
             });
           }
         }
+        }
       }
-
-      // Update last km check on plan
-      await prisma.vehicleMantPlan.update({
-        where: { id: plan.id },
-        data: { lastKmCheck: kilometers },
-      });
     }
+
+    // Update last km check on plan
+    await prisma.vehicleMantProgram.update({
+      where: { id: plan.id },
+      data: { lastKmCheck: kilometers },
+    });
   } catch (error) {
     console.error("Error checking maintenance alerts:", error);
     // Don't throw error here, just log it
   }
+  */
 }

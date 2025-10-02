@@ -320,7 +320,7 @@ export class NotificationService {
       
       return {
         success: result.success,
-        error: result.error
+        ...(result.error && { error: result.error })
       };
 
     } catch (error: any) {

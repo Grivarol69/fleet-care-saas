@@ -12,11 +12,7 @@ export async function GET() {
         name: true,
         slug: true,
         domain: true,
-        industryPreset: true,
-        businessType: true,
         subscriptionStatus: true,
-        onboardingCompleted: true,
-        maxVehicles: true,
         createdAt: true,
         _count: {
           select: {
@@ -64,13 +60,13 @@ export async function POST(request: NextRequest) {
       data: {
         name: name.trim(),
         slug: slug,
-        industryPreset: industryPreset || null,
-        businessType: presetConfig?.businessType || null,
-        industrySettings: (presetConfig?.industrySettings as InputJsonValue) || undefined,
-        checklistPresets: (presetConfig?.checklistPresets as InputJsonValue) || undefined,
-        maintenancePresets: (presetConfig?.maintenancePresets as InputJsonValue) || undefined,
-        onboardingCompleted: !!presetConfig,
-        onboardingStep: presetConfig ? 4 : 0,
+        ...(presetConfig && {
+          settings: {
+            industrySettings: presetConfig.industrySettings,
+            checklistPresets: presetConfig.checklistPresets,
+            maintenancePresets: presetConfig.maintenancePresets
+          } as InputJsonValue
+        })
       }
     })
 

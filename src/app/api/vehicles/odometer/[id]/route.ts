@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@supabase/ssr";
 import { prisma } from "@/lib/prisma";
 
 // GET - Fetch specific odometer log
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -169,7 +168,7 @@ export async function PUT(
 
 // DELETE - Delete odometer log
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
