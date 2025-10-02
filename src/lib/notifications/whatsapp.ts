@@ -74,12 +74,12 @@ export class WhatsAppService {
         to: formattedPhone
       };
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`❌ WhatsApp failed to ${message.to}:`, error);
-      
+
       return {
         success: false,
-        error: error.message || 'Unknown error',
+        error: error instanceof Error ? error.message : 'Unknown error',
         to: message.to
       };
     }
@@ -147,12 +147,12 @@ export class WhatsAppService {
       console.log(`✅ Twilio configuration valid. Account: ${account.friendlyName}`);
       
       return { valid: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Twilio configuration invalid:', error);
-      
-      return { 
-        valid: false, 
-        error: error.message || 'Invalid Twilio configuration' 
+
+      return {
+        valid: false,
+        error: error instanceof Error ? error.message : 'Invalid Twilio configuration'
       };
     }
   }
@@ -164,10 +164,10 @@ export class WhatsAppService {
     try {
       const message = await this.client.messages(messageId).fetch();
       return { status: message.status };
-    } catch (error: any) {
-      return { 
-        status: 'error', 
-        error: error.message || 'Failed to fetch message status' 
+    } catch (error: unknown) {
+      return {
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Failed to fetch message status'
       };
     }
   }

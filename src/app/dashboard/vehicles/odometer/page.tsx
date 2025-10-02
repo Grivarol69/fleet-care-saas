@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { useToast } from "@/components/hooks/use-toast";
 
@@ -21,7 +21,7 @@ export default function OdometerPage() {
   const { toast } = useToast();
 
   // Load odometer logs
-  const fetchOdometerLogs = async () => {
+  const fetchOdometerLogs = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await axios.get("/api/vehicles/odometer");
@@ -36,11 +36,11 @@ export default function OdometerPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchOdometerLogs();
-  }, []);
+  }, [fetchOdometerLogs]);
 
   const handleAddOdometer = (newLog: OdometerLog) => {
     setOdometerLogs((prev) => [newLog, ...prev]);

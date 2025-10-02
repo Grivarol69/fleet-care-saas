@@ -48,6 +48,7 @@ interface FormEditOdometerProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   odometerLog: OdometerLog | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onEditOdometer: (odometer: any) => void;
 }
 

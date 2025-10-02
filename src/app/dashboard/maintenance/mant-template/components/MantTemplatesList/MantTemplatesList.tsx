@@ -295,7 +295,7 @@ export function MantTemplatesList() {
         title: 'Template eliminado',
         description: 'El template ha sido eliminado exitosamente.',
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Error al eliminar el template.',
@@ -323,7 +323,7 @@ export function MantTemplatesList() {
         title: 'Paquete eliminado',
         description: 'El paquete ha sido eliminado exitosamente.',
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Error al eliminar el paquete.',
@@ -347,7 +347,7 @@ export function MantTemplatesList() {
         title: 'Item eliminado',
         description: 'El item ha sido eliminado exitosamente.',
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Error al eliminar el item.',

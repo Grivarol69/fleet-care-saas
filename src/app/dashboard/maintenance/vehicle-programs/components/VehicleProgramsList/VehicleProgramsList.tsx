@@ -166,7 +166,7 @@ export function VehicleProgramsList() {
         description: "Programa eliminado",
       });
       fetchPrograms();
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Error",
         description: "No se pudo eliminar",

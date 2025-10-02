@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -42,7 +42,7 @@ export function VehicleTemplateList() {
 
   const { toast } = useToast();
 
-  const fetchVehicleMantPlans = async () => {
+  const fetchVehicleMantPlans = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await axios.get(`/api/maintenance/vehicle-template`);
@@ -57,11 +57,11 @@ export function VehicleTemplateList() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchVehicleMantPlans();
-  }, []);
+  }, [fetchVehicleMantPlans]);
 
   const handleEdit = (item: VehicleMantPlan) => {
     setEditingVehicleMantPlan(item);

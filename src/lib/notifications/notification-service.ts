@@ -293,9 +293,9 @@ export class NotificationService {
         whatsappResponse: whatsappResponse
       };
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("[NOTIFICATION_SERVICE] Error sending maintenance alerts:", error);
-      throw new Error(`Failed to send maintenance alerts: ${error.message}`);
+      throw new Error(`Failed to send maintenance alerts: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -322,10 +322,10 @@ export class NotificationService {
         ...(result.error && { error: result.error })
       };
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
-        error: error.message || 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }

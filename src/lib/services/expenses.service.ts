@@ -104,7 +104,7 @@ class ExpensesService {
     const data = await response.json();
 
     // Convertir fechas de string a Date objects
-    data.expenses = data.expenses.map((expense: any) => ({
+    data.expenses = data.expenses.map((expense: { expenseDate: string; createdAt: string; updatedAt: string; [key: string]: unknown }) => ({
       ...expense,
       expenseDate: new Date(expense.expenseDate),
       createdAt: new Date(expense.createdAt),

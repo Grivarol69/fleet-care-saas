@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -51,27 +51,28 @@ export function MaintenanceItemsTable({ vehicleId, mantPlanId }: MaintenanceItem
 
   const { toast } = useToast();
 
-  const fetchMaintenanceItems = async () => {
+  const fetchMaintenanceItems = useCallback(async () => {
     try {
       setIsLoading(true);
-      
+
       // Construir URL con filtros opcionales
       let url = "/api/maintenance/items/all";
       const params = new URLSearchParams();
-      
+
       if (vehicleId) params.append("vehicleId", vehicleId.toString());
       if (mantPlanId) params.append("mantPlanId", mantPlanId.toString());
-      
+
       if (params.toString()) {
         url += `?${params.toString()}`;
       }
-      
+
       const response = await axios.get(url);
-      
+
       // Procesar datos con cálculos
       const processedData = response.data.map(calculateMaintenanceItemData);
       setData(processedData);
-    } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_error) {
       console.error("Error fetching maintenance items:");
       toast({
         title: "Error al cargar items",
@@ -81,11 +82,11 @@ export function MaintenanceItemsTable({ vehicleId, mantPlanId }: MaintenanceItem
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [vehicleId, mantPlanId, toast]);
 
   useEffect(() => {
     fetchMaintenanceItems();
-  }, [vehicleId, mantPlanId]);
+  }, [fetchMaintenanceItems]);
 
   // Filtrar datos por estado
   const filteredData = useMemo(() => {
@@ -274,7 +275,8 @@ export function MaintenanceItemsTable({ vehicleId, mantPlanId }: MaintenanceItem
         title: "Item completado",
         description: "El item de mantenimiento ha sido marcado como completado",
       });
-    } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_error) {
       toast({
         title: "Error",
         description: "No se pudo completar el item de mantenimiento",

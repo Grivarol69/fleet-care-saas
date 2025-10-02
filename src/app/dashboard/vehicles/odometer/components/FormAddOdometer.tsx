@@ -47,6 +47,7 @@ import { DriverSelectModal } from "./DriverSelectModal";
 interface FormAddOdometerProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onAddOdometer: (odometer: any) => void;
 }
 
