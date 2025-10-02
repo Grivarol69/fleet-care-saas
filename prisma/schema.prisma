@@ -34,14 +34,14 @@ model Tenant {
   vehicleTypes                VehicleType[]
   mantCategories              MantCategory[]
   mantItems                   MantItem[]
-  mantPlans                   MantPlan[]
-  vehicleMantPlans            VehicleMantPlan[]
-  vehicleMantPackages         VehicleMantPackage[]
-  maintenanceTemplates        MaintenanceTemplate[]      // NUEVO
-  vehicleMaintenanceMetrics   VehicleMaintenanceMetrics[] // NUEVO
-  vehicleMantPrograms         VehicleMantProgram[]        // NUEVA ARQUITECTURA
-  vehicleProgramPackages      VehicleProgramPackage[]     // NUEVA ARQUITECTURA
-  vehicleProgramItems         VehicleProgramItem[]        // NUEVA ARQUITECTURA
+  // mantPlans                   MantPlan[]                  // DEPRECATED 02-Oct-2025
+  // vehicleMantPlans            VehicleMantPlan[]           // DEPRECATED 02-Oct-2025
+  // vehicleMantPackages         VehicleMantPackage[]        // DEPRECATED 02-Oct-2025
+  maintenanceTemplates        MaintenanceTemplate[]      // ✅ CURRENT
+  vehicleMaintenanceMetrics   VehicleMaintenanceMetrics[] // ✅ CURRENT (Future)
+  vehicleMantPrograms         VehicleMantProgram[]        // ✅ CURRENT ARCHITECTURE
+  vehicleProgramPackages      VehicleProgramPackage[]     // ✅ CURRENT ARCHITECTURE
+  vehicleProgramItems         VehicleProgramItem[]        // ✅ CURRENT ARCHITECTURE
   workOrders                  WorkOrder[]
   technicians                 Technician[]
   providers                   Provider[]
@@ -136,8 +136,8 @@ model VehicleBrand {
   tenant               Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   lines                VehicleLine[]
   vehicles             Vehicle[]
-  mantPlans            MantPlan[]
-  maintenanceTemplates MaintenanceTemplate[] // NUEVO
+  // mantPlans            MantPlan[]                 // DEPRECATED 02-Oct-2025
+  maintenanceTemplates MaintenanceTemplate[]         // ✅ CURRENT
 
   @@index([tenantId])
   @@unique([tenantId, name])
@@ -154,8 +154,8 @@ model VehicleLine {
   tenant               Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   brand                VehicleBrand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
   vehicles             Vehicle[]
-  mantPlans            MantPlan[]
-  maintenanceTemplates MaintenanceTemplate[] // NUEVO
+  // mantPlans            MantPlan[]                 // DEPRECATED 02-Oct-2025
+  maintenanceTemplates MaintenanceTemplate[]         // ✅ CURRENT
 
   @@index([tenantId])
   @@index([brandId])
@@ -208,11 +208,11 @@ model Vehicle {
   documents                 Document[]
   workOrders                WorkOrder[]
   odometerLogs              OdometerLog[]
-  vehicleMantPlans          VehicleMantPlan[]
+  // vehicleMantPlans          VehicleMantPlan[]           // DEPRECATED 02-Oct-2025
   maintenanceAlerts         MaintenanceAlert[]
   vehicleDrivers            VehicleDriver[]
-  vehicleMaintenanceMetrics  VehicleMaintenanceMetrics? // NUEVO: Un vehículo puede tener métricas
-  vehicleMantProgram         VehicleMantProgram?        // NUEVA ARQUITECTURA: Un vehículo puede tener un programa
+  vehicleMaintenanceMetrics  VehicleMaintenanceMetrics?  // ✅ CURRENT (Future)
+  vehicleMantProgram         VehicleMantProgram?          // ✅ CURRENT ARCHITECTURE
 
   @@index([tenantId])
   @@index([licensePlate])
@@ -256,143 +256,149 @@ model MantItem {
 
   tenant              Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   category            MantCategory          @relation(fields: [categoryId], references: [id])
-  planTasks           PlanTask[]
-  packageItems        PackageItem[]         // NUEVO: Items que pertenecen a paquetes de template
+  // planTasks           PlanTask[]                  // DEPRECATED 02-Oct-2025
+  packageItems        PackageItem[]                  // ✅ CURRENT (Template items)
   workOrderItems      WorkOrderItem[]
-  vehicleMantPlanItem VehicleMantPlanItem[]
-  vehicleProgramItems VehicleProgramItem[]  // NUEVA ARQUITECTURA
+  // vehicleMantPlanItem VehicleMantPlanItem[]       // DEPRECATED 02-Oct-2025
+  vehicleProgramItems VehicleProgramItem[]           // ✅ CURRENT ARCHITECTURE
 
   @@index([tenantId])
   @@index([categoryId])
   @@unique([tenantId, name])
 }
 
-model MantPlan {
-  id             Int      @id @default(autoincrement())
-  tenantId       String
-  name           String
-  description    String?
-  vehicleBrandId Int
-  vehicleLineId  Int
-  status         Status   @default(ACTIVE)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  
-  tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  brand           VehicleBrand      @relation(fields: [vehicleBrandId], references: [id])
-  line            VehicleLine       @relation(fields: [vehicleLineId], references: [id])
-  planTasks       PlanTask[]
-  vehicleMantPlan VehicleMantPlan[]
+// ========================================
+// DEPRECATED - 02 Octubre 2025
+// Reemplazado por: MaintenanceTemplate
+// ========================================
+// model MantPlan {
+//   id             Int      @id @default(autoincrement())
+//   tenantId       String
+//   name           String
+//   description    String?
+//   vehicleBrandId Int
+//   vehicleLineId  Int
+//   status         Status   @default(ACTIVE)
+//   createdAt      DateTime @default(now())
+//   updatedAt      DateTime @updatedAt
+//
+//   tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+//   brand           VehicleBrand      @relation(fields: [vehicleBrandId], references: [id])
+//   line            VehicleLine       @relation(fields: [vehicleLineId], references: [id])
+//   planTasks       PlanTask[]
+//   vehicleMantPlan VehicleMantPlan[]
+//
+//   @@index([tenantId])
+//   @@index([vehicleBrandId])
+//   @@index([vehicleLineId])
+//   @@unique([tenantId, vehicleBrandId, vehicleLineId, name])
+// }
 
-  @@index([tenantId])
-  @@index([vehicleBrandId])
-  @@index([vehicleLineId])
-  @@unique([tenantId, vehicleBrandId, vehicleLineId, name])
-}
+// ========================================
+// DEPRECATED - 02 Octubre 2025
+// Reemplazado por: PackageItem
+// ========================================
+// model PlanTask {
+//   id         Int      @id @default(autoincrement())
+//   planId     Int
+//   mantItemId Int
+//   triggerKm  Int      // Cada cuántos km se ejecuta
+//   createdAt  DateTime @default(now())
+//
+//   mantPlan MantPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+//   mantItem MantItem @relation(fields: [mantItemId], references: [id])
+//
+//   @@index([planId])
+//   @@index([mantItemId])
+//   @@unique([planId, mantItemId])
+// }
 
-model PlanTask {
-  id         Int      @id @default(autoincrement())
-  planId     Int
-  mantItemId Int
-  triggerKm  Int      // Cada cuántos km se ejecuta
-  createdAt  DateTime @default(now())
-  
-  mantPlan MantPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
-  mantItem MantItem @relation(fields: [mantItemId], references: [id])
+// ========================================
+// DEPRECATED - 02 Octubre 2025
+// Reemplazado por: VehicleMantProgram + VehicleProgramPackage + VehicleProgramItem
+// ========================================
+// model VehicleMantPlan {
+//   id                  Int      @id @default(autoincrement())
+//   tenantId            String
+//   vehicleId           Int
+//   mantPlanId          Int
+//   assignedAt          DateTime @default(now())
+//   lastKmCheck         Int?
+//   status              Status   @default(ACTIVE)
+//   createdAt           DateTime @default(now())
+//   updatedAt           DateTime @updatedAt
+//
+//   tenant              Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+//   vehicle             Vehicle               @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+//   mantPlan            MantPlan              @relation(fields: [mantPlanId], references: [id])
+//   vehicleMantPlanItem VehicleMantPlanItem[]
+//   vehicleMantPackages VehicleMantPackage[]
+//
+//   @@index([tenantId])
+//   @@index([vehicleId])
+//   @@index([mantPlanId])
+//   @@unique([vehicleId, mantPlanId])
+// }
 
-  @@index([planId])
-  @@index([mantItemId])
-  @@unique([planId, mantItemId])
-}
+// model VehicleMantPlanItem {
+//   id                Int      @id @default(autoincrement())
+//   vehicleMantPlanId Int
+//   mantItemId        Int
+//   vehicleMantPackageId Int?
+//   executionMileage  Int
+//   technicianId      Int?
+//   providerId        Int?
+//   startDate         DateTime?
+//   endDate           DateTime?
+//   cost              Decimal? @db.Decimal(10, 2)
+//   notes             String?
+//   status            WorkOrderStatus @default(PENDING)
+//   createdAt         DateTime @default(now())
+//   updatedAt         DateTime @updatedAt
+//
+//   vehicleMantPlan VehicleMantPlan @relation(fields: [vehicleMantPlanId], references: [id], onDelete: Cascade)
+//   mantItem        MantItem        @relation(fields: [mantItemId], references: [id])
+//   technician      Technician?     @relation(fields: [technicianId], references: [id])
+//   provider        Provider?       @relation(fields: [providerId], references: [id])
+//   vehicleMantPackage VehicleMantPackage? @relation(fields: [vehicleMantPackageId], references: [id])
+//
+//   @@index([vehicleMantPlanId])
+//   @@index([mantItemId])
+//   @@unique([vehicleMantPlanId, mantItemId])
+// }
 
-model VehicleMantPlan {
-  id                  Int      @id @default(autoincrement())
-  tenantId            String
-  vehicleId           Int
-  mantPlanId          Int
-  assignedAt          DateTime @default(now())
-  lastKmCheck         Int?
-  status              Status   @default(ACTIVE)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-  
-  tenant              Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  vehicle             Vehicle               @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-  mantPlan            MantPlan              @relation(fields: [mantPlanId], references: [id])
-  vehicleMantPlanItem VehicleMantPlanItem[]
-  vehicleMantPackages VehicleMantPackage[]  // NUEVO: Paquetes que pertenecen a este plan
-
-  @@index([tenantId])
-  @@index([vehicleId])
-  @@index([mantPlanId])
-  @@unique([vehicleId, mantPlanId])
-}
-
-model VehicleMantPlanItem {
-  id                Int      @id @default(autoincrement())
-  vehicleMantPlanId Int
-  mantItemId        Int
-  vehicleMantPackageId Int?   // NUEVO: opcional para items que pertenecen a paquetes
-  executionMileage  Int      // Km específico en que debe ejecutarse
-  technicianId      Int?
-  providerId        Int?
-  startDate         DateTime?
-  endDate           DateTime?
-  cost              Decimal? @db.Decimal(10, 2)
-  notes             String?
-  status            WorkOrderStatus @default(PENDING)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
-  vehicleMantPlan VehicleMantPlan @relation(fields: [vehicleMantPlanId], references: [id], onDelete: Cascade)
-  mantItem        MantItem        @relation(fields: [mantItemId], references: [id])
-  technician      Technician?     @relation(fields: [technicianId], references: [id])
-  provider        Provider?       @relation(fields: [providerId], references: [id])
-  vehicleMantPackage VehicleMantPackage? @relation(fields: [vehicleMantPackageId], references: [id])  // NUEVO: Items pueden pertenecer a un paquete
-
-  @@index([vehicleMantPlanId])
-  @@index([mantItemId])
-  @@unique([vehicleMantPlanId, mantItemId])
-}
-
-model VehicleMantPackage {
-  id                    Int      @id @default(autoincrement())
-  tenantId              String
-  vehicleMantPlanId     Int
-  // INFORMACIÓN COPIADA DEL TEMPLATE PACKAGE (independiente)
-  packageName           String   // "Mantenimiento 5,000 km" (copiado del MaintenancePackage)
-  packageDescription    String?  // Descripción copiada
-  originalTriggerKm     Int      // Km original del template (5000, 15000, etc.)
-  // KILOMETRAJES ESPECÍFICOS DEL VEHÍCULO
-  scheduledExecutionKm  Int      // Km programado REAL para este vehículo (ej: 32000)
-  actualExecutionKm     Int?     // Km REAL cuando se ejecutó (null si no ejecutado)
-  // MÉTRICAS DE DESVIACIÓN
-  deviationKm           Int?     // actualExecutionKm - scheduledExecutionKm
-  onTimeExecution       Boolean? // true si a tiempo, false si tarde, null si no ejecutado
-  // COSTOS
-  estimatedCost         Decimal? @db.Decimal(10, 2) // Costo estimado total del paquete
-  actualCost            Decimal? @db.Decimal(10, 2) // Costo real total (suma de items)
-  // ESTADO Y TRACKING
-  status                WorkOrderStatus @default(PENDING)
-  priority              Priority @default(MEDIUM)
-  executedAt            DateTime? // Fecha real de ejecución del paquete
-  workOrderId           Int?     // WorkOrder generada para este paquete
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-
-  // RELACIONES
-  tenant              Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  vehicleMantPlan     VehicleMantPlan     @relation(fields: [vehicleMantPlanId], references: [id], onDelete: Cascade)
-  workOrder           WorkOrder?          @relation(fields: [workOrderId], references: [id])
-  vehicleMantPlanItems VehicleMantPlanItem[] // Items que pertenecen a este paquete
-
-  @@index([tenantId])
-  @@index([vehicleMantPlanId])
-  @@index([scheduledExecutionKm])
-  @@index([status])
-  @@index([onTimeExecution]) // Para ranking
-  @@unique([vehicleMantPlanId, originalTriggerKm]) // No duplicar paquetes del mismo km
-}
+// model VehicleMantPackage {
+//   id                    Int      @id @default(autoincrement())
+//   tenantId              String
+//   vehicleMantPlanId     Int
+//   packageName           String
+//   packageDescription    String?
+//   originalTriggerKm     Int
+//   scheduledExecutionKm  Int
+//   actualExecutionKm     Int?
+//   deviationKm           Int?
+//   onTimeExecution       Boolean?
+//   estimatedCost         Decimal? @db.Decimal(10, 2)
+//   actualCost            Decimal? @db.Decimal(10, 2)
+//   status                WorkOrderStatus @default(PENDING)
+//   priority              Priority @default(MEDIUM)
+//   executedAt            DateTime?
+//   workOrderId           Int?
+//   createdAt             DateTime @default(now())
+//   updatedAt             DateTime @updatedAt
+//
+//   tenant              Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+//   vehicleMantPlan     VehicleMantPlan     @relation(fields: [vehicleMantPlanId], references: [id], onDelete: Cascade)
+//   workOrder           WorkOrder?          @relation(fields: [workOrderId], references: [id])
+//   vehicleMantPlanItems VehicleMantPlanItem[]
+//
+//   @@index([tenantId])
+//   @@index([vehicleMantPlanId])
+//   @@index([scheduledExecutionKm])
+//   @@index([status])
+//   @@index([onTimeExecution])
+//   @@unique([vehicleMantPlanId, originalTriggerKm])
+// }
 
 // ========================================
 // MAINTENANCE TEMPLATES & PACKAGES SYSTEM
@@ -607,9 +613,9 @@ model WorkOrder {
   workOrderExpenses WorkOrderExpense[]
   approvals         WorkOrderApproval[]
   auditLogs         ExpenseAuditLog[]
-  scheduledPackages ScheduledPackage[] // Paquetes que generaron esta WorkOrder
-  vehicleMantPackages VehicleMantPackage[] // NUEVO: Paquetes del nuevo sistema
-  vehicleProgramPackages VehicleProgramPackage[] // NUEVA ARQUITECTURA
+  scheduledPackages ScheduledPackage[]           // ✅ CURRENT (VehicleMaintenanceMetrics)
+  // vehicleMantPackages VehicleMantPackage[]     // DEPRECATED 02-Oct-2025
+  vehicleProgramPackages VehicleProgramPackage[]  // ✅ CURRENT ARCHITECTURE
 
   @@index([tenantId])
   @@index([vehicleId])
@@ -735,9 +741,9 @@ model Technician {
 
   tenant                Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   workOrders            WorkOrder[]
-  vehicleMantPlanItem   VehicleMantPlanItem[]
-  vehicleProgramPackages VehicleProgramPackage[] // NUEVA ARQUITECTURA
-  vehicleProgramItems   VehicleProgramItem[]    // NUEVA ARQUITECTURA
+  // vehicleMantPlanItem   VehicleMantPlanItem[]       // DEPRECATED 02-Oct-2025
+  vehicleProgramPackages VehicleProgramPackage[]      // ✅ CURRENT ARCHITECTURE
+  vehicleProgramItems   VehicleProgramItem[]          // ✅ CURRENT ARCHITECTURE
 
   @@index([tenantId])
   @@unique([tenantId, name])
@@ -757,9 +763,9 @@ model Provider {
 
   tenant                Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   workOrders            WorkOrder[]
-  vehicleMantPlanItem   VehicleMantPlanItem[]
-  vehicleProgramPackages VehicleProgramPackage[] // NUEVA ARQUITECTURA
-  vehicleProgramItems   VehicleProgramItem[]    // NUEVA ARQUITECTURA
+  // vehicleMantPlanItem   VehicleMantPlanItem[]       // DEPRECATED 02-Oct-2025
+  vehicleProgramPackages VehicleProgramPackage[]      // ✅ CURRENT ARCHITECTURE
+  vehicleProgramItems   VehicleProgramItem[]          // ✅ CURRENT ARCHITECTURE
 
   @@index([tenantId])
   @@unique([tenantId, name])

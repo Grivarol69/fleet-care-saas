@@ -40,7 +40,7 @@ export class NotificationService {
         scheduledKm: { not: null }
       };
 
-      const maintenanceItems = await prisma.vehicleMantItem.findMany({
+      const maintenanceItems = await prisma.vehicleProgramItem.findMany({
         where: whereClause,
         include: {
           package: {

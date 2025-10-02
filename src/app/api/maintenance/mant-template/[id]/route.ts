@@ -246,8 +246,8 @@ export async function DELETE(
             return new NextResponse("Template not found", { status: 404 });
         }
 
-        // Verificar si hay vehículos asignados a este plan antes de eliminar
-        const vehiclePlansCount = await prisma.vehicleMaintenanceSchedule.count({
+        // Verificar si hay vehículos asignados a este template antes de eliminar
+        const vehiclePlansCount = await prisma.vehicleMantProgram.count({
             where: {
                 tenantId: TENANT_ID,
                 generatedFrom: {
