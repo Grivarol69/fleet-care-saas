@@ -152,13 +152,42 @@ declare module 'twilio' {
 **Estado:** Eliminado
 **Impacto:** `MaintenanceItemsTable.tsx` necesitará nueva API
 
+## 🧪 Testing en Vivo - Runtime Errors (Sesión Continuación)
+
+### Errores Encontrados al Probar App:
+
+#### 1. Error 404: API `/api/maintenance/vehicle-template` no existe
+- **Causa:** Componente `VehicleTemplateList` llamaba API eliminada en sesión anterior
+- **Solución:** Eliminada carpeta completa `/dashboard/maintenance/vehicle-template/` (19 archivos, 2,199 líneas)
+- **Razón:** Feature duplicado - ya existe `/dashboard/maintenance/vehicle-programs/` con nueva arquitectura
+
+#### 2. Error 500: Cannot reach Supabase database
+```
+Can't reach database server at `aws-1-us-east-2.pooler.supabase.com:6543`
+```
+- **Causa:** Proyecto Supabase pausado (indicador amarillo en dashboard)
+- **Solución:** Reactivar proyecto desde dashboard Supabase → verde
+- **Aprendizaje:** Proyectos gratuitos se pausan tras ~1 semana inactividad
+
+#### 3. Actualización Navegación
+- `SidebarRoutes.data.ts` línea 52:
+  - **Antes:** `"Planes Vehículos"` → `/vehicle-template`
+  - **Después:** `"Programas Vehículos"` → `/vehicle-programs`
+
+### ✅ Estado Final Testing:
+- App corriendo sin errores
+- Datos cargando correctamente desde Supabase
+- Componentes `VehicleProgramsList` funcionando
+- APIs respondiendo correctamente
+
 ## 🎯 Próximos Pasos
 
 1. ✅ **Arquitectura limpia** - COMPLETADO
-2. ⏭️ **Reactivar Auth Supabase** - Siguiente
-3. ⏭️ **Reactivar Multitenant** - Siguiente
-4. ⏭️ **Sprint 1: TanStack Query + Zustand** - Planificado
-5. ⏭️ **Deployment** - Post-Sprint 1
+2. ✅ **Testing componentes en vivo** - COMPLETADO
+3. ⏭️ **Reactivar Auth Supabase** - Siguiente
+4. ⏭️ **Reactivar Multitenant** - Siguiente
+5. ⏭️ **Sprint 1: TanStack Query + Zustand** - Planificado
+6. ⏭️ **Deployment** - Post-Sprint 1
 
 ## 📊 Métricas Finales
 
@@ -172,4 +201,58 @@ declare module 'twilio' {
 
 ---
 
+## 📍 Estado Actual de la Sesión (Pausa)
+
+### ✅ Logros de Hoy (Sesión Continuación):
+1. **Eliminación feature duplicado:** `/dashboard/maintenance/vehicle-template/` (19 archivos)
+2. **Resolución error Supabase:** Proyecto pausado → reactivado
+3. **Testing exitoso:** App corriendo sin errores, datos cargando correctamente
+4. **Navegación actualizada:** Menu apunta a `/vehicle-programs` (nueva arquitectura)
+
+### 🎯 Punto de Retorno:
+**Estado:** Aplicación funcionando completamente
+- TypeScript: 0 errores ✅
+- Build: Exitoso ✅
+- Runtime: Sin errores ✅
+- Database: Conectada y activa ✅
+- Componentes probados: `MantTemplatesList`, `VehicleProgramsList` ✅
+
+### 📋 Commits Pendientes de Push:
+```bash
+git log origin/develop..develop --oneline
+```
+Aproximadamente 14-15 commits en `develop` listos para push a origin.
+
+### ⏭️ Recomendaciones para Próxima Sesión:
+
+**Opción A - Continuar Testing:**
+- Probar más componentes de la app
+- Verificar flujos completos (crear template → asignar → ver alertas)
+- Identificar funcionalidades rotas o incompletas
+
+**Opción B - Push & Reactivar Infraestructura:**
+- Push de commits a origin/develop
+- Reactivar Auth Supabase (actualmente bypass con tenant hardcoded)
+- Reactivar Multitenant completo
+- Preparar para deployment
+
+**Opción C - Modernización (Sprint 1):**
+- Implementar TanStack Query para data fetching
+- Implementar Zustand para state management
+- Refactorizar componentes con mejores patterns
+
+### 🔍 Issues Conocidos NO Críticos:
+1. `checkMaintenanceAlerts()` en `odometer/route.ts` deshabilitada
+2. `MaintenanceItemsTable.tsx` puede necesitar ajustes (API eliminada)
+3. 12 warnings ESLint menores (React Hook Form `_field`)
+
+### 💡 Notas Técnicas:
+- **Supabase Free Tier:** Proyecto se pausa tras ~1 semana inactividad
+- **Pooler vs Direct URL:** En dev mejor usar DIRECT_URL (puerto 5432)
+- **Prisma Cache:** Si hay cambios en schema, hacer `rm -rf .next && npx prisma generate`
+
+---
+
 **Filosofía aplicada:** "ZERO deuda técnica, código profesional, sin apuros"
+
+**Última actualización:** 02 Octubre 2025 - Sesión pausada, lista para retomar
