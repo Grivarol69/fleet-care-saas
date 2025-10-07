@@ -201,7 +201,7 @@ export function VehicleProgramsList() {
       </div>
 
       {/* Tabs - 5% */}
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'programs' | 'packages' | 'items')}>
         <TabsList className="grid w-full grid-cols-3 h-8">
           <TabsTrigger value="programs" className="text-xs">
             <Car className="w-3 h-3 mr-1" />

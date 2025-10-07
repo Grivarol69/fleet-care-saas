@@ -118,12 +118,12 @@ export async function GET(request: NextRequest) {
         });
     }
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[ALERTS_TEST] Error:", error);
-    
+
     return NextResponse.json({
       success: false,
-      error: error.message || 'Unknown error occurred',
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
       message: 'Failed to process alert test request'
     }, { status: 500 });
   }
@@ -168,12 +168,12 @@ export async function POST(request: NextRequest) {
       error: result.error
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[ALERTS_TEST_POST] Error:", error);
-    
+
     return NextResponse.json({
       success: false,
-      error: error.message || 'Unknown error occurred'
+      error: error instanceof Error ? error.message : 'Unknown error occurred'
     }, { status: 500 });
   }
 }

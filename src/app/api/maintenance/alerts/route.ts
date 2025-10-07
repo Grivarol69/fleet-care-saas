@@ -41,7 +41,7 @@ export async function GET() {
     });
 
     // Transformar datos para el formato esperado por el componente
-    const alerts = maintenanceItems.map((item: any) => {
+    const alerts = maintenanceItems.map((item) => {
       const vehicle = item.package.program.vehicle;
       const currentKm = vehicle.mileage;
       const executionKm = item.scheduledKm!; // Ya filtramos que no sea null

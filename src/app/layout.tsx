@@ -6,6 +6,7 @@ import { ourFileRouter } from "@/app/api/uploadthing/core";
 import NextTopLoader from "nextjs-toploader";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import { QueryProvider } from "@/lib/providers/QueryProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,10 +33,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
-        <NextTopLoader color="#000" />
-        {children}
-        <Toaster />
+        <QueryProvider>
+          <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
+          <NextTopLoader color="#000" />
+          {children}
+          <Toaster />
+        </QueryProvider>
       </body>
     </html>
   );
