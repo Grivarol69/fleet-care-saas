@@ -22,6 +22,7 @@ import {
   VehicleProgramsListProps,
   VehicleProgramPackage
 } from './VehicleProgramsList.types';
+import { FormAssignProgram } from '../FormAssignProgram';
 
 // Componente de card ultra-compacta para programs
 interface ProgramCardProps {
@@ -37,8 +38,28 @@ function ProgramCard({ program, onSelect, onEdit, onDelete }: ProgramCardProps) 
   const pendingItems = program.packages.reduce((sum, pkg) =>
     sum + pkg.items.filter(item => item.status === 'PENDING').length, 0);
 
+  // Calcular siguiente mantenimiento (paquete PENDING con menor scheduledKm)
+  const nextMaintenance = program.packages
+    .filter(pkg => pkg.status === 'PENDING')
+    .map(pkg => ({
+      scheduledKm: pkg.items[0]?.scheduledKm || 0,
+      name: pkg.name
+    }))
+    .sort((a, b) => a.scheduledKm - b.scheduledKm)[0];
+
+  // Calcular alerta (diferencia entre km actual y próximo mantenimiento)
+  const kmUntilNext = nextMaintenance ? nextMaintenance.scheduledKm - program.vehicle.mileage : null;
+  const urgency = kmUntilNext !== null
+    ? (kmUntilNext <= 0 ? 'CRITICO' : kmUntilNext <= 1000 ? 'PROXIMO' : 'OK')
+    : 'OK';
+
+  // Progreso de paquetes
+  const progressPercentage = totalPackages > 0 ? (completedPackages / totalPackages) * 100 : 0;
+
   return (
-    <Card className="hover:shadow-md transition-all duration-200 hover:scale-[1.01] cursor-pointer group">
+    <Card className={`hover:shadow-md transition-all duration-200 hover:scale-[1.01] cursor-pointer group ${
+      urgency === 'CRITICO' ? 'border-red-500 border-2' : urgency === 'PROXIMO' ? 'border-yellow-500 border-2' : ''
+    }`}>
       <CardContent className="p-3">
         {/* Header ultra-compacto */}
         <div className="flex items-start justify-between mb-2">
@@ -66,13 +87,37 @@ function ProgramCard({ program, onSelect, onEdit, onDelete }: ProgramCardProps) 
             <span className="text-gray-500">Km actual:</span>
             <span className="font-medium">{program.vehicle.mileage.toLocaleString()}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-gray-500">Paquetes:</span>
-            <span className="font-medium">{completedPackages}/{totalPackages}</span>
+
+          {nextMaintenance && (
+            <div className="flex justify-between">
+              <span className="text-gray-500">Próximo en:</span>
+              <span className={`font-medium ${
+                urgency === 'CRITICO' ? 'text-red-600' : urgency === 'PROXIMO' ? 'text-yellow-600' : 'text-green-600'
+              }`}>
+                {kmUntilNext && kmUntilNext > 0 ? `${kmUntilNext.toLocaleString()} km` : '¡Vencido!'}
+              </span>
+            </div>
+          )}
+
+          {/* Barra de progreso de paquetes */}
+          <div className="pt-1">
+            <div className="flex justify-between mb-1">
+              <span className="text-gray-500">Progreso:</span>
+              <span className="font-medium">{completedPackages}/{totalPackages}</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-1.5">
+              <div
+                className={`h-1.5 rounded-full transition-all ${
+                  progressPercentage === 100 ? 'bg-green-600' : 'bg-blue-600'
+                }`}
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
           </div>
+
           {pendingItems > 0 && (
             <div className="flex justify-between">
-              <span className="text-gray-500">Pendientes:</span>
+              <span className="text-gray-500">Items pendientes:</span>
               <Badge variant="outline" className="text-xs h-4 px-1">{pendingItems}</Badge>
             </div>
           )}
@@ -99,6 +144,7 @@ export function VehicleProgramsList() {
   const [selectedPackage, setSelectedPackage] = useState<VehicleProgramPackage | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
 
   const { toast } = useToast();
 
@@ -250,7 +296,11 @@ export function VehicleProgramsList() {
                 className="pl-7 h-7 text-xs w-40"
               />
             </div>
-            <Button size="sm" className="h-7 text-xs">
+            <Button
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => setIsAssignModalOpen(true)}
+            >
               <Plus className="w-3 h-3 mr-1" />
               Programa
             </Button>
@@ -267,7 +317,13 @@ export function VehicleProgramsList() {
                 <Car className="w-6 h-6 text-gray-400 mx-auto mb-2" />
                 <h3 className="text-sm font-semibold mb-1">Sin programas</h3>
                 <p className="text-xs text-gray-500 mb-2">Asigna template a vehículo</p>
-                <Button size="sm" className="h-7 text-xs">Crear</Button>
+                <Button
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setIsAssignModalOpen(true)}
+                >
+                  Crear
+                </Button>
               </CardContent>
             </Card>
           ) : (
@@ -302,18 +358,65 @@ export function VehicleProgramsList() {
               </Card>
 
               {/* Grid de Packages - 95% */}
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
-                {selectedProgram.packages.map((pkg) => (
-                  <Card key={pkg.id} className="hover:shadow-sm transition-all cursor-pointer" onClick={() => handleSelectPackage(pkg)}>
-                    <CardContent className="p-2">
-                      <h3 className="text-sm font-semibold truncate">{pkg.name}</h3>
-                      <div className="flex justify-between text-xs mt-1">
-                        <Badge variant="outline" className="text-xs h-4">{pkg.packageType}</Badge>
-                        <span className="text-blue-600">Items: {pkg.items.length}</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                {selectedProgram.packages.map((pkg) => {
+                  const scheduledKm = pkg.items[0]?.scheduledKm || 0;
+                  const executedKm = pkg.executedKm || null;
+                  const isCompleted = pkg.status === 'COMPLETED';
+                  const isPending = pkg.status === 'PENDING';
+
+                  return (
+                    <Card
+                      key={pkg.id}
+                      className={`hover:shadow-sm transition-all cursor-pointer ${
+                        isCompleted ? 'bg-green-50 border-green-200' : ''
+                      }`}
+                      onClick={() => handleSelectPackage(pkg)}
+                    >
+                      <CardContent className="p-3">
+                        <div className="flex items-start justify-between mb-2">
+                          <h3 className="text-sm font-semibold truncate">{pkg.name}</h3>
+                          <Badge variant={isCompleted ? "default" : "outline"} className="text-xs h-4 ml-2">
+                            {pkg.status}
+                          </Badge>
+                        </div>
+
+                        <div className="space-y-1 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Tipo:</span>
+                            <Badge variant="outline" className="text-xs h-4">{pkg.packageType}</Badge>
+                          </div>
+
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Programado:</span>
+                            <span className="font-medium">{scheduledKm.toLocaleString()} km</span>
+                          </div>
+
+                          {executedKm && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-500">Ejecutado:</span>
+                              <span className="font-medium text-green-600">{executedKm.toLocaleString()} km</span>
+                            </div>
+                          )}
+
+                          {isPending && scheduledKm > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-500">Faltan:</span>
+                              <span className="font-medium">
+                                {(scheduledKm - selectedProgram.vehicle.mileage).toLocaleString()} km
+                              </span>
+                            </div>
+                          )}
+
+                          <div className="flex justify-between pt-1 border-t">
+                            <span className="text-gray-500">Items:</span>
+                            <span className="text-blue-600 font-medium">{pkg.items.length}</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             </>
           )}
@@ -360,6 +463,19 @@ export function VehicleProgramsList() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Modal Asignar Programa */}
+      <FormAssignProgram
+        open={isAssignModalOpen}
+        onOpenChange={setIsAssignModalOpen}
+        onSuccess={() => {
+          fetchPrograms();
+          toast({
+            title: "¡Programa asignado!",
+            description: "El programa de mantenimiento se generó correctamente",
+          });
+        }}
+      />
     </div>
   );
 }

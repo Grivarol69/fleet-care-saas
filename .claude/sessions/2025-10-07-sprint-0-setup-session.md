@@ -534,6 +534,398 @@ src/app/dashboard/.../VehicleProgramsList.tsx
 
 ---
 
-**Sesión finalizada**: 07 Octubre 2025 ~18:00
-**Próxima sesión**: Sprint 1 - Preventivo 100%
-**Status**: ✅ Sprint 0 completado exitosamente
+---
+
+## 🚀 Continuación: Inicio Sprint 1 - UI Asignación de Programas
+
+**Inicio**: ~19:00
+**Contexto**: Sprint 0 completado, iniciamos Sprint 1
+
+### 9. Implementación FormAssignProgram (Modal de Asignación)
+
+#### Objetivo
+Crear UI completa para asignar templates de mantenimiento a vehículos, generando VehicleMantProgram con sus paquetes e items calculados.
+
+#### Análisis Previo
+**User compartió screenshots** de la UI de Templates (3 tabs: Plantillas → Paquetes → Items)
+
+**Decisión de UX**: Mantener mismo patrón de 3 tabs drill-down para consistencia:
+- **Programas** → ver todos los programas asignados
+- **Paquetes** → ver paquetes de un programa seleccionado
+- **Items** → ver items de un paquete seleccionado
+
+**User feedback**: "Excelente enfoque, va a quedar de lujo, te animas a que lo empecemos?"
+
+#### Implementación
+
+**Archivo creado**: `FormAssignProgram.tsx` (~437 líneas)
+
+**Features implementadas**:
+
+1. **Modal con Dialog de shadcn/ui**
+   - Responsive, max-height con overflow
+   - Estados de loading para fetch y submit
+
+2. **Form con react-hook-form + Zod**
+```typescript
+const formSchema = z.object({
+  vehicleId: z.number().min(1, "Seleccione un vehículo"),
+  templateId: z.number().min(1, "Seleccione un template"),
+  assignmentKm: z.number().min(1).max(500000),
+  generatedBy: z.string().min(1),
+});
+```
+
+3. **Fetch de datos en apertura**
+```typescript
+useEffect(() => {
+  if (open) {
+    fetchData(); // Parallel fetch de vehicles y templates
+  }
+}, [open]);
+```
+
+4. **Auto-población de kilometraje**
+```typescript
+// Cuando selecciona vehículo, auto-llenar con km actual
+useEffect(() => {
+  const vehicle = vehicles.find((v) => v.id === watchVehicleId);
+  if (vehicle) {
+    form.setValue("assignmentKm", vehicle.mileage);
+  }
+}, [watchVehicleId, vehicles]);
+```
+
+5. **Filtrado inteligente de templates**
+```typescript
+// Solo mostrar templates compatibles con marca/línea del vehículo
+const compatibleTemplates = selectedVehicle
+  ? templates.filter(t =>
+      t.brand.id === selectedVehicle.brand.id &&
+      t.line.id === selectedVehicle.line.id
+    )
+  : [];
+```
+
+6. **Preview de paquetes calculados**
+```typescript
+{selectedTemplate.packages.map((pkg) => {
+  const scheduledKm = assignmentKm + pkg.triggerKm;
+  return (
+    <div>
+      <p>{pkg.name}</p>
+      <p>{scheduledKm.toLocaleString()} km</p>
+      <p>${pkg.estimatedCost}</p>
+    </div>
+  );
+})}
+```
+
+7. **Resumen con métricas**
+   - Total paquetes
+   - Total items
+   - Costo estimado total
+
+8. **Submit a API existente**
+```typescript
+async function onSubmit(values: FormValues) {
+  await axios.post("/api/maintenance/vehicle-programs", values);
+  // La API ya existe y funciona ✅
+}
+```
+
+#### Integración en VehicleProgramsList
+
+**Cambios en VehicleProgramsList.tsx**:
+
+1. **Import del componente**
+```typescript
+import { FormAssignProgram } from '../FormAssignProgram';
+```
+
+2. **Estado para modal**
+```typescript
+const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+```
+
+3. **Botones conectados**
+```typescript
+// Botón "+ Programa" en toolbar (línea 255)
+<Button onClick={() => setIsAssignModalOpen(true)}>
+  <Plus /> Programa
+</Button>
+
+// Botón "Crear" en empty state (línea 276)
+<Button onClick={() => setIsAssignModalOpen(true)}>
+  Crear
+</Button>
+```
+
+4. **Componente renderizado**
+```typescript
+<FormAssignProgram
+  open={isAssignModalOpen}
+  onOpenChange={setIsAssignModalOpen}
+  onSuccess={() => {
+    fetchPrograms(); // Refresh lista
+    toast({ title: "¡Programa asignado!" });
+  }}
+/>
+```
+
+#### Problema Detectado: API Route Incorrecta
+
+**Error inicial**: Modal no cargaba vehículos
+
+**User feedback**: "no me trae los vehiculos... como estamos con la Api? No vi que trabajaras la Api, puede ser?"
+
+**Causa**: FormAssignProgram usaba `/api/vehicles` pero la ruta real es `/api/vehicles/vehicles`
+
+**Fix aplicado**:
+```typescript
+// ❌ Antes
+axios.get("/api/vehicles")
+
+// ✅ Después
+axios.get("/api/vehicles/vehicles")
+```
+
+**Resultado**: ✅ Modal carga vehículos y templates correctamente
+
+---
+
+### 10. Mejoras en Cards de Programas
+
+#### Objetivo
+Mostrar información crítica en cards: km hasta próximo mantenimiento, alertas visuales, progreso.
+
+#### Implementación en ProgramCard
+
+**1. Cálculo de próximo mantenimiento**
+```typescript
+const nextMaintenance = program.packages
+  .filter(pkg => pkg.status === 'PENDING')
+  .map(pkg => ({
+    scheduledKm: pkg.items[0]?.scheduledKm || 0,
+    name: pkg.name
+  }))
+  .sort((a, b) => a.scheduledKm - b.scheduledKm)[0];
+```
+
+**2. Cálculo de urgencia**
+```typescript
+const kmUntilNext = nextMaintenance
+  ? nextMaintenance.scheduledKm - program.vehicle.mileage
+  : null;
+
+const urgency = kmUntilNext !== null
+  ? (kmUntilNext <= 0 ? 'CRITICO' : kmUntilNext <= 1000 ? 'PROXIMO' : 'OK')
+  : 'OK';
+```
+
+**3. Alertas visuales en bordes**
+```typescript
+<Card className={`... ${
+  urgency === 'CRITICO' ? 'border-red-500 border-2' :
+  urgency === 'PROXIMO' ? 'border-yellow-500 border-2' : ''
+}`}>
+```
+
+**4. Indicador de km faltantes**
+```typescript
+{nextMaintenance && (
+  <div className="flex justify-between">
+    <span>Próximo en:</span>
+    <span className={
+      urgency === 'CRITICO' ? 'text-red-600' :
+      urgency === 'PROXIMO' ? 'text-yellow-600' :
+      'text-green-600'
+    }>
+      {kmUntilNext > 0 ? `${kmUntilNext.toLocaleString()} km` : '¡Vencido!'}
+    </span>
+  </div>
+)}
+```
+
+**5. Barra de progreso visual**
+```typescript
+const progressPercentage = totalPackages > 0
+  ? (completedPackages / totalPackages) * 100
+  : 0;
+
+<div className="w-full bg-gray-200 rounded-full h-1.5">
+  <div
+    className={`h-1.5 rounded-full ${
+      progressPercentage === 100 ? 'bg-green-600' : 'bg-blue-600'
+    }`}
+    style={{ width: `${progressPercentage}%` }}
+  />
+</div>
+```
+
+**Resultado**: Cards ahora muestran:
+- ✅ Km actual del vehículo
+- ✅ Km faltantes para próximo servicio
+- ✅ Color coding: rojo (vencido), amarillo (próximo), verde (OK)
+- ✅ Barra de progreso de paquetes completados
+- ✅ Items pendientes
+
+---
+
+### 11. Mejoras en Vista de Paquetes
+
+#### Objetivo
+Mostrar km programado vs km ejecutado, y cuántos km faltan para paquetes pendientes.
+
+#### Implementación
+
+**Vista enriquecida de cada paquete**:
+```typescript
+{selectedProgram.packages.map((pkg) => {
+  const scheduledKm = pkg.items[0]?.scheduledKm || 0;
+  const executedKm = pkg.executedKm || null;
+  const isCompleted = pkg.status === 'COMPLETED';
+  const isPending = pkg.status === 'PENDING';
+
+  return (
+    <Card className={isCompleted ? 'bg-green-50 border-green-200' : ''}>
+      <CardContent>
+        {/* Header con nombre y status */}
+        <h3>{pkg.name}</h3>
+        <Badge>{pkg.status}</Badge>
+
+        {/* Km programado */}
+        <div>
+          <span>Programado:</span>
+          <span>{scheduledKm.toLocaleString()} km</span>
+        </div>
+
+        {/* Km ejecutado (solo si completado) */}
+        {executedKm && (
+          <div>
+            <span>Ejecutado:</span>
+            <span className="text-green-600">
+              {executedKm.toLocaleString()} km
+            </span>
+          </div>
+        )}
+
+        {/* Km faltantes (solo si pendiente) */}
+        {isPending && scheduledKm > 0 && (
+          <div>
+            <span>Faltan:</span>
+            <span>
+              {(scheduledKm - selectedProgram.vehicle.mileage).toLocaleString()} km
+            </span>
+          </div>
+        )}
+
+        {/* Total items */}
+        <div>
+          <span>Items:</span>
+          <span>{pkg.items.length}</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+})}
+```
+
+**Cambios visuales**:
+- ✅ Grid ajustado a 1-2-3 columnas (antes 1-3-4-5)
+- ✅ Background verde para paquetes completados
+- ✅ Muestra "Programado", "Ejecutado" y "Faltan"
+- ✅ Badge de tipo de paquete y status
+
+---
+
+### 12. Verificación TypeScript
+
+```bash
+pnpm tsc --noEmit
+# ✅ 0 errores
+```
+
+---
+
+## 💬 Conversaciones Técnicas (Continuación)
+
+### User Feedback Final
+
+**User**: "quedo increible, no lo puedo creer, cuando hagamos correr el seed con buenos datos lo vamos a ver en accion, es un avance importantisimo"
+
+**Reflexión**: El patrón UX drill-down de 3 tabs funciona muy bien. La consistencia entre Templates y Programs hace que la UI sea intuitiva. Falta:
+1. Seed con datos realistas
+2. Lógica de recalculación al completar paquetes
+3. Cron job para alertas
+4. UI de página de alertas
+
+---
+
+## 📊 Métricas Adicionales (Continuación)
+
+### Archivos Modificados
+```
+src/app/dashboard/maintenance/vehicle-programs/components/
+├── FormAssignProgram/
+│   ├── FormAssignProgram.tsx (NUEVO - 437 líneas)
+│   └── index.ts (NUEVO - export)
+└── VehicleProgramsList/
+    └── VehicleProgramsList.tsx (MODIFICADO - mejoras en cards y paquetes)
+```
+
+### Líneas de Código
+- **FormAssignProgram**: +437 líneas nuevas
+- **VehicleProgramsList**: ~150 líneas modificadas
+- **Total**: ~587 líneas
+
+### Features Implementadas
+- ✅ Modal de asignación de programas (completamente funcional)
+- ✅ Cards mejoradas con alertas visuales
+- ✅ Vista de paquetes enriquecida con km programado/ejecutado
+- ✅ Barra de progreso en cards
+- ✅ Color coding por urgencia
+- ✅ Filtrado inteligente de templates compatibles
+- ✅ Preview de paquetes calculados antes de submit
+
+---
+
+## 🎯 Estado al Final de Continuación
+
+### Completado ✅
+- FormAssignProgram completamente funcional
+- API route corregida (`/api/vehicles/vehicles`)
+- Cards de programas con alertas y progreso
+- Vista de paquetes enriquecida
+- TypeScript 0 errores
+- UX consistente con Templates
+
+### Próximos Pasos Críticos
+1. **Seed con datos realistas**
+   - Vehículos variados (diferentes marcas/líneas/km)
+   - Templates con paquetes de mantenimiento reales
+   - Algunos programas ya asignados con diferentes estados
+
+2. **Lógica de recalculación**
+   - Cuando se completa paquete con executedKm
+   - Recalcular: nextKm = executedKm + triggerKm (NO assignmentKm)
+
+3. **Cron Job diario**
+   - Revisar vehículos con mantenimientos próximos/vencidos
+   - Generar alertas automáticas
+
+4. **UI de Alertas**
+   - Página `/dashboard/maintenance/alerts`
+   - Lista de alertas con filtros
+   - Acción rápida para crear orden de trabajo
+
+### Para Siguiente Sesión
+- Crear seed completo
+- Testing end-to-end del flujo
+- Documentar en avances/sprint-1.md
+
+---
+
+**Sesión continuada hasta**: 07 Octubre 2025 ~20:00
+**Próxima tarea**: Seed de datos + Testing
+**Status**: ✅ Sprint 1 UI completada (~40% del sprint)
