@@ -1,84 +1,160 @@
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 const TENANT_ID = 'mvp-default-tenant';
 
-export async function GET() {
+/**
+ * GET - Obtener todas las alertas de mantenimiento
+ * Query params:
+ * - vehicleId: Filtrar por vehículo específico
+ * - status: Filtrar por estado (PENDING, IN_PROGRESS, etc.)
+ * - priority: Filtrar por prioridad (LOW, MEDIUM, HIGH, URGENT)
+ */
+export async function GET(request: NextRequest) {
   try {
-    // Obtener items de mantenimiento con la nueva arquitectura VehicleMantProgram
-    const maintenanceItems = await prisma.vehicleProgramItem.findMany({
-      where: {
-        tenantId: TENANT_ID,
-        status: 'PENDING',
-        package: {
-          program: {
-            status: 'ACTIVE',
-            isActive: true
-          }
-        },
-        scheduledKm: { not: null } // Solo items con kilómetraje programado
-      },
+    const searchParams = request.nextUrl.searchParams;
+    const vehicleId = searchParams.get('vehicleId');
+    const status = searchParams.get('status');
+    const priority = searchParams.get('priority');
+
+    // Construir filtros dinámicos
+    const where: any = { tenantId: TENANT_ID };
+
+    if (vehicleId) {
+      where.vehicleId = parseInt(vehicleId);
+    }
+
+    if (status) {
+      where.status = status;
+    } else {
+      // Por defecto, solo alertas activas
+      where.status = { in: ['PENDING', 'ACKNOWLEDGED', 'SNOOZED'] };
+    }
+
+    if (priority) {
+      where.priority = priority;
+    }
+
+    // Obtener alertas desde la tabla MaintenanceAlert
+    const alerts = await prisma.maintenanceAlert.findMany({
+      where,
       include: {
-        package: {
+        vehicle: {
           include: {
-            program: {
-              include: {
-                vehicle: {
-                  include: {
-                    brand: true,
-                    line: true
-                  }
-                }
-              }
-            }
+            brand: true,
+            line: true
           }
         },
-        mantItem: true
+        programItem: {
+          include: {
+            mantItem: true,
+            package: true
+          }
+        },
+        workOrder: {
+          select: {
+            id: true,
+            title: true,
+            status: true
+          }
+        }
       },
-      orderBy: {
-        scheduledKm: 'asc'
-      }
+      orderBy: [
+        { priorityScore: 'desc' }, // Primero por score de prioridad
+        { kmToMaintenance: 'asc' }  // Luego por urgencia de km
+      ]
     });
 
-    // Transformar datos para el formato esperado por el componente
-    const alerts = maintenanceItems.map((item) => {
-      const vehicle = item.package.program.vehicle;
-      const currentKm = vehicle.mileage;
-      const executionKm = item.scheduledKm!; // Ya filtramos que no sea null
-      const kmToMaintenance = executionKm - currentKm;
-      
-      // Determinar el estado basado en kilómetros restantes
-      let state: "YELLOW" | "RED" = "YELLOW";
-      if (kmToMaintenance <= 500) {
-        state = "RED"; // Crítico: menos de 500 km
-      } else if (kmToMaintenance <= 2000) {
-        state = "YELLOW"; // Atención: menos de 2000 km
-      }
+    // Transformar para el frontend
+    const formattedAlerts = alerts.map(alert => ({
+      // IDs
+      id: alert.id,
+      programItemId: alert.programItemId,
+      vehicleId: alert.vehicleId,
 
-      return {
-        id: item.id,
-        vehiclePlate: vehicle.licensePlate,
-        photo: vehicle.photo || "https://utfs.io/f/ed8f2e8a-1265-4310-b086-1385aa133fc8-zbbdk9.jpg",
-        brandName: vehicle.brand.name,
-        lineName: vehicle.line.name,
-        mantItemDescription: item.mantItem.name,
-        currentKm: currentKm,
-        executionKm: executionKm,
-        kmToMaintenance: Math.max(0, kmToMaintenance), // No negativos
-        state: state,
-        status: "ACTIVE" as const
-      };
-    });
+      // Vehículo
+      vehiclePlate: alert.vehicle.licensePlate,
+      vehiclePhoto: alert.vehicle.photo || "https://utfs.io/f/ed8f2e8a-1265-4310-b086-1385aa133fc8-zbbdk9.jpg",
+      brandName: alert.vehicle.brand.name,
+      lineName: alert.vehicle.line.name,
 
-    // Filtrar solo alertas que requieren atención (próximas o vencidas)
-    const filteredAlerts = alerts.filter(alert => alert.kmToMaintenance <= 3000);
+      // Mantenimiento
+      itemName: alert.itemName,
+      packageName: alert.packageName,
+      description: alert.description,
 
-    // Ordenar por urgencia (menos kilómetros restantes primero)
-    const sortedAlerts = filteredAlerts.sort((a, b) => a.kmToMaintenance - b.kmToMaintenance);
+      // Kilometraje
+      scheduledKm: alert.scheduledKm,
+      currentKm: alert.currentKm,
+      kmToMaintenance: alert.kmToMaintenance,
 
-    return NextResponse.json(sortedAlerts);
+      // Priorización
+      type: alert.type,
+      category: alert.category,
+      priority: alert.priority,
+      alertLevel: alert.alertLevel,
+      priorityScore: alert.priorityScore,
+
+      // Estado
+      status: alert.status,
+
+      // Costos y tiempo
+      estimatedCost: alert.estimatedCost?.toNumber() || null,
+      estimatedDuration: alert.estimatedDuration?.toNumber() || null,
+
+      // WorkOrder vinculada
+      workOrder: alert.workOrder,
+
+      // Tracking
+      createdAt: alert.createdAt,
+      acknowledgedAt: alert.acknowledgedAt,
+      snoozedUntil: alert.snoozedUntil,
+
+      // Legacy fields (para compatibilidad con componentes viejos)
+      mantItemDescription: alert.itemName,
+      executionKm: alert.scheduledKm,
+      state: alert.alertLevel === 'CRITICAL' ? 'RED' :
+             alert.alertLevel === 'HIGH' ? 'RED' : 'YELLOW'
+    }));
+
+    return NextResponse.json(formattedAlerts);
   } catch (error) {
     console.error("[MAINTENANCE_ALERTS_GET]", error);
+    return new NextResponse("Internal Error", { status: 500 });
+  }
+}
+
+/**
+ * PATCH - Actualizar estado de una alerta
+ * Body: { alertId, status, notes?, snoozedUntil? }
+ */
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { alertId, status, notes, snoozedUntil, acknowledgedBy } = body;
+
+    if (!alertId) {
+      return NextResponse.json({ error: "alertId is required" }, { status: 400 });
+    }
+
+    const updateData: any = { status, updatedAt: new Date() };
+
+    if (notes) updateData.notes = notes;
+    if (snoozedUntil) updateData.snoozedUntil = new Date(snoozedUntil);
+
+    if (status === 'ACKNOWLEDGED' && !acknowledgedBy) {
+      updateData.acknowledgedBy = "current-user-id"; // TODO: Get from session
+      updateData.acknowledgedAt = new Date();
+    }
+
+    const updatedAlert = await prisma.maintenanceAlert.update({
+      where: { id: alertId },
+      data: updateData
+    });
+
+    return NextResponse.json(updatedAlert);
+  } catch (error) {
+    console.error("[MAINTENANCE_ALERTS_PATCH]", error);
     return new NextResponse("Internal Error", { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { MaintenanceAlertService } from "@/lib/services/MaintenanceAlertService";
 
 // GET - Fetch all odometer logs for tenant
 export async function GET() {
@@ -137,8 +138,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Check for maintenance alerts
-    await checkMaintenanceAlerts(vehicleId, measureType === "KILOMETERS" ? kilometers : null);
+    // Check for maintenance alerts (trigger automático)
+    if (measureType === "KILOMETERS" && kilometers) {
+      await checkMaintenanceAlerts(vehicleId, kilometers);
+    }
 
     return NextResponse.json(odometerLog, { status: 201 });
   } catch (error) {
@@ -147,103 +150,15 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// TODO: Refactorizar checkMaintenanceAlerts para usar VehicleMantProgram/VehicleProgramPackage/VehicleProgramItem
-// Esta función está temporalmente deshabilitada hasta migrar a la nueva arquitectura
-async function checkMaintenanceAlerts(_vehicleId: number, _kilometers: number | null) {
-  if (!_kilometers) return;
-
-  // TODO: Implementar con nueva arquitectura VehicleMantProgram
-  return;
-
-  /* DEPRECATED - Usar VehicleMantProgram en vez de vehicleMantPlan
+/**
+ * Verifica y genera alertas de mantenimiento automáticamente
+ * cuando se actualiza el odómetro del vehículo
+ */
+async function checkMaintenanceAlerts(vehicleId: number, kilometers: number) {
   try {
-    // Get active maintenance plans for this vehicle
-    const vehicleMaintPlans = await prisma.vehicleMantProgram.findMany({
-      where: {
-        vehicleId: vehicleId,
-        status: "ACTIVE",
-      },
-      include: {
-        packages: {
-          include: {
-            items: {
-              include: {
-                mantItem: true,
-              },
-              where: {
-                status: "PENDING",
-              },
-            }
-          }
-        }
-      },
-    });
-
-    for (const plan of vehicleMaintPlans) {
-      for (const pkg of plan.packages) {
-        for (const item of pkg.items) {
-        const kmToMaintenance = item.executionMileage - kilometers;
-
-        // Determine alert level
-        let alertLevel: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-        if (kmToMaintenance <= 0) {
-          alertLevel = "CRITICAL";
-        } else if (kmToMaintenance <= 500) {
-          alertLevel = "HIGH";
-        } else if (kmToMaintenance <= 1000) {
-          alertLevel = "MEDIUM";
-        } else {
-          alertLevel = "LOW";
-        }
-
-        // Only create alerts for non-low levels
-        if (alertLevel !== "LOW") {
-          // Check if alert already exists
-          const existingAlert = await prisma.maintenanceAlert.findFirst({
-            where: {
-              vehicleId: vehicleId,
-              mantItemDescription: item.mantItem.name,
-              executionKm: item.executionMileage,
-              status: "ACTIVE",
-            },
-          });
-
-          if (!existingAlert) {
-            await prisma.maintenanceAlert.create({
-              data: {
-                vehicleId: vehicleId,
-                mantItemDescription: item.mantItem.name,
-                currentKm: kilometers,
-                executionKm: item.executionMileage,
-                kmToMaintenance: kmToMaintenance,
-                alertLevel: alertLevel,
-                status: "ACTIVE",
-              },
-            });
-          } else {
-            // Update existing alert
-            await prisma.maintenanceAlert.update({
-              where: { id: existingAlert.id },
-              data: {
-                currentKm: kilometers,
-                kmToMaintenance: kmToMaintenance,
-                alertLevel: alertLevel,
-              },
-            });
-          }
-        }
-        }
-      }
-    }
-
-    // Update last km check on plan
-    await prisma.vehicleMantProgram.update({
-      where: { id: plan.id },
-      data: { lastKmCheck: kilometers },
-    });
+    await MaintenanceAlertService.checkAndGenerateAlerts(vehicleId, kilometers);
   } catch (error) {
-    console.error("Error checking maintenance alerts:", error);
-    // Don't throw error here, just log it
+    console.error("[ODOMETER] Error checking maintenance alerts:", error);
+    // No lanzar error para no bloquear el guardado del odómetro
   }
-  */
 }

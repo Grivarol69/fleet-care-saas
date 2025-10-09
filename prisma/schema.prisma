@@ -49,6 +49,7 @@ model Tenant {
   subscriptions               Subscription[]
   drivers                     Driver[]
   vehicleDrivers              VehicleDriver[]
+  maintenanceAlerts           MaintenanceAlert[]
 
   @@index([slug])
   @@index([subscriptionStatus])
@@ -616,6 +617,7 @@ model WorkOrder {
   scheduledPackages ScheduledPackage[]           // ✅ CURRENT (VehicleMaintenanceMetrics)
   // vehicleMantPackages VehicleMantPackage[]     // DEPRECATED 02-Oct-2025
   vehicleProgramPackages VehicleProgramPackage[]  // ✅ CURRENT ARCHITECTURE
+  maintenanceAlert  MaintenanceAlert?            // ✅ Relación con alerta de mantenimiento
 
   @@index([tenantId])
   @@index([vehicleId])
@@ -840,22 +842,88 @@ model OdometerLog {
 }
 
 model MaintenanceAlert {
-  id                  Int        @id @default(autoincrement())
-  vehicleId           Int
-  mantItemDescription String
-  currentKm           Int
-  executionKm         Int
-  kmToMaintenance     Int
-  alertLevel          AlertLevel
-  status              Status     @default(ACTIVE)
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @updatedAt
-  
-  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  id                    Int           @id @default(autoincrement())
+  tenantId              String
+  vehicleId             Int
+  programItemId         Int           // VehicleProgramItem específico (granular)
 
+  // TIPO Y CLASIFICACIÓN
+  type                  AlertType     @default(PREVENTIVE)
+  category              AlertCategory // CRITICAL_SAFETY, MAJOR_COMPONENT, ROUTINE, MINOR
+
+  // CONTEXTO (copiado del item al crear alerta)
+  itemName              String        // "Cambio aceite motor"
+  packageName           String        // "Mantenimiento 15,000 km" (contexto visual)
+  description           String?
+  estimatedCost         Decimal?      @db.Decimal(10, 2)
+  estimatedDuration     Decimal?      @db.Decimal(5, 2) // Horas
+
+  // KILOMETRAJE
+  scheduledKm           Int           // Km programado del item
+  currentKmAtCreation   Int           // Km cuando se generó alerta
+  currentKm             Int           // Km actual (actualizado por cron)
+  kmToMaintenance       Int           // scheduledKm - currentKm
+  alertThresholdKm      Int           // Umbral que disparó (1000, 500, etc)
+
+  // PRIORIZACIÓN INTELIGENTE
+  priority              Priority      @default(MEDIUM)
+  alertLevel            AlertLevel    // LOW, MEDIUM, HIGH, CRITICAL (semaforización)
+  priorityScore         Int           @default(50) // 0-100 calculado
+
+  // ESTADO Y WORKFLOW
+  status                AlertStatus   @default(PENDING)
+
+  // TRACKING DE ATENCIÓN
+  viewedBy              String[]      // Array de user IDs que vieron
+  firstViewedAt         DateTime?
+  acknowledgedBy        String?
+  acknowledgedAt        DateTime?
+
+  // SNOOZE (posponer)
+  snoozedUntil          DateTime?
+  snoozeReason          String?
+  snoozedBy             String?
+
+  // CONEXIÓN CON WORKORDER
+  workOrderId           Int?          @unique
+  workOrderCreatedAt    DateTime?
+  workOrderCreatedBy    String?
+
+  // MÉTRICAS DE PERFORMANCE
+  responseTimeMinutes   Int?          // Minutos desde creación hasta WO
+  completionTimeHours   Int?          // Horas desde WO hasta cierre
+  wasOnTime             Boolean?      // ¿Se completó antes de vencer?
+  actualCost            Decimal?      @db.Decimal(10, 2)
+  costVariance          Decimal?      @db.Decimal(10, 2) // actualCost - estimatedCost
+
+  // NOTIFICACIONES
+  notificationsSent     Int           @default(0)
+  lastNotificationAt    DateTime?
+
+  // AUDITORÍA
+  notes                 String?
+  cancelReason          String?
+  cancelledBy           String?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  closedAt              DateTime?
+
+  // RELACIONES
+  tenant                Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicle               Vehicle                @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  programItem           VehicleProgramItem     @relation(fields: [programItemId], references: [id], onDelete: Cascade)
+  workOrder             WorkOrder?             @relation(fields: [workOrderId], references: [id])
+
+  @@index([tenantId])
   @@index([vehicleId])
-  @@index([alertLevel])
+  @@index([programItemId])
   @@index([status])
+  @@index([type])
+  @@index([priority])
+  @@index([alertLevel])
+  @@index([scheduledKm])
+  @@index([wasOnTime])
+  @@unique([programItemId, status])
 }
 
 model Document {
@@ -1012,6 +1080,7 @@ model VehicleProgramItem {
   mantItem              MantItem                @relation(fields: [mantItemId], references: [id])
   technician            Technician?             @relation(fields: [technicianId], references: [id])
   provider              Provider?               @relation(fields: [providerId], references: [id])
+  maintenanceAlerts     MaintenanceAlert[]
 
   @@index([tenantId])
   @@index([packageId])
@@ -1192,4 +1261,27 @@ enum ScheduleStatus {
   COMPLETED    // Completado exitosamente
   SKIPPED      // Saltado/omitido por el usuario
   CANCELLED    // Cancelado
+}
+
+enum AlertStatus {
+  PENDING       // Generada, esperando atención
+  ACKNOWLEDGED  // Vista y reconocida por admin
+  IN_PROGRESS   // WorkOrder creada y asignada
+  COMPLETED     // Mantenimiento ejecutado
+  CLOSED        // Ciclo cerrado (WO + factura + costo)
+  SNOOZED       // Pospuesta temporalmente
+  CANCELLED     // Cancelada (vehículo vendido, plan cambiado)
+}
+
+enum AlertType {
+  PREVENTIVE        // Mantenimiento preventivo programado
+  OVERDUE           // Mantenimiento vencido (pasó el km)
+  EARLY_WARNING     // Aviso temprano (>1000km)
+}
+
+enum AlertCategory {
+  CRITICAL_SAFETY   // Frenos, dirección, neumáticos
+  MAJOR_COMPONENT   // Motor, transmisión, suspensión
+  ROUTINE           // Aceite, filtros, lubricación
+  MINOR             // Limpieza, inspecciones visuales
 }
