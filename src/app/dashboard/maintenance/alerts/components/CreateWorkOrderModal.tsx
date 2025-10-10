@@ -40,8 +40,8 @@ export function CreateWorkOrderModal({ isOpen, onClose, selectedAlertIds, onSucc
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [technicianId, setTechnicianId] = useState('');
-  const [providerId, setProviderId] = useState('');
+  const [technicianId, setTechnicianId] = useState<string | undefined>(undefined);
+  const [providerId, setProviderId] = useState<string | undefined>(undefined);
   const [scheduledDate, setScheduledDate] = useState('');
   const [priority, setPriority] = useState('MEDIUM');
 
@@ -124,8 +124,8 @@ export function CreateWorkOrderModal({ isOpen, onClose, selectedAlertIds, onSucc
         alertIds: selectedAlertIds,
         title,
         description,
-        technicianId: technicianId ? parseInt(technicianId) : null,
-        providerId: providerId ? parseInt(providerId) : null,
+        technicianId: technicianId && technicianId !== "NONE" ? parseInt(technicianId) : null,
+        providerId: providerId && providerId !== "NONE" ? parseInt(providerId) : null,
         scheduledDate: scheduledDate || null,
         priority,
       });
@@ -240,11 +240,12 @@ export function CreateWorkOrderModal({ isOpen, onClose, selectedAlertIds, onSucc
               {/* Técnico */}
               <div className="space-y-2">
                 <Label htmlFor="technician">Técnico asignado</Label>
-                <Select value={technicianId} onValueChange={setTechnicianId}>
+                <Select value={technicianId || "NONE"} onValueChange={(val) => setTechnicianId(val === "NONE" ? undefined : val)}>
                   <SelectTrigger id="technician">
                     <SelectValue placeholder="Seleccionar técnico..." />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="NONE">Sin asignar</SelectItem>
                     {technicians.map((tech) => (
                       <SelectItem key={tech.id} value={tech.id.toString()}>
                         {tech.name}
@@ -257,11 +258,12 @@ export function CreateWorkOrderModal({ isOpen, onClose, selectedAlertIds, onSucc
               {/* Proveedor */}
               <div className="space-y-2">
                 <Label htmlFor="provider">Proveedor</Label>
-                <Select value={providerId} onValueChange={setProviderId}>
+                <Select value={providerId || "NONE"} onValueChange={(val) => setProviderId(val === "NONE" ? undefined : val)}>
                   <SelectTrigger id="provider">
                     <SelectValue placeholder="Seleccionar proveedor..." />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="NONE">Sin asignar</SelectItem>
                     {providers.map((provider) => (
                       <SelectItem key={provider.id} value={provider.id.toString()}>
                         {provider.name}

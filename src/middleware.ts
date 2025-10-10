@@ -30,8 +30,8 @@ export async function middleware(request: NextRequest) {
         console.log('⏭️ No es subdomain, aplicando tenant por defecto para desarrollo')
         // Para localhost sin subdomain, usar tenant por defecto
         if (hostname.includes('localhost')) {
-            url.searchParams.set('tenant', 'mvp-default-tenant')
-            console.log('🔧 Tenant por defecto aplicado: mvp-default-tenant')
+            url.searchParams.set('tenant', 'cf68b103-12fd-4208-a352-42379ef3b6e1')
+            console.log('🔧 Tenant por defecto aplicado: cf68b103-12fd-4208-a352-42379ef3b6e1')
         }
     }
 
@@ -62,7 +62,7 @@ export async function middleware(request: NextRequest) {
     if (subdomain) {
         supabaseResponse.headers.set('x-tenant', subdomain)
     } else if (hostname.includes('localhost')) {
-        supabaseResponse.headers.set('x-tenant', 'mvp-default-tenant')
+        supabaseResponse.headers.set('x-tenant', 'cf68b103-12fd-4208-a352-42379ef3b6e1')
     }
 
     // IMPORTANTE: No remover esta línea

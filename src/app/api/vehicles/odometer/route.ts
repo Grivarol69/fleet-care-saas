@@ -7,7 +7,7 @@ export async function GET() {
   try {
     // TODO: Get tenant from auth session
     // For now, we'll use the hardcoded tenant for MVP
-    const tenantId = "mvp-default-tenant";
+    const tenantId = "cf68b103-12fd-4208-a352-42379ef3b6e1";
 
     const odometerLogs = await prisma.odometerLog.findMany({
       where: {
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     const { vehicleId, driverId, kilometers, hours, measureType, recordedAt } = body;
 
     // TODO: Get tenant from auth session
-    const tenantId = "mvp-default-tenant";
+    const tenantId = "cf68b103-12fd-4208-a352-42379ef3b6e1";
 
     // Validate vehicle belongs to tenant
     const vehicle = await prisma.vehicle.findFirst({

@@ -3,7 +3,7 @@ import { getNotificationService } from "@/lib/notifications/notification-service
 import { getWhatsAppService } from "@/lib/notifications/whatsapp";
 
 // Hardcoded tenant ID para MVP (desarrollo)
-const MVP_TENANT_ID = 'mvp-default-tenant';
+const MVP_TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1';
 
 export async function GET(request: NextRequest) {
   try {

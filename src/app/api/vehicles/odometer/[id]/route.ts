@@ -14,7 +14,7 @@ export async function GET(
     }
 
     // TODO: Get tenant from auth session
-    const tenantId = "mvp-default-tenant";
+    const tenantId = "cf68b103-12fd-4208-a352-42379ef3b6e1";
 
     const odometerLog = await prisma.odometerLog.findFirst({
       where: {
@@ -62,7 +62,7 @@ export async function PUT(
     const { vehicleId, driverId, kilometers, hours, measureType, recordedAt } = body;
 
     // TODO: Get tenant from auth session
-    const tenantId = "mvp-default-tenant";
+    const tenantId = "cf68b103-12fd-4208-a352-42379ef3b6e1";
 
     // Verify odometer log exists and belongs to tenant
     const existingLog = await prisma.odometerLog.findFirst({
@@ -179,7 +179,7 @@ export async function DELETE(
     }
 
     // TODO: Get tenant from auth session
-    const tenantId = "mvp-default-tenant";
+    const tenantId = "cf68b103-12fd-4208-a352-42379ef3b6e1";
 
     // Verify odometer log exists and belongs to tenant
     const existingLog = await prisma.odometerLog.findFirst({

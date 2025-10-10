@@ -617,7 +617,7 @@ model WorkOrder {
   scheduledPackages ScheduledPackage[]           // ✅ CURRENT (VehicleMaintenanceMetrics)
   // vehicleMantPackages VehicleMantPackage[]     // DEPRECATED 02-Oct-2025
   vehicleProgramPackages VehicleProgramPackage[]  // ✅ CURRENT ARCHITECTURE
-  maintenanceAlert  MaintenanceAlert?            // ✅ Relación con alerta de mantenimiento
+  maintenanceAlerts MaintenanceAlert[]           // ✅ Relación 1-to-many con alertas
 
   @@index([tenantId])
   @@index([vehicleId])
@@ -885,7 +885,7 @@ model MaintenanceAlert {
   snoozedBy             String?
 
   // CONEXIÓN CON WORKORDER
-  workOrderId           Int?          @unique
+  workOrderId           Int?
   workOrderCreatedAt    DateTime?
   workOrderCreatedBy    String?
 

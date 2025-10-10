@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from "next/server";
 
-const TENANT_ID = 'mvp-default-tenant'; // Tenant hardcodeado para MVP
+const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1'; // Tenant hardcodeado para MVP
 
 // GET - Obtener Document específica por ID
 export async function GET(

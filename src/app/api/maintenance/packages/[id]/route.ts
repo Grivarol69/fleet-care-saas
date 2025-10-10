@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
 
-const TENANT_ID = 'mvp-default-tenant'; // Tenant hardcodeado para MVP
+const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1'; // Tenant hardcodeado para MVP
 
 export async function GET(
     _request: NextRequest,

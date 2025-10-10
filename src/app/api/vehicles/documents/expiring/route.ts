@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
-const TENANT_ID = 'mvp-default-tenant';
+const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1';
 
 export async function GET() {
   try {

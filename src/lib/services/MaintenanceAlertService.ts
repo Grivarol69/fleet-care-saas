@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { AlertLevel, AlertType, AlertCategory, Priority } from "@prisma/client";
 
-const TENANT_ID = "mvp-default-tenant";
+const TENANT_ID = "cf68b103-12fd-4208-a352-42379ef3b6e1";
 
 // Umbrales para generar alertas (en km)
 const ALERT_THRESHOLDS = {

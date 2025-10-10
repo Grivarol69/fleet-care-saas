@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-const TENANT_ID = "mvp-default-tenant";
+const TENANT_ID = "cf68b103-12fd-4208-a352-42379ef3b6e1";
 
 /**
  * POST - Crear WorkOrder desde alertas de mantenimiento
@@ -86,8 +86,8 @@ export async function POST(request: NextRequest) {
         mantType: 'PREVENTIVE',
         priority,
         status: 'PENDING',
-        technicianId: technicianId ? parseInt(technicianId) : null,
-        providerId: providerId ? parseInt(providerId) : null,
+        technicianId: technicianId || null,
+        providerId: providerId || null,
         creationMileage: vehicle.mileage,
         estimatedCost,
         requestedBy: "current-user-id", // TODO: Get from session
