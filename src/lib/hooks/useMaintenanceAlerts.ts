@@ -145,7 +145,7 @@ export function useSnoozeAlert() {
 
   return {
     snoozeAlert: (alertId: number, snoozedUntil: Date, reason?: string) => {
-      const params: any = {
+      const params: { alertId: number; status: string; snoozedUntil: Date; notes?: string } = {
         alertId,
         status: 'SNOOZED',
         snoozedUntil,

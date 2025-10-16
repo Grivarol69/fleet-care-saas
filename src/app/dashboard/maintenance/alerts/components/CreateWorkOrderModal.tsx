@@ -46,8 +46,8 @@ export function CreateWorkOrderModal({ isOpen, onClose, selectedAlertIds, onSucc
   const [priority, setPriority] = useState('MEDIUM');
 
   // Datos auxiliares (en producción vienen de APIs)
-  const [technicians, setTechnicians] = useState<any[]>([]);
-  const [providers, setProviders] = useState<any[]>([]);
+  const [technicians, setTechnicians] = useState<{ id: number; name: string }[]>([]);
+  const [providers, setProviders] = useState<{ id: number; name: string }[]>([]);
 
   const selectedAlerts = allAlerts?.filter(a => selectedAlertIds.includes(a.id)) || [];
 
@@ -140,11 +140,12 @@ export function CreateWorkOrderModal({ isOpen, onClose, selectedAlertIds, onSucc
       queryClient.invalidateQueries({ queryKey: ['work-orders'] });
 
       onSuccess();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating work order:', error);
+      const errorMessage = error instanceof Error ? error.message : "No se pudo crear la orden de trabajo";
       toast({
         title: "Error",
-        description: error.response?.data?.error || "No se pudo crear la orden de trabajo",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

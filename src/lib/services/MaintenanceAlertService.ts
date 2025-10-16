@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { AlertLevel, AlertType, AlertCategory, Priority } from "@prisma/client";
+import { Prisma, AlertLevel, AlertType, AlertCategory, Priority } from "@prisma/client";
 
 const TENANT_ID = "cf68b103-12fd-4208-a352-42379ef3b6e1";
 
@@ -87,8 +87,8 @@ export class MaintenanceAlertService {
     scheduledKm: number,
     currentKm: number,
     kmToMaintenance: number,
-    estimatedCost: any,
-    estimatedDuration: any,
+    estimatedCost: number | null,
+    estimatedDuration: number | null,
     category: AlertCategory
   ): Promise<void> {
 
@@ -357,7 +357,7 @@ export class MaintenanceAlertService {
       ? actualCost - alert.estimatedCost.toNumber()
       : null;
 
-    const updateData: any = {
+    const updateData: Prisma.MaintenanceAlertUpdateInput = {
       status: 'CLOSED',
       workOrderId,
       wasOnTime,

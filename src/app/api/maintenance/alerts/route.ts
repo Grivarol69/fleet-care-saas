@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1';
@@ -18,21 +19,21 @@ export async function GET(request: NextRequest) {
     const priority = searchParams.get('priority');
 
     // Construir filtros dinámicos
-    const where: any = { tenantId: TENANT_ID };
+    const where: Prisma.MaintenanceAlertWhereInput = { tenantId: TENANT_ID };
 
     if (vehicleId) {
       where.vehicleId = parseInt(vehicleId);
     }
 
     if (status) {
-      where.status = status;
+      where.status = status as Prisma.EnumAlertStatusFilter;
     } else {
       // Por defecto, solo alertas activas
       where.status = { in: ['PENDING', 'ACKNOWLEDGED', 'SNOOZED'] };
     }
 
     if (priority) {
-      where.priority = priority;
+      where.priority = priority as Prisma.EnumPriorityFilter;
     }
 
     // Obtener alertas desde la tabla MaintenanceAlert
@@ -137,7 +138,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "alertId is required" }, { status: 400 });
     }
 
-    const updateData: any = { status, updatedAt: new Date() };
+    const updateData: Prisma.MaintenanceAlertUpdateInput = { status, updatedAt: new Date() };
 
     if (notes) updateData.notes = notes;
     if (snoozedUntil) updateData.snoozedUntil = new Date(snoozedUntil);

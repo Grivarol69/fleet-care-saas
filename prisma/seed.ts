@@ -13,7 +13,7 @@ async function main() {
 
   const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1';
 
-  const tenant = await prisma.tenant.upsert({
+  await prisma.tenant.upsert({
     where: { id: TENANT_ID },
     update: {},
     create: {
@@ -257,10 +257,10 @@ async function main() {
   });
 
   await createPackageItems(hilux5k.id, [
-    { mantItemId: items[0].id, triggerKm: 5000, priority: 'HIGH', order: 1 },
-    { mantItemId: items[2].id, triggerKm: 5000, priority: 'HIGH', order: 2 },
-    { mantItemId: items[1].id, triggerKm: 5000, priority: 'MEDIUM', order: 3 },
-    { mantItemId: items[11].id, triggerKm: 5000, priority: 'LOW', order: 4 },
+    { mantItemId: items[0]!.id, triggerKm: 5000, priority: 'HIGH', order: 1 },
+    { mantItemId: items[2]!.id, triggerKm: 5000, priority: 'HIGH', order: 2 },
+    { mantItemId: items[1]!.id, triggerKm: 5000, priority: 'MEDIUM', order: 3 },
+    { mantItemId: items[11]!.id, triggerKm: 5000, priority: 'LOW', order: 4 },
   ]);
 
   // Paquete 10,000 km - Hilux
@@ -277,11 +277,11 @@ async function main() {
   });
 
   await createPackageItems(hilux10k.id, [
-    { mantItemId: items[0].id, triggerKm: 10000, priority: 'HIGH', order: 1 },
-    { mantItemId: items[2].id, triggerKm: 10000, priority: 'HIGH', order: 2 },
-    { mantItemId: items[6].id, triggerKm: 10000, priority: 'MEDIUM', order: 3 },
-    { mantItemId: items[8].id, triggerKm: 10000, priority: 'MEDIUM', order: 4 },
-    { mantItemId: items[10].id, triggerKm: 10000, priority: 'MEDIUM', order: 5 },
+    { mantItemId: items[0]!.id, triggerKm: 10000, priority: 'HIGH', order: 1 },
+    { mantItemId: items[2]!.id, triggerKm: 10000, priority: 'HIGH', order: 2 },
+    { mantItemId: items[6]!.id, triggerKm: 10000, priority: 'MEDIUM', order: 3 },
+    { mantItemId: items[8]!.id, triggerKm: 10000, priority: 'MEDIUM', order: 4 },
+    { mantItemId: items[10]!.id, triggerKm: 10000, priority: 'MEDIUM', order: 5 },
   ]);
 
   // Paquete 15,000 km - Hilux
@@ -298,9 +298,9 @@ async function main() {
   });
 
   await createPackageItems(hilux15k.id, [
-    { mantItemId: items[0].id, triggerKm: 15000, priority: 'HIGH', order: 1 },
-    { mantItemId: items[2].id, triggerKm: 15000, priority: 'HIGH', order: 2 },
-    { mantItemId: items[9].id, triggerKm: 15000, priority: 'MEDIUM', order: 3 },
+    { mantItemId: items[0]!.id, triggerKm: 15000, priority: 'HIGH', order: 1 },
+    { mantItemId: items[2]!.id, triggerKm: 15000, priority: 'HIGH', order: 2 },
+    { mantItemId: items[9]!.id, triggerKm: 15000, priority: 'MEDIUM', order: 3 },
   ]);
 
   // Paquete 30,000 km - Hilux (COMPLETO)
@@ -317,15 +317,15 @@ async function main() {
   });
 
   await createPackageItems(hilux30k.id, [
-    { mantItemId: items[0].id, triggerKm: 30000, priority: 'HIGH', order: 1 },
-    { mantItemId: items[2].id, triggerKm: 30000, priority: 'HIGH', order: 2 },
-    { mantItemId: items[3].id, triggerKm: 30000, priority: 'HIGH', order: 3 },
-    { mantItemId: items[5].id, triggerKm: 30000, priority: 'MEDIUM', order: 4 },
-    { mantItemId: items[4].id, triggerKm: 30000, priority: 'HIGH', order: 5 },
-    { mantItemId: items[6].id, triggerKm: 30000, priority: 'MEDIUM', order: 6 },
-    { mantItemId: items[10].id, triggerKm: 30000, priority: 'MEDIUM', order: 7 },
-    { mantItemId: items[12].id, triggerKm: 30000, priority: 'MEDIUM', order: 8 },
-    { mantItemId: items[13].id, triggerKm: 30000, priority: 'MEDIUM', order: 9 },
+    { mantItemId: items[0]!.id, triggerKm: 30000, priority: 'HIGH', order: 1 },
+    { mantItemId: items[2]!.id, triggerKm: 30000, priority: 'HIGH', order: 2 },
+    { mantItemId: items[3]!.id, triggerKm: 30000, priority: 'HIGH', order: 3 },
+    { mantItemId: items[5]!.id, triggerKm: 30000, priority: 'MEDIUM', order: 4 },
+    { mantItemId: items[4]!.id, triggerKm: 30000, priority: 'HIGH', order: 5 },
+    { mantItemId: items[6]!.id, triggerKm: 30000, priority: 'MEDIUM', order: 6 },
+    { mantItemId: items[10]!.id, triggerKm: 30000, priority: 'MEDIUM', order: 7 },
+    { mantItemId: items[12]!.id, triggerKm: 30000, priority: 'MEDIUM', order: 8 },
+    { mantItemId: items[13]!.id, triggerKm: 30000, priority: 'MEDIUM', order: 9 },
   ]);
 
   // Paquete 50,000 km - Hilux
@@ -342,13 +342,13 @@ async function main() {
   });
 
   await createPackageItems(hilux50k.id, [
-    { mantItemId: items[0].id, triggerKm: 50000, priority: 'HIGH', order: 1 },
-    { mantItemId: items[2].id, triggerKm: 50000, priority: 'HIGH', order: 2 },
-    { mantItemId: items[3].id, triggerKm: 50000, priority: 'HIGH', order: 3 },
-    { mantItemId: items[4].id, triggerKm: 50000, priority: 'HIGH', order: 4 },
-    { mantItemId: items[7].id, triggerKm: 50000, priority: 'HIGH', order: 5 },
-    { mantItemId: items[14].id, triggerKm: 50000, priority: 'HIGH', order: 6 },
-    { mantItemId: items[15].id, triggerKm: 50000, priority: 'HIGH', order: 7 },
+    { mantItemId: items[0]!.id, triggerKm: 50000, priority: 'HIGH', order: 1 },
+    { mantItemId: items[2]!.id, triggerKm: 50000, priority: 'HIGH', order: 2 },
+    { mantItemId: items[3]!.id, triggerKm: 50000, priority: 'HIGH', order: 3 },
+    { mantItemId: items[4]!.id, triggerKm: 50000, priority: 'HIGH', order: 4 },
+    { mantItemId: items[7]!.id, triggerKm: 50000, priority: 'HIGH', order: 5 },
+    { mantItemId: items[14]!.id, triggerKm: 50000, priority: 'HIGH', order: 6 },
+    { mantItemId: items[15]!.id, triggerKm: 50000, priority: 'HIGH', order: 7 },
   ]);
 
   console.log('✓ Toyota Hilux template created with 5 packages');
@@ -380,9 +380,9 @@ async function main() {
   });
 
   await createPackageItems(ranger10k.id, [
-    { mantItemId: items[0].id, triggerKm: 10000, priority: 'HIGH', order: 1 },
-    { mantItemId: items[2].id, triggerKm: 10000, priority: 'HIGH', order: 2 },
-    { mantItemId: items[6].id, triggerKm: 10000, priority: 'MEDIUM', order: 3 },
+    { mantItemId: items[0]!.id, triggerKm: 10000, priority: 'HIGH', order: 1 },
+    { mantItemId: items[2]!.id, triggerKm: 10000, priority: 'HIGH', order: 2 },
+    { mantItemId: items[6]!.id, triggerKm: 10000, priority: 'MEDIUM', order: 3 },
   ]);
 
   // Paquete 20,000 km - Ranger
@@ -399,9 +399,9 @@ async function main() {
   });
 
   await createPackageItems(ranger20k.id, [
-    { mantItemId: items[0].id, triggerKm: 20000, priority: 'HIGH', order: 1 },
-    { mantItemId: items[2].id, triggerKm: 20000, priority: 'HIGH', order: 2 },
-    { mantItemId: items[5].id, triggerKm: 20000, priority: 'MEDIUM', order: 3 },
+    { mantItemId: items[0]!.id, triggerKm: 20000, priority: 'HIGH', order: 1 },
+    { mantItemId: items[2]!.id, triggerKm: 20000, priority: 'HIGH', order: 2 },
+    { mantItemId: items[5]!.id, triggerKm: 20000, priority: 'MEDIUM', order: 3 },
   ]);
 
   // Paquete 30,000 km - Ranger
@@ -418,10 +418,10 @@ async function main() {
   });
 
   await createPackageItems(ranger30k.id, [
-    { mantItemId: items[0].id, triggerKm: 30000, priority: 'HIGH', order: 1 },
-    { mantItemId: items[2].id, triggerKm: 30000, priority: 'HIGH', order: 2 },
-    { mantItemId: items[3].id, triggerKm: 30000, priority: 'HIGH', order: 3 },
-    { mantItemId: items[4].id, triggerKm: 30000, priority: 'HIGH', order: 4 },
+    { mantItemId: items[0]!.id, triggerKm: 30000, priority: 'HIGH', order: 1 },
+    { mantItemId: items[2]!.id, triggerKm: 30000, priority: 'HIGH', order: 2 },
+    { mantItemId: items[3]!.id, triggerKm: 30000, priority: 'HIGH', order: 3 },
+    { mantItemId: items[4]!.id, triggerKm: 30000, priority: 'HIGH', order: 4 },
   ]);
 
   console.log('✓ Ford Ranger template created with 3 packages');
