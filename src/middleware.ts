@@ -72,8 +72,8 @@ export async function middleware(request: NextRequest) {
 }
 
 function getSubdomain(hostname: string): string | null {
-    // For development (localhost)
-    if (hostname.includes('localhost')) {
+    // For development (localhost) or Vercel deployments (temporal MVP)
+    if (hostname.includes('localhost') || hostname.includes('vercel.app')) {
         const parts = hostname.split('.')
         if (parts.length > 1 && parts[0] && parts[0] !== 'localhost') {
             return parts[0]
