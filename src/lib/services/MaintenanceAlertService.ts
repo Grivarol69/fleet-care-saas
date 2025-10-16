@@ -64,7 +64,7 @@ export class MaintenanceAlertService {
               currentKm,
               kmToMaintenance,
               item.estimatedCost ? Number(item.estimatedCost) : null,
-              item.estimatedTime,
+              item.estimatedTime ? Number(item.estimatedTime) : null,
               this.determineCategory(item.mantItem.name)
             );
           }
