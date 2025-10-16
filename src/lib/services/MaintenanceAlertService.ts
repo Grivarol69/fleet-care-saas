@@ -63,7 +63,7 @@ export class MaintenanceAlertService {
               item.scheduledKm,
               currentKm,
               kmToMaintenance,
-              item.estimatedCost,
+              item.estimatedCost ? Number(item.estimatedCost) : null,
               item.estimatedTime,
               this.determineCategory(item.mantItem.name)
             );
@@ -354,12 +354,12 @@ export class MaintenanceAlertService {
     const wasOnTime = alert.kmToMaintenance >= 0;
 
     const costVariance = actualCost && alert.estimatedCost
-      ? actualCost - alert.estimatedCost.toNumber()
+      ? actualCost - Number(alert.estimatedCost)
       : null;
 
     const updateData: Prisma.MaintenanceAlertUpdateInput = {
       status: 'CLOSED',
-      workOrderId,
+      workOrder: { connect: { id: workOrderId } },
       wasOnTime,
       closedAt: new Date()
     };
