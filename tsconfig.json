@@ -43,6 +43,7 @@
     ".next",
     "dist",
     "build",
-    "prisma/seed-extended.ts"
+    "prisma/seed-extended.ts",
+    "prisma/seed.ts"
   ]
 }
