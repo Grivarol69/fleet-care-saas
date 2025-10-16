@@ -50,6 +50,7 @@ model Tenant {
   drivers                     Driver[]
   vehicleDrivers              VehicleDriver[]
   maintenanceAlerts           MaintenanceAlert[]
+  invoices                    Invoice[]
 
   @@index([slug])
   @@index([subscriptionStatus])
@@ -67,8 +68,15 @@ model User {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Relaciones de auditoría - Invoice & MasterParts
+  invoicesApproved          Invoice[]        @relation("InvoiceApprover")
+  invoicesRegistered        Invoice[]        @relation("InvoiceRegistrar")
+  priceHistoryApproved      PartPriceHistory[] @relation("PriceHistoryApprover")
+  priceHistoryPurchased     PartPriceHistory[] @relation("PriceHistoryPurchaser")
+  paymentsRegistered        InvoicePayment[] @relation("PaymentRegistrar")
 
   @@index([tenantId])
   @@index([email])
@@ -252,6 +260,11 @@ model MantItem {
   estimatedCost       Decimal? @db.Decimal(10, 2) // Costo estimado del item
   categoryId          Int
   status              Status   @default(ACTIVE)
+
+  // NUEVO: Discriminación de tipo y vinculación con MasterPart
+  type                ItemType @default(ACTION) // ACTION, PART, SERVICE
+  technicalNotes      String?  @db.Text // Recomendaciones técnicas para el técnico
+
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
@@ -262,9 +275,11 @@ model MantItem {
   workOrderItems      WorkOrderItem[]
   // vehicleMantPlanItem VehicleMantPlanItem[]       // DEPRECATED 02-Oct-2025
   vehicleProgramItems VehicleProgramItem[]           // ✅ CURRENT ARCHITECTURE
+  parts               MantItemPart[]                 // ✅ Artículos vinculados al item
 
   @@index([tenantId])
   @@index([categoryId])
+  @@index([type])
   @@unique([tenantId, name])
 }
 
@@ -618,6 +633,7 @@ model WorkOrder {
   // vehicleMantPackages VehicleMantPackage[]     // DEPRECATED 02-Oct-2025
   vehicleProgramPackages VehicleProgramPackage[]  // ✅ CURRENT ARCHITECTURE
   maintenanceAlerts MaintenanceAlert[]           // ✅ Relación 1-to-many con alertas
+  invoices          Invoice[]                     // ✅ Facturas vinculadas a esta WO
 
   @@index([tenantId])
   @@index([vehicleId])
@@ -656,8 +672,9 @@ model WorkOrderItem {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
-  mantItem  MantItem  @relation(fields: [mantItemId], references: [id])
+  workOrder    WorkOrder      @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  mantItem     MantItem       @relation(fields: [mantItemId], references: [id])
+  invoiceItems InvoiceItem[]  // ✅ Items de factura vinculados
 
   @@index([workOrderId])
   @@index([mantItemId])
@@ -727,6 +744,251 @@ model ExpenseAuditLog {
 }
 
 // ========================================
+// INVOICE & MASTER PARTS SYSTEM (FASE 1-3)
+// Sistema de facturación y catálogo de artículos
+// ========================================
+
+// 1. Master de Artículos - Catálogo compartido entre tenants
+model MasterPart {
+  id              String   @id @default(cuid())
+  tenantId        String?  // NULL = compartido globalmente, FK = específico del tenant
+
+  // Identificación
+  code            String   @unique  // "BOSCH-123", "SHELL-5W40-SYNT"
+  description     String              // "Filtro aceite motor BOSCH"
+  category        String              // "FILTROS", "ACEITES", "LUBRICANTES"
+  subcategory     String?             // "FILTROS_ACEITE", "FILTROS_AIRE"
+  unit            String   @default("UNIDAD")  // "UNIDAD", "LITRO", "GALÓN", "KG"
+
+  // Precio referencia (último conocido)
+  referencePrice  Decimal? @db.Decimal(10, 2)
+  lastPriceUpdate DateTime?
+
+  // Specs técnicas (JSON flexible para FASE 3)
+  specifications  Json?    // { "viscosity": "5W-40", "type": "synthetic", "apiRating": "SN/CF" }
+
+  // Alternativas/Equivalentes (FASE 2-3)
+  alternativeFor  String?  // FK a otro MasterPart (ej: genérico equivalente)
+  alternativePart MasterPart? @relation("Alternatives", fields: [alternativeFor], references: [id], onDelete: SetNull)
+  alternatives    MasterPart[] @relation("Alternatives")
+
+  // Metadata
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relaciones
+  mantItemParts   MantItemPart[]
+  invoiceItems    InvoiceItem[]
+  priceHistory    PartPriceHistory[]
+  compatibilities PartCompatibility[]  // FASE 3
+
+  @@index([category])
+  @@index([tenantId])
+  @@index([code])
+  @@index([isActive])
+}
+
+// 2. Tabla intermedia: MantItem ↔ MasterPart (many-to-many)
+model MantItemPart {
+  id            String   @id @default(cuid())
+  mantItemId    Int
+  mantItem      MantItem @relation(fields: [mantItemId], references: [id], onDelete: Cascade)
+  masterPartId  String
+  masterPart    MasterPart @relation(fields: [masterPartId], references: [id], onDelete: Restrict)
+
+  quantity      Decimal  @default(1) @db.Decimal(10, 2)  // Ej: 4.5 litros de aceite
+  isRequired    Boolean  @default(true)  // Requerido vs opcional
+  isPrimary     Boolean  @default(false) // Artículo principal del item
+
+  // Notas específicas de este vínculo
+  notes         String?  // "Alternativamente usar CASTROL 5W-40"
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([mantItemId, masterPartId])
+  @@index([mantItemId])
+  @@index([masterPartId])
+}
+
+// 3. Invoice - Factura del proveedor
+model Invoice {
+  id              String   @id @default(cuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Identificación factura
+  invoiceNumber   String   // Número de factura del proveedor
+  invoiceDate     DateTime // Fecha emisión factura
+  dueDate         DateTime? // Fecha vencimiento pago
+
+  // Proveedor (reutilizamos Provider existente, lo renombraremos a Supplier)
+  supplierId      Int
+  supplier        Provider @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+
+  // Vinculación con trabajo (opcional si factura es de WO)
+  workOrderId     Int?
+  workOrder       WorkOrder? @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
+
+  // Montos
+  subtotal        Decimal  @db.Decimal(10, 2)
+  taxAmount       Decimal  @default(0) @db.Decimal(10, 2)
+  totalAmount     Decimal  @db.Decimal(10, 2)
+  currency        String   @default("COP")
+
+  // Estado
+  status          InvoiceStatus @default(PENDING)
+
+  // Aprobación y auditoría
+  approvedBy      String?
+  approver        User?    @relation("InvoiceApprover", fields: [approvedBy], references: [id], onDelete: SetNull)
+  approvedAt      DateTime?
+
+  registeredBy    String   // Usuario que registró la factura
+  registrar       User     @relation("InvoiceRegistrar", fields: [registeredBy], references: [id], onDelete: Restrict)
+
+  // Notas y adjuntos
+  notes           String?  @db.Text
+  attachmentUrl   String?  // URL a factura escaneada/PDF
+
+  // Metadata
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relaciones
+  items           InvoiceItem[]
+  payments        InvoicePayment[]  // FASE 2
+  priceHistory    PartPriceHistory[]
+
+  @@unique([tenantId, invoiceNumber])
+  @@index([tenantId])
+  @@index([supplierId])
+  @@index([workOrderId])
+  @@index([invoiceDate])
+}
+
+// 4. InvoiceItem - Línea de factura (granular)
+model InvoiceItem {
+  id              String   @id @default(cuid())
+  invoiceId       String
+  invoice         Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  // Vinculación con catálogo (CLAVE para analytics)
+  masterPartId    String?  // Nullable: permite registrar sin catálogo inicialmente
+  masterPart      MasterPart? @relation(fields: [masterPartId], references: [id], onDelete: SetNull)
+
+  // Vinculación con trabajo realizado (traza: alerta → WO → factura)
+  workOrderItemId Int?
+  workOrderItem   WorkOrderItem? @relation(fields: [workOrderItemId], references: [id], onDelete: SetNull)
+
+  // Datos de factura (lo que dice el documento físico)
+  description     String   // Texto exacto de la factura
+  quantity        Decimal  @db.Decimal(10, 2)
+  unitPrice       Decimal  @db.Decimal(10, 2) // Precio real pagado
+  subtotal        Decimal  @db.Decimal(10, 2)
+  taxRate         Decimal  @default(0) @db.Decimal(5, 2)
+  taxAmount       Decimal  @default(0) @db.Decimal(10, 2)
+  total           Decimal  @db.Decimal(10, 2)
+
+  // Metadata
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([invoiceId])
+  @@index([masterPartId])
+  @@index([workOrderItemId])
+}
+
+// 5. Histórico de precios por artículo + proveedor (GOLD MINE para analytics)
+model PartPriceHistory {
+  id              String   @id @default(cuid())
+  tenantId        String   // Precios son específicos del tenant
+
+  // Artículo
+  masterPartId    String
+  masterPart      MasterPart @relation(fields: [masterPartId], references: [id], onDelete: Cascade)
+
+  // Proveedor
+  supplierId      Int
+  supplier        Provider @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+
+  // Precio y contexto
+  price           Decimal  @db.Decimal(10, 2)
+  quantity        Decimal  @default(1) @db.Decimal(10, 2)  // Por si aplican descuentos por volumen
+  recordedAt      DateTime @default(now())
+
+  // Auditoría (RESPONDE: "¿Quién autorizó esta compra?")
+  invoiceId       String?
+  invoice         Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  approvedBy      String?
+  approver        User?    @relation("PriceHistoryApprover", fields: [approvedBy], references: [id], onDelete: SetNull)
+  purchasedBy     String?  // Usuario que gestionó la compra
+  purchaser       User?    @relation("PriceHistoryPurchaser", fields: [purchasedBy], references: [id], onDelete: SetNull)
+
+  // Metadata
+  createdAt       DateTime @default(now())
+
+  @@index([masterPartId, supplierId])
+  @@index([tenantId])
+  @@index([recordedAt])
+  @@index([approvedBy])
+}
+
+// ========================================
+// FASE 2-3: MODELOS FUTUROS
+// ========================================
+
+// 6. Pagos de facturas (FASE 2 - control financiero)
+model InvoicePayment {
+  id              String   @id @default(cuid())
+  invoiceId       String
+  invoice         Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  amount          Decimal  @db.Decimal(10, 2)
+  paymentDate     DateTime
+  paymentMethod   String   // "TRANSFERENCIA", "CHEQUE", "EFECTIVO"
+  referenceNumber String?  // Número de transferencia/cheque
+
+  registeredBy    String
+  registrar       User     @relation("PaymentRegistrar", fields: [registeredBy], references: [id], onDelete: Restrict)
+
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  @@index([invoiceId])
+  @@index([paymentDate])
+}
+
+// 7. Compatibilidad de artículos por vehículo (FASE 3 - para sugerir alternativas)
+model PartCompatibility {
+  id              String   @id @default(cuid())
+  masterPartId    String
+  masterPart      MasterPart @relation(fields: [masterPartId], references: [id], onDelete: Cascade)
+
+  // Filtros de compatibilidad (NULL = aplica a todos)
+  brand           String?   // "Toyota"
+  model           String?   // "Hilux"
+  yearFrom        Int?      // 2020
+  yearTo          Int?      // 2024
+  engineType      String?   // "Diesel 2.8L", "Gasolina 2.7L"
+  transmission    String?   // "Manual", "Automática"
+
+  // Nivel de compatibilidad
+  compatibility   CompatibilityLevel @default(COMPATIBLE)
+
+  notes           String?  @db.Text
+  verifiedBy      String?  // Usuario que verificó compatibilidad
+  verifiedAt      DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([masterPartId])
+  @@index([brand, model])
+}
+
+// ========================================
 // PEOPLE & PROVIDERS
 // ========================================
 
@@ -768,6 +1030,8 @@ model Provider {
   // vehicleMantPlanItem   VehicleMantPlanItem[]       // DEPRECATED 02-Oct-2025
   vehicleProgramPackages VehicleProgramPackage[]      // ✅ CURRENT ARCHITECTURE
   vehicleProgramItems   VehicleProgramItem[]          // ✅ CURRENT ARCHITECTURE
+  invoices              Invoice[]                     // ✅ Facturas del proveedor
+  priceHistory          PartPriceHistory[]            // ✅ Histórico de precios
 
   @@index([tenantId])
   @@unique([tenantId, name])
@@ -857,6 +1121,11 @@ model MaintenanceAlert {
   description           String?
   estimatedCost         Decimal?      @db.Decimal(10, 2)
   estimatedDuration     Decimal?      @db.Decimal(5, 2) // Horas
+
+  // NUEVO: Info técnica heredada de MantItem
+  technicalNotes        String?       @db.Text // Copiado de MantItem.technicalNotes
+  recommendedParts      Json?         // Snapshot de parts recomendados
+  customNotes           String?       @db.Text // Admin puede agregar notas específicas
 
   // KILOMETRAJE
   scheduledKm           Int           // Km programado del item
@@ -1284,4 +1553,29 @@ enum AlertCategory {
   MAJOR_COMPONENT   // Motor, transmisión, suspensión
   ROUTINE           // Aceite, filtros, lubricación
   MINOR             // Limpieza, inspecciones visuales
+}
+
+// ========================================
+// ENUMS - INVOICE & MASTER PARTS
+// ========================================
+
+enum ItemType {
+  ACTION   // Inspección, revisión (no factura artículo)
+  PART     // Repuesto facturable (filtro, aceite, etc.)
+  SERVICE  // Servicio completo (mano obra + materiales del proveedor)
+}
+
+enum InvoiceStatus {
+  PENDING      // Registrada, pendiente aprobación
+  APPROVED     // Aprobada para pago
+  PAID         // Pagada
+  OVERDUE      // Vencida
+  CANCELLED    // Cancelada
+}
+
+enum CompatibilityLevel {
+  RECOMMENDED   // OEM o recomendado fabricante
+  COMPATIBLE    // Compatible genérico
+  CONDITIONAL   // Compatible bajo condiciones
+  INCOMPATIBLE  // No compatible
 }
