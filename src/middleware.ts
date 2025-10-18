@@ -72,21 +72,28 @@ export async function middleware(request: NextRequest) {
 }
 
 function getSubdomain(hostname: string): string | null {
-    // For development (localhost) or Vercel deployments (temporal MVP)
-    if (hostname.includes('localhost') || hostname.includes('vercel.app')) {
+    // For development (localhost)
+    if (hostname.includes('localhost')) {
+        return null // No subdomains en localhost para MVP
+    }
+
+    // For Vercel deployments
+    if (hostname.includes('vercel.app')) {
         const parts = hostname.split('.')
-        if (parts.length > 1 && parts[0] && parts[0] !== 'localhost') {
+        // fleet-care-staging.vercel.app = 3 parts (NO subdomain)
+        // tenant.fleet-care-staging.vercel.app = 4 parts (SÍ subdomain)
+        if (parts.length > 3 && parts[0]) {
             return parts[0]
         }
         return null
     }
-    
-    // For production
+
+    // For production with custom domain
     const parts = hostname.split('.')
     if (parts.length > 2 && parts[0]) {
         return parts[0]
     }
-    
+
     return null
 }
 
