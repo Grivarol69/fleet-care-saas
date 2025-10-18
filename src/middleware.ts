@@ -28,8 +28,8 @@ export async function middleware(request: NextRequest) {
         console.log('🔄 URL final:', url.pathname, 'Query:', url.searchParams.toString())
     } else {
         console.log('⏭️ No es subdomain, aplicando tenant por defecto para desarrollo')
-        // Para localhost sin subdomain, usar tenant por defecto
-        if (hostname.includes('localhost')) {
+        // Para localhost y staging sin subdomain, usar tenant por defecto
+        if (hostname.includes('localhost') || hostname.includes('vercel.app')) {
             url.searchParams.set('tenant', 'cf68b103-12fd-4208-a352-42379ef3b6e1')
             console.log('🔧 Tenant por defecto aplicado: cf68b103-12fd-4208-a352-42379ef3b6e1')
         }
@@ -61,7 +61,7 @@ export async function middleware(request: NextRequest) {
     // Add tenant to response headers
     if (subdomain) {
         supabaseResponse.headers.set('x-tenant', subdomain)
-    } else if (hostname.includes('localhost')) {
+    } else if (hostname.includes('localhost') || hostname.includes('vercel.app')) {
         supabaseResponse.headers.set('x-tenant', 'cf68b103-12fd-4208-a352-42379ef3b6e1')
     }
 
