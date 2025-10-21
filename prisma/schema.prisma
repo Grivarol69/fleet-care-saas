@@ -207,6 +207,15 @@ model Vehicle {
   typePlate      PlateType    @default(PARTICULAR)
   lastKilometers Int?
   lastRecorder   DateTime? @default(now())
+
+  // ===== CAMPOS ADICIONALES PARA CV (Hoja de Vida) =====
+  fuelType              FuelType?      // DIESEL, GASOLINA, GAS, ELECTRICO, HIBRIDO
+  serviceType           ServiceType?   // PUBLICO, PARTICULAR, OFICIAL
+
+  // Contacto de emergencia
+  emergencyContactName  String?
+  emergencyContactPhone String?
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   
@@ -1200,14 +1209,21 @@ model Document {
   tenantId     String
   vehicleId    Int
   type         DocumentType
-  fileName     String
-  fileUrl      String
+
+  // Metadata del ARCHIVO físico
+  fileName     String         // Nombre del archivo subido (ej: "soat-toyota-abc123.pdf")
+  fileUrl      String         // URL del archivo en uploadthing
+
+  // Información del DOCUMENTO legal
+  documentNumber String?      // Número oficial del documento (ej: "2508004334695000")
+  entity         String?      // Entidad emisora (ej: "SURA", "Seguros Equidad")
+
   expiryDate   DateTime?
   status       DocumentStatus @default(ACTIVE)
   uploadedAt   DateTime       @default(now())
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
-  
+
   tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
 
@@ -1215,6 +1231,7 @@ model Document {
   @@index([vehicleId])
   @@index([type])
   @@index([expiryDate])
+  @@index([documentNumber])
 }
 
 // ========================================
@@ -1411,6 +1428,20 @@ enum VehicleOwner {
 enum PlateType {
   PARTICULAR
   PUBLICO
+}
+
+enum FuelType {
+  DIESEL
+  GASOLINA
+  GAS
+  ELECTRICO
+  HIBRIDO
+}
+
+enum ServiceType {
+  PUBLICO
+  PARTICULAR
+  OFICIAL
 }
 
 enum Status {
