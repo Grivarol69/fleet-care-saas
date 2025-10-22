@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { createClient } from '@/utils/supabase/server';
 import { Resend } from "resend";
 import { VehicleCVEmail } from "@/emails/VehicleCVEmail";
 import { renderToBuffer } from "@react-pdf/renderer";
@@ -9,12 +8,14 @@ import { prisma } from "@/lib/prisma";
 import React from "react";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1'; // Tenant hardcodeado para MVP
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
-    if (!session?.user?.tenantId) {
+    if (!user) {
       return NextResponse.json(
         { error: "No autorizado" },
         { status: 401 }
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
     const vehicle = await prisma.vehicle.findFirst({
       where: {
         id: vehicleId,
-        tenantId: session.user.tenantId,
+        tenantId: TENANT_ID,
       },
       include: {
         brand: true,
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
 
     // Obtener datos del tenant
     const tenant = await prisma.tenant.findUnique({
-      where: { id: session.user.tenantId },
+      where: { id: TENANT_ID },
       select: {
         name: true,
         logo: true,
