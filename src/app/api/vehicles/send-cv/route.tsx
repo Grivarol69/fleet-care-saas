@@ -75,35 +75,49 @@ export async function POST(req: NextRequest) {
     });
 
     // Generar PDF del CV
+    const vehicleData = {
+      licensePlate: vehicle.licensePlate,
+      ...(vehicle.brand && { brand: { name: vehicle.brand.name } }),
+      ...(vehicle.line && { line: { name: vehicle.line.name } }),
+      ...(vehicle.type && { type: { name: vehicle.type.name } }),
+      year: vehicle.year,
+      color: vehicle.color,
+      ...(vehicle.cylinder && { cylinder: vehicle.cylinder }),
+      ...(vehicle.bodyWork && { bodyWork: vehicle.bodyWork }),
+      ...(vehicle.engineNumber && { engineNumber: vehicle.engineNumber }),
+      ...(vehicle.chasisNumber && { chasisNumber: vehicle.chasisNumber }),
+      ...(vehicle.ownerCard && { ownerCard: vehicle.ownerCard }),
+      ...(vehicle.fuelType && { fuelType: vehicle.fuelType }),
+      ...(vehicle.serviceType && { serviceType: vehicle.serviceType }),
+      ...(vehicle.photo && { photo: vehicle.photo }),
+      mileage: vehicle.mileage,
+      ...(vehicle.emergencyContactName && { emergencyContactName: vehicle.emergencyContactName }),
+      ...(vehicle.emergencyContactPhone && { emergencyContactPhone: vehicle.emergencyContactPhone }),
+    };
+
+    const tenantData: { name: string; logo?: string } | undefined = tenant ? {
+      name: tenant.name,
+      ...(tenant.logo && { logo: tenant.logo }),
+    } : undefined;
+
+    const documentsData: Array<{
+      type: string;
+      documentNumber?: string;
+      expiryDate?: string;
+      entity?: string;
+    }> = vehicle.documents.map((doc) => ({
+      type: doc.type as string,
+      ...(doc.documentNumber && { documentNumber: doc.documentNumber }),
+      ...(doc.expiryDate && { expiryDate: doc.expiryDate.toISOString() }),
+      ...(doc.entity && { entity: doc.entity }),
+    }));
+
     const pdfBuffer = await renderToBuffer(
-      React.createElement(VehicleCV, {
-        vehicle: {
-          licensePlate: vehicle.licensePlate,
-          brand: vehicle.brand,
-          line: vehicle.line,
-          type: vehicle.type,
-          year: vehicle.year,
-          color: vehicle.color,
-          cylinder: vehicle.cylinder || undefined,
-          bodyWork: vehicle.bodyWork || undefined,
-          engineNumber: vehicle.engineNumber || undefined,
-          chasisNumber: vehicle.chasisNumber || undefined,
-          ownerCard: vehicle.ownerCard || undefined,
-          fuelType: vehicle.fuelType || undefined,
-          serviceType: vehicle.serviceType || undefined,
-          photo: vehicle.photo || undefined,
-          mileage: vehicle.mileage,
-          emergencyContactName: vehicle.emergencyContactName || undefined,
-          emergencyContactPhone: vehicle.emergencyContactPhone || undefined,
-        },
-        tenant: tenant || undefined,
-        documents: vehicle.documents.map((doc) => ({
-          type: doc.type,
-          documentNumber: doc.documentNumber || undefined,
-          expiryDate: doc.expiryDate?.toISOString(),
-          entity: doc.entity || undefined,
-        })),
-      })
+      <VehicleCV
+        vehicle={vehicleData}
+        {...(tenantData && { tenant: tenantData })}
+        documents={documentsData}
+      />
     );
 
     // Preparar attachments: CV + documentos del vehículo
