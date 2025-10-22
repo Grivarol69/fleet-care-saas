@@ -25,18 +25,34 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormAddFleetVehicle } from "../FormAddFleetVehicle";
 import { FormEditFleetVehicle } from "../FormEditFleetVehicle";
+import { VehicleCVViewer } from "../VehicleCV";
+import { SendCVDialog } from "../SendCVDialog";
 import axios from "axios";
 import { useToast } from "@/components/hooks/use-toast";
 import Image from "next/image";
 import { DownloadBtn } from "./DownloadBtn";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal, Pencil, Trash2, FileText, Mail, MessageCircle } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function FleetVehiclesList() {
   const [data, setData] = useState<FleetVehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isCVDialogOpen, setIsCVDialogOpen] = useState(false);
+  const [isSendEmailDialogOpen, setIsSendEmailDialogOpen] = useState(false);
   const [editingFleetVehicle, setEditingFleetVehicle] =
+    useState<FleetVehicle | null>(null);
+  const [viewingVehicleCV, setViewingVehicleCV] =
+    useState<FleetVehicle | null>(null);
+  const [sendingVehicleCV, setSendingVehicleCV] =
     useState<FleetVehicle | null>(null);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -238,28 +254,63 @@ export function FleetVehiclesList() {
       },
       {
         id: "actions",
-        header: "Acciones",
-        cell: ({ row }) => (
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleEdit(row.original)}
-            >
-              Editar
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => handleDelete(row.original.id)}
-            >
-              Eliminar
-            </Button>
-          </div>
-        ),
+        header: () => <div className="text-right">Acciones</div>,
+        cell: ({ row }) => {
+          const vehicle = row.original;
+
+          return (
+            <div className="text-right">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-8 w-8 p-0">
+                    <span className="sr-only">Abrir menú</span>
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuItem onClick={() => handleEdit(vehicle)}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Editar
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem onClick={() => handleDelete(vehicle.id)}>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Eliminar
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuItem onClick={() => {
+                    setViewingVehicleCV(vehicle);
+                    setIsCVDialogOpen(true);
+                  }}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Ver CV
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem onClick={() => {
+                    setSendingVehicleCV(vehicle);
+                    setIsSendEmailDialogOpen(true);
+                  }}>
+                    <Mail className="mr-2 h-4 w-4" />
+                    Enviar por Email
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem disabled>
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    Enviar por WhatsApp
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          );
+        },
       },
     ],
-    [handleDelete, handleEdit]
+    [handleDelete, handleEdit, toast]
   );
 
   const table = useReactTable({
@@ -416,6 +467,24 @@ export function FleetVehiclesList() {
             // Refrescar los datos desde el servidor en lugar de hacer merge manual
             fetchFleetVehicles();
           }}
+        />
+      )}
+
+      {viewingVehicleCV && (
+        <VehicleCVViewer
+          isOpen={isCVDialogOpen}
+          setIsOpen={setIsCVDialogOpen}
+          vehicle={viewingVehicleCV}
+          documents={viewingVehicleCV.documents || []}
+        />
+      )}
+
+      {sendingVehicleCV && (
+        <SendCVDialog
+          isOpen={isSendEmailDialogOpen}
+          setIsOpen={setIsSendEmailDialogOpen}
+          vehicleId={sendingVehicleCV.id}
+          vehiclePlate={sendingVehicleCV.licensePlate}
         />
       )}
     </div>

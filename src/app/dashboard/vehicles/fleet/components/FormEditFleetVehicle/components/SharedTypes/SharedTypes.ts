@@ -8,6 +8,8 @@ export interface DocumentProps {
     type: DocumentType;
     fileName: string;
     fileUrl: string;
+    documentNumber: string | null;
+    entity: string | null;
     expiryDate: string | null;
     status: DocumentStatus;
     uploadedAt: string;

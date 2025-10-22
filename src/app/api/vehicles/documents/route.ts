@@ -64,11 +64,14 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { vehiclePlate, type, fileName, fileUrl, expiryDate, status } = body;
+        const { vehiclePlate, type, documentNumber, entity, fileUrl, expiryDate, status } = body;
 
-        if (!vehiclePlate || !type || !fileName || !fileUrl) {
+        if (!vehiclePlate || !type || !documentNumber || !fileUrl) {
             return new NextResponse("Missing required fields", { status: 400 });
         }
+
+        // Extraer fileName del fileUrl automáticamente
+        const fileName = fileUrl.split('/').pop() || 'document.pdf';
 
         const vehicle = await prisma.vehicle.findUnique({
             where: {
@@ -88,7 +91,9 @@ export async function POST(req: Request) {
                 tenantId: TENANT_ID,
                 vehicleId: vehicle.id,
                 type,
-                fileName,
+                fileName,              // Extraído del fileUrl
+                documentNumber,        // Número oficial del documento
+                entity: entity || null, // Entidad emisora (opcional)
                 fileUrl,
                 expiryDate: expiryDate ? new Date(expiryDate) : null,
                 status: status || 'ACTIVE',

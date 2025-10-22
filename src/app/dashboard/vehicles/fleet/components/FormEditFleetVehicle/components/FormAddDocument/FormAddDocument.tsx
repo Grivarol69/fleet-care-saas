@@ -45,7 +45,8 @@ import { DocumentType } from "@prisma/client";
 
 const formSchema = z.object({
   type: z.nativeEnum(DocumentType),
-  fileName: z.string().min(1, "El número de documento es requerido"),
+  documentNumber: z.string().min(1, "El número de documento es requerido"),
+  entity: z.string().optional(),
   fileUrl: z.string().min(1, "Debe subir un archivo"),
   expiryDate: z.date().optional(),
 });
@@ -62,7 +63,8 @@ export function FormAddDocument({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      fileName: "",
+      documentNumber: "",
+      entity: "",
       fileUrl: "",
     },
   });
@@ -156,13 +158,32 @@ export function FormAddDocument({
             {/* Número de Documento */}
             <FormField
               control={form.control}
-              name="fileName"
+              name="documentNumber"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Número de Documento *</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Ej: 123456789"
+                      placeholder="Ej: 2508004334695000"
+                      {...field}
+                      disabled={isLoading}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Entidad Emisora */}
+            <FormField
+              control={form.control}
+              name="entity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Entidad Emisora</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Ej: SURA, Seguros Equidad, Tecnimotors"
                       {...field}
                       disabled={isLoading}
                     />

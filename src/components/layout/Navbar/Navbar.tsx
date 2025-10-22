@@ -1,13 +1,84 @@
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+'use client';
 
-import { Menu } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+
+import {
+  Menu,
+  Gauge,
+  Car,
+  Bell,
+  Wrench,
+  Search,
+  DollarSign,
+  Plus,
+  AlertTriangle,
+  FileBarChart,
+} from 'lucide-react';
 import { SidebarRoutes } from '../SidebarRoutes';
-import Link from 'next/link';
+import { useRouter, usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
+
+interface NavbarStats {
+  totalVehicles: number;
+  criticalAlerts: number;
+  openWorkOrders: number;
+  monthCosts: string;
+}
 
 export function Navbar() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [stats, setStats] = useState<NavbarStats>({
+    totalVehicles: 0,
+    criticalAlerts: 0,
+    openWorkOrders: 0,
+    monthCosts: '0',
+  });
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    // Fetch navbar stats
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/dashboard/navbar-stats');
+        if (response.ok) {
+          const data = await response.json();
+          setStats(data);
+        }
+      } catch (error) {
+        console.error('Error fetching navbar stats:', error);
+      }
+    };
+
+    fetchStats();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchStats, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/dashboard/vehicles/fleet?search=${searchQuery}`);
+    }
+  };
+
+  const isActive = (path: string) => pathname === path;
+
   return (
-    <nav className="flex items-center justify-between w-full h-20 px-2 border-b gap-x-4 md:px-6 bg-background">
-      <div className="block xl:hidden">
+    <nav className="flex items-center justify-between w-full border-b bg-background">
+      {/* Mobile menu */}
+      <div className="block xl:hidden px-4 py-3">
         <Sheet>
           <SheetTrigger className="flex items-center">
             <Menu />
@@ -17,22 +88,199 @@ export function Navbar() {
           </SheetContent>
         </Sheet>
       </div>
-      <div className="flex items-center justify-end w-full gap-x-2">
-        <div className="flex items-center justify-between w-full max-w-5xl py-5 mx-auto gap-x-2">
-          <Link
-            href="/dashboard/vehicles/odometer"
-            className="text-1xl font-bold"
-          >
-            Odómetro
-          </Link>
-          <Link href="/dashboard/vehicles/fleet" className="text-1xl font-bold">
-            Lista de Vehículos
-          </Link>
-          <Link href="/dashboard" className="text-1xl font-bold">
-            Dashboard
-          </Link>
+
+      {/* Desktop navbar */}
+      <div className="hidden xl:flex items-center justify-between w-full px-6 py-3">
+        {/* Navigation buttons */}
+        <div className="flex items-center gap-2">
+          <TooltipProvider>
+            {/* Odómetro */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={isActive('/dashboard/vehicles/odometer') ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => router.push('/dashboard/vehicles/odometer')}
+                  className="gap-2"
+                >
+                  <Gauge className="h-4 w-4" />
+                  Registrar Km
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Registrar lectura del odómetro</p>
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Flota */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={isActive('/dashboard/vehicles/fleet') ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => router.push('/dashboard/vehicles/fleet')}
+                  className="gap-2"
+                >
+                  <Car className="h-4 w-4" />
+                  Flota
+                  {stats.totalVehicles > 0 && (
+                    <Badge variant="secondary" className="ml-1">
+                      {stats.totalVehicles}
+                    </Badge>
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Ver lista completa de vehículos</p>
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Alertas */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={isActive('/dashboard/maintenance/alerts') ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => router.push('/dashboard/maintenance/alerts')}
+                  className="gap-2"
+                >
+                  <Bell className="h-4 w-4" />
+                  Alertas
+                  {stats.criticalAlerts > 0 && (
+                    <Badge variant="destructive" className="ml-1 animate-pulse">
+                      {stats.criticalAlerts}
+                    </Badge>
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Alertas de mantenimiento {stats.criticalAlerts > 0 && '(¡Críticas!)'}</p>
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Órdenes de Trabajo */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={isActive('/dashboard/maintenance/work-orders') ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => router.push('/dashboard/maintenance/work-orders')}
+                  className="gap-2"
+                >
+                  <Wrench className="h-4 w-4" />
+                  Órdenes
+                  {stats.openWorkOrders > 0 && (
+                    <Badge variant="secondary" className="ml-1">
+                      {stats.openWorkOrders}
+                    </Badge>
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Órdenes de trabajo abiertas</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Separator orientation="vertical" className="h-6 mx-1" />
+
+            {/* Dashboard */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={isActive('/dashboard') ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => router.push('/dashboard')}
+                  className="gap-2"
+                >
+                  <FileBarChart className="h-4 w-4" />
+                  Dashboard
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Vista general y reportes</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <Separator orientation="vertical" className="h-6 mx-1" />
+
+          {/* Búsqueda rápida */}
+          <form onSubmit={handleSearch} className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar vehículo..."
+              className="pl-8 w-[200px] h-9"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </form>
         </div>
-        {/*<UserButton />*/}
+
+        {/* Acciones rápidas */}
+        <div className="flex items-center gap-2">
+          <TooltipProvider>
+            {/* Indicador de costos del mes */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  <span className="text-xs">Mes:</span>
+                  <span className="font-bold">${stats.monthCosts}k</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Costos de mantenimiento del mes actual</p>
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Crear Orden de Trabajo - CTA principal */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  onClick={() => router.push('/dashboard/maintenance/work-orders?action=create')}
+                  className="gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Nueva Orden
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Crear nueva orden de trabajo</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </div>
+
+      {/* Mobile simplified navbar */}
+      <div className="flex xl:hidden items-center justify-between w-full px-4 py-3 gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push('/dashboard/vehicles/fleet')}
+        >
+          <Car className="h-4 w-4 mr-1" />
+          <Badge variant="secondary">{stats.totalVehicles}</Badge>
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push('/dashboard/maintenance/alerts')}
+        >
+          <AlertTriangle className="h-4 w-4 mr-1" />
+          {stats.criticalAlerts > 0 && (
+            <Badge variant="destructive">{stats.criticalAlerts}</Badge>
+          )}
+        </Button>
+
+        <Button
+          size="sm"
+          onClick={() => router.push('/dashboard/maintenance/work-orders?action=create')}
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
       </div>
     </nav>
   );

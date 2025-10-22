@@ -20,8 +20,16 @@ export interface FleetVehicle {
     owner: "OWN" | "LEASED" | "RENTED";
     lastKilometers: number | null;
     lastRecorder: Date | null;
+
+    // Campos adicionales para CV
+    fuelType: string | null;
+    serviceType: string | null;
+    emergencyContactName: string | null;
+    emergencyContactPhone: string | null;
+
     createdAt: Date;
     updatedAt: Date;
+
     // Relaciones incluidas
     brand: {
         name: string;
@@ -32,6 +40,13 @@ export interface FleetVehicle {
     type: {
         name: string;
     };
+    documents?: Array<{
+        id: string;
+        type: string;
+        documentNumber?: string;
+        expiryDate?: string;
+        entity?: string;
+    }>;
 }
 
 export interface FormAddFleetVehicleProps {
