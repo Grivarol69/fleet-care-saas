@@ -12,12 +12,29 @@ import {
 import { Button } from "@/components/ui/button";
 import { Download, Loader2 } from "lucide-react";
 
+interface Tenant {
+  name: string;
+  logo?: string | null;
+}
+
+interface Document {
+  type: string;
+  documentNumber?: string | null;
+  expiryDate?: string | null;
+  entity?: string | null;
+}
+
+interface Vehicle {
+  licensePlate: string;
+  [key: string]: unknown;
+}
+
 interface VehicleCVViewerProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  vehicle: any;
-  tenant?: any;
-  documents?: any[];
+  vehicle: Vehicle;
+  tenant?: Tenant;
+  documents?: Document[];
 }
 
 export function VehicleCVViewer({
