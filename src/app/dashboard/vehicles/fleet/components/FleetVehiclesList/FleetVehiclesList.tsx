@@ -474,7 +474,25 @@ export function FleetVehiclesList() {
         <VehicleCVViewer
           isOpen={isCVDialogOpen}
           setIsOpen={setIsCVDialogOpen}
-          vehicle={viewingVehicleCV}
+          vehicle={{
+            licensePlate: viewingVehicleCV.licensePlate,
+            brand: viewingVehicleCV.brand,
+            line: viewingVehicleCV.line,
+            type: viewingVehicleCV.type,
+            year: viewingVehicleCV.year ?? 0,
+            color: viewingVehicleCV.color ?? "",
+            mileage: viewingVehicleCV.mileage,
+            ...(viewingVehicleCV.cylinder && { cylinder: viewingVehicleCV.cylinder }),
+            ...(viewingVehicleCV.bodyWork && { bodyWork: viewingVehicleCV.bodyWork }),
+            ...(viewingVehicleCV.engineNumber && { engineNumber: viewingVehicleCV.engineNumber }),
+            ...(viewingVehicleCV.chasisNumber && { chasisNumber: viewingVehicleCV.chasisNumber }),
+            ...(viewingVehicleCV.ownerCard && { ownerCard: viewingVehicleCV.ownerCard }),
+            ...(viewingVehicleCV.fuelType && { fuelType: viewingVehicleCV.fuelType }),
+            ...(viewingVehicleCV.serviceType && { serviceType: viewingVehicleCV.serviceType }),
+            ...(viewingVehicleCV.photo && { photo: viewingVehicleCV.photo }),
+            ...(viewingVehicleCV.emergencyContactName && { emergencyContactName: viewingVehicleCV.emergencyContactName }),
+            ...(viewingVehicleCV.emergencyContactPhone && { emergencyContactPhone: viewingVehicleCV.emergencyContactPhone }),
+          }}
           documents={viewingVehicleCV.documents || []}
         />
       )}

@@ -26,7 +26,44 @@ interface Document {
 
 interface Vehicle {
   licensePlate: string;
+  brand?: { name: string };
+  line?: { name: string };
+  type?: { name: string };
+  year?: number;
+  color?: string;
+  mileage?: number;
+  cylinder?: number;
+  bodyWork?: string;
+  engineNumber?: string;
+  chasisNumber?: string;
+  ownerCard?: string;
+  fuelType?: string;
+  serviceType?: string;
+  photo?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  documents?: Document[];
   [key: string]: unknown;
+}
+
+type VehicleCVData = {
+  licensePlate: string;
+  brand?: { name: string };
+  line?: { name: string };
+  type?: { name: string };
+  year: number;
+  color: string;
+  mileage: number;
+  cylinder?: number;
+  bodyWork?: string;
+  engineNumber?: string;
+  chasisNumber?: string;
+  ownerCard?: string;
+  fuelType?: string;
+  serviceType?: string;
+  photo?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
 }
 
 interface VehicleCVViewerProps {
@@ -74,7 +111,23 @@ export function VehicleCVViewer({
           <DialogTitle className="flex items-center justify-between">
             <span>CV del Vehículo - {vehicle.licensePlate}</span>
             <PDFDownloadLink
-              document={<VehicleCV vehicle={vehicle} tenant={tenant} documents={documents} />}
+              document={
+                <VehicleCV
+                  vehicle={vehicle as VehicleCVData}
+                  {...(tenant && {
+                    tenant: {
+                      name: tenant.name,
+                      ...(tenant.logo && { logo: tenant.logo })
+                    }
+                  })}
+                  documents={documents.map(doc => ({
+                    type: doc.type,
+                    ...(doc.documentNumber && { documentNumber: doc.documentNumber }),
+                    ...(doc.expiryDate && { expiryDate: doc.expiryDate }),
+                    ...(doc.entity && { entity: doc.entity })
+                  }))}
+                />
+              }
               fileName={fileName}
             >
               {({ loading }) => (
@@ -98,7 +151,21 @@ export function VehicleCVViewer({
 
         <div className="w-full flex-1 px-6 pb-6">
           <PDFViewer width="100%" height="100%" showToolbar={true} className="rounded-lg">
-            <VehicleCV vehicle={vehicle} tenant={tenant} documents={documents} />
+            <VehicleCV
+              vehicle={vehicle as VehicleCVData}
+              {...(tenant && {
+                tenant: {
+                  name: tenant.name,
+                  ...(tenant.logo && { logo: tenant.logo })
+                }
+              })}
+              documents={documents.map(doc => ({
+                type: doc.type,
+                ...(doc.documentNumber && { documentNumber: doc.documentNumber }),
+                ...(doc.expiryDate && { expiryDate: doc.expiryDate }),
+                ...(doc.entity && { entity: doc.entity })
+              }))}
+            />
           </PDFViewer>
         </div>
       </DialogContent>
