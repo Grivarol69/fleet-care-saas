@@ -1,16 +1,18 @@
 import { prisma } from "@/lib/prisma";
-import { createClient } from '@/utils/supabase/server';
+import { getCurrentUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
-
-const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1'; // Tenant hardcodeado para MVP
-
 
 export async function GET() {
     try {
-        // ✅ Corregido: consultando vehicleLine en lugar de vehicleBrand
+        const user = await getCurrentUser();
+
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
         const lines = await prisma.vehicleLine.findMany({
             where: {
-                tenantId: TENANT_ID
+                tenantId: user.tenantId
             },
             orderBy: {
                 name: 'asc'
@@ -35,37 +37,44 @@ export async function GET() {
         return NextResponse.json(mappedLines);
     } catch (error) {
         console.error("[LINE_GET]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Error interno" }, { status: 500 });
     }
 }
 
 export async function POST(req: Request) {
     try {
-        // Verificar autenticación con Supabase SSR (método actualizado)
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        console.log("API User: ", user)
+        const user = await getCurrentUser();
 
         if (!user) {
-            return new NextResponse("Unauthorized", { status: 401 });
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        // Validar permisos - Solo SUPER_ADMIN puede modificar tablas maestras
+        const { requireSuperAdmin } = await import("@/lib/permissions");
+        try {
+            requireSuperAdmin(user);
+        } catch (error) {
+            return NextResponse.json(
+                { error: (error as Error).message },
+                { status: 403 }
+            );
         }
 
         const { name, brandId } = await req.json();
 
         if (!name || name.trim() === '') {
-            return new NextResponse("Name is required", { status: 400 });
+            return NextResponse.json({ error: "El nombre es requerido" }, { status: 400 });
         }
 
         if (!brandId) {
-            return new NextResponse("Brand ID is required", { status: 400 });
+            return NextResponse.json({ error: "La marca es requerida" }, { status: 400 });
         }
 
-        // ✅ Corregido: usando el constraint único correcto según el schema
-        // @@unique([tenantId, brandId, name])
+        // Verificar que no existe
         const existingLine = await prisma.vehicleLine.findUnique({
             where: {
                 tenantId_brandId_name: {
-                    tenantId: TENANT_ID,
+                    tenantId: user.tenantId,
                     brandId: parseInt(brandId),
                     name: name.trim()
                 }
@@ -73,26 +82,26 @@ export async function POST(req: Request) {
         });
 
         if (existingLine) {
-            return new NextResponse("Line already exists for this brand", { status: 409 });
+            return NextResponse.json({ error: "La línea ya existe para esta marca" }, { status: 409 });
         }
 
         // Verificar que la marca existe y pertenece al tenant
         const brand = await prisma.vehicleBrand.findUnique({
             where: {
                 id: parseInt(brandId),
-                tenantId: TENANT_ID
+                tenantId: user.tenantId
             }
         });
 
         if (!brand) {
-            return new NextResponse("Brand not found", { status: 404 });
+            return NextResponse.json({ error: "Marca no encontrada" }, { status: 404 });
         }
 
         const line = await prisma.vehicleLine.create({
             data: {
                 name: name.trim(),
                 brandId: parseInt(brandId),
-                tenantId: TENANT_ID,
+                tenantId: user.tenantId,
             },
             include: {
                 brand: {
@@ -114,6 +123,6 @@ export async function POST(req: Request) {
         return NextResponse.json(mappedLine);
     } catch (error) {
         console.log("[LINE_POST]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Error interno" }, { status: 500 });
     }
 }

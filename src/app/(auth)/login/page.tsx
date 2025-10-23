@@ -44,7 +44,11 @@ export default function Login() {
     if (error) {
       setMessage(error.message);
     } else {
-      setMessage("Revisa tu email para confirmar tu cuenta");
+      setMessage("¡Registro exitoso! Ahora puedes iniciar sesión");
+      // Auto-login después de registro exitoso
+      setTimeout(() => {
+        handleSignIn(new Event('submit') as any);
+      }, 1500);
     }
 
     setLoading(false);

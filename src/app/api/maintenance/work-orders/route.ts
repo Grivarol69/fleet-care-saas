@@ -1,7 +1,107 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import { getCurrentUser } from "@/lib/auth";
 
-const TENANT_ID = "cf68b103-12fd-4208-a352-42379ef3b6e1";
+/**
+ * GET - Listar WorkOrders con filtros
+ */
+export async function GET(request: NextRequest) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const vehicleId = searchParams.get("vehicleId");
+    const status = searchParams.get("status");
+    const mantType = searchParams.get("mantType");
+    const limit = searchParams.get("limit");
+
+    // Construir filtros
+    const where: any = {
+      tenantId: user.tenantId,
+    };
+
+    if (vehicleId) {
+      where.vehicleId = parseInt(vehicleId);
+    }
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (mantType) {
+      where.mantType = mantType;
+    }
+
+    // Obtener WorkOrders con relaciones
+    const workOrders = await prisma.workOrder.findMany({
+      where,
+      include: {
+        vehicle: {
+          select: {
+            id: true,
+            plate: true,
+            brand: { select: { name: true } },
+            line: { select: { name: true } },
+          },
+        },
+        technician: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        provider: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        maintenanceAlerts: {
+          select: {
+            id: true,
+            itemName: true,
+            status: true,
+            priority: true,
+          },
+        },
+        workOrderItems: {
+          select: {
+            id: true,
+            description: true,
+            totalCost: true,
+            status: true,
+          },
+        },
+        invoices: {
+          select: {
+            id: true,
+            invoiceNumber: true,
+            totalAmount: true,
+            status: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: limit ? parseInt(limit) : undefined,
+    });
+
+    return NextResponse.json(workOrders);
+  } catch (error: unknown) {
+    console.error("[WORK_ORDERS_GET]", error);
+    return NextResponse.json(
+      {
+        error: error instanceof Error ? error.message : "Internal Error",
+      },
+      { status: 500 }
+    );
+  }
+}
 
 /**
  * POST - Crear WorkOrder desde alertas de mantenimiento

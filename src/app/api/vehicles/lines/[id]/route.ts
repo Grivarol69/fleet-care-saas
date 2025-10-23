@@ -1,9 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { createClient } from '@/utils/supabase/server';
+import { getCurrentUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
-
-const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1'; // Tenant hardcodeado para MVP
-
 
 // GET - Obtener línea específica por ID
 export async function GET(
@@ -11,11 +8,17 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const user = await getCurrentUser();
+
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
         const { id } = await params;
         const line = await prisma.vehicleLine.findUnique({
             where: {
                 id: parseInt(id),
-                tenantId: TENANT_ID
+                tenantId: user.tenantId
             },
             include: {
                 brand: {
@@ -27,7 +30,7 @@ export async function GET(
         });
 
         if (!line) {
-            return new NextResponse("Line not found", { status: 404 });
+            return NextResponse.json({ error: "Línea no encontrada" }, { status: 404 });
         }
 
         // Mapear para incluir brandName
@@ -41,64 +44,73 @@ export async function GET(
         return NextResponse.json(mappedLine);
     } catch (error) {
         console.error("[LINE_GET]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Error interno" }, { status: 500 });
     }
 }
 
-// PUT - Actualizar línea específica (reemplazo completo)
+// PUT - Actualizar línea específica (solo SUPER_ADMIN)
 export async function PUT(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = await params;
-        // Verificar autenticación con Supabase SSR (método actualizado)
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await getCurrentUser();
 
         if (!user) {
-            return new NextResponse("Unauthorized", { status: 401 });
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
+
+        // Validar permisos
+        const { requireSuperAdmin } = await import("@/lib/permissions");
+        try {
+            requireSuperAdmin(user);
+        } catch (error) {
+            return NextResponse.json(
+                { error: (error as Error).message },
+                { status: 403 }
+            );
+        }
+
+        const { id } = await params;
 
         const { name, brandId } = await req.json();
 
         if (!name || name.trim() === '') {
-            return new NextResponse("Name is required", { status: 400 });
+            return NextResponse.json({ error: "El nombre es requerido" }, { status: 400 });
         }
 
         if (!brandId) {
-            return new NextResponse("Brand ID is required", { status: 400 });
+            return NextResponse.json({ error: "La marca es requerida" }, { status: 400 });
         }
 
         // Verificar que la línea existe y pertenece al tenant
         const existingLine = await prisma.vehicleLine.findUnique({
             where: {
                 id: parseInt(id),
-                tenantId: TENANT_ID
+                tenantId: user.tenantId
             }
         });
 
         if (!existingLine) {
-            return new NextResponse("Line not found", { status: 404 });
+            return NextResponse.json({ error: "Línea no encontrada" }, { status: 404 });
         }
 
         // Verificar que la marca existe y pertenece al tenant
         const brand = await prisma.vehicleBrand.findUnique({
             where: {
                 id: parseInt(brandId),
-                tenantId: TENANT_ID
+                tenantId: user.tenantId
             }
         });
 
         if (!brand) {
-            return new NextResponse("Brand not found", { status: 404 });
+            return NextResponse.json({ error: "Marca no encontrada" }, { status: 404 });
         }
 
-        // Verificar que no exista otra línea con el mismo nombre y marca 
-        // (excluyendo la línea actual)
+        // Verificar que no exista otra línea con el mismo nombre y marca
         const duplicateLine = await prisma.vehicleLine.findFirst({
             where: {
-                tenantId: TENANT_ID,
+                tenantId: user.tenantId,
                 brandId: parseInt(brandId),
                 name: name.trim(),
                 id: {
@@ -108,13 +120,13 @@ export async function PUT(
         });
 
         if (duplicateLine) {
-            return new NextResponse("Line already exists for this brand", { status: 409 });
+            return NextResponse.json({ error: "La línea ya existe para esta marca" }, { status: 409 });
         }
 
         const updatedLine = await prisma.vehicleLine.update({
             where: {
                 id: parseInt(id),
-                tenantId: TENANT_ID
+                tenantId: user.tenantId
             },
             data: {
                 name: name.trim(),
@@ -140,24 +152,34 @@ export async function PUT(
         return NextResponse.json(mappedLine);
     } catch (error) {
         console.log("[LINE_PUT]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Error interno" }, { status: 500 });
     }
 }
 
-// PATCH - Actualizar línea específica (actualización parcial)
+// PATCH - Actualizar línea específica (solo SUPER_ADMIN)
 export async function PATCH(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = await params;
-        // Verificar autenticación con Supabase SSR (método actualizado)
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await getCurrentUser();
 
         if (!user) {
-            return new NextResponse("Unauthorized", { status: 401 });
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
+
+        // Validar permisos
+        const { requireSuperAdmin } = await import("@/lib/permissions");
+        try {
+            requireSuperAdmin(user);
+        } catch (error) {
+            return NextResponse.json(
+                { error: (error as Error).message },
+                { status: 403 }
+            );
+        }
+
+        const { id } = await params;
 
         const body = await req.json();
         const { name, brandId } = body;
@@ -166,17 +188,17 @@ export async function PATCH(
         const existingLine = await prisma.vehicleLine.findUnique({
             where: {
                 id: parseInt(id),
-                tenantId: TENANT_ID
+                tenantId: user.tenantId
             }
         });
 
         if (!existingLine) {
-            return new NextResponse("Line not found", { status: 404 });
+            return NextResponse.json({ error: "Línea no encontrada" }, { status: 404 });
         }
 
         // Validar nombre si se proporciona
         if (name !== undefined && (!name || name.trim() === '')) {
-            return new NextResponse("Name cannot be empty", { status: 400 });
+            return NextResponse.json({ error: "El nombre no puede estar vacío" }, { status: 400 });
         }
 
         // Verificar que la marca existe si se proporciona
@@ -184,12 +206,12 @@ export async function PATCH(
             const brand = await prisma.vehicleBrand.findUnique({
                 where: {
                     id: parseInt(brandId),
-                    tenantId: TENANT_ID
+                    tenantId: user.tenantId
                 }
             });
 
             if (!brand) {
-                return new NextResponse("Brand not found", { status: 404 });
+                return NextResponse.json({ error: "Marca no encontrada" }, { status: 404 });
             }
         }
 
@@ -204,15 +226,14 @@ export async function PATCH(
             updateData.brandId = parseInt(brandId);
         }
 
-        // Verificar que no exista otra línea con el mismo nombre y marca 
-        // (excluyendo la línea actual) solo si se está cambiando alguno de estos campos
+        // Verificar que no exista otra línea con el mismo nombre y marca
         if (name !== undefined || brandId !== undefined) {
             const checkName = name !== undefined ? name.trim() : existingLine.name;
             const checkBrandId = brandId !== undefined ? parseInt(brandId) : existingLine.brandId;
-            
+
             const duplicateLine = await prisma.vehicleLine.findFirst({
                 where: {
-                    tenantId: TENANT_ID,
+                    tenantId: user.tenantId,
                     brandId: checkBrandId,
                     name: checkName,
                     id: {
@@ -222,14 +243,14 @@ export async function PATCH(
             });
 
             if (duplicateLine) {
-                return new NextResponse("Line already exists for this brand", { status: 409 });
+                return NextResponse.json({ error: "La línea ya existe para esta marca" }, { status: 409 });
             }
         }
 
         const updatedLine = await prisma.vehicleLine.update({
             where: {
                 id: parseInt(id),
-                tenantId: TENANT_ID
+                tenantId: user.tenantId
             },
             data: updateData,
             include: {
@@ -252,68 +273,77 @@ export async function PATCH(
         return NextResponse.json(mappedLine);
     } catch (error) {
         console.log("[LINE_PATCH]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Error interno" }, { status: 500 });
     }
 }
 
-// DELETE - Eliminar línea específica
+// DELETE - Eliminar línea específica (solo SUPER_ADMIN)
 export async function DELETE(
     _req: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = await params;
-        // Verificar autenticación con Supabase SSR (método actualizado)
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await getCurrentUser();
 
         if (!user) {
-            return new NextResponse("Unauthorized", { status: 401 });
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
+
+        // Validar permisos
+        const { requireSuperAdmin } = await import("@/lib/permissions");
+        try {
+            requireSuperAdmin(user);
+        } catch (error) {
+            return NextResponse.json(
+                { error: (error as Error).message },
+                { status: 403 }
+            );
+        }
+
+        const { id } = await params;
 
         // Verificar que la línea existe y pertenece al tenant
         const existingLine = await prisma.vehicleLine.findUnique({
             where: {
                 id: parseInt(id),
-                tenantId: TENANT_ID
+                tenantId: user.tenantId
             }
         });
 
         if (!existingLine) {
-            return new NextResponse("Line not found", { status: 404 });
+            return NextResponse.json({ error: "Línea no encontrada" }, { status: 404 });
         }
 
-        // ✅ CORREGIDO: Verificar que no tenga vehículos dependientes
-        // Una línea no puede eliminarse si hay vehículos que la usan
+        // Verificar que no tenga vehículos dependientes
         const hasVehicles = await prisma.vehicle.findFirst({
             where: {
-                lineId: parseInt(id), // ← Cambié de brandId a lineId
-                tenantId: TENANT_ID
+                lineId: parseInt(id),
+                tenantId: user.tenantId
             }
         });
 
-        // ✅ CORREGIDO: Verificar templates de mantenimiento que usan esta línea
+        // Verificar templates de mantenimiento
         const hasMantTemplates = await prisma.maintenanceTemplate.findFirst({
             where: {
-                vehicleLineId: parseInt(id), // ← Cambié de brandId a vehicleLineId
-                tenantId: TENANT_ID
+                vehicleLineId: parseInt(id),
+                tenantId: user.tenantId
             }
         });
 
         if (hasVehicles || hasMantTemplates) {
-            return new NextResponse("Cannot delete line with existing vehicles or maintenance templates", { status: 409 });
+            return NextResponse.json({ error: "No se puede eliminar la línea porque tiene vehículos o plantillas de mantenimiento asociadas" }, { status: 409 });
         }
 
         await prisma.vehicleLine.delete({
             where: {
                 id: parseInt(id),
-                tenantId: TENANT_ID
+                tenantId: user.tenantId
             }
         });
 
         return new NextResponse(null, { status: 204 });
     } catch (error) {
         console.log("[LINE_DELETE]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Error interno" }, { status: 500 });
     }
 }

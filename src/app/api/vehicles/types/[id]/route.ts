@@ -1,73 +1,85 @@
-// src/app/api/vehicles/Types/[id]/route.ts
 import { prisma } from "@/lib/prisma";
-import { createClient } from '@/utils/supabase/server';
+import { getCurrentUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
-const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1'; // Tenant hardcodeado para MVP
-
-
-// GET - Obtener marca específica por ID
+// GET - Obtener tipo específico por ID
 export async function GET(
     _req: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const user = await getCurrentUser();
+
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
         const { id } = await params;
         const type = await prisma.vehicleType.findUnique({
             where: {
                 id: parseInt(id),
-                tenantId: TENANT_ID
+                tenantId: user.tenantId
             }
         });
 
         if (!type) {
-            return new NextResponse("Type not found", { status: 404 });
+            return NextResponse.json({ error: "Tipo no encontrado" }, { status: 404 });
         }
 
         return NextResponse.json(type);
     } catch (error) {
         console.error("[TYPE_GET]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Error interno" }, { status: 500 });
     }
 }
 
-// PUT - Actualizar marca específica
+// PUT - Actualizar tipo específico (solo SUPER_ADMIN)
 export async function PUT(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = await params;
-        // Verificar autenticación con Supabase SSR (método actualizado)
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await getCurrentUser();
 
         if (!user) {
-            return new NextResponse("Unauthorized", { status: 401 });
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
+
+        // Validar permisos
+        const { requireSuperAdmin } = await import("@/lib/permissions");
+        try {
+            requireSuperAdmin(user);
+        } catch (error) {
+            return NextResponse.json(
+                { error: (error as Error).message },
+                { status: 403 }
+            );
+        }
+
+        const { id } = await params;
 
         const { name } = await req.json();
 
         if (!name || name.trim() === '') {
-            return new NextResponse("Name is required", { status: 400 });
+            return NextResponse.json({ error: "El nombre es requerido" }, { status: 400 });
         }
 
         // Verificar que el tipo existe y pertenece al tenant
         const existingType = await prisma.vehicleType.findUnique({
             where: {
                 id: parseInt(id),
-                tenantId: TENANT_ID
+                tenantId: user.tenantId
             }
         });
 
         if (!existingType) {
-            return new NextResponse("Type not found", { status: 404 });
+            return NextResponse.json({ error: "Tipo no encontrado" }, { status: 404 });
         }
 
         // Verificar que no exista otro tipo con el mismo nombre
         const duplicateType = await prisma.vehicleType.findFirst({
             where: {
-                tenantId: TENANT_ID,
+                tenantId: user.tenantId,
                 name: name.trim(),
                 id: {
                     not: parseInt(id)
@@ -76,7 +88,7 @@ export async function PUT(
         });
 
         if (duplicateType) {
-            return new NextResponse("Type name already exists", { status: 409 });
+            return NextResponse.json({ error: "El tipo ya existe" }, { status: 409 });
         }
 
         const updatedType = await prisma.vehicleType.update({
@@ -91,35 +103,45 @@ export async function PUT(
         return NextResponse.json(updatedType);
     } catch (error) {
         console.log("[TYPE_PUT]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Error interno" }, { status: 500 });
     }
 }
 
-// DELETE - Eliminar Tipo específico
+// DELETE - Eliminar tipo específico (solo SUPER_ADMIN)
 export async function DELETE(
     _req: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = await params;
-        // Verificar autenticación con Supabase SSR (método actualizado)
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await getCurrentUser();
 
         if (!user) {
-            return new NextResponse("Unauthorized", { status: 401 });
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
-        // Verificar que la marca existe y pertenece al tenant
+        // Validar permisos
+        const { requireSuperAdmin } = await import("@/lib/permissions");
+        try {
+            requireSuperAdmin(user);
+        } catch (error) {
+            return NextResponse.json(
+                { error: (error as Error).message },
+                { status: 403 }
+            );
+        }
+
+        const { id } = await params;
+
+        // Verificar que el tipo existe y pertenece al tenant
         const existingType = await prisma.vehicleType.findUnique({
             where: {
                 id: parseInt(id),
-                tenantId: TENANT_ID
+                tenantId: user.tenantId
             }
         });
 
         if (!existingType) {
-            return new NextResponse("Type not found", { status: 404 });
+            return NextResponse.json({ error: "Tipo no encontrado" }, { status: 404 });
         }
 
         await prisma.vehicleType.delete({
@@ -131,6 +153,6 @@ export async function DELETE(
         return new NextResponse(null, { status: 204 });
     } catch (error) {
         console.log("[TYPE_DELETE]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Error interno" }, { status: 500 });
     }
 }

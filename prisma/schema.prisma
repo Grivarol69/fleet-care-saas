@@ -5,7 +5,8 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  // Nota: Usando Transaction Mode en Supabase Pooler
+  // No se necesita directUrl - el pooler soporta migraciones y seeds
 }
 
 // ========================================
@@ -62,7 +63,7 @@ model User {
   email     String
   firstName String?
   lastName  String?
-  role      UserRole @default(USER)
+  role      UserRole @default(DRIVER)  // Default más restrictivo
   avatar    String?
   phone     String?
   isActive  Boolean  @default(true)
@@ -1383,9 +1384,11 @@ model VehicleProgramItem {
 // ========================================
 
 enum UserRole {
-  ADMIN
-  MANAGER
-  USER
+  SUPER_ADMIN    // Dueño del SaaS - acceso total + tablas maestras
+  OWNER          // Dueño empresa cliente - acceso total a su tenant
+  MANAGER        // Gerente/Supervisor - gestión + costos
+  TECHNICIAN     // Mecánico/Técnico - operación sin costos
+  DRIVER         // Conductor - solo odómetro
 }
 
 enum SubscriptionStatus {

@@ -1,14 +1,23 @@
 import { prisma } from "@/lib/prisma";
-import { createClient } from '@/utils/supabase/server';
+import { getCurrentUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
-
-const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1'; // Tenant hardcodeado para MVP
 
 export async function GET() {
     try {
+        // Obtener usuario actual
+        const user = await getCurrentUser();
+
+        if (!user) {
+            return NextResponse.json(
+                { error: "No autenticado" },
+                { status: 401 }
+            );
+        }
+
+        // Todos pueden VER las marcas (solo lectura)
         const brands = await prisma.vehicleBrand.findMany({
             where: {
-                tenantId: TENANT_ID
+                tenantId: user.tenantId // Usar tenant del usuario en lugar de hardcoded
             },
             orderBy: {
                 name: 'asc'
@@ -17,50 +26,76 @@ export async function GET() {
         return NextResponse.json(brands);
     } catch (error) {
         console.error("[BRANDS_GET]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json(
+            { error: "Error interno" },
+            { status: 500 }
+        );
     }
 }
 
 export async function POST(req: Request) {
     try {
-        const supabase = await createClient();
-
-        const { data: { user } } = await supabase.auth.getUser();
+        // Obtener usuario actual
+        const user = await getCurrentUser();
 
         if (!user) {
-            return new NextResponse("Unauthorized", { status: 401 });
+            return NextResponse.json(
+                { error: "No autenticado" },
+                { status: 401 }
+            );
+        }
+
+        // Solo SUPER_ADMIN puede crear marcas
+        const { requireSuperAdmin } = await import("@/lib/permissions");
+        try {
+            requireSuperAdmin(user);
+        } catch (error: unknown) {
+            const err = error as Error;
+            return NextResponse.json(
+                { error: err.message },
+                { status: 403 }
+            );
         }
 
         const { name } = await req.json();
 
         if (!name || name.trim() === '') {
-            return new NextResponse("Name is required", { status: 400 });
+            return NextResponse.json(
+                { error: "El nombre es requerido" },
+                { status: 400 }
+            );
         }
 
         // Verificar que no exista una marca con el mismo nombre
         const existingBrand = await prisma.vehicleBrand.findUnique({
             where: {
                 tenantId_name: {
-                    tenantId: TENANT_ID,
+                    tenantId: user.tenantId,
                     name: name.trim()
                 }
             }
         });
 
         if (existingBrand) {
-            return new NextResponse("Brand already exists", { status: 409 });
+            return NextResponse.json(
+                { error: "La marca ya existe" },
+                { status: 409 }
+            );
         }
 
         const brand = await prisma.vehicleBrand.create({
             data: {
                 name: name.trim(),
-                tenantId: TENANT_ID,
+                tenantId: user.tenantId,
             },
         });
 
         return NextResponse.json(brand);
     } catch (error) {
         console.log("[BRAND_POST]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json(
+            { error: "Error interno" },
+            { status: 500 }
+        );
     }
 }

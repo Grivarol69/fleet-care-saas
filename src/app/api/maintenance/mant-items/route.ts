@@ -1,14 +1,18 @@
 import { prisma } from "@/lib/prisma";
-import { createClient } from '@/utils/supabase/server';
+import { getCurrentUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
-
-const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1'; // Tenant hardcodeado para MVP
 
 export async function GET() {
     try {
+        const user = await getCurrentUser();
+
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
         const mantItems = await prisma.mantItem.findMany({
             where: {
-                tenantId: TENANT_ID
+                tenantId: user.tenantId
             },
             include: {
                 category: {
@@ -25,64 +29,72 @@ export async function GET() {
         return NextResponse.json(mantItems);
     } catch (error) {
         console.error("[MANT_ITEMS_GET]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Error interno" }, { status: 500 });
     }
 }
 
 export async function POST(req: Request) {
     try {
-        const supabase = await createClient();
-
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await getCurrentUser();
 
         if (!user) {
-            return new NextResponse("Unauthorized", { status: 401 });
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        // Validar permisos - Solo SUPER_ADMIN puede modificar tablas maestras
+        const { requireSuperAdmin } = await import("@/lib/permissions");
+        try {
+            requireSuperAdmin(user);
+        } catch (error) {
+            return NextResponse.json(
+                { error: (error as Error).message },
+                { status: 403 }
+            );
         }
 
         const { name, description, mantType, estimatedTime, categoryId } = await req.json();
 
         // Validación de campos requeridos
         if (!name || name.trim() === '') {
-            return new NextResponse("Name is required", { status: 400 });
+            return NextResponse.json({ error: "El nombre es requerido" }, { status: 400 });
         }
 
         if (!mantType || !['PREVENTIVE', 'PREDICTIVE', 'CORRECTIVE', 'EMERGENCY'].includes(mantType)) {
-            return new NextResponse("Valid mantType is required", { status: 400 });
+            return NextResponse.json({ error: "Tipo de mantenimiento inválido" }, { status: 400 });
         }
 
         if (!estimatedTime || estimatedTime <= 0) {
-            return new NextResponse("Valid estimatedTime is required", { status: 400 });
+            return NextResponse.json({ error: "Tiempo estimado inválido" }, { status: 400 });
         }
 
         if (!categoryId || categoryId <= 0) {
-            return new NextResponse("Valid categoryId is required", { status: 400 });
+            return NextResponse.json({ error: "Categoría inválida" }, { status: 400 });
         }
 
         // Verificar que la categoría existe
-
         const category = await prisma.mantCategory.findUnique({
             where: {
                 id: categoryId,
-                tenantId: TENANT_ID
+                tenantId: user.tenantId
             }
         });
 
         if (!category) {
-            return new NextResponse("Category not found", { status: 404 });
+            return NextResponse.json({ error: "Categoría no encontrada" }, { status: 404 });
         }
 
         // Verificar que no exista un item con el mismo nombre
         const existingItem = await prisma.mantItem.findUnique({
             where: {
                 tenantId_name: {
-                    tenantId: TENANT_ID,
+                    tenantId: user.tenantId,
                     name: name.trim()
                 }
             }
         });
 
         if (existingItem) {
-            return new NextResponse("Item already exists", { status: 409 });
+            return NextResponse.json({ error: "El ítem ya existe" }, { status: 409 });
         }
 
         const mantItem = await prisma.mantItem.create({
@@ -92,7 +104,7 @@ export async function POST(req: Request) {
                 mantType,
                 estimatedTime: parseFloat(estimatedTime),
                 categoryId,
-                tenantId: TENANT_ID,
+                tenantId: user.tenantId,
             },
             include: {
                 category: {
@@ -107,6 +119,6 @@ export async function POST(req: Request) {
         return NextResponse.json(mantItem);
     } catch (error) {
         console.log("[MANT_ITEM_POST]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Error interno" }, { status: 500 });
     }
 }

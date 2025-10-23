@@ -1,9 +1,7 @@
 // src/app/api/vehicles/brands/[id]/route.ts
 import { prisma } from "@/lib/prisma";
-import { createClient } from '@/utils/supabase/server';
+import { getCurrentUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
-
-const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1';
 
 // GET - Obtener marca específica por ID
 export async function GET(
@@ -11,63 +9,78 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const user = await getCurrentUser();
+
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
         const { id } = await params;
 
         const brand = await prisma.vehicleBrand.findUnique({
             where: {
                 id: parseInt(id),
-                tenantId: TENANT_ID
+                tenantId: user.tenantId
             }
         });
 
         if (!brand) {
-            return new NextResponse("Brand not found", { status: 404 });
+            return NextResponse.json({ error: "Marca no encontrada" }, { status: 404 });
         }
 
         return NextResponse.json(brand);
     } catch (error) {
         console.error("[BRAND_GET]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Error interno" }, { status: 500 });
     }
 }
 
-// PUT - Actualizar marca específica
+// PUT - Actualizar marca específica (solo SUPER_ADMIN)
 export async function PUT(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-
-        const { id } = await params;
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await getCurrentUser();
 
         if (!user) {
-            return new NextResponse("Unauthorized", { status: 401 });
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
+        // Validar permisos - Solo SUPER_ADMIN puede modificar tablas maestras
+        const { requireSuperAdmin } = await import("@/lib/permissions");
+        try {
+            requireSuperAdmin(user);
+        } catch (error) {
+            return NextResponse.json(
+                { error: (error as Error).message },
+                { status: 403 }
+            );
+        }
+
+        const { id } = await params;
         const { name } = await req.json();
 
         if (!name || name.trim() === '') {
-            return new NextResponse("Name is required", { status: 400 });
+            return NextResponse.json({ error: "El nombre es requerido" }, { status: 400 });
         }
 
         // Verificar que la marca existe
         const existingBrand = await prisma.vehicleBrand.findUnique({
             where: {
                 id: parseInt(id),
-                tenantId: TENANT_ID
+                tenantId: user.tenantId
             }
         });
 
         if (!existingBrand) {
-            return new NextResponse("Brand not found", { status: 404 });
+            return NextResponse.json({ error: "Marca no encontrada" }, { status: 404 });
         }
 
         // Verificar duplicados
         const duplicateBrand = await prisma.vehicleBrand.findFirst({
             where: {
-                tenantId: TENANT_ID,
+                tenantId: user.tenantId,
                 name: name.trim(),
                 id: {
                     not: parseInt(id)
@@ -76,13 +89,13 @@ export async function PUT(
         });
 
         if (duplicateBrand) {
-            return new NextResponse("Brand name already exists", { status: 409 });
+            return NextResponse.json({ error: "La marca ya existe" }, { status: 409 });
         }
 
         const updatedBrand = await prisma.vehicleBrand.update({
             where: {
                 id: parseInt(id),
-                tenantId: TENANT_ID
+                tenantId: user.tenantId
             },
             data: {
                 name: name.trim(),
@@ -92,46 +105,56 @@ export async function PUT(
         return NextResponse.json(updatedBrand);
     } catch (error) {
         console.log("[BRAND_PUT]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Error interno" }, { status: 500 });
     }
 }
 
-// DELETE - Eliminar marca específica
+// DELETE - Eliminar marca específica (solo SUPER_ADMIN)
 export async function DELETE(
     _req: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = await params;
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await getCurrentUser();
 
         if (!user) {
-            return new NextResponse("Unauthorized", { status: 401 });
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
+
+        // Validar permisos - Solo SUPER_ADMIN puede modificar tablas maestras
+        const { requireSuperAdmin } = await import("@/lib/permissions");
+        try {
+            requireSuperAdmin(user);
+        } catch (error) {
+            return NextResponse.json(
+                { error: (error as Error).message },
+                { status: 403 }
+            );
+        }
+
+        const { id } = await params;
 
         const existingBrand = await prisma.vehicleBrand.findUnique({
             where: {
                 id: parseInt(id),
-                tenantId: TENANT_ID
+                tenantId: user.tenantId
             }
         });
 
         if (!existingBrand) {
-            return new NextResponse("Brand not found", { status: 404 });
+            return NextResponse.json({ error: "Marca no encontrada" }, { status: 404 });
         }
 
-        // ✅ CORREGIDO: Usar vehicleBrand.delete en lugar de vehicleType.delete
         await prisma.vehicleBrand.delete({
             where: {
                 id: parseInt(id),
-                tenantId: TENANT_ID
+                tenantId: user.tenantId
             }
         });
 
         return new NextResponse(null, { status: 204 });
     } catch (error) {
         console.log("[BRAND_DELETE]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Error interno" }, { status: 500 });
     }
 }

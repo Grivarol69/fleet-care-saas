@@ -409,3 +409,4 @@ Contenido:
 > por favor documenta e integra todo lo que conversamos ahora, creo que es material para profundizar mas adelante y que nos va a dar tremenda ventaja competitiva, ya sabemos que se puede
 > hacer y ese reporte del rendimiento de conductores es terrible, probablemente a alguno no le guste pero es increible la informacion que las empresas tienen disponible, pagan por eso
 > pero no ni siquiera saben lo que se puede hacer, cada vez estoy mas entusiasmado con este proyecto
+> pr
