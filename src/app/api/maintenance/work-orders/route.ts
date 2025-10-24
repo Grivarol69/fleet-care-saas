@@ -50,8 +50,7 @@ export async function GET(request: NextRequest) {
         technician: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
+            name: true,
           },
         },
         provider: {
@@ -108,6 +107,20 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
+
+    // Validar permisos (OWNER, MANAGER pueden crear WO)
+    const { canCreateWorkOrders } = await import("@/lib/permissions");
+    if (!canCreateWorkOrders(user)) {
+      return NextResponse.json(
+        { error: "No tienes permisos para crear órdenes de trabajo" },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const {
       vehicleId,
@@ -117,20 +130,21 @@ export async function POST(request: NextRequest) {
       technicianId,
       providerId,
       scheduledDate,
-      priority = 'MEDIUM',
+      priority = "MEDIUM",
+      mantType = "PREVENTIVE",
     } = body;
 
     // Validaciones
     if (!vehicleId || !alertIds || alertIds.length === 0) {
       return NextResponse.json(
-        { error: "vehicleId and alertIds are required" },
+        { error: "vehicleId y alertIds son requeridos" },
         { status: 400 }
       );
     }
 
     if (!title || !title.trim()) {
       return NextResponse.json(
-        { error: "title is required" },
+        { error: "El título es requerido" },
         { status: 400 }
       );
     }
@@ -139,8 +153,9 @@ export async function POST(request: NextRequest) {
     const alerts = await prisma.maintenanceAlert.findMany({
       where: {
         id: { in: alertIds },
-        status: { in: ['PENDING', 'ACKNOWLEDGED', 'SNOOZED'] },
+        status: { in: ["PENDING", "ACKNOWLEDGED", "SNOOZED"] },
         vehicleId,
+        tenantId: user.tenantId,
       },
       include: {
         programItem: {
@@ -153,7 +168,7 @@ export async function POST(request: NextRequest) {
 
     if (alerts.length === 0) {
       return NextResponse.json(
-        { error: "No valid alerts found" },
+        { error: "No se encontraron alertas válidas" },
         { status: 404 }
       );
     }
@@ -166,12 +181,12 @@ export async function POST(request: NextRequest) {
 
     // 3. Obtener km actual del vehículo
     const vehicle = await prisma.vehicle.findUnique({
-      where: { id: vehicleId },
+      where: { id: vehicleId, tenantId: user.tenantId },
     });
 
     if (!vehicle) {
       return NextResponse.json(
-        { error: "Vehicle not found" },
+        { error: "Vehículo no encontrado" },
         { status: 404 }
       );
     }
@@ -179,18 +194,18 @@ export async function POST(request: NextRequest) {
     // 4. Crear WorkOrder
     const workOrder = await prisma.workOrder.create({
       data: {
-        tenantId: TENANT_ID,
+        tenantId: user.tenantId,
         vehicleId,
         title,
         description: description || null,
-        mantType: 'PREVENTIVE',
+        mantType,
         priority,
-        status: 'PENDING',
+        status: "PENDING",
         technicianId: technicianId || null,
         providerId: providerId || null,
         creationMileage: vehicle.mileage,
         estimatedCost,
-        requestedBy: "current-user-id", // TODO: Get from session
+        requestedBy: user.id,
         startDate: scheduledDate ? new Date(scheduledDate) : null,
         isPackageWork: alerts.length > 1,
         packageName: alerts.length > 1 ? title : null,
@@ -199,14 +214,19 @@ export async function POST(request: NextRequest) {
 
     // 5. Actualizar alertas (vincular con WorkOrder y cambiar estado)
     const now = new Date();
+    const alertCreatedAt = alerts[0].createdAt;
+    const responseTimeMinutes = Math.floor(
+      (now.getTime() - alertCreatedAt.getTime()) / (1000 * 60)
+    );
+
     await prisma.maintenanceAlert.updateMany({
       where: { id: { in: alertIds } },
       data: {
-        status: 'IN_PROGRESS',
+        status: "IN_PROGRESS",
         workOrderId: workOrder.id,
         workOrderCreatedAt: now,
-        workOrderCreatedBy: "current-user-id",
-        responseTimeMinutes: 0, // TODO: Calcular real
+        workOrderCreatedBy: user.id,
+        responseTimeMinutes,
       },
     });
 
@@ -214,7 +234,7 @@ export async function POST(request: NextRequest) {
     const programItemIds = alerts.map((a) => a.programItemId);
     await prisma.vehicleProgramItem.updateMany({
       where: { id: { in: programItemIds } },
-      data: { status: 'IN_PROGRESS' },
+      data: { status: "IN_PROGRESS" },
     });
 
     // 7. Crear WorkOrderItems
@@ -229,8 +249,8 @@ export async function POST(request: NextRequest) {
             unitPrice: alert.estimatedCost || 0,
             quantity: 1,
             totalCost: alert.estimatedCost || 0,
-            purchasedBy: "current-user-id",
-            status: 'PENDING',
+            purchasedBy: user.id,
+            status: "PENDING",
           },
         })
       )
@@ -241,7 +261,7 @@ export async function POST(request: NextRequest) {
     console.error("[WORK_ORDERS_POST]", error);
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Internal Error",
+        error: error instanceof Error ? error.message : "Error interno",
       },
       { status: 500 }
     );
