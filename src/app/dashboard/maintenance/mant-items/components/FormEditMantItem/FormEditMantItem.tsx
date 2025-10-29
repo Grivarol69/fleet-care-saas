@@ -60,8 +60,8 @@ export function FormEditMantItem({
       name: mantItem.name,
       description: mantItem.description || '',
       mantType: mantItem.mantType,
-      estimatedTime: mantItem.estimatedTime,
       categoryId: mantItem.categoryId,
+      type: mantItem.type,
     },
   });
 
@@ -92,8 +92,8 @@ export function FormEditMantItem({
         name: mantItem.name,
         description: mantItem.description || '',
         mantType: mantItem.mantType,
-        estimatedTime: mantItem.estimatedTime,
         categoryId: mantItem.categoryId,
+        type: mantItem.type,
       });
     }
   }, [isOpen, mantItem, form, toast]);
@@ -223,28 +223,29 @@ export function FormEditMantItem({
               )}
             />
 
-            {/* Tiempo Estimado */}
+            {/* Tipo de Item */}
             <FormField
               control={form.control}
-              name="estimatedTime"
+              name="type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tiempo Estimado (Horas)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.5"
-                      min="0.1"
-                      max="999.99"
-                      placeholder="1.5"
-                      {...field}
-                      value={field.value || ''}
-                      onChange={e =>
-                        field.onChange(parseFloat(e.target.value) || 0)
-                      }
-                      disabled={isLoading}
-                    />
-                  </FormControl>
+                  <FormLabel>Tipo de Item</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value || 'ACTION'}
+                    disabled={isLoading}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccione el tipo de item" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="ACTION">Acción (inspección, revisión)</SelectItem>
+                      <SelectItem value="PART">Repuesto (filtro, aceite)</SelectItem>
+                      <SelectItem value="SERVICE">Servicio externo completo</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

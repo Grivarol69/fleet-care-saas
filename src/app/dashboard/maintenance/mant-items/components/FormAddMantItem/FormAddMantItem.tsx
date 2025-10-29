@@ -33,7 +33,7 @@ import { useToast } from '@/components/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
-// Schema para MantItem
+// Schema para MantItem (Biblia Universal - solo datos base)
 const formSchema = z.object({
   name: z.string().min(2, {
     message: 'El nombre debe tener al menos 2 caracteres',
@@ -42,12 +42,10 @@ const formSchema = z.object({
   mantType: z.enum(['PREVENTIVE', 'PREDICTIVE', 'CORRECTIVE', 'EMERGENCY'], {
     required_error: 'Debe seleccionar un tipo de mantenimiento',
   }),
-  estimatedTime: z.number().min(0.1, {
-    message: 'El tiempo estimado debe ser mayor a 0',
-  }),
   categoryId: z.number().min(1, {
     message: 'Debe seleccionar una categoría',
   }),
+  type: z.enum(['ACTION', 'PART', 'SERVICE']).default('ACTION'),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -69,8 +67,8 @@ interface MantItemResponse {
   name: string;
   description?: string | null;
   mantType: 'PREVENTIVE' | 'PREDICTIVE' | 'CORRECTIVE' | 'EMERGENCY';
-  estimatedTime: number;
   categoryId: number;
+  type: 'ACTION' | 'PART' | 'SERVICE';
   status: 'ACTIVE' | 'INACTIVE';
   createdAt: string;
   updatedAt: string;
@@ -100,8 +98,8 @@ export function FormAddMantItem({
     defaultValues: {
       name: '',
       description: '',
-      estimatedTime: 1,
       categoryId: 0,
+      type: 'ACTION',
     },
   });
 
@@ -252,28 +250,29 @@ export function FormAddMantItem({
               )}
             />
 
-            {/* Tiempo Estimado */}
+            {/* Tipo de Item */}
             <FormField
               control={form.control}
-              name="estimatedTime"
+              name="type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tiempo Estimado (Horas)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.5"
-                      min="0.1"
-                      max="999.99"
-                      placeholder="1.5"
-                      {...field}
-                      value={field.value || ''}
-                      onChange={e =>
-                        field.onChange(parseFloat(e.target.value) || 0)
-                      }
-                      disabled={isLoading}
-                    />
-                  </FormControl>
+                  <FormLabel>Tipo de Item</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value || 'ACTION'}
+                    disabled={isLoading}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccione el tipo de item" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="ACTION">Acción (inspección, revisión)</SelectItem>
+                      <SelectItem value="PART">Repuesto (filtro, aceite)</SelectItem>
+                      <SelectItem value="SERVICE">Servicio externo completo</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

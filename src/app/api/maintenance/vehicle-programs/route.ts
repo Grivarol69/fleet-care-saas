@@ -134,7 +134,7 @@ export async function POST(req: Request) {
           }
         });
 
-        // 3. Crear VehicleMantItems para cada item del package
+        // 3. Crear VehicleProgramItems para cada item del package
         for (const packageItem of templatePackage.packageItems) {
           await tx.vehicleProgramItem.create({
             data: {
@@ -145,10 +145,17 @@ export async function POST(req: Request) {
               priority: templatePackage.priority,
               order: packageItem.order,
               scheduledKm: scheduledKm,
-              estimatedCost: packageItem.mantItem.estimatedCost,
-              estimatedTime: packageItem.mantItem.estimatedTime,
+
+              // ✅ Heredar tiempo universal desde PackageItem
+              estimatedTime: packageItem.estimatedTime,
+
+              // ✅ Costo local (inicialmente null, se calculará con precios locales)
+              estimatedCost: null,
+
+              // ✅ Notas locales (usuario puede agregar después)
+              localNotes: null,
+
               isOptional: packageItem.isOptional,
-              notes: packageItem.notes,
               status: 'PENDING'
             }
           });

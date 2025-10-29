@@ -83,7 +83,7 @@ export async function PATCH(
             return NextResponse.json({ error: "ID inválido" }, { status: 400 });
         }
 
-        const { name, description, mantType, estimatedTime, categoryId } = await req.json();
+        const { name, description, mantType, categoryId, type } = await req.json();
 
         // Validación de campos requeridos
         if (!name || name.trim() === '') {
@@ -94,12 +94,12 @@ export async function PATCH(
             return NextResponse.json({ error: "Tipo de mantenimiento inválido" }, { status: 400 });
         }
 
-        if (!estimatedTime || estimatedTime <= 0) {
-            return NextResponse.json({ error: "Tiempo estimado inválido" }, { status: 400 });
-        }
-
         if (!categoryId || categoryId <= 0) {
             return NextResponse.json({ error: "Categoría inválida" }, { status: 400 });
+        }
+
+        if (type && !['ACTION', 'PART', 'SERVICE'].includes(type)) {
+            return NextResponse.json({ error: "Tipo de item inválido" }, { status: 400 });
         }
 
         // Verificar que el item existe y pertenece al tenant
@@ -149,8 +149,8 @@ export async function PATCH(
                 name: name.trim(),
                 description: description?.trim() || null,
                 mantType,
-                estimatedTime: parseFloat(estimatedTime),
                 categoryId,
+                type: type || existingItem.type,
             },
             include: {
                 category: {

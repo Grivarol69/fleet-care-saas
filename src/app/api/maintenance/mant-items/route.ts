@@ -52,7 +52,7 @@ export async function POST(req: Request) {
             );
         }
 
-        const { name, description, mantType, estimatedTime, categoryId } = await req.json();
+        const { name, description, mantType, categoryId, type } = await req.json();
 
         // Validación de campos requeridos
         if (!name || name.trim() === '') {
@@ -63,12 +63,12 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Tipo de mantenimiento inválido" }, { status: 400 });
         }
 
-        if (!estimatedTime || estimatedTime <= 0) {
-            return NextResponse.json({ error: "Tiempo estimado inválido" }, { status: 400 });
-        }
-
         if (!categoryId || categoryId <= 0) {
             return NextResponse.json({ error: "Categoría inválida" }, { status: 400 });
+        }
+
+        if (type && !['ACTION', 'PART', 'SERVICE'].includes(type)) {
+            return NextResponse.json({ error: "Tipo de item inválido" }, { status: 400 });
         }
 
         // Verificar que la categoría existe
@@ -102,8 +102,8 @@ export async function POST(req: Request) {
                 name: name.trim(),
                 description: description?.trim() || null,
                 mantType,
-                estimatedTime: parseFloat(estimatedTime),
                 categoryId,
+                type: type || 'ACTION',
                 tenantId: user.tenantId,
             },
             include: {

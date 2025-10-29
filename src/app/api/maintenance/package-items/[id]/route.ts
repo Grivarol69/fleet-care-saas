@@ -9,7 +9,7 @@ export async function PUT(
     try {
         const id = parseInt(params.id);
         const body = await request.json();
-        const { triggerKm, priority, estimatedCost, estimatedTime, notes } = body;
+        const { triggerKm, priority, estimatedTime, technicalNotes, isOptional, order } = body;
 
         // Validaciones básicas
         if (!triggerKm) {
@@ -36,9 +36,10 @@ export async function PUT(
             data: {
                 triggerKm,
                 priority: priority || 'MEDIUM',
-                estimatedCost: estimatedCost ? parseFloat(estimatedCost) : null,
                 estimatedTime: estimatedTime ? parseFloat(estimatedTime) : null,
-                notes
+                technicalNotes,
+                isOptional: isOptional ?? existingItem.isOptional,
+                order: order ?? existingItem.order
             },
             include: {
                 mantItem: {
