@@ -43,7 +43,7 @@ export async function GET(
                                         name: true,
                                         description: true,
                                         mantType: true,
-                                        estimatedTime: true,
+                                        type: true,
                                         category: {
                                             select: {
                                                 id: true,
@@ -194,7 +194,7 @@ export async function PATCH(
                                         id: true,
                                         name: true,
                                         mantType: true,
-                                        estimatedTime: true
+                                        type: true
                                     }
                                 }
                             },

@@ -26,8 +26,7 @@ export async function GET(
                                 id: true,
                                 name: true,
                                 mantType: true,
-                                estimatedTime: true,
-                                estimatedCost: true,
+                                type: true,
                                 category: {
                                     select: {
                                         name: true

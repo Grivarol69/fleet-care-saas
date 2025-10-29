@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
         vehicle: {
           select: {
             id: true,
-            plate: true,
+            licensePlate: true,
             brand: { select: { name: true } },
             line: { select: { name: true } },
           },

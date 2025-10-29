@@ -33,7 +33,7 @@ export async function GET() {
                                         id: true,
                                         name: true,
                                         mantType: true,
-                                        estimatedTime: true
+                                        type: true
                                     }
                                 }
                             },
@@ -155,7 +155,7 @@ export async function POST(req: Request) {
                                         id: true,
                                         name: true,
                                         mantType: true,
-                                        estimatedTime: true
+                                        type: true
                                     }
                                 }
                             }
