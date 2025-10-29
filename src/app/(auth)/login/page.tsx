@@ -47,7 +47,8 @@ export default function Login() {
       setMessage("¡Registro exitoso! Ahora puedes iniciar sesión");
       // Auto-login después de registro exitoso
       setTimeout(() => {
-        handleSignIn(new Event('submit') as any);
+        const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+        handleSignIn(fakeEvent);
       }, 1500);
     }
 

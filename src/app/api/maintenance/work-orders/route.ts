@@ -19,7 +19,8 @@ export async function GET(request: NextRequest) {
     const limit = searchParams.get("limit");
 
     // Construir filtros
-    const where: any = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: Record<string, any> = {
       tenantId: user.tenantId,
     };
 

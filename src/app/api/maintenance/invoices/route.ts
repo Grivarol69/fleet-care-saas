@@ -1,6 +1,18 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { Prisma } from "@prisma/client";
+
+type InvoiceItemInput = {
+  masterPartId?: string | null;
+  workOrderItemId?: number | null;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  taxRate?: number;
+  taxAmount?: number;
+  total?: number;
+};
 
 /**
  * GET - Listar Invoices con filtros
@@ -19,7 +31,7 @@ export async function GET(request: NextRequest) {
     const limit = searchParams.get("limit");
 
     // Construir filtros
-    const where: any = {
+    const where: Prisma.InvoiceWhereInput = {
       tenantId: user.tenantId,
     };
 
@@ -217,7 +229,7 @@ export async function POST(request: NextRequest) {
 
       // 2. Crear InvoiceItems
       await Promise.all(
-        items.map((item: any) =>
+        items.map((item: InvoiceItemInput) =>
           tx.invoiceItem.create({
             data: {
               invoiceId: newInvoice.id,

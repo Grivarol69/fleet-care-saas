@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { Prisma } from "@prisma/client";
 
 /**
  * GET - Obtener detalle de una WorkOrder específica
@@ -138,11 +139,12 @@ export async function PATCH(
       );
     }
 
-    const { status, actualCost, completedAt, notes, technicianId, providerId } =
+    const { status, actualCost, completedAt, technicianId, providerId } =
       body;
 
     // Preparar datos para actualizar
-    const updateData: any = {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateData: Record<string, any> = {};
 
     if (status) {
       updateData.status = status;

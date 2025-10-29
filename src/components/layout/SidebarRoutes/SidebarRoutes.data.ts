@@ -8,15 +8,16 @@ import {
     BarChart2,
     Settings,
     Gauge,
+    type LucideIcon,
 } from "lucide-react";
 
 import { UserRole } from "@prisma/client";
 
 type SidebarItem = {
-    icon: any;
+    icon: LucideIcon;
     label: string;
     href?: string;
-    subItems?: { label: string; icon?: any; href: string; roles?: UserRole[] }[];
+    subItems?: { label: string; icon?: LucideIcon; href: string; roles?: UserRole[] }[];
     roles?: UserRole[]; // Roles que pueden ver este item
 };
 
