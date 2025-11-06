@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { Prisma } from "@prisma/client";
 
 /**
  * GET - Listar WorkOrders con filtros
@@ -19,8 +20,7 @@ export async function GET(request: NextRequest) {
     const limit = searchParams.get("limit");
 
     // Construir filtros
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: Record<string, any> = {
+    const where: Prisma.WorkOrderWhereInput = {
       tenantId: user.tenantId,
     };
 
@@ -29,11 +29,11 @@ export async function GET(request: NextRequest) {
     }
 
     if (status) {
-      where.status = status;
+      where.status = status as Prisma.EnumWorkOrderStatusFilter<"WorkOrder">;
     }
 
     if (mantType) {
-      where.mantType = mantType;
+      where.mantType = mantType as Prisma.EnumMantTypeFilter<"WorkOrder">;
     }
 
     // Obtener WorkOrders con relaciones
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
       orderBy: {
         createdAt: "desc",
       },
-      take: limit ? parseInt(limit) : undefined,
+      ...(limit ? { take: parseInt(limit) } : {}),
     });
 
     return NextResponse.json(workOrders);
@@ -215,7 +215,11 @@ export async function POST(request: NextRequest) {
 
     // 5. Actualizar alertas (vincular con WorkOrder y cambiar estado)
     const now = new Date();
-    const alertCreatedAt = alerts[0].createdAt;
+    const firstAlert = alerts[0];
+    if (!firstAlert) {
+      throw new Error("No hay alertas para procesar");
+    }
+    const alertCreatedAt = firstAlert.createdAt;
     const responseTimeMinutes = Math.floor(
       (now.getTime() - alertCreatedAt.getTime()) / (1000 * 60)
     );

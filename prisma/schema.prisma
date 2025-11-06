@@ -872,6 +872,14 @@ model Invoice {
   notes         String? @db.Text
   attachmentUrl String? // URL a factura escaneada/PDF
 
+  // ============ CAMPOS OCR ============
+  pdfUrl         String?    // URL en Supabase Storage
+  ocrStatus      OCRStatus  @default(PENDING)
+  ocrRawData     Json?      // JSON completo de Vision API
+  ocrConfidence  Decimal?   @db.Decimal(5, 2) // Promedio confianza 0-100
+  ocrProcessedAt DateTime?
+  needsReview    Boolean    @default(false) // true si confianza < 70%
+
   // Metadata
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1480,10 +1488,14 @@ enum Priority {
 }
 
 enum WorkOrderStatus {
-  PENDING
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
+  PENDING           // Creada, sin asignar
+  PENDING_APPROVAL  // Esperando aprobación Manager/Owner
+  APPROVED          // Aprobada, lista para ejecución
+  IN_PROGRESS       // Técnico trabajando
+  PENDING_INVOICE   // Trabajo terminado, esperando factura
+  COMPLETED         // Cerrada con factura registrada
+  REJECTED          // Rechazada por Manager/Owner
+  CANCELLED         // Cancelada manualmente
 }
 
 enum ExpenseType {
@@ -1618,6 +1630,13 @@ enum InvoiceStatus {
   PAID // Pagada
   OVERDUE // Vencida
   CANCELLED // Cancelada
+}
+
+enum OCRStatus {
+  PENDING // PDF subido, esperando procesamiento
+  PROCESSING // Vision API procesando
+  COMPLETED // OCR completado exitosamente
+  FAILED // Error en procesamiento OCR
 }
 
 enum CompatibilityLevel {
