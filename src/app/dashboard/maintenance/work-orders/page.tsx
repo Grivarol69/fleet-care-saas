@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { WorkOrdersList } from './components/WorkOrdersList/WorkOrdersList';
 import { WorkOrdersFilters } from './components/WorkOrdersList/WorkOrdersFilters';
@@ -42,6 +43,7 @@ type WorkOrder = {
 };
 
 export default function WorkOrdersPage() {
+  const router = useRouter();
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState({
@@ -87,8 +89,7 @@ export default function WorkOrdersPage() {
   };
 
   const handleViewDetail = (id: number) => {
-    // TODO: Navegar a la página de detalle
-    console.log('Ver detalle de WO:', id);
+    router.push(`/dashboard/maintenance/work-orders/${id}`);
   };
 
   const handleStartWork = async (id: number) => {

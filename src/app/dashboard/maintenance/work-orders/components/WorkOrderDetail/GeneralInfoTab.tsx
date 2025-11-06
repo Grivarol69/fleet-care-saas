@@ -72,6 +72,7 @@ const statusConfig = {
   PENDING_APPROVAL: { label: 'Por Aprobar', variant: 'outline' as const },
   APPROVED: { label: 'Aprobada', variant: 'default' as const },
   REJECTED: { label: 'Rechazada', variant: 'destructive' as const },
+  PENDING_INVOICE: { label: 'Pendiente Factura', variant: 'outline' as const },
   COMPLETED: { label: 'Completada', variant: 'default' as const },
   CANCELLED: { label: 'Cancelada', variant: 'outline' as const },
 };
@@ -168,6 +169,7 @@ export function GeneralInfoTab({ workOrder, onUpdate }: GeneralInfoTabProps) {
                       Por Aprobar
                     </SelectItem>
                     <SelectItem value="APPROVED">Aprobada</SelectItem>
+                    <SelectItem value="PENDING_INVOICE">Pendiente Factura</SelectItem>
                     <SelectItem value="COMPLETED">Completada</SelectItem>
                   </SelectContent>
                 </Select>

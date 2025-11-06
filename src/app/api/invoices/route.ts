@@ -1,26 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
+import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
 
     if (!user) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
-    }
-
-    // Obtener tenant del usuario
-    const dbUser = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { tenantId: true, role: true },
-    });
-
-    if (!dbUser) {
-      return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -30,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     const invoices = await prisma.invoice.findMany({
       where: {
-        tenantId: dbUser.tenantId,
+        tenantId: user.tenantId,
         ...(status && { status: status as any }),
         ...(workOrderId && { workOrderId: parseInt(workOrderId) }),
       },
@@ -73,27 +60,14 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
 
     if (!user) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
-    // Obtener tenant del usuario
-    const dbUser = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { tenantId: true, role: true },
-    });
-
-    if (!dbUser) {
-      return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
-    }
-
     // Validar permisos
-    if (!['OWNER', 'MANAGER'].includes(dbUser.role)) {
+    if (!['OWNER', 'MANAGER'].includes(user.role)) {
       return NextResponse.json(
         { error: 'No tienes permisos para crear facturas' },
         { status: 403 }
@@ -135,7 +109,7 @@ export async function POST(request: NextRequest) {
     const existingInvoice = await prisma.invoice.findUnique({
       where: {
         tenantId_invoiceNumber: {
-          tenantId: dbUser.tenantId,
+          tenantId: user.tenantId,
           invoiceNumber,
         },
       },
@@ -153,7 +127,7 @@ export async function POST(request: NextRequest) {
       const workOrder = await prisma.workOrder.findUnique({
         where: {
           id: workOrderId,
-          tenantId: dbUser.tenantId,
+          tenantId: user.tenantId,
         },
       });
 
@@ -169,7 +143,7 @@ export async function POST(request: NextRequest) {
     const provider = await prisma.provider.findUnique({
       where: {
         id: supplierId,
-        tenantId: dbUser.tenantId,
+        tenantId: user.tenantId,
       },
     });
 
@@ -185,7 +159,7 @@ export async function POST(request: NextRequest) {
       // 1. Crear Invoice
       const newInvoice = await tx.invoice.create({
         data: {
-          tenantId: dbUser.tenantId,
+          tenantId: user.tenantId,
           invoiceNumber,
           invoiceDate: new Date(invoiceDate),
           dueDate: dueDate ? new Date(dueDate) : null,
@@ -222,15 +196,45 @@ export async function POST(request: NextRequest) {
         )
       );
 
-      // 3. Si tiene workOrderId, actualizar estado de WorkOrder a PENDING_INVOICE
+      // 3. Si tiene workOrderId, actualizar estado de WorkOrder a COMPLETED
       if (workOrderId) {
         await tx.workOrder.update({
           where: { id: workOrderId },
           data: {
-            status: 'PENDING_INVOICE',
+            status: 'COMPLETED',
             actualCost: totalAmount,
           },
         });
+
+        // 4. Actualizar WorkOrderItems a COMPLETED
+        await tx.workOrderItem.updateMany({
+          where: { workOrderId },
+          data: { status: 'COMPLETED' },
+        });
+
+        // 5. Actualizar MaintenanceAlerts vinculadas a COMPLETED
+        await tx.maintenanceAlert.updateMany({
+          where: { workOrderId },
+          data: { status: 'COMPLETED' },
+        });
+
+        // 6. Actualizar VehicleProgramItems vinculadas a COMPLETED
+        // Primero obtenemos los alertIds para encontrar los programItemIds
+        const alerts = await tx.maintenanceAlert.findMany({
+          where: { workOrderId },
+          select: { programItemId: true },
+        });
+
+        if (alerts.length > 0) {
+          const programItemIds = alerts.map((a) => a.programItemId);
+          await tx.vehicleProgramItem.updateMany({
+            where: { id: { in: programItemIds } },
+            data: {
+              status: 'COMPLETED',
+              executedDate: new Date(),
+            },
+          });
+        }
       }
 
       return { ...newInvoice, items: invoiceItems };

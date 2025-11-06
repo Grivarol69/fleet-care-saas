@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ArrowLeft, Plus, Trash2, Upload } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/hooks/use-toast';
 import axios from 'axios';
 
 interface InvoiceItem {
@@ -66,7 +66,7 @@ function NewInvoiceContent() {
     const fetchData = async () => {
       try {
         // Cargar providers
-        const providersRes = await axios.get('/api/maintenance/providers');
+        const providersRes = await axios.get('/api/people/providers');
         setProviders(providersRes.data);
 
         // Si viene workOrderId, cargar datos
@@ -112,14 +112,20 @@ function NewInvoiceContent() {
       prev.map((item) => {
         if (item.id !== id) return item;
 
-        const updated = { ...item, [field]: value };
+        // Convertir valores numéricos, usando 0 como fallback para valores inválidos
+        const numericValue =
+          ['quantity', 'unitPrice', 'taxRate'].includes(field)
+            ? parseFloat(value) || 0
+            : value;
+
+        const updated = { ...item, [field]: numericValue };
 
         // Recalcular totales si cambian quantity, unitPrice o taxRate
         if (['quantity', 'unitPrice', 'taxRate'].includes(field)) {
           const totals = calculateItemTotals(
-            field === 'quantity' ? value : updated.quantity,
-            field === 'unitPrice' ? value : updated.unitPrice,
-            field === 'taxRate' ? value : updated.taxRate
+            field === 'quantity' ? numericValue : updated.quantity,
+            field === 'unitPrice' ? numericValue : updated.unitPrice,
+            field === 'taxRate' ? numericValue : updated.taxRate
           );
           return { ...updated, ...totals };
         }

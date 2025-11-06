@@ -38,7 +38,7 @@ async function main() {
       email: 'admin@mvp.com',
       firstName: 'Admin',
       lastName: 'MVP',
-      role: 'ADMIN',
+      role: 'OWNER', // OWNER = dueño empresa cliente con acceso total
       isActive: true,
     },
   });
@@ -46,7 +46,138 @@ async function main() {
   console.log('✓ Tenant and user created');
 
   // ========================================
-  // 2. VEHICLE BRANDS, LINES, TYPES
+  // 2. PROVIDERS, TECHNICIANS, DRIVERS
+  // ========================================
+  console.log('Creating providers, technicians, drivers...');
+
+  // PROVIDERS (talleres y proveedores de repuestos)
+  const provider1 = await prisma.provider.create({
+    data: {
+      tenantId: TENANT_ID,
+      name: 'Taller Automotriz El Rayo',
+      email: 'contacto@tallerelrayo.com',
+      phone: '+57 310 234 5678',
+      address: 'Calle 45 #23-15, Bogotá',
+      specialty: 'REPUESTOS',
+      status: 'ACTIVE',
+    },
+  });
+
+  const provider2 = await prisma.provider.create({
+    data: {
+      tenantId: TENANT_ID,
+      name: 'Repuestos Toyota Oficial',
+      email: 'ventas@repuestostoyota.com',
+      phone: '+57 320 456 7890',
+      address: 'Av. Boyacá #123-45, Bogotá',
+      specialty: 'REPUESTOS',
+      status: 'ACTIVE',
+    },
+  });
+
+  const provider3 = await prisma.provider.create({
+    data: {
+      tenantId: TENANT_ID,
+      name: 'Lubricentro Express',
+      email: 'info@lubricentroexpress.com',
+      phone: '+57 315 678 9012',
+      address: 'Carrera 68 #45-23, Bogotá',
+      specialty: 'LUBRICANTES',
+      status: 'ACTIVE',
+    },
+  });
+
+  console.log('✓ Created 3 providers');
+
+  // TECHNICIANS (mecánicos)
+  const technician1 = await prisma.technician.create({
+    data: {
+      tenantId: TENANT_ID,
+      name: 'Pedro Martínez',
+      email: 'pedro.martinez@empresa.com',
+      phone: '+57 311 234 5678',
+      specialty: 'MOTOR',
+      status: 'ACTIVE',
+    },
+  });
+
+  const technician2 = await prisma.technician.create({
+    data: {
+      tenantId: TENANT_ID,
+      name: 'Luis Rodríguez',
+      email: 'luis.rodriguez@empresa.com',
+      phone: '+57 312 345 6789',
+      specialty: 'ELECTRICO',
+      status: 'ACTIVE',
+    },
+  });
+
+  const technician3 = await prisma.technician.create({
+    data: {
+      tenantId: TENANT_ID,
+      name: 'Andrés López',
+      email: 'andres.lopez@tallerelrayo.com',
+      phone: '+57 313 456 7890',
+      specialty: 'TRANSMISION',
+      status: 'ACTIVE',
+    },
+  });
+
+  console.log('✓ Created 3 technicians');
+
+  // DRIVERS (conductores de la flota)
+  const driver1 = await prisma.driver.create({
+    data: {
+      tenantId: TENANT_ID,
+      name: 'Juan Pérez',
+      email: 'juan.perez@empresa.com',
+      phone: '+57 314 567 8901',
+      licenseNumber: 'C1-12345678',
+      licenseExpiry: new Date('2026-12-31'),
+      status: 'ACTIVE',
+    },
+  });
+
+  const driver2 = await prisma.driver.create({
+    data: {
+      tenantId: TENANT_ID,
+      name: 'Ana García',
+      email: 'ana.garcia@empresa.com',
+      phone: '+57 315 678 9012',
+      licenseNumber: 'C1-23456789',
+      licenseExpiry: new Date('2027-06-30'),
+      status: 'ACTIVE',
+    },
+  });
+
+  const driver3 = await prisma.driver.create({
+    data: {
+      tenantId: TENANT_ID,
+      name: 'Carlos Hernández',
+      email: 'carlos.hernandez@empresa.com',
+      phone: '+57 316 789 0123',
+      licenseNumber: 'C2-34567890',
+      licenseExpiry: new Date('2025-09-15'),
+      status: 'ACTIVE',
+    },
+  });
+
+  const driver4 = await prisma.driver.create({
+    data: {
+      tenantId: TENANT_ID,
+      name: 'Sofía Díaz',
+      email: 'sofia.diaz@empresa.com',
+      phone: '+57 317 890 1234',
+      licenseNumber: 'C1-45678901',
+      licenseExpiry: new Date('2028-03-20'),
+      status: 'ACTIVE',
+    },
+  });
+
+  console.log('✓ Created 4 drivers');
+
+  // ========================================
+  // 3. VEHICLE BRANDS, LINES, TYPES
   // ========================================
   console.log('Creating vehicle brands, lines, types...');
 
@@ -165,34 +296,35 @@ async function main() {
   });
 
   // Items de mantenimiento basados en programas reales
+  // NOTA: estimatedTime y estimatedCost ahora están en PackageItem, no en MantItem
   const itemsData = [
     // MOTOR
-    { name: 'Cambio aceite motor', description: 'Cambio de aceite de motor y verificación de nivel', mantType: 'PREVENTIVE' as const, estimatedTime: 0.5, estimatedCost: 45000, categoryId: motorCat.id },
-    { name: 'Revisión nivel refrigerante', description: 'Verificar nivel y estado del refrigerante', mantType: 'PREVENTIVE' as const, estimatedTime: 0.2, estimatedCost: 5000, categoryId: motorCat.id },
+    { name: 'Cambio aceite motor', description: 'Cambio de aceite de motor y verificación de nivel', mantType: 'PREVENTIVE' as const, categoryId: motorCat.id },
+    { name: 'Revisión nivel refrigerante', description: 'Verificar nivel y estado del refrigerante', mantType: 'PREVENTIVE' as const, categoryId: motorCat.id },
 
     // FILTROS
-    { name: 'Cambio filtro aceite', description: 'Reemplazo filtro de aceite', mantType: 'PREVENTIVE' as const, estimatedTime: 0.3, estimatedCost: 25000, categoryId: filtrosCat.id },
-    { name: 'Cambio filtro aire', description: 'Reemplazo filtro de aire motor', mantType: 'PREVENTIVE' as const, estimatedTime: 0.3, estimatedCost: 35000, categoryId: filtrosCat.id },
-    { name: 'Cambio filtro combustible', description: 'Reemplazo filtro de combustible', mantType: 'PREVENTIVE' as const, estimatedTime: 0.4, estimatedCost: 45000, categoryId: filtrosCat.id },
-    { name: 'Cambio filtro cabina', description: 'Reemplazo filtro de aire acondicionado', mantType: 'PREVENTIVE' as const, estimatedTime: 0.2, estimatedCost: 30000, categoryId: filtrosCat.id },
+    { name: 'Cambio filtro aceite', description: 'Reemplazo filtro de aceite', mantType: 'PREVENTIVE' as const, categoryId: filtrosCat.id },
+    { name: 'Cambio filtro aire', description: 'Reemplazo filtro de aire motor', mantType: 'PREVENTIVE' as const, categoryId: filtrosCat.id },
+    { name: 'Cambio filtro combustible', description: 'Reemplazo filtro de combustible', mantType: 'PREVENTIVE' as const, categoryId: filtrosCat.id },
+    { name: 'Cambio filtro cabina', description: 'Reemplazo filtro de aire acondicionado', mantType: 'PREVENTIVE' as const, categoryId: filtrosCat.id },
 
     // FRENOS
-    { name: 'Inspección pastillas freno', description: 'Verificar estado de pastillas de freno', mantType: 'PREVENTIVE' as const, estimatedTime: 0.5, estimatedCost: 15000, categoryId: frenosCat.id },
-    { name: 'Cambio pastillas freno', description: 'Reemplazo pastillas de freno delanteras', mantType: 'PREVENTIVE' as const, estimatedTime: 1.5, estimatedCost: 180000, categoryId: frenosCat.id },
-    { name: 'Revisión líquido frenos', description: 'Verificar nivel y estado líquido de frenos', mantType: 'PREVENTIVE' as const, estimatedTime: 0.2, estimatedCost: 8000, categoryId: frenosCat.id },
+    { name: 'Inspección pastillas freno', description: 'Verificar estado de pastillas de freno', mantType: 'PREVENTIVE' as const, categoryId: frenosCat.id },
+    { name: 'Cambio pastillas freno', description: 'Reemplazo pastillas de freno delanteras', mantType: 'PREVENTIVE' as const, categoryId: frenosCat.id },
+    { name: 'Revisión líquido frenos', description: 'Verificar nivel y estado líquido de frenos', mantType: 'PREVENTIVE' as const, categoryId: frenosCat.id },
 
     // NEUMÁTICOS
-    { name: 'Rotación neumáticos', description: 'Rotación de neumáticos según patrón', mantType: 'PREVENTIVE' as const, estimatedTime: 0.5, estimatedCost: 25000, categoryId: neumaticoCat.id },
-    { name: 'Alineación y balanceo', description: 'Alineación y balanceo de neumáticos', mantType: 'PREVENTIVE' as const, estimatedTime: 1.0, estimatedCost: 60000, categoryId: neumaticoCat.id },
-    { name: 'Revisión presión neumáticos', description: 'Verificar y ajustar presión de neumáticos', mantType: 'PREVENTIVE' as const, estimatedTime: 0.2, estimatedCost: 5000, categoryId: neumaticoCat.id },
+    { name: 'Rotación neumáticos', description: 'Rotación de neumáticos según patrón', mantType: 'PREVENTIVE' as const, categoryId: neumaticoCat.id },
+    { name: 'Alineación y balanceo', description: 'Alineación y balanceo de neumáticos', mantType: 'PREVENTIVE' as const, categoryId: neumaticoCat.id },
+    { name: 'Revisión presión neumáticos', description: 'Verificar y ajustar presión de neumáticos', mantType: 'PREVENTIVE' as const, categoryId: neumaticoCat.id },
 
     // SUSPENSIÓN
-    { name: 'Inspección amortiguadores', description: 'Verificar estado de amortiguadores', mantType: 'PREVENTIVE' as const, estimatedTime: 0.5, estimatedCost: 20000, categoryId: suspensionCat.id },
-    { name: 'Revisión terminales dirección', description: 'Verificar terminales y rótulas de dirección', mantType: 'PREVENTIVE' as const, estimatedTime: 0.5, estimatedCost: 15000, categoryId: suspensionCat.id },
+    { name: 'Inspección amortiguadores', description: 'Verificar estado de amortiguadores', mantType: 'PREVENTIVE' as const, categoryId: suspensionCat.id },
+    { name: 'Revisión terminales dirección', description: 'Verificar terminales y rótulas de dirección', mantType: 'PREVENTIVE' as const, categoryId: suspensionCat.id },
 
     // TRANSMISIÓN
-    { name: 'Cambio aceite transmisión', description: 'Cambio de aceite de caja de transmisión', mantType: 'PREVENTIVE' as const, estimatedTime: 1.0, estimatedCost: 120000, categoryId: transmisionCat.id },
-    { name: 'Cambio aceite diferencial', description: 'Cambio de aceite del diferencial', mantType: 'PREVENTIVE' as const, estimatedTime: 0.8, estimatedCost: 80000, categoryId: transmisionCat.id },
+    { name: 'Cambio aceite transmisión', description: 'Cambio de aceite de caja de transmisión', mantType: 'PREVENTIVE' as const, categoryId: transmisionCat.id },
+    { name: 'Cambio aceite diferencial', description: 'Cambio de aceite del diferencial', mantType: 'PREVENTIVE' as const, categoryId: transmisionCat.id },
   ];
 
   const items = [];
@@ -227,17 +359,25 @@ async function main() {
   });
 
   // Helper to create package items sequentially
+  // NOTA: estimatedCost va en VehicleProgramItem (específico por tenant/país)
+  // estimatedTime va en PackageItem (universal por tipo de máquina)
   async function createPackageItems(packageId: number, packageItems: Array<{
     mantItemId: number;
     triggerKm: number;
     priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
     order: number;
+    estimatedTime?: number;
   }>) {
     for (const item of packageItems) {
       await prisma.packageItem.create({
         data: {
           packageId,
-          ...item,
+          mantItemId: item.mantItemId,
+          triggerKm: item.triggerKm,
+          priority: item.priority,
+          order: item.order,
+          estimatedTime: item.estimatedTime || null,
+          status: 'ACTIVE',
         },
       });
     }
@@ -257,10 +397,10 @@ async function main() {
   });
 
   await createPackageItems(hilux5k.id, [
-    { mantItemId: items[0]!.id, triggerKm: 5000, priority: 'HIGH', order: 1 },
-    { mantItemId: items[2]!.id, triggerKm: 5000, priority: 'HIGH', order: 2 },
-    { mantItemId: items[1]!.id, triggerKm: 5000, priority: 'MEDIUM', order: 3 },
-    { mantItemId: items[11]!.id, triggerKm: 5000, priority: 'LOW', order: 4 },
+    { mantItemId: items[0]!.id, triggerKm: 5000, priority: 'HIGH', order: 1, estimatedTime: 0.5 },
+    { mantItemId: items[2]!.id, triggerKm: 5000, priority: 'HIGH', order: 2, estimatedTime: 0.3 },
+    { mantItemId: items[1]!.id, triggerKm: 5000, priority: 'MEDIUM', order: 3, estimatedTime: 0.2 },
+    { mantItemId: items[11]!.id, triggerKm: 5000, priority: 'LOW', order: 4, estimatedTime: 0.2 },
   ]);
 
   // Paquete 10,000 km - Hilux
@@ -277,11 +417,11 @@ async function main() {
   });
 
   await createPackageItems(hilux10k.id, [
-    { mantItemId: items[0]!.id, triggerKm: 10000, priority: 'HIGH', order: 1 },
-    { mantItemId: items[2]!.id, triggerKm: 10000, priority: 'HIGH', order: 2 },
-    { mantItemId: items[6]!.id, triggerKm: 10000, priority: 'MEDIUM', order: 3 },
-    { mantItemId: items[8]!.id, triggerKm: 10000, priority: 'MEDIUM', order: 4 },
-    { mantItemId: items[10]!.id, triggerKm: 10000, priority: 'MEDIUM', order: 5 },
+    { mantItemId: items[0]!.id, triggerKm: 10000, priority: 'HIGH', order: 1, estimatedTime: 0.5 },
+    { mantItemId: items[2]!.id, triggerKm: 10000, priority: 'HIGH', order: 2, estimatedTime: 0.3 },
+    { mantItemId: items[6]!.id, triggerKm: 10000, priority: 'MEDIUM', order: 3, estimatedTime: 0.5 },
+    { mantItemId: items[8]!.id, triggerKm: 10000, priority: 'MEDIUM', order: 4, estimatedTime: 0.2 },
+    { mantItemId: items[10]!.id, triggerKm: 10000, priority: 'MEDIUM', order: 5, estimatedTime: 1.0 },
   ]);
 
   // Paquete 15,000 km - Hilux
@@ -298,9 +438,9 @@ async function main() {
   });
 
   await createPackageItems(hilux15k.id, [
-    { mantItemId: items[0]!.id, triggerKm: 15000, priority: 'HIGH', order: 1 },
-    { mantItemId: items[2]!.id, triggerKm: 15000, priority: 'HIGH', order: 2 },
-    { mantItemId: items[9]!.id, triggerKm: 15000, priority: 'MEDIUM', order: 3 },
+    { mantItemId: items[0]!.id, triggerKm: 15000, priority: 'HIGH', order: 1, estimatedTime: 0.5 },
+    { mantItemId: items[2]!.id, triggerKm: 15000, priority: 'HIGH', order: 2, estimatedTime: 0.3 },
+    { mantItemId: items[9]!.id, triggerKm: 15000, priority: 'MEDIUM', order: 3, estimatedTime: 0.5 },
   ]);
 
   // Paquete 30,000 km - Hilux (COMPLETO)
@@ -317,15 +457,15 @@ async function main() {
   });
 
   await createPackageItems(hilux30k.id, [
-    { mantItemId: items[0]!.id, triggerKm: 30000, priority: 'HIGH', order: 1 },
-    { mantItemId: items[2]!.id, triggerKm: 30000, priority: 'HIGH', order: 2 },
-    { mantItemId: items[3]!.id, triggerKm: 30000, priority: 'HIGH', order: 3 },
-    { mantItemId: items[5]!.id, triggerKm: 30000, priority: 'MEDIUM', order: 4 },
-    { mantItemId: items[4]!.id, triggerKm: 30000, priority: 'HIGH', order: 5 },
-    { mantItemId: items[6]!.id, triggerKm: 30000, priority: 'MEDIUM', order: 6 },
-    { mantItemId: items[10]!.id, triggerKm: 30000, priority: 'MEDIUM', order: 7 },
-    { mantItemId: items[12]!.id, triggerKm: 30000, priority: 'MEDIUM', order: 8 },
-    { mantItemId: items[13]!.id, triggerKm: 30000, priority: 'MEDIUM', order: 9 },
+    { mantItemId: items[0]!.id, triggerKm: 30000, priority: 'HIGH', order: 1, estimatedTime: 0.5 },
+    { mantItemId: items[2]!.id, triggerKm: 30000, priority: 'HIGH', order: 2, estimatedTime: 0.3 },
+    { mantItemId: items[3]!.id, triggerKm: 30000, priority: 'HIGH', order: 3, estimatedTime: 0.3 },
+    { mantItemId: items[5]!.id, triggerKm: 30000, priority: 'MEDIUM', order: 4, estimatedTime: 0.2 },
+    { mantItemId: items[4]!.id, triggerKm: 30000, priority: 'HIGH', order: 5, estimatedTime: 0.4 },
+    { mantItemId: items[6]!.id, triggerKm: 30000, priority: 'MEDIUM', order: 6, estimatedTime: 0.5 },
+    { mantItemId: items[10]!.id, triggerKm: 30000, priority: 'MEDIUM', order: 7, estimatedTime: 1.0 },
+    { mantItemId: items[12]!.id, triggerKm: 30000, priority: 'MEDIUM', order: 8, estimatedTime: 0.5 },
+    { mantItemId: items[13]!.id, triggerKm: 30000, priority: 'MEDIUM', order: 9, estimatedTime: 0.5 },
   ]);
 
   // Paquete 50,000 km - Hilux
@@ -342,13 +482,13 @@ async function main() {
   });
 
   await createPackageItems(hilux50k.id, [
-    { mantItemId: items[0]!.id, triggerKm: 50000, priority: 'HIGH', order: 1 },
-    { mantItemId: items[2]!.id, triggerKm: 50000, priority: 'HIGH', order: 2 },
-    { mantItemId: items[3]!.id, triggerKm: 50000, priority: 'HIGH', order: 3 },
-    { mantItemId: items[4]!.id, triggerKm: 50000, priority: 'HIGH', order: 4 },
-    { mantItemId: items[7]!.id, triggerKm: 50000, priority: 'HIGH', order: 5 },
-    { mantItemId: items[14]!.id, triggerKm: 50000, priority: 'HIGH', order: 6 },
-    { mantItemId: items[15]!.id, triggerKm: 50000, priority: 'HIGH', order: 7 },
+    { mantItemId: items[0]!.id, triggerKm: 50000, priority: 'HIGH', order: 1, estimatedTime: 0.5 },
+    { mantItemId: items[2]!.id, triggerKm: 50000, priority: 'HIGH', order: 2, estimatedTime: 0.3 },
+    { mantItemId: items[3]!.id, triggerKm: 50000, priority: 'HIGH', order: 3, estimatedTime: 0.3 },
+    { mantItemId: items[4]!.id, triggerKm: 50000, priority: 'HIGH', order: 4, estimatedTime: 0.4 },
+    { mantItemId: items[7]!.id, triggerKm: 50000, priority: 'HIGH', order: 5, estimatedTime: 1.5 },
+    { mantItemId: items[14]!.id, triggerKm: 50000, priority: 'HIGH', order: 6, estimatedTime: 1.0 },
+    { mantItemId: items[15]!.id, triggerKm: 50000, priority: 'HIGH', order: 7, estimatedTime: 0.8 },
   ]);
 
   console.log('✓ Toyota Hilux template created with 5 packages');
@@ -380,9 +520,9 @@ async function main() {
   });
 
   await createPackageItems(ranger10k.id, [
-    { mantItemId: items[0]!.id, triggerKm: 10000, priority: 'HIGH', order: 1 },
-    { mantItemId: items[2]!.id, triggerKm: 10000, priority: 'HIGH', order: 2 },
-    { mantItemId: items[6]!.id, triggerKm: 10000, priority: 'MEDIUM', order: 3 },
+    { mantItemId: items[0]!.id, triggerKm: 10000, priority: 'HIGH', order: 1, estimatedTime: 0.5 },
+    { mantItemId: items[2]!.id, triggerKm: 10000, priority: 'HIGH', order: 2, estimatedTime: 0.3 },
+    { mantItemId: items[6]!.id, triggerKm: 10000, priority: 'MEDIUM', order: 3, estimatedTime: 0.5 },
   ]);
 
   // Paquete 20,000 km - Ranger
@@ -399,9 +539,9 @@ async function main() {
   });
 
   await createPackageItems(ranger20k.id, [
-    { mantItemId: items[0]!.id, triggerKm: 20000, priority: 'HIGH', order: 1 },
-    { mantItemId: items[2]!.id, triggerKm: 20000, priority: 'HIGH', order: 2 },
-    { mantItemId: items[5]!.id, triggerKm: 20000, priority: 'MEDIUM', order: 3 },
+    { mantItemId: items[0]!.id, triggerKm: 20000, priority: 'HIGH', order: 1, estimatedTime: 0.5 },
+    { mantItemId: items[2]!.id, triggerKm: 20000, priority: 'HIGH', order: 2, estimatedTime: 0.3 },
+    { mantItemId: items[5]!.id, triggerKm: 20000, priority: 'MEDIUM', order: 3, estimatedTime: 0.2 },
   ]);
 
   // Paquete 30,000 km - Ranger
@@ -418,10 +558,10 @@ async function main() {
   });
 
   await createPackageItems(ranger30k.id, [
-    { mantItemId: items[0]!.id, triggerKm: 30000, priority: 'HIGH', order: 1 },
-    { mantItemId: items[2]!.id, triggerKm: 30000, priority: 'HIGH', order: 2 },
-    { mantItemId: items[3]!.id, triggerKm: 30000, priority: 'HIGH', order: 3 },
-    { mantItemId: items[4]!.id, triggerKm: 30000, priority: 'HIGH', order: 4 },
+    { mantItemId: items[0]!.id, triggerKm: 30000, priority: 'HIGH', order: 1, estimatedTime: 0.5 },
+    { mantItemId: items[2]!.id, triggerKm: 30000, priority: 'HIGH', order: 2, estimatedTime: 0.3 },
+    { mantItemId: items[3]!.id, triggerKm: 30000, priority: 'HIGH', order: 3, estimatedTime: 0.3 },
+    { mantItemId: items[4]!.id, triggerKm: 30000, priority: 'HIGH', order: 4, estimatedTime: 0.4 },
   ]);
 
   console.log('✓ Ford Ranger template created with 3 packages');
@@ -515,61 +655,34 @@ async function main() {
         },
       });
 
-      // 4. Create VehicleProgramItems for this package
-      for (const packageItem of templatePackage.packageItems) {
-        const scheduledKm = templatePackage.triggerKm;
-
-        await prisma.vehicleProgramItem.create({
-          data: {
-            tenantId: TENANT_ID,
-            packageId: vehiclePackage.id,
-            mantItemId: packageItem.mantItemId,
-            mantType: 'PREVENTIVE',
-            priority: packageItem.priority,
-            order: packageItem.order,
-            scheduledKm: scheduledKm,
-            estimatedCost: packageItem.estimatedCost || packageItem.mantItem.estimatedCost,
-            estimatedTime: packageItem.estimatedTime || packageItem.mantItem.estimatedTime,
-            status: 'PENDING', // Sistema de alertas determina si vencido
-            description: packageItem.mantItem.description,
-          },
-        });
-      }
+      // NOTA: VehicleProgramItems se crearán desde la aplicación
+      // cuando se asigne el template al vehículo
     }
 
     return program;
   }
 
-  // Assign programs to Toyota Hilux vehicles (vehicles 0, 1, 3, 5, 7, 9)
-  const hiluxVehicles = [vehicles[0], vehicles[1], vehicles[3], vehicles[5], vehicles[7], vehicles[9]];
-  for (const vehicle of hiluxVehicles) {
-    await assignProgramToVehicle(vehicle, hiluxTemplate);
-  }
-  console.log(`✓ Assigned Hilux programs to ${hiluxVehicles.length} vehicles`);
-
-  // Assign programs to Ford Ranger vehicles (vehicles 2, 4, 6)
-  const rangerVehicles = [vehicles[2], vehicles[4], vehicles[6]];
-  for (const vehicle of rangerVehicles) {
-    await assignProgramToVehicle(vehicle, rangerTemplate);
-  }
-  console.log(`✓ Assigned Ranger programs to ${rangerVehicles.length} vehicles`);
-
-  // Vehicle 8 (Chevrolet NPR) remains without program
+  // NOTA: No asignamos programas automáticamente en el seed
+  // Los programas se asignarán manualmente desde la aplicación para probar el flujo
 
   console.log('✅ Seed completed successfully!');
   console.log('\n📊 Summary:');
-  console.log(`  - 1 Tenant & 1 User`);
-  console.log(`  - 3 Brands, 3 Lines, 2 Types`);
-  console.log(`  - 6 Categories, ${items.length} Items`);
-  console.log(`  - 2 Templates (Hilux: 5 packages, Ranger: 3 packages)`);
-  console.log(`  - ${vehicles.length} Vehicles`);
-  console.log(`  - 9 Vehicles with programs assigned`);
-  console.log(`  - ~30 VehicleProgramItems created`);
+  console.log(`  - 1 Tenant & 1 User (admin@mvp.com)`);
+  console.log(`  - 3 Providers, 3 Technicians, 4 Drivers`);
+  console.log(`  - 3 Brands (Toyota, Ford, Chevrolet)`);
+  console.log(`  - 3 Lines (Hilux, Ranger, NPR)`);
+  console.log(`  - 2 Types (Pick-up, Camión)`);
+  console.log(`  - 6 MantCategories, ${items.length} MantItems`);
+  console.log(`  - 2 Templates disponibles:`);
+  console.log(`    • Toyota Hilux: 5 paquetes (5k, 10k, 15k, 30k, 50k km)`);
+  console.log(`    • Ford Ranger: 3 paquetes (10k, 20k, 30k km)`);
+  console.log(`  - ${vehicles.length} Vehicles (SIN programas asignados)`);
   console.log('\n💡 Next steps:');
-  console.log('  1. Run dev server: pnpm dev');
-  console.log('  2. Navigate to /dashboard/maintenance/alerts');
-  console.log('  3. Register odometer to trigger alerts');
-  console.log('  4. Or manually trigger: POST /api/maintenance/alerts/trigger');
+  console.log('  1. Run dev server: npm run dev');
+  console.log('  2. Login: admin@mvp.com');
+  console.log('  3. Asignar template a vehículo Toyota Hilux desde la UI');
+  console.log('  4. Registrar odómetro para generar alertas de mantenimiento');
+  console.log('  5. Probar flujo: Alert → WorkOrder → Invoice');
 }
 
 main()

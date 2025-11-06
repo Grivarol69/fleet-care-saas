@@ -58,6 +58,7 @@ export function WorkOrdersFilters({
             <SelectItem value="IN_PROGRESS">En Progreso</SelectItem>
             <SelectItem value="PENDING_APPROVAL">Por Aprobar</SelectItem>
             <SelectItem value="APPROVED">Aprobada</SelectItem>
+            <SelectItem value="PENDING_INVOICE">Pendiente Factura</SelectItem>
             <SelectItem value="COMPLETED">Completada</SelectItem>
             <SelectItem value="REJECTED">Rechazada</SelectItem>
             <SelectItem value="CANCELLED">Cancelada</SelectItem>
