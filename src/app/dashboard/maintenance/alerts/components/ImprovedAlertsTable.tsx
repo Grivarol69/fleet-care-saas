@@ -53,6 +53,11 @@ export function ImprovedAlertsTable({
   const selectedCost = selectedAlerts.reduce((sum, a) => sum + (a.estimatedCost || 0), 0);
   const selectedDuration = selectedAlerts.reduce((sum, a) => sum + (a.estimatedDuration || 0), 0);
 
+  // Validar si hay alertas en progreso
+  const inProgressCount = selectedAlerts.filter(a => a.status === 'IN_PROGRESS').length;
+  const hasInProgressAlerts = inProgressCount > 0;
+  const allInProgress = inProgressCount === selectedAlerts.length;
+
   // Ordenar vehículos: críticos primero, luego advertencia, luego normales
   const sortedVehicles = [...vehicles].sort((a, b) => {
     const aCritical = a.alerts.filter(alert => alert.alertLevel === 'CRITICAL').length;
@@ -142,22 +147,30 @@ export function ImprovedAlertsTable({
                 </div>
 
                 {/* Botones de Acción */}
-                <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={() => onSelectionChange([])}
-                    className="bg-white/10 text-white border-white/30 hover:bg-white/20 backdrop-blur-sm font-semibold"
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    Cancelar
-                  </Button>
-                  <Button
-                    onClick={onCreateWorkOrder}
-                    className="gap-2 bg-white text-blue-600 hover:bg-blue-50 font-bold text-lg px-8 py-6 shadow-xl hover:shadow-2xl transition-all hover:scale-105"
-                  >
-                    <Plus className="h-5 w-5" />
-                    Crear Orden de Trabajo
-                  </Button>
+                <div className="flex flex-col gap-2 items-end">
+                  {hasInProgressAlerts && (
+                    <p className="text-xs text-yellow-200 font-semibold">
+                      ⚠️ {inProgressCount} item{inProgressCount > 1 ? 's' : ''} ya {inProgressCount > 1 ? 'están' : 'está'} en progreso
+                    </p>
+                  )}
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => onSelectionChange([])}
+                      className="bg-white/10 text-white border-white/30 hover:bg-white/20 backdrop-blur-sm font-semibold"
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Cancelar
+                    </Button>
+                    <Button
+                      onClick={onCreateWorkOrder}
+                      disabled={allInProgress}
+                      className="gap-2 bg-white text-blue-600 hover:bg-blue-50 font-bold text-lg px-8 py-6 shadow-xl hover:shadow-2xl transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    >
+                      <Plus className="h-5 w-5" />
+                      Crear Orden de Trabajo
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>

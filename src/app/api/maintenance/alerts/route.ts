@@ -28,8 +28,8 @@ export async function GET(request: NextRequest) {
     if (status) {
       where.status = status as Prisma.EnumAlertStatusFilter;
     } else {
-      // Por defecto, solo alertas activas
-      where.status = { in: ['PENDING', 'ACKNOWLEDGED', 'SNOOZED'] };
+      // Por defecto, solo alertas activas (no completadas)
+      where.status = { in: ['PENDING', 'ACKNOWLEDGED', 'SNOOZED', 'IN_PROGRESS'] };
     }
 
     if (priority) {
