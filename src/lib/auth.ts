@@ -13,6 +13,25 @@ import { User } from '@prisma/client';
 export async function getCurrentUser(): Promise<User | null> {
   try {
     // ========================================
+    // BYPASS TEMPORAL PARA DESARROLLO (Neon DB sin Supabase Auth)
+    // ========================================
+    // DESHABILITADO - Usar Supabase Auth normal
+    // if (process.env.NODE_ENV === 'development') {
+    //   console.log('[DEV MODE] Usando usuario admin@mvp.com directamente');
+    //
+    //   const user = await prisma.user.findFirst({
+    //     where: {
+    //       email: 'admin@mvp.com',
+    //       tenantId: 'cf68b103-12fd-4208-a352-42379ef3b6e1'
+    //     }
+    //   });
+    //
+    //   if (user) {
+    //     return user;
+    //   }
+    // }
+
+    // ========================================
     // VERSIÓN ACTUAL: SUPABASE AUTH
     // ========================================
     const supabase = await createClient();

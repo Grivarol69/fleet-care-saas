@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 
@@ -13,10 +13,27 @@ export default function Login() {
   const supabase = createClient();
   const router = useRouter();
 
+  // BYPASS TEMPORAL PARA DESARROLLO - Auto-redirigir al dashboard
+  // DESHABILITADO - Usar login normal
+  // useEffect(() => {
+  //   if (process.env.NODE_ENV === 'development') {
+  //     console.log('[DEV MODE] Bypass de login activado - Redirigiendo al dashboard...');
+  //     router.push("/dashboard");
+  //   }
+  // }, [router]);
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setMessage("");
+
+    // BYPASS TEMPORAL PARA DESARROLLO
+    // DESHABILITADO - Usar Supabase Auth normal
+    // if (process.env.NODE_ENV === 'development') {
+    //   console.log('[DEV MODE] Bypass de autenticación activado');
+    //   router.push("/dashboard");
+    //   return;
+    // }
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
