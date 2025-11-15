@@ -22,7 +22,7 @@ import {
   VehicleProgramsListProps,
   VehicleProgramPackage
 } from './VehicleProgramsList.types';
-import { FormAssignProgram } from '../FormAssignProgram';
+import { FormAssignProgramImproved } from '../FormAssignProgram/FormAssignProgramImproved';
 
 // Componente de card ultra-compacta para programs
 interface ProgramCardProps {
@@ -465,7 +465,7 @@ export function VehicleProgramsList() {
       </Tabs>
 
       {/* Modal Asignar Programa */}
-      <FormAssignProgram
+      <FormAssignProgramImproved
         open={isAssignModalOpen}
         onOpenChange={setIsAssignModalOpen}
         onSuccess={() => {
