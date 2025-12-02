@@ -3,14 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
-
-  // EXPLICACIÓN:
-  // - DATABASE_URL: Connection pooler (Transaction Mode) - usado en runtime por la app
-  // - DIRECT_URL: Conexión directa (puerto 5432) - usado SOLO por migraciones y seeds
-  // Esto resuelve el error "prepared statement already exists" de pgbouncer
+  provider = "postgresql"
 }
 
 // ========================================

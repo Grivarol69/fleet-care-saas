@@ -10,6 +10,7 @@ import {
   AlertCircle,
   XCircle,
   PlayCircle,
+  FileText,
 } from 'lucide-react';
 
 type WorkOrder = {
@@ -30,6 +31,13 @@ type WorkOrder = {
     itemName: string;
     status: string;
   }>;
+  invoices: Array<{
+    id: number;
+    invoiceNumber: string;
+    invoiceDate: string;
+    totalAmount: number;
+    status: string;
+  }>;
 };
 
 type HistoryTabProps = {
@@ -38,7 +46,7 @@ type HistoryTabProps = {
 
 type TimelineEvent = {
   id: string;
-  type: 'creation' | 'start' | 'completion' | 'approval' | 'alert';
+  type: 'creation' | 'start' | 'completion' | 'approval' | 'alert' | 'invoice';
   title: string;
   description: string;
   timestamp: string;
@@ -110,12 +118,27 @@ export function HistoryTab({ workOrder }: HistoryTabProps) {
     }
   });
 
+  // Facturas cargadas
+  if (workOrder.invoices && workOrder.invoices.length > 0) {
+    workOrder.invoices.forEach((invoice) => {
+      timeline.push({
+        id: `invoice-${invoice.id}`,
+        type: 'invoice',
+        title: 'Factura Cargada',
+        description: `Factura ${invoice.invoiceNumber} por $${invoice.totalAmount.toLocaleString('es-CO')}`,
+        timestamp: invoice.invoiceDate,
+        icon: <FileText className="h-4 w-4" />,
+        color: 'bg-purple-500',
+      });
+    });
+  }
+
   // Completado
   if (workOrder.endDate) {
     timeline.push({
       id: 'completion',
       type: 'completion',
-      title: 'Trabajo Completado',
+      title: 'Orden Completada',
       description: 'La orden de trabajo fue completada exitosamente',
       timestamp: workOrder.endDate,
       icon: <CheckCircle className="h-4 w-4" />,

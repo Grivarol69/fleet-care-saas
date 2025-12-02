@@ -215,7 +215,7 @@ export function FormEditOdometer({
             <FormField
               control={form.control}
               name="vehicleId"
-              render={({ field: _field }) => (
+              render={() => (
                 <FormItem>
                   <FormLabel>Vehículo *</FormLabel>
                   <div className="flex space-x-2">
@@ -254,7 +254,7 @@ export function FormEditOdometer({
             <FormField
               control={form.control}
               name="driverId"
-              render={({ field: _field }) => (
+              render={() => (
                 <FormItem>
                   <FormLabel>Conductor</FormLabel>
                   <div className="flex space-x-2">

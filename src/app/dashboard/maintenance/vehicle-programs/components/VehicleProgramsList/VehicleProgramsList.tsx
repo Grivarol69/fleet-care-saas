@@ -39,12 +39,14 @@ function ProgramCard({ program, onSelect, onEdit, onDelete }: ProgramCardProps) 
     sum + pkg.items.filter(item => item.status === 'PENDING').length, 0);
 
   // Calcular siguiente mantenimiento (paquete PENDING con menor scheduledKm)
+  // Excluir paquetes CORRECTIVOS (no tienen km programado específico)
   const nextMaintenance = program.packages
-    .filter(pkg => pkg.status === 'PENDING')
+    .filter(pkg => pkg.status === 'PENDING' && pkg.packageType !== 'CORRECTIVE')
     .map(pkg => ({
-      scheduledKm: pkg.items[0]?.scheduledKm || 0,
+      scheduledKm: pkg.scheduledKm || pkg.items[0]?.scheduledKm || 0, // ✅ BUG #4: Usar scheduledKm del paquete
       name: pkg.name
     }))
+    .filter(pkg => pkg.scheduledKm > 0) // ✅ Excluir paquetes sin km programado
     .sort((a, b) => a.scheduledKm - b.scheduledKm)[0];
 
   // Calcular alerta (diferencia entre km actual y próximo mantenimiento)

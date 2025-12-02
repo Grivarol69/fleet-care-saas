@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
     try {
         const user = await getCurrentUser();
 
@@ -10,9 +10,19 @@ export async function GET() {
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
+        // Búsqueda para autocompletado
+        const searchParams = request.nextUrl.searchParams;
+        const search = searchParams.get('search');
+
         const mantItems = await prisma.mantItem.findMany({
             where: {
-                tenantId: user.tenantId
+                tenantId: user.tenantId,
+                ...(search && {
+                    OR: [
+                        { name: { contains: search, mode: 'insensitive' } },
+                        { description: { contains: search, mode: 'insensitive' } }
+                    ]
+                })
             },
             include: {
                 category: {
@@ -23,8 +33,9 @@ export async function GET() {
                 }
             },
             orderBy: {
-                createdAt: 'desc'
-            }
+                name: 'asc'
+            },
+            ...(search && { take: 15 }) // Limitar solo en búsquedas
         });
         return NextResponse.json(mantItems);
     } catch (error) {

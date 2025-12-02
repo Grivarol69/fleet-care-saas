@@ -8,6 +8,7 @@ import {
     BarChart2,
     Settings,
     Gauge,
+    FileText,
     type LucideIcon,
 } from "lucide-react";
 
@@ -67,6 +68,7 @@ export const dataAdminSidebar: SidebarItem[] = [
             { label: "Plantillas Planes Mantenimiento", href: "/dashboard/maintenance/mant-template", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER] },
             { label: "Programas Vehículos", href: "/dashboard/maintenance/vehicle-programs", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER] },
             { label: "Órdenes de Trabajo", href: "/dashboard/maintenance/work-orders", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.TECHNICIAN] }, // TECHNICIAN ejecuta OT
+            { label: "Facturas", icon: FileText, href: "/dashboard/invoices", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER] },
             { label: "Alertas", href: "/dashboard/maintenance/alerts", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.TECHNICIAN] },
         ],
     },

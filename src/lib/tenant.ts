@@ -51,7 +51,7 @@ export const tenantService = {
                         email: userEmail,
                         firstName: firstName || null,
                         lastName: lastName || null,
-                        role: UserRole.ADMIN, // Primer usuario es admin
+                        role: UserRole.OWNER, // Primer usuario es owner
                     }
                 })
 

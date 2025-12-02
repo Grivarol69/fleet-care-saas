@@ -65,6 +65,35 @@ export const ourFileRouter = {
             console.log("Document upload complete:", file.url);
             return { uploadedBy: metadata.userId };
         }),
+
+    // Invoice uploader (Facturas de compra)
+    invoiceUploader: f({
+        pdf: {
+            maxFileSize: "8MB",
+            maxFileCount: 1
+        },
+        image: {
+            maxFileSize: "8MB",
+            maxFileCount: 1
+        }
+    })
+        .middleware(async () => {
+            const supabase = await createClient();
+            const { data: { user }, error } = await supabase.auth.getUser();
+
+            if (!user || error) {
+                throw new Error("Unauthorized");
+            }
+
+            return {
+                userId: user.id,
+                userEmail: user.email
+            };
+        })
+        .onUploadComplete(async ({ metadata, file }) => {
+            console.log("Invoice upload complete:", file.url);
+            return { uploadedBy: metadata.userId };
+        }),
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter;

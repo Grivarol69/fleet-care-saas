@@ -203,6 +203,7 @@ export async function POST(request: NextRequest) {
           data: {
             status: 'COMPLETED',
             actualCost: totalAmount,
+            endDate: new Date(), // ✅ BUG #5: Actualizar fecha de finalización
           },
         });
 
