@@ -49,14 +49,21 @@ export async function GET(req: Request) {
 // UTILITY FUNCTIONS
 // ========================================
 
+interface TemplatePackage {
+  id: number;
+  triggerKm: number;
+  name: string;
+  [key: string]: unknown;
+}
+
 /**
  * Infiere qué paquete del template corresponde al km ejecutado
  * Usa una tolerancia de ±500km para encontrar el match más cercano
  */
 function inferPackageFromKm(
   executedKm: number,
-  templatePackages: any[]
-): any | null {
+  templatePackages: TemplatePackage[]
+): TemplatePackage | null {
   const TOLERANCE = 500; // ±500 km de tolerancia
 
   if (templatePackages.length === 0) return null;
@@ -81,9 +88,9 @@ function inferPackageFromKm(
  * Filtra solo los paquetes que están DESPUÉS del último paquete ejecutado
  */
 function filterFuturePackages(
-  templatePackages: any[],
+  templatePackages: TemplatePackage[],
   lastPackageKm: number
-): any[] {
+): TemplatePackage[] {
   return templatePackages
     .filter(pkg => pkg.triggerKm > lastPackageKm)
     .sort((a, b) => a.triggerKm - b.triggerKm);
@@ -279,7 +286,7 @@ export async function POST(req: Request) {
         if (!historicalPackage) {
           // Buscar el template package original
           const templatePackage = template.packages.find(
-            (pkg: any) => pkg.triggerKm === lastMaintenancePackageKm
+            (pkg: TemplatePackage) => pkg.triggerKm === lastMaintenancePackageKm
           );
 
           if (templatePackage) {

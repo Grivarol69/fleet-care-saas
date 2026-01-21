@@ -14,10 +14,13 @@ export async function GET() {
             );
         }
 
-        // Todos pueden VER las marcas (solo lectura)
+        // Devolver marcas GLOBALES + del tenant
         const brands = await prisma.vehicleBrand.findMany({
             where: {
-                tenantId: user.tenantId // Usar tenant del usuario en lugar de hardcoded
+                OR: [
+                    { isGlobal: true },           // Marcas globales (Knowledge Base)
+                    { tenantId: user.tenantId }   // Marcas custom del tenant
+                ]
             },
             orderBy: {
                 name: 'asc'
@@ -45,19 +48,7 @@ export async function POST(req: Request) {
             );
         }
 
-        // Solo SUPER_ADMIN puede crear marcas
-        const { requireSuperAdmin } = await import("@/lib/permissions");
-        try {
-            requireSuperAdmin(user);
-        } catch (error: unknown) {
-            const err = error as Error;
-            return NextResponse.json(
-                { error: err.message },
-                { status: 403 }
-            );
-        }
-
-        const { name } = await req.json();
+        const { name, isGlobal } = await req.json();
 
         if (!name || name.trim() === '') {
             return NextResponse.json(
@@ -66,13 +57,42 @@ export async function POST(req: Request) {
             );
         }
 
-        // Verificar que no exista una marca con el mismo nombre
-        const existingBrand = await prisma.vehicleBrand.findUnique({
+        // Validar permisos según destino
+        let targetTenant: string | null;
+
+        if (isGlobal) {
+            // Solo SUPER_ADMIN puede crear marcas globales
+            const { requireSuperAdmin } = await import("@/lib/permissions");
+            try {
+                requireSuperAdmin(user);
+                targetTenant = null; // NULL para datos globales
+            } catch (error: unknown) {
+                const err = error as Error;
+                return NextResponse.json(
+                    { error: err.message },
+                    { status: 403 }
+                );
+            }
+        } else {
+            // OWNER/MANAGER pueden crear custom en su tenant
+            const { requireManagementRole } = await import("@/lib/permissions");
+            try {
+                requireManagementRole(user);
+                targetTenant = user.tenantId;
+            } catch (error: unknown) {
+                const err = error as Error;
+                return NextResponse.json(
+                    { error: err.message },
+                    { status: 403 }
+                );
+            }
+        }
+
+        // Verificar que no exista una marca con el mismo nombre en el scope
+        const existingBrand = await prisma.vehicleBrand.findFirst({
             where: {
-                tenantId_name: {
-                    tenantId: user.tenantId,
-                    name: name.trim()
-                }
+                tenantId: targetTenant,
+                name: name.trim()
             }
         });
 
@@ -86,7 +106,8 @@ export async function POST(req: Request) {
         const brand = await prisma.vehicleBrand.create({
             data: {
                 name: name.trim(),
-                tenantId: user.tenantId,
+                tenantId: targetTenant,
+                isGlobal: isGlobal || false
             },
         });
 

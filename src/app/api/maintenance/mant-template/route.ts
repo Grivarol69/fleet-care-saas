@@ -1,14 +1,24 @@
 import { prisma } from "@/lib/prisma";
-import { createClient } from '@/utils/supabase/server';
+import { getCurrentUser } from '@/lib/auth';
 import { NextResponse } from "next/server";
 
 const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1'; // Tenant hardcodeado para MVP
 
 export async function GET() {
     try {
+        const user = await getCurrentUser();
+
+        if (!user) {
+            return new NextResponse("Unauthorized", { status: 401 });
+        }
+
+        // Devolver templates GLOBALES + del tenant
         const mantTemplates = await prisma.maintenanceTemplate.findMany({
             where: {
-                tenantId: TENANT_ID,
+                OR: [
+                    { isGlobal: true },                 // Templates globales (Knowledge Base)
+                    { tenantId: user.tenantId }       // Templates custom del tenant
+                ],
                 status: 'ACTIVE'
             },
             include: {
@@ -61,13 +71,12 @@ export async function GET() {
 
 export async function POST(req: Request) {
     try {
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await getCurrentUser();
         if (!user) {
             return new NextResponse("Unauthorized", { status: 401 });
         }
 
-        const { name, description, vehicleBrandId, vehicleLineId } = await req.json();
+        const { name, description, vehicleBrandId, vehicleLineId, isGlobal } = await req.json();
 
         // Validación de campos requeridos
         if (!name || name.trim() === '') {
@@ -82,11 +91,31 @@ export async function POST(req: Request) {
             return new NextResponse("Valid vehicle line is required", { status: 400 });
         }
 
-        // Verificar que la marca existe y pertenece al tenant
+        // Validar permisos según destino
+        let targetTenant: string | null;
+
+        if (isGlobal) {
+            // Solo SUPER_ADMIN puede crear templates globales
+            if (user.role !== 'SUPER_ADMIN') {
+                return new NextResponse("Only SUPER_ADMIN can create global templates", { status: 403 });
+            }
+            targetTenant = null;
+        } else {
+            // OWNER/MANAGER pueden crear custom
+            if (!['SUPER_ADMIN', 'OWNER', 'MANAGER'].includes(user.role)) {
+                return new NextResponse("Insufficient permissions", { status: 403 });
+            }
+            targetTenant = user.tenantId;
+        }
+
+        // Verificar que la marca existe (global o del tenant)
         const brand = await prisma.vehicleBrand.findFirst({
             where: {
                 id: vehicleBrandId,
-                tenantId: TENANT_ID
+                OR: [
+                    { isGlobal: true },
+                    { tenantId: targetTenant }
+                ]
             }
         });
 
@@ -94,12 +123,15 @@ export async function POST(req: Request) {
             return new NextResponse("Vehicle brand not found", { status: 404 });
         }
 
-        // Verificar que la línea existe, pertenece al tenant y a la marca
+        // Verificar que la línea existe (global o del tenant) y pertenece a la marca
         const line = await prisma.vehicleLine.findFirst({
             where: {
                 id: vehicleLineId,
-                tenantId: TENANT_ID,
-                brandId: vehicleBrandId
+                brandId: vehicleBrandId,
+                OR: [
+                    { isGlobal: true },
+                    { tenantId: targetTenant }
+                ]
             }
         });
 
@@ -107,10 +139,10 @@ export async function POST(req: Request) {
             return new NextResponse("Vehicle line not found or doesn't belong to the specified brand", { status: 404 });
         }
 
-        // Verificar que no exista un template con el mismo nombre para la misma marca/línea
+        // Verificar que no exista un template con el mismo nombre para la misma marca/línea en el scope
         const existingTemplate = await prisma.maintenanceTemplate.findFirst({
             where: {
-                tenantId: TENANT_ID,
+                tenantId: targetTenant,
                 vehicleBrandId,
                 vehicleLineId,
                 name: name.trim(),
@@ -128,7 +160,8 @@ export async function POST(req: Request) {
                 description: description?.trim() || null,
                 vehicleBrandId,
                 vehicleLineId,
-                tenantId: TENANT_ID,
+                tenantId: targetTenant,
+                isGlobal: isGlobal || false,
                 status: 'ACTIVE',
                 version: '1.0',
                 isDefault: false

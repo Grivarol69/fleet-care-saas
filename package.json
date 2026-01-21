@@ -19,6 +19,8 @@
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
+    "seed": "tsx prisma/seed.ts",
+    "seed:kb": "tsx prisma/seed.kb.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky"

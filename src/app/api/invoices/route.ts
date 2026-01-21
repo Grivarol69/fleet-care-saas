@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { InvoiceStatus } from '@prisma/client';
+
+interface InvoiceItemInput {
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+  taxRate?: number;
+  taxAmount?: number;
+  total: number;
+  workOrderItemId?: number | null;
+  masterPartId?: string | null;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,7 +31,7 @@ export async function GET(request: NextRequest) {
     const invoices = await prisma.invoice.findMany({
       where: {
         tenantId: user.tenantId,
-        ...(status && { status: status as any }),
+        ...(status && { status: status as InvoiceStatus }),
         ...(workOrderId && { workOrderId: parseInt(workOrderId) }),
       },
       include: {
@@ -178,7 +191,7 @@ export async function POST(request: NextRequest) {
 
       // 2. Crear InvoiceItems
       const invoiceItems = await Promise.all(
-        items.map((item: any) =>
+        items.map((item: InvoiceItemInput) =>
           tx.invoiceItem.create({
             data: {
               invoiceId: newInvoice.id,

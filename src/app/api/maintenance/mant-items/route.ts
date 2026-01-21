@@ -14,13 +14,21 @@ export async function GET(request: NextRequest) {
         const searchParams = request.nextUrl.searchParams;
         const search = searchParams.get('search');
 
+        // Devolver items GLOBALES + del tenant
         const mantItems = await prisma.mantItem.findMany({
             where: {
-                tenantId: user.tenantId,
+                OR: [
+                    { isGlobal: true },           // Items globales (Knowledge Base)
+                    { tenantId: user.tenantId }   // Items custom del tenant
+                ],
                 ...(search && {
-                    OR: [
-                        { name: { contains: search, mode: 'insensitive' } },
-                        { description: { contains: search, mode: 'insensitive' } }
+                    AND: [
+                        {
+                            OR: [
+                                { name: { contains: search, mode: 'insensitive' } },
+                                { description: { contains: search, mode: 'insensitive' } }
+                            ]
+                        }
                     ]
                 })
             },
@@ -52,18 +60,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
-        // Validar permisos - Solo SUPER_ADMIN puede modificar tablas maestras
-        const { requireSuperAdmin } = await import("@/lib/permissions");
-        try {
-            requireSuperAdmin(user);
-        } catch (error) {
-            return NextResponse.json(
-                { error: (error as Error).message },
-                { status: 403 }
-            );
-        }
-
-        const { name, description, mantType, categoryId, type } = await req.json();
+        const { name, description, mantType, categoryId, type, isGlobal } = await req.json();
 
         // Validación de campos requeridos
         if (!name || name.trim() === '') {
@@ -82,11 +79,43 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Tipo de item inválido" }, { status: 400 });
         }
 
-        // Verificar que la categoría existe
-        const category = await prisma.mantCategory.findUnique({
+        // Validar permisos según destino
+        let targetTenant: string | null;
+
+        if (isGlobal) {
+            // Solo SUPER_ADMIN puede crear items globales
+            const { requireSuperAdmin } = await import("@/lib/permissions");
+            try {
+                requireSuperAdmin(user);
+                targetTenant = null;
+            } catch (error) {
+                return NextResponse.json(
+                    { error: (error as Error).message },
+                    { status: 403 }
+                );
+            }
+        } else {
+            // OWNER/MANAGER pueden crear custom
+            const { requireManagementRole } = await import("@/lib/permissions");
+            try {
+                requireManagementRole(user);
+                targetTenant = user.tenantId;
+            } catch (error) {
+                return NextResponse.json(
+                    { error: (error as Error).message },
+                    { status: 403 }
+                );
+            }
+        }
+
+        // Verificar que la categoría existe (global o del tenant)
+        const category = await prisma.mantCategory.findFirst({
             where: {
                 id: categoryId,
-                tenantId: user.tenantId
+                OR: [
+                    { isGlobal: true },
+                    { tenantId: targetTenant }
+                ]
             }
         });
 
@@ -94,13 +123,11 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Categoría no encontrada" }, { status: 404 });
         }
 
-        // Verificar que no exista un item con el mismo nombre
-        const existingItem = await prisma.mantItem.findUnique({
+        // Verificar que no exista un item con el mismo nombre en el scope
+        const existingItem = await prisma.mantItem.findFirst({
             where: {
-                tenantId_name: {
-                    tenantId: user.tenantId,
-                    name: name.trim()
-                }
+                tenantId: targetTenant,
+                name: name.trim()
             }
         });
 
@@ -115,7 +142,8 @@ export async function POST(req: Request) {
                 mantType,
                 categoryId,
                 type: type || 'ACTION',
-                tenantId: user.tenantId,
+                tenantId: targetTenant,
+                isGlobal: isGlobal || false
             },
             include: {
                 category: {

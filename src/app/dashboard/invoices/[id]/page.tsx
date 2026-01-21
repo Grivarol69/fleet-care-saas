@@ -127,11 +127,14 @@ export default function InvoiceDetailPage() {
         description: 'La factura ha sido eliminada exitosamente',
       });
       router.push('/dashboard/invoices');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error deleting invoice:', error);
+      const errorMessage = error instanceof Error && 'response' in error
+        ? (error as { response?: { data?: { error?: string } } }).response?.data?.error
+        : 'No se pudo eliminar la factura';
       toast({
         title: 'Error',
-        description: error.response?.data?.error || 'No se pudo eliminar la factura',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {

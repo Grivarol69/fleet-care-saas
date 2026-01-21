@@ -17,6 +17,7 @@ export default defineConfig({
     url: env('DATABASE_URL'),
 
     // DIRECT_URL: Neon direct connection (para migraciones)
-    directUrl: env('DIRECT_URL'),
+    // Note: directUrl causa error TS, se maneja vía env var DIRECT_URL automáticamente
+    // directUrl: env('DIRECT_URL'),
   },
 })

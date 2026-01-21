@@ -69,10 +69,28 @@ function NewInvoiceContent() {
   const { toast } = useToast();
   const workOrderId = searchParams.get('workOrderId');
 
+  interface Provider {
+    id: number;
+    name: string;
+    [key: string]: unknown;
+  }
+
+  interface WorkOrder {
+    id: number;
+    title: string;
+    items?: InvoiceItem[];
+    estimatedCost?: number;
+    vehicle?: {
+      licensePlate: string;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  }
+
   const [loading, setLoading] = useState(false);
   const [loadingWOItems, setLoadingWOItems] = useState(false);
-  const [providers, setProviders] = useState<any[]>([]);
-  const [workOrder, setWorkOrder] = useState<any>(null);
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
 
   // Form state
   const [invoiceNumber, setInvoiceNumber] = useState('');
@@ -89,7 +107,7 @@ function NewInvoiceContent() {
   // Dialog agregar item
   const [addItemDialogOpen, setAddItemDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [mantItems, setMantItems] = useState<any[]>([]);
+  const [mantItems, setMantItems] = useState<MantItemType[]>([]);
   const [searchingItems, setSearchingItems] = useState(false);
 
   // Cargar datos iniciales
@@ -119,7 +137,16 @@ function NewInvoiceContent() {
           );
 
           // Mapear items de WO a formato de factura
-          const woItems = woItemsRes.data.items.map((item: any) => ({
+          interface WOItemResponse {
+            id: number;
+            description: string;
+            mantItemId?: number;
+            category?: { name: string };
+            cost?: number;
+            quantity?: number;
+            [key: string]: unknown;
+          }
+          const woItems = woItemsRes.data.items.map((item: WOItemResponse) => ({
             id: crypto.randomUUID(),
             workOrderItemId: item.workOrderItemId,
             description: item.description,
@@ -209,7 +236,15 @@ function NewInvoiceContent() {
   }, [searchTerm]);
 
   // Agregar item desde MantItem
-  const addItemFromMantItem = (mantItem: any) => {
+  interface MantItemType {
+    id: number;
+    name: string;
+    description?: string;
+    category?: { name: string };
+    [key: string]: unknown;
+  }
+
+  const addItemFromMantItem = (mantItem: MantItemType) => {
     const newItem: InvoiceItem = {
       id: crypto.randomUUID(),
       mantItemId: mantItem.id,
@@ -420,12 +455,14 @@ function NewInvoiceContent() {
       } else {
         router.push('/dashboard/invoices');
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error creating invoice:', error);
+      const errorMessage = error instanceof Error && 'response' in error
+        ? (error as { response?: { data?: { error?: string } } }).response?.data?.error
+        : 'No se pudo crear la factura';
       toast({
         title: 'Error',
-        description:
-          error.response?.data?.error || 'No se pudo crear la factura',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -479,7 +516,7 @@ function NewInvoiceContent() {
             {workOrder && (
               <p className="text-muted-foreground mt-2 flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
-                Vinculada a: {workOrder.title} ({workOrder.vehicle.licensePlate})
+                Vinculada a: {workOrder.title} ({workOrder.vehicle?.licensePlate})
               </p>
             )}
           </div>

@@ -10,9 +10,13 @@ export async function GET() {
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
+        // Devolver categorías GLOBALES + del tenant
         const categories = await prisma.mantCategory.findMany({
             where: {
-                tenantId: user.tenantId
+                OR: [
+                    { isGlobal: true },           // Categorías globales (Knowledge Base)
+                    { tenantId: user.tenantId }   // Categorías custom del tenant
+                ]
             },
             orderBy: {
                 name: 'asc'
@@ -33,30 +37,48 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
-        // Validar permisos - Solo SUPER_ADMIN puede modificar tablas maestras
-        const { requireSuperAdmin } = await import("@/lib/permissions");
-        try {
-            requireSuperAdmin(user);
-        } catch (error) {
-            return NextResponse.json(
-                { error: (error as Error).message },
-                { status: 403 }
-            );
-        }
-
-        const { name } = await req.json();
+        const { name, description, isGlobal } = await req.json();
 
         if (!name || name.trim() === '') {
             return NextResponse.json({ error: "El nombre es requerido" }, { status: 400 });
         }
 
-        // Verificar que no exista una categoria con el mismo nombre
-        const existingCategory = await prisma.mantCategory.findUnique({
+        // Validar permisos según destino
+        let targetTenant: string | null;
+
+        if (isGlobal) {
+            // Solo SUPER_ADMIN puede crear categorías globales
+            const { requireSuperAdmin } = await import("@/lib/permissions");
+            try {
+                requireSuperAdmin(user);
+                targetTenant = null;
+            } catch (error: unknown) {
+                const err = error as Error;
+                return NextResponse.json(
+                    { error: err.message },
+                    { status: 403 }
+                );
+            }
+        } else {
+            // OWNER/MANAGER pueden crear custom
+            const { requireManagementRole } = await import("@/lib/permissions");
+            try {
+                requireManagementRole(user);
+                targetTenant = user.tenantId;
+            } catch (error: unknown) {
+                const err = error as Error;
+                return NextResponse.json(
+                    { error: err.message },
+                    { status: 403 }
+                );
+            }
+        }
+
+        // Verificar que no exista una categoría con el mismo nombre
+        const existingCategory = await prisma.mantCategory.findFirst({
             where: {
-                tenantId_name: {
-                    tenantId: user.tenantId,
-                    name: name.trim()
-                }
+                tenantId: targetTenant,
+                name: name.trim()
             }
         });
 
@@ -67,7 +89,9 @@ export async function POST(req: Request) {
         const category = await prisma.mantCategory.create({
             data: {
                 name: name.trim(),
-                tenantId: user.tenantId,
+                description: description?.trim() || null,
+                tenantId: targetTenant,
+                isGlobal: isGlobal || false
             },
         });
 
