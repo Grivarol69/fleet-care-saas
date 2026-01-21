@@ -310,7 +310,7 @@ export function FleetVehiclesList() {
         },
       },
     ],
-    [handleDelete, handleEdit, toast]
+    [handleDelete, handleEdit]
   );
 
   const table = useReactTable({

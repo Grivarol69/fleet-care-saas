@@ -8,15 +8,17 @@ import {
     BarChart2,
     Settings,
     Gauge,
+    FileText,
+    type LucideIcon,
 } from "lucide-react";
 
 import { UserRole } from "@prisma/client";
 
 type SidebarItem = {
-    icon: any;
+    icon: LucideIcon;
     label: string;
     href?: string;
-    subItems?: { label: string; icon?: any; href: string; roles?: UserRole[] }[];
+    subItems?: { label: string; icon?: LucideIcon; href: string; roles?: UserRole[] }[];
     roles?: UserRole[]; // Roles que pueden ver este item
 };
 
@@ -66,6 +68,7 @@ export const dataAdminSidebar: SidebarItem[] = [
             { label: "Plantillas Planes Mantenimiento", href: "/dashboard/maintenance/mant-template", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER] },
             { label: "Programas Vehículos", href: "/dashboard/maintenance/vehicle-programs", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER] },
             { label: "Órdenes de Trabajo", href: "/dashboard/maintenance/work-orders", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.TECHNICIAN] }, // TECHNICIAN ejecuta OT
+            { label: "Facturas", icon: FileText, href: "/dashboard/invoices", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER] },
             { label: "Alertas", href: "/dashboard/maintenance/alerts", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.TECHNICIAN] },
         ],
     },

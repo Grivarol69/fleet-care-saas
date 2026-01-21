@@ -3,8 +3,8 @@ export type MantItemsListProps = {
     name: string;
     description?: string | null;
     mantType: 'PREVENTIVE' | 'PREDICTIVE' | 'CORRECTIVE' | 'EMERGENCY';
-    estimatedTime: number; // En decimal para horas
     categoryId: number;
+    type: 'ACTION' | 'PART' | 'SERVICE';
     status: 'ACTIVE' | 'INACTIVE';
     createdAt: string;
     updatedAt: string;

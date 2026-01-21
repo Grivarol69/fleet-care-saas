@@ -24,6 +24,7 @@ import {
   AlertTriangle,
   FileBarChart,
 } from 'lucide-react';
+import { UserButton } from '@clerk/nextjs';
 import { SidebarRoutes } from '../SidebarRoutes';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -217,7 +218,7 @@ export function Navbar() {
         </div>
 
         {/* Acciones rápidas */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <TooltipProvider>
             {/* Indicador de costos del mes */}
             <Tooltip>
@@ -250,37 +251,61 @@ export function Navbar() {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+
+          <Separator orientation="vertical" className="h-6" />
+
+          {/* User Menu - Clerk */}
+          <UserButton
+            appearance={{
+              elements: {
+                avatarBox: 'w-9 h-9',
+              },
+            }}
+            afterSignOutUrl="/sign-in"
+          />
         </div>
       </div>
 
       {/* Mobile simplified navbar */}
       <div className="flex xl:hidden items-center justify-between w-full px-4 py-3 gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => router.push('/dashboard/vehicles/fleet')}
-        >
-          <Car className="h-4 w-4 mr-1" />
-          <Badge variant="secondary">{stats.totalVehicles}</Badge>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push('/dashboard/vehicles/fleet')}
+          >
+            <Car className="h-4 w-4 mr-1" />
+            <Badge variant="secondary">{stats.totalVehicles}</Badge>
+          </Button>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => router.push('/dashboard/maintenance/alerts')}
-        >
-          <AlertTriangle className="h-4 w-4 mr-1" />
-          {stats.criticalAlerts > 0 && (
-            <Badge variant="destructive">{stats.criticalAlerts}</Badge>
-          )}
-        </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push('/dashboard/maintenance/alerts')}
+          >
+            <AlertTriangle className="h-4 w-4 mr-1" />
+            {stats.criticalAlerts > 0 && (
+              <Badge variant="destructive">{stats.criticalAlerts}</Badge>
+            )}
+          </Button>
 
-        <Button
-          size="sm"
-          onClick={() => router.push('/dashboard/maintenance/work-orders?action=create')}
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
+          <Button
+            size="sm"
+            onClick={() => router.push('/dashboard/maintenance/work-orders?action=create')}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* User Menu - Mobile */}
+        <UserButton
+          appearance={{
+            elements: {
+              avatarBox: 'w-8 h-8',
+            },
+          }}
+          afterSignOutUrl="/sign-in"
+        />
       </div>
     </nav>
   );

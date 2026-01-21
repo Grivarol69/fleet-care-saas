@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { createClient } from '@/utils/supabase/server';
+import { getCurrentUser } from '@/lib/auth';
 import { NextResponse } from "next/server";
 
 const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1';
@@ -43,7 +43,7 @@ export async function GET(
                                         name: true,
                                         description: true,
                                         mantType: true,
-                                        estimatedTime: true,
+                                        type: true,
                                         category: {
                                             select: {
                                                 id: true,
@@ -81,8 +81,7 @@ export async function PATCH(
     { params }: { params: { id: string } }
 ) {
     try {
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await getCurrentUser();
         if (!user) {
             return new NextResponse("Unauthorized", { status: 401 });
         }
@@ -194,7 +193,7 @@ export async function PATCH(
                                         id: true,
                                         name: true,
                                         mantType: true,
-                                        estimatedTime: true
+                                        type: true
                                     }
                                 }
                             },
@@ -222,8 +221,7 @@ export async function DELETE(
     { params }: { params: { id: string } }
 ) {
     try {
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await getCurrentUser();
         if (!user) {
             return new NextResponse("Unauthorized", { status: 401 });
         }

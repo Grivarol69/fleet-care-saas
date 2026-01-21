@@ -1,104 +1,97 @@
-import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { NextResponse } from 'next/server'
 
-export async function middleware(request: NextRequest) {
-    console.log('🚀 MIDDLEWARE EJECUTÁNDOSE:', request.nextUrl.pathname, 'HOST:', request.headers.get('host'))
-    
-    // Multi-tenant subdomain detection
-    const url = request.nextUrl.clone()
-    const hostname = request.headers.get('host') || ''
-    
-    // Detect subdomain
-    const subdomain = getSubdomain(hostname)
-    console.log('🔍 Subdomain detectado:', subdomain)
-    
-    // Handle tenant routing based on subdomain
-    if (subdomain && subdomain !== 'www') {
-        console.log('✅ Aplicando routing para tenant:', subdomain)
-        // Add tenant info to headers for use in pages/API routes
-        url.searchParams.set('tenant', subdomain)
-        
-        // Rewrite to tenant-specific path
-        if (url.pathname === '/') {
-            url.pathname = '/tenant'
-        } else if (!url.pathname.startsWith('/tenant') && !url.pathname.startsWith('/api') && !url.pathname.startsWith('/_next')) {
-            url.pathname = `/tenant${url.pathname}`
-        }
-        
-        console.log('🔄 URL final:', url.pathname, 'Query:', url.searchParams.toString())
-    } else {
-        console.log('⏭️ No es subdomain, aplicando tenant por defecto para desarrollo')
-        // Para localhost y staging sin subdomain, usar tenant por defecto
-        if (hostname.includes('localhost') || hostname.includes('vercel.app')) {
-            url.searchParams.set('tenant', 'cf68b103-12fd-4208-a352-42379ef3b6e1')
-            console.log('🔧 Tenant por defecto aplicado: cf68b103-12fd-4208-a352-42379ef3b6e1')
-        }
+// Rutas públicas que NO requieren autenticación
+const isPublicRoute = createRouteMatcher([
+  '/sign-in(.*)',
+  '/sign-up(.*)',
+  '/api/webhooks/clerk(.*)',
+  '/',
+])
+
+export default clerkMiddleware(async (auth, request) => {
+  const { userId, orgId } = await auth()
+
+  // Multi-tenant subdomain detection
+  const url = request.nextUrl.clone()
+  const hostname = request.headers.get('host') || ''
+
+  // Detect subdomain
+  const subdomain = getSubdomain(hostname)
+
+  // Handle tenant routing based on subdomain or orgId
+  if (subdomain && subdomain !== 'www') {
+    // Add tenant info to headers for use in pages/API routes
+    url.searchParams.set('tenant', subdomain)
+
+    // Rewrite to tenant-specific path
+    if (url.pathname === '/') {
+      url.pathname = '/tenant'
+    } else if (!url.pathname.startsWith('/tenant') && !url.pathname.startsWith('/api') && !url.pathname.startsWith('/_next')) {
+      url.pathname = `/tenant${url.pathname}`
+    }
+  } else {
+    // Para localhost y staging, usar orgId de Clerk como tenant
+    if (orgId) {
+      url.searchParams.set('tenant', orgId)
+    }
+  }
+
+  // Proteger rutas privadas
+  if (!isPublicRoute(request)) {
+    if (!userId) {
+      return NextResponse.redirect(new URL('/sign-in', request.url))
     }
 
-    let supabaseResponse = NextResponse.rewrite(url)
-
-    createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-            cookies: {
-                getAll() {
-                    return request.cookies.getAll()
-                },
-                setAll(cookiesToSet) {
-                    cookiesToSet.forEach(({ name, value }) => {
-                        request.cookies.set(name, value)
-                    })
-                    supabaseResponse = NextResponse.rewrite(url)
-                    cookiesToSet.forEach(({ name, value, options }) =>
-                        supabaseResponse.cookies.set(name, value, options)
-                    )
-                },
-            },
-        }
-    )
-
-    // Add tenant to response headers
-    if (subdomain) {
-        supabaseResponse.headers.set('x-tenant', subdomain)
-    } else if (hostname.includes('localhost') || hostname.includes('vercel.app')) {
-        supabaseResponse.headers.set('x-tenant', 'cf68b103-12fd-4208-a352-42379ef3b6e1')
+    // Validar que usuario pertenece a una organización
+    if (!orgId && !url.pathname.startsWith('/onboarding')) {
+      return NextResponse.redirect(new URL('/onboarding', request.url))
     }
+  }
 
-    // IMPORTANTE: No remover esta línea
-    // await supabase.auth.getUser() // TEMPORALMENTE DESHABILITADO PARA TESTING
+  const response = NextResponse.rewrite(url)
 
-    return supabaseResponse
-}
+  // Add tenant to response headers
+  if (orgId) {
+    response.headers.set('x-tenant-id', orgId)
+  } else if (subdomain) {
+    response.headers.set('x-tenant', subdomain)
+  }
+
+  return response
+})
 
 function getSubdomain(hostname: string): string | null {
-    // For development (localhost)
-    if (hostname.includes('localhost')) {
-        return null // No subdomains en localhost para MVP
-    }
+  // For development (localhost)
+  if (hostname.includes('localhost')) {
+    return null // No subdomains en localhost para MVP
+  }
 
-    // For Vercel deployments
-    if (hostname.includes('vercel.app')) {
-        const parts = hostname.split('.')
-        // fleet-care-staging.vercel.app = 3 parts (NO subdomain)
-        // tenant.fleet-care-staging.vercel.app = 4 parts (SÍ subdomain)
-        if (parts.length > 3 && parts[0]) {
-            return parts[0]
-        }
-        return null
-    }
-
-    // For production with custom domain
+  // For Vercel deployments
+  if (hostname.includes('vercel.app')) {
     const parts = hostname.split('.')
-    if (parts.length > 2 && parts[0]) {
-        return parts[0]
+    // fleet-care-staging.vercel.app = 3 parts (NO subdomain)
+    // tenant.fleet-care-staging.vercel.app = 4 parts (SÍ subdomain)
+    if (parts.length > 3 && parts[0]) {
+      return parts[0]
     }
-
     return null
+  }
+
+  // For production with custom domain
+  const parts = hostname.split('.')
+  if (parts.length > 2 && parts[0]) {
+    return parts[0]
+  }
+
+  return null
 }
 
 export const config = {
-    matcher: [
-        '/((?!api|_next/static|_next/image|favicon.ico|logo.svg|file.svg|globe.svg|window.svg|yevimaquinas.svg|next.svg|vercel.svg).*)',
-    ],
+  matcher: [
+    // Skip Next.js internals and static files
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    // Always run for API routes
+    '/(api|trpc)(.*)',
+  ],
 }

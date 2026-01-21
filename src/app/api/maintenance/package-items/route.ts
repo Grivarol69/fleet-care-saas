@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { packageId, mantItemId, triggerKm, priority, estimatedCost, estimatedTime, notes } = body;
+        const { packageId, mantItemId, triggerKm, priority, estimatedTime, technicalNotes, isOptional, order } = body;
 
         // Validaciones básicas
         if (!packageId || !mantItemId || !triggerKm) {
@@ -107,9 +107,10 @@ export async function POST(request: NextRequest) {
                 mantItemId,
                 triggerKm,
                 priority: priority || 'MEDIUM',
-                estimatedCost: estimatedCost ? parseFloat(estimatedCost) : null,
                 estimatedTime: estimatedTime ? parseFloat(estimatedTime) : null,
-                notes
+                technicalNotes,
+                isOptional: isOptional ?? false,
+                order: order ?? 0
             },
             include: {
                 mantItem: {

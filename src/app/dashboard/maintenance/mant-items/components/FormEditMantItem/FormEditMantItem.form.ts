@@ -8,11 +8,9 @@ export const formSchema = z.object({
     mantType: z.enum(['PREVENTIVE', 'PREDICTIVE', 'CORRECTIVE', 'EMERGENCY'], {
         required_error: 'Debe seleccionar un tipo de mantenimiento',
     }),
-    estimatedTime: z.number().min(0.1, {
-        message: 'El tiempo estimado debe ser mayor a 0',
-    }),
     categoryId: z.number().min(1, {
         message: 'Debe seleccionar una categoría',
     }),
+    type: z.enum(['ACTION', 'PART', 'SERVICE']).default('ACTION'),
 });
 

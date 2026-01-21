@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
     try {
         const user = await getCurrentUser();
 
@@ -10,9 +10,27 @@ export async function GET() {
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
+        // Búsqueda para autocompletado
+        const searchParams = request.nextUrl.searchParams;
+        const search = searchParams.get('search');
+
+        // Devolver items GLOBALES + del tenant
         const mantItems = await prisma.mantItem.findMany({
             where: {
-                tenantId: user.tenantId
+                OR: [
+                    { isGlobal: true },           // Items globales (Knowledge Base)
+                    { tenantId: user.tenantId }   // Items custom del tenant
+                ],
+                ...(search && {
+                    AND: [
+                        {
+                            OR: [
+                                { name: { contains: search, mode: 'insensitive' } },
+                                { description: { contains: search, mode: 'insensitive' } }
+                            ]
+                        }
+                    ]
+                })
             },
             include: {
                 category: {
@@ -23,8 +41,9 @@ export async function GET() {
                 }
             },
             orderBy: {
-                createdAt: 'desc'
-            }
+                name: 'asc'
+            },
+            ...(search && { take: 15 }) // Limitar solo en búsquedas
         });
         return NextResponse.json(mantItems);
     } catch (error) {
@@ -41,18 +60,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
-        // Validar permisos - Solo SUPER_ADMIN puede modificar tablas maestras
-        const { requireSuperAdmin } = await import("@/lib/permissions");
-        try {
-            requireSuperAdmin(user);
-        } catch (error) {
-            return NextResponse.json(
-                { error: (error as Error).message },
-                { status: 403 }
-            );
-        }
-
-        const { name, description, mantType, estimatedTime, categoryId } = await req.json();
+        const { name, description, mantType, categoryId, type, isGlobal } = await req.json();
 
         // Validación de campos requeridos
         if (!name || name.trim() === '') {
@@ -63,19 +71,51 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Tipo de mantenimiento inválido" }, { status: 400 });
         }
 
-        if (!estimatedTime || estimatedTime <= 0) {
-            return NextResponse.json({ error: "Tiempo estimado inválido" }, { status: 400 });
-        }
-
         if (!categoryId || categoryId <= 0) {
             return NextResponse.json({ error: "Categoría inválida" }, { status: 400 });
         }
 
-        // Verificar que la categoría existe
-        const category = await prisma.mantCategory.findUnique({
+        if (type && !['ACTION', 'PART', 'SERVICE'].includes(type)) {
+            return NextResponse.json({ error: "Tipo de item inválido" }, { status: 400 });
+        }
+
+        // Validar permisos según destino
+        let targetTenant: string | null;
+
+        if (isGlobal) {
+            // Solo SUPER_ADMIN puede crear items globales
+            const { requireSuperAdmin } = await import("@/lib/permissions");
+            try {
+                requireSuperAdmin(user);
+                targetTenant = null;
+            } catch (error) {
+                return NextResponse.json(
+                    { error: (error as Error).message },
+                    { status: 403 }
+                );
+            }
+        } else {
+            // OWNER/MANAGER pueden crear custom
+            const { requireManagementRole } = await import("@/lib/permissions");
+            try {
+                requireManagementRole(user);
+                targetTenant = user.tenantId;
+            } catch (error) {
+                return NextResponse.json(
+                    { error: (error as Error).message },
+                    { status: 403 }
+                );
+            }
+        }
+
+        // Verificar que la categoría existe (global o del tenant)
+        const category = await prisma.mantCategory.findFirst({
             where: {
                 id: categoryId,
-                tenantId: user.tenantId
+                OR: [
+                    { isGlobal: true },
+                    { tenantId: targetTenant }
+                ]
             }
         });
 
@@ -83,13 +123,11 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Categoría no encontrada" }, { status: 404 });
         }
 
-        // Verificar que no exista un item con el mismo nombre
-        const existingItem = await prisma.mantItem.findUnique({
+        // Verificar que no exista un item con el mismo nombre en el scope
+        const existingItem = await prisma.mantItem.findFirst({
             where: {
-                tenantId_name: {
-                    tenantId: user.tenantId,
-                    name: name.trim()
-                }
+                tenantId: targetTenant,
+                name: name.trim()
             }
         });
 
@@ -102,9 +140,10 @@ export async function POST(req: Request) {
                 name: name.trim(),
                 description: description?.trim() || null,
                 mantType,
-                estimatedTime: parseFloat(estimatedTime),
                 categoryId,
-                tenantId: user.tenantId,
+                type: type || 'ACTION',
+                tenantId: targetTenant,
+                isGlobal: isGlobal || false
             },
             include: {
                 category: {

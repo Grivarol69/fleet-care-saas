@@ -10,9 +10,13 @@ export async function GET() {
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
+        // Devolver líneas GLOBALES + del tenant
         const lines = await prisma.vehicleLine.findMany({
             where: {
-                tenantId: user.tenantId
+                OR: [
+                    { isGlobal: true },           // Líneas globales (Knowledge Base)
+                    { tenantId: user.tenantId }   // Líneas custom del tenant
+                ]
             },
             orderBy: {
                 name: 'asc'
@@ -31,7 +35,8 @@ export async function GET() {
             id: line.id,
             name: line.name,
             brandId: line.brandId,
-            brandName: line.brand?.name || 'Sin marca'
+            brandName: line.brand?.name || 'Sin marca',
+            isGlobal: line.isGlobal
         }));
 
         return NextResponse.json(mappedLines);
@@ -49,18 +54,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
-        // Validar permisos - Solo SUPER_ADMIN puede modificar tablas maestras
-        const { requireSuperAdmin } = await import("@/lib/permissions");
-        try {
-            requireSuperAdmin(user);
-        } catch (error) {
-            return NextResponse.json(
-                { error: (error as Error).message },
-                { status: 403 }
-            );
-        }
-
-        const { name, brandId } = await req.json();
+        const { name, brandId, isGlobal } = await req.json();
 
         if (!name || name.trim() === '') {
             return NextResponse.json({ error: "El nombre es requerido" }, { status: 400 });
@@ -70,14 +64,41 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "La marca es requerida" }, { status: 400 });
         }
 
+        // Validar permisos según destino
+        let targetTenant: string | null;
+
+        if (isGlobal) {
+            // Solo SUPER_ADMIN puede crear líneas globales
+            const { requireSuperAdmin } = await import("@/lib/permissions");
+            try {
+                requireSuperAdmin(user);
+                targetTenant = null;
+            } catch (error) {
+                return NextResponse.json(
+                    { error: (error as Error).message },
+                    { status: 403 }
+                );
+            }
+        } else {
+            // OWNER/MANAGER pueden crear custom
+            const { requireManagementRole } = await import("@/lib/permissions");
+            try {
+                requireManagementRole(user);
+                targetTenant = user.tenantId;
+            } catch (error) {
+                return NextResponse.json(
+                    { error: (error as Error).message },
+                    { status: 403 }
+                );
+            }
+        }
+
         // Verificar que no existe
-        const existingLine = await prisma.vehicleLine.findUnique({
+        const existingLine = await prisma.vehicleLine.findFirst({
             where: {
-                tenantId_brandId_name: {
-                    tenantId: user.tenantId,
-                    brandId: parseInt(brandId),
-                    name: name.trim()
-                }
+                tenantId: targetTenant,
+                brandId: parseInt(brandId),
+                name: name.trim()
             }
         });
 
@@ -85,11 +106,14 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "La línea ya existe para esta marca" }, { status: 409 });
         }
 
-        // Verificar que la marca existe y pertenece al tenant
-        const brand = await prisma.vehicleBrand.findUnique({
+        // Verificar que la marca existe (global o del tenant)
+        const brand = await prisma.vehicleBrand.findFirst({
             where: {
                 id: parseInt(brandId),
-                tenantId: user.tenantId
+                OR: [
+                    { isGlobal: true },
+                    { tenantId: targetTenant }
+                ]
             }
         });
 
@@ -101,7 +125,8 @@ export async function POST(req: Request) {
             data: {
                 name: name.trim(),
                 brandId: parseInt(brandId),
-                tenantId: user.tenantId,
+                tenantId: targetTenant,
+                isGlobal: isGlobal || false
             },
             include: {
                 brand: {
@@ -117,7 +142,8 @@ export async function POST(req: Request) {
             id: line.id,
             name: line.name,
             brandId: line.brandId,
-            brandName: line.brand?.name || 'Sin marca'
+            brandName: line.brand?.name || 'Sin marca',
+            isGlobal: line.isGlobal
         };
 
         return NextResponse.json(mappedLine);

@@ -36,6 +36,12 @@ export function VehicleAlertRow({
   const highCount = vehicle.alerts.filter(a => a.alertLevel === 'HIGH').length;
   const mediumCount = vehicle.alerts.filter(a => a.alertLevel === 'MEDIUM').length;
 
+  // Contar alertas por estado
+  const inProgressCount = vehicle.alerts.filter(a => a.status === 'IN_PROGRESS').length;
+  const pendingCount = vehicle.alerts.filter(a => a.status === 'PENDING').length;
+  const acknowledgedCount = vehicle.alerts.filter(a => a.status === 'ACKNOWLEDGED').length;
+  const snoozedCount = vehicle.alerts.filter(a => a.status === 'SNOOZED').length;
+
   const totalCost = vehicle.alerts.reduce((sum, a) => sum + (a.estimatedCost || 0), 0);
   const totalDuration = vehicle.alerts.reduce((sum, a) => sum + (a.estimatedDuration || 0), 0);
 
@@ -102,7 +108,7 @@ export function VehicleAlertRow({
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="text-lg font-bold text-gray-900">{vehicle.vehiclePlate}</h3>
-                {/* Badges de Alertas */}
+                {/* Badges de Alertas por Nivel */}
                 <div className="flex gap-1.5">
                   {criticalCount > 0 && (
                     <Badge variant="destructive" className="text-xs px-2 py-0.5 font-semibold">
@@ -121,9 +127,34 @@ export function VehicleAlertRow({
                   )}
                 </div>
               </div>
-              <p className="text-sm text-gray-600">
-                {vehicle.brandName} {vehicle.lineName}
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-gray-600">
+                  {vehicle.brandName} {vehicle.lineName}
+                </p>
+                {/* Badges de Estado */}
+                <div className="flex gap-1.5">
+                  {inProgressCount > 0 && (
+                    <Badge className="text-xs px-2 py-0.5 bg-purple-500 hover:bg-purple-600 font-semibold">
+                      🔧 En Progreso ({inProgressCount})
+                    </Badge>
+                  )}
+                  {pendingCount > 0 && (
+                    <Badge className="text-xs px-2 py-0.5 bg-gray-400 hover:bg-gray-500 font-semibold">
+                      ⏳ Pendiente ({pendingCount})
+                    </Badge>
+                  )}
+                  {acknowledgedCount > 0 && (
+                    <Badge className="text-xs px-2 py-0.5 bg-blue-500 hover:bg-blue-600 font-semibold">
+                      👁️ Vista ({acknowledgedCount})
+                    </Badge>
+                  )}
+                  {snoozedCount > 0 && (
+                    <Badge className="text-xs px-2 py-0.5 bg-yellow-500 hover:bg-yellow-600 font-semibold">
+                      💤 Pospuesta ({snoozedCount})
+                    </Badge>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Km Actual */}
@@ -257,6 +288,7 @@ export function VehicleAlertRow({
                         const isSelected = selectedAlertIds.includes(alert.id);
                         const isOverdue = alert.kmToMaintenance <= 0;
                         const isUrgent = alert.kmToMaintenance > 0 && alert.kmToMaintenance <= 500;
+                        const isInProgress = alert.status === 'IN_PROGRESS';
 
                         return (
                           <motion.div
@@ -267,18 +299,22 @@ export function VehicleAlertRow({
                             className={`
                               flex items-center gap-3 px-4 py-3 rounded-lg text-sm
                               transition-all duration-200
-                              ${isSelected
+                              ${isInProgress
+                                ? 'bg-purple-50 border-2 border-purple-300 opacity-75'
+                                : isSelected
                                 ? 'bg-blue-50 border-2 border-blue-400 shadow-sm'
                                 : 'bg-white border-2 border-gray-200 hover:border-gray-300'
                               }
-                              ${isOverdue ? 'border-l-4 !border-l-red-500' : ''}
-                              ${isUrgent ? 'border-l-4 !border-l-amber-500' : ''}
+                              ${isOverdue && !isInProgress ? 'border-l-4 !border-l-red-500' : ''}
+                              ${isUrgent && !isInProgress ? 'border-l-4 !border-l-amber-500' : ''}
+                              ${isInProgress ? 'border-l-4 !border-l-purple-500' : ''}
                             `}
                           >
                             <Checkbox
                               checked={isSelected}
                               onCheckedChange={() => onToggleAlert(alert.id)}
                               className="h-5 w-5"
+                              disabled={isInProgress}
                             />
 
                             <div className="flex-1 flex items-center gap-4">
@@ -315,12 +351,38 @@ export function VehicleAlertRow({
                               )}
                             </div>
 
-                            {/* Badge de Prioridad */}
-                            {alert.priority === 'URGENT' && (
-                              <Badge variant="destructive" className="text-xs font-bold animate-pulse">
-                                URGENTE
+                            {/* Badges de Estado y Prioridad */}
+                            <div className="flex gap-2">
+                              {/* Badge de Estado */}
+                              <Badge
+                                className={`text-xs font-bold ${
+                                  alert.status === 'IN_PROGRESS'
+                                    ? 'bg-purple-500 hover:bg-purple-600'
+                                    : alert.status === 'PENDING'
+                                    ? 'bg-gray-400 hover:bg-gray-500'
+                                    : alert.status === 'ACKNOWLEDGED'
+                                    ? 'bg-blue-500 hover:bg-blue-600'
+                                    : alert.status === 'SNOOZED'
+                                    ? 'bg-yellow-500 hover:bg-yellow-600'
+                                    : alert.status === 'COMPLETED'
+                                    ? 'bg-green-500 hover:bg-green-600'
+                                    : 'bg-gray-400'
+                                }`}
+                              >
+                                {alert.status === 'IN_PROGRESS' && '🔧 EN PROGRESO'}
+                                {alert.status === 'PENDING' && '⏳ PENDIENTE'}
+                                {alert.status === 'ACKNOWLEDGED' && '👁️ VISTA'}
+                                {alert.status === 'SNOOZED' && '💤 POSPUESTA'}
+                                {alert.status === 'COMPLETED' && '✅ COMPLETADA'}
                               </Badge>
-                            )}
+
+                              {/* Badge de Prioridad Urgente */}
+                              {alert.priority === 'URGENT' && (
+                                <Badge variant="destructive" className="text-xs font-bold animate-pulse">
+                                  🚨 URGENTE
+                                </Badge>
+                              )}
+                            </div>
                           </motion.div>
                         );
                       })}

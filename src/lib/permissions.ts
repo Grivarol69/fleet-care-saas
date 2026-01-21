@@ -154,6 +154,34 @@ export function requireAuthenticated(user: User | null): void {
 }
 
 // ========================================
+// KNOWLEDGE BASE PERMISSIONS
+// ========================================
+
+/**
+ * Solo SUPER_ADMIN puede crear/modificar Knowledge Base global
+ * (isGlobal = true)
+ */
+export function canManageGlobalKnowledgeBase(user: User | null): boolean {
+  return isSuperAdmin(user);
+}
+
+/**
+ * Todos los usuarios autenticados pueden VER Knowledge Base global
+ * (lectura de datos con isGlobal = true)
+ */
+export function canViewGlobalKnowledgeBase(user: User | null): boolean {
+  return !!user; // Cualquier usuario autenticado
+}
+
+/**
+ * OWNER y MANAGER pueden crear datos custom en su tenant
+ * (isGlobal = false, tenantId = su tenant)
+ */
+export function canManageTenantData(user: User | null): boolean {
+  return isSuperAdmin(user) || isOwner(user) || isManager(user);
+}
+
+// ========================================
 // CONSTANTES
 // ========================================
 

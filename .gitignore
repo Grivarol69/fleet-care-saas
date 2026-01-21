@@ -46,4 +46,13 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
-.claude/sessions/*ambientes*
+
+# Claude Code - configuración y sesiones locales
+.claude/
+
+# Google Cloud credentials
+/credentials/
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json

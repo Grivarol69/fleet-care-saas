@@ -10,9 +10,13 @@ export async function GET() {
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
+        // Devolver tipos GLOBALES + del tenant
         const types = await prisma.vehicleType.findMany({
             where: {
-                tenantId: user.tenantId
+                OR: [
+                    { isGlobal: true },           // Tipos globales (Knowledge Base)
+                    { tenantId: user.tenantId }   // Tipos custom del tenant
+                ]
             },
             orderBy: {
                 name: 'asc'
@@ -33,30 +37,46 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
-        // Validar permisos - Solo SUPER_ADMIN puede modificar tablas maestras
-        const { requireSuperAdmin } = await import("@/lib/permissions");
-        try {
-            requireSuperAdmin(user);
-        } catch (error) {
-            return NextResponse.json(
-                { error: (error as Error).message },
-                { status: 403 }
-            );
-        }
-
-        const { name } = await req.json();
+        const { name, isGlobal } = await req.json();
 
         if (!name || name.trim() === '') {
             return NextResponse.json({ error: "El nombre es requerido" }, { status: 400 });
         }
 
+        // Validar permisos según destino
+        let targetTenant: string | null;
+
+        if (isGlobal) {
+            // Solo SUPER_ADMIN puede crear tipos globales
+            const { requireSuperAdmin } = await import("@/lib/permissions");
+            try {
+                requireSuperAdmin(user);
+                targetTenant = null;
+            } catch (error) {
+                return NextResponse.json(
+                    { error: (error as Error).message },
+                    { status: 403 }
+                );
+            }
+        } else {
+            // OWNER/MANAGER pueden crear custom
+            const { requireManagementRole } = await import("@/lib/permissions");
+            try {
+                requireManagementRole(user);
+                targetTenant = user.tenantId;
+            } catch (error) {
+                return NextResponse.json(
+                    { error: (error as Error).message },
+                    { status: 403 }
+                );
+            }
+        }
+
         // Verificar que no exista un tipo con el mismo nombre
-        const existingType = await prisma.vehicleType.findUnique({
+        const existingType = await prisma.vehicleType.findFirst({
             where: {
-                tenantId_name: {
-                    tenantId: user.tenantId,
-                    name: name.trim()
-                }
+                tenantId: targetTenant,
+                name: name.trim()
             }
         });
 
@@ -67,7 +87,8 @@ export async function POST(req: Request) {
         const type = await prisma.vehicleType.create({
             data: {
                 name: name.trim(),
-                tenantId: user.tenantId,
+                tenantId: targetTenant,
+                isGlobal: isGlobal || false
             },
         });
 

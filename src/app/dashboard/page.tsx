@@ -1,50 +1,62 @@
 // src/app/dashboard/page.tsx - Fleet Care SaaS
 'use client';
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DocumentStats } from '@/components/layout/DocumentStats';
-import { MaintenanceMetrics } from '@/components/layout/MaintenanceMetrics';
-import { HighRiskVehicles } from '@/components/layout/HighRiskVehicles';
 import { MaintenanceCalendar } from '@/components/layout/MaintenanceCalendar';
-
-// const maintenanceStats = [
-//   { name: "Al día", value: 65, color: "#22c55e" },
-//   { name: "Próximos", value: 25, color: "#eab308" },
-//   { name: "Vencidos", value: 10, color: "#ef4444" },
-// ];
+import { FleetStatusBoard } from '@/components/dashboard';
+import { FinancialDashboard } from '@/components/dashboard/FinancialDashboard';
+import { BarChart3, Truck, Calendar, FileText } from 'lucide-react';
 
 export default function DashboardPage() {
-  // const { user, loading } = useAuth();
-
-  // if (loading) {
-  //   return (
-  //     <div className="min-h-screen flex items-center justify-center">
-  //       <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-  //     </div>
-  //   );
-  // }
-
   return (
-    <div>
-      {/* Header de bienvenida */}
-      <div className="mb-8"></div>
+    <div className="space-y-6">
+      <Tabs defaultValue="fleet" className="w-full">
+        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+          <TabsTrigger value="fleet" className="gap-2">
+            <Truck className="h-4 w-4" />
+            <span className="hidden sm:inline">Estado de Flota</span>
+            <span className="sm:hidden">Flota</span>
+          </TabsTrigger>
+          <TabsTrigger value="financial" className="gap-2">
+            <BarChart3 className="h-4 w-4" />
+            <span className="hidden sm:inline">Situación Financiera</span>
+            <span className="sm:hidden">Financiero</span>
+          </TabsTrigger>
+          <TabsTrigger value="calendar" className="gap-2">
+            <Calendar className="h-4 w-4" />
+            <span className="hidden sm:inline">Calendario</span>
+            <span className="sm:hidden">Agenda</span>
+          </TabsTrigger>
+          <TabsTrigger value="documents" className="gap-2">
+            <FileText className="h-4 w-4" />
+            <span className="hidden sm:inline">Documentos</span>
+            <span className="sm:hidden">Docs</span>
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Grid de gráficos y estadísticas */}
-      <div className="grid grid-cols-1 mt-8 gap-6">
-        {/* KPIs Compactos de Mantenimiento */}
-        <MaintenanceMetrics />
+        {/* Tab 1: Estado de Flota */}
+        <TabsContent value="fleet" className="mt-6">
+          <FleetStatusBoard />
+        </TabsContent>
 
-        {/* Layout de 2 columnas: Alto Riesgo + Calendario */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <HighRiskVehicles />
-          <MaintenanceCalendar />
-        </div>
+        {/* Tab 2: Situación Financiera */}
+        <TabsContent value="financial" className="mt-6">
+          <FinancialDashboard />
+        </TabsContent>
 
-        {/* Documentos por Vencer */}
-        <DocumentStats />
-      </div>
+        {/* Tab 3: Calendario */}
+        <TabsContent value="calendar" className="mt-6">
+          <div className="max-w-4xl mx-auto">
+            <MaintenanceCalendar />
+          </div>
+        </TabsContent>
 
-      {/* Comentado por migrar después */}
-      {/* <DashboardChart stats={maintenanceStats} /> */}
+        {/* Tab 4: Documentos */}
+        <TabsContent value="documents" className="mt-6">
+          <DocumentStats />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
