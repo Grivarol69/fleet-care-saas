@@ -1,7 +1,7 @@
 // src/app/dashboard/layout.tsx - Fleet Care SaaS
 import { Navbar } from "@/components/layout/Navbar";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { createClient } from "@/utils/supabase/server";
+import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import React from "react";
 
@@ -10,16 +10,17 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Verificar autenticación
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+  // Verificar autenticación con Clerk
+  const { userId, orgId } = await auth();
 
-  // Si no hay usuario o hay error, redirigir a login
-  if (!user || error) {
-    redirect("/login");
+  // Si no hay usuario, redirigir a sign-in
+  if (!userId) {
+    redirect("/sign-in");
+  }
+
+  // Si no tiene organización, redirigir a onboarding
+  if (!orgId) {
+    redirect("/onboarding");
   }
 
   return (
