@@ -9,6 +9,8 @@ import {
     Settings,
     Gauge,
     FileText,
+    FileCheck,
+    Package,
     type LucideIcon,
 } from "lucide-react";
 
@@ -61,15 +63,25 @@ export const dataAdminSidebar: SidebarItem[] = [
     {
         icon: Wrench,
         label: "Mantenimiento",
-        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.TECHNICIAN],
+        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.PURCHASER, UserRole.TECHNICIAN],
         subItems: [
             { label: "Master Items", href: "/dashboard/maintenance/mant-items", roles: [UserRole.SUPER_ADMIN] }, // Solo SUPER_ADMIN modifica maestras
             { label: "Categorías", href: "/dashboard/maintenance/mant-categories", roles: [UserRole.SUPER_ADMIN] },
             { label: "Plantillas Planes Mantenimiento", href: "/dashboard/maintenance/mant-template", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER] },
+            { label: "Paquetes de Mantenimiento", icon: ClipboardCheck, href: "/dashboard/maintenance/packages", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER] },
             { label: "Programas Vehículos", href: "/dashboard/maintenance/vehicle-programs", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER] },
-            { label: "Órdenes de Trabajo", href: "/dashboard/maintenance/work-orders", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.TECHNICIAN] }, // TECHNICIAN ejecuta OT
-            { label: "Facturas", icon: FileText, href: "/dashboard/invoices", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER] },
+            { label: "Órdenes de Trabajo", href: "/dashboard/maintenance/work-orders", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.PURCHASER, UserRole.TECHNICIAN] }, // TECHNICIAN ejecuta OT, PURCHASER ve para gestión de compras
+            { label: "Facturas", icon: FileText, href: "/dashboard/invoices", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.PURCHASER] }, // PURCHASER gestiona facturas
             { label: "Alertas", href: "/dashboard/maintenance/alerts", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.TECHNICIAN] },
+        ],
+    },
+    {
+        icon: Package,
+        label: "Inventario",
+        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.PURCHASER, UserRole.TECHNICIAN],
+        subItems: [
+            { label: "Catálogo de Partes", href: "/dashboard/inventory/parts", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.PURCHASER] },
+            { label: "Compras", href: "/dashboard/inventory/purchases/new", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.PURCHASER] }, // PURCHASER gestiona compras
         ],
     },
     {
@@ -85,11 +97,11 @@ export const dataAdminSidebar: SidebarItem[] = [
     {
         icon: Users,
         label: "Personal",
-        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
+        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.PURCHASER],
         subItems: [
             { label: "Técnicos", href: "/dashboard/people/technician", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER] },
             { label: "Conductores", href: "/dashboard/people/driver", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER] },
-            { label: "Proveedores", href: "/dashboard/people/provider", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER] },
+            { label: "Proveedores", href: "/dashboard/people/provider", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.PURCHASER] }, // PURCHASER gestiona proveedores
         ],
     },
     {
@@ -109,6 +121,7 @@ export const dataAdminSidebar: SidebarItem[] = [
         subItems: [
             { label: "Tenant", href: "/dashboard/admin/tenant", roles: [UserRole.SUPER_ADMIN] },
             { label: "Users", href: "/dashboard/admin/users", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER] },
+            { label: "Tipos de Documento", icon: FileCheck, href: "/dashboard/admin/document-types", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER] },
             { label: "Roles", href: "/dashboard/admin/roles", roles: [UserRole.SUPER_ADMIN] },
             { label: "Permisos", href: "/dashboard/admin/permissions", roles: [UserRole.SUPER_ADMIN] },
         ],

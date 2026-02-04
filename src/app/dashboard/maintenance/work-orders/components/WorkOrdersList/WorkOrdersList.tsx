@@ -8,7 +8,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,7 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, CheckCircle, XCircle, Play, FileText } from "lucide-react";
+import { MoreHorizontal, Eye, Play, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
@@ -57,22 +56,16 @@ type WorkOrder = {
 type WorkOrdersListProps = {
   workOrders: WorkOrder[];
   isLoading: boolean;
-  onRefresh: () => void;
   onViewDetail?: (id: number) => void;
   onStartWork?: (id: number) => void;
-  onApprove?: (id: number) => void;
-  onReject?: (id: number) => void;
 };
 
 const statusConfig = {
-  PENDING: { label: "Pendiente", variant: "secondary" as const },
-  IN_PROGRESS: { label: "En Progreso", variant: "default" as const },
-  PENDING_APPROVAL: { label: "Por Aprobar", variant: "outline" as const },
-  APPROVED: { label: "Aprobada", variant: "default" as const },
-  REJECTED: { label: "Rechazada", variant: "destructive" as const },
-  PENDING_INVOICE: { label: "Pendiente Factura", variant: "outline" as const },
-  COMPLETED: { label: "Completada", variant: "default" as const },
-  CANCELLED: { label: "Cancelada", variant: "outline" as const },
+  PENDING: { label: "Abierta", variant: "secondary" as const, color: "bg-blue-100 text-blue-700 border-blue-200" },
+  IN_PROGRESS: { label: "En Trabajo", variant: "default" as const, color: "bg-yellow-100 text-yellow-700 border-yellow-200" },
+  PENDING_INVOICE: { label: "Por Cerrar", variant: "outline" as const, color: "bg-orange-100 text-orange-700 border-orange-200" },
+  COMPLETED: { label: "Cerrada", variant: "default" as const, color: "bg-green-100 text-green-700 border-green-200" },
+  CANCELLED: { label: "Cancelada", variant: "outline" as const, color: "bg-gray-100 text-gray-500 border-gray-200" },
 };
 
 const mantTypeConfig = {
@@ -91,11 +84,8 @@ const priorityConfig = {
 export function WorkOrdersList({
   workOrders,
   isLoading,
-  onRefresh,
   onViewDetail,
   onStartWork,
-  onApprove,
-  onReject,
 }: WorkOrdersListProps) {
   const router = useRouter();
   if (isLoading) {
@@ -171,9 +161,9 @@ export function WorkOrdersList({
                   </span>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={statusInfo.variant}>
-                    {statusInfo.label}
-                  </Badge>
+                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${statusInfo?.color || 'bg-gray-100 text-gray-700'}`}>
+                    {statusInfo?.label || wo.status}
+                  </span>
                 </TableCell>
                 <TableCell>
                   <div className="text-sm">
@@ -227,25 +217,6 @@ export function WorkOrdersList({
                           <Play className="mr-2 h-4 w-4" />
                           Iniciar Trabajo
                         </DropdownMenuItem>
-                      )}
-                      {wo.status === "PENDING_APPROVAL" && (
-                        <>
-                          {onApprove && (
-                            <DropdownMenuItem onClick={() => onApprove(wo.id)}>
-                              <CheckCircle className="mr-2 h-4 w-4" />
-                              Aprobar
-                            </DropdownMenuItem>
-                          )}
-                          {onReject && (
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => onReject(wo.id)}
-                            >
-                              <XCircle className="mr-2 h-4 w-4" />
-                              Rechazar
-                            </DropdownMenuItem>
-                          )}
-                        </>
                       )}
                       {(wo.status === "IN_PROGRESS" || wo.status === "PENDING_INVOICE") && (
                         <DropdownMenuItem

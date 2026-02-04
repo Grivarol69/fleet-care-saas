@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import { safeParseInt } from '@/lib/validation';
 
 // GET - Obtener tipo específico por ID
 export async function GET(
@@ -15,9 +16,15 @@ export async function GET(
         }
 
         const { id } = await params;
+        const typeId = safeParseInt(id);
+
+        if (typeId === null) {
+            return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+        }
+
         const type = await prisma.vehicleType.findUnique({
             where: {
-                id: parseInt(id),
+                id: typeId,
                 tenantId: user.tenantId
             }
         });
@@ -29,7 +36,7 @@ export async function GET(
         return NextResponse.json(type);
     } catch (error) {
         console.error("[TYPE_GET]", error);
-        return NextResponse.json({ error: "Error interno" }, { status: 500 });
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }
 
@@ -57,6 +64,11 @@ export async function PUT(
         }
 
         const { id } = await params;
+        const typeId = safeParseInt(id);
+
+        if (typeId === null) {
+            return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+        }
 
         const { name } = await req.json();
 
@@ -67,7 +79,7 @@ export async function PUT(
         // Verificar que el tipo existe y pertenece al tenant
         const existingType = await prisma.vehicleType.findUnique({
             where: {
-                id: parseInt(id),
+                id: typeId,
                 tenantId: user.tenantId
             }
         });
@@ -82,7 +94,7 @@ export async function PUT(
                 tenantId: user.tenantId,
                 name: name.trim(),
                 id: {
-                    not: parseInt(id)
+                    not: typeId
                 }
             }
         });
@@ -93,7 +105,7 @@ export async function PUT(
 
         const updatedType = await prisma.vehicleType.update({
             where: {
-                id: parseInt(id)
+                id: typeId
             },
             data: {
                 name: name.trim(),
@@ -102,8 +114,8 @@ export async function PUT(
 
         return NextResponse.json(updatedType);
     } catch (error) {
-        console.log("[TYPE_PUT]", error);
-        return NextResponse.json({ error: "Error interno" }, { status: 500 });
+        console.error("[TYPE_PUT]", error);
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }
 
@@ -131,11 +143,16 @@ export async function DELETE(
         }
 
         const { id } = await params;
+        const typeId = safeParseInt(id);
+
+        if (typeId === null) {
+            return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+        }
 
         // Verificar que el tipo existe y pertenece al tenant
         const existingType = await prisma.vehicleType.findUnique({
             where: {
-                id: parseInt(id),
+                id: typeId,
                 tenantId: user.tenantId
             }
         });
@@ -144,15 +161,31 @@ export async function DELETE(
             return NextResponse.json({ error: "Tipo no encontrado" }, { status: 404 });
         }
 
-        await prisma.vehicleType.delete({
+        // Verificar que no tenga vehículos dependientes
+        const hasVehicles = await prisma.vehicle.findFirst({
             where: {
-                id: parseInt(id)
+                typeId: typeId,
+                tenantId: user.tenantId
             }
         });
 
-        return new NextResponse(null, { status: 204 });
+        if (hasVehicles) {
+            return NextResponse.json({ error: "No se puede eliminar el tipo porque tiene vehículos asociados" }, { status: 409 });
+        }
+
+        // Soft delete - cambiar status a INACTIVE
+        await prisma.vehicleType.update({
+            where: {
+                id: typeId
+            },
+            data: {
+                status: 'INACTIVE'
+            }
+        });
+
+        return NextResponse.json({ success: true, message: "Tipo desactivado" });
     } catch (error) {
-        console.log("[TYPE_DELETE]", error);
-        return NextResponse.json({ error: "Error interno" }, { status: 500 });
+        console.error("[TYPE_DELETE]", error);
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }

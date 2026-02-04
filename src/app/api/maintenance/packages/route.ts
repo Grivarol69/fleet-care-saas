@@ -1,11 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
-
-const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1'; // Tenant hardcodeado para MVP
+import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
     try {
+        const user = await getCurrentUser();
+        if (!user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
         const { searchParams } = new URL(request.url);
         const templateId = searchParams.get('templateId');
 
@@ -18,7 +22,14 @@ export async function GET(request: NextRequest) {
 
         const packages = await prisma.maintenancePackage.findMany({
             where: {
-                templateId: parseInt(templateId)
+                templateId: parseInt(templateId),
+                // Asegurar que el template pertenece al tenant o es global
+                template: {
+                    OR: [
+                        { tenantId: user.tenantId },
+                        { isGlobal: true }
+                    ]
+                }
             },
             include: {
                 _count: {
@@ -44,6 +55,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
+        const user = await getCurrentUser();
+        if (!user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
         const body = await request.json();
         const { templateId, name, triggerKm, description, estimatedCost, estimatedTime, priority, packageType } = body;
 
@@ -59,7 +75,7 @@ export async function POST(request: NextRequest) {
         const template = await prisma.maintenanceTemplate.findFirst({
             where: {
                 id: templateId,
-                tenantId: TENANT_ID
+                tenantId: user.tenantId // Solo permitir editar templates propios
             }
         });
 

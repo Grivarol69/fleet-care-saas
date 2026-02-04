@@ -67,7 +67,7 @@ async function testSeedOperations() {
       });
 
       // Crear VehicleType
-      const type = await tx.vehicleType.create({
+      await tx.vehicleType.create({
         data: {
           tenantId: testTenantId,
           name: 'Test Type',

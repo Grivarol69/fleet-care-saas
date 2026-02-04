@@ -2,13 +2,17 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from '@/lib/auth';
 import { NextResponse } from "next/server";
 
-const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1'; // Tenant hardcodeado para MVP
-
 export async function GET() {
     try {
+        const user = await getCurrentUser();
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
         const providers = await prisma.provider.findMany({
             where: {
-                tenantId: TENANT_ID
+                tenantId: user.tenantId,
+                status: 'ACTIVE'
             },
             orderBy: {
                 name: 'asc'
@@ -17,7 +21,7 @@ export async function GET() {
         return NextResponse.json(providers);
     } catch (error) {
         console.error("[PROVIDERS_GET]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }
 
@@ -26,27 +30,27 @@ export async function POST(req: Request) {
         const user = await getCurrentUser();
 
         if (!user) {
-            return new NextResponse("Unauthorized", { status: 401 });
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
         const { name, email, phone, address, specialty } = await req.json();
 
         if (!name || name.trim() === '') {
-            return new NextResponse("Name is required", { status: 400 });
+            return NextResponse.json({ error: "El nombre es requerido" }, { status: 400 });
         }
 
         // Verificar que no exista un proveedor con el mismo nombre
         const existingProvider = await prisma.provider.findUnique({
             where: {
                 tenantId_name: {
-                    tenantId: TENANT_ID,
+                    tenantId: user.tenantId,
                     name: name.trim()
                 }
             }
         });
 
         if (existingProvider) {
-            return new NextResponse("Provider already exists", { status: 409 });
+            return NextResponse.json({ error: "Ya existe un proveedor con este nombre" }, { status: 409 });
         }
 
         const provider = await prisma.provider.create({
@@ -56,13 +60,13 @@ export async function POST(req: Request) {
                 phone: phone?.trim() || null,
                 address: address?.trim() || null,
                 specialty: specialty?.trim() || null,
-                tenantId: TENANT_ID,
+                tenantId: user.tenantId,
             },
         });
 
-        return NextResponse.json(provider);
+        return NextResponse.json(provider, { status: 201 });
     } catch (error) {
-        console.log("[PROVIDER_POST]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        console.error("[PROVIDER_POST]", error);
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }

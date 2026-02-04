@@ -1,8 +1,19 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
+import { getCurrentUser } from '@/lib/auth';
+import { z } from 'zod';
+import { safeParseInt } from '@/lib/validation';
 
-const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1';
+// Schema for PATCH body validation
+const updateAlertSchema = z.object({
+  alertId: z.number().int().positive(),
+  status: z.enum(['PENDING', 'ACKNOWLEDGED', 'IN_PROGRESS', 'COMPLETED', 'CLOSED', 'SNOOZED', 'CANCELLED']).optional(),
+  notes: z.string().max(2000).optional(),
+  snoozedUntil: z.string().datetime().optional(),
+  snoozeReason: z.string().max(500).optional(),
+  cancelReason: z.string().max(500).optional(),
+}).strict();
 
 /**
  * GET - Obtener todas las alertas de mantenimiento
@@ -13,19 +24,34 @@ const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1';
  */
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const vehicleId = searchParams.get('vehicleId');
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
+
+    const { searchParams } = request.nextUrl;
+    const vehicleIdParam = searchParams.get('vehicleId');
     const status = searchParams.get('status');
     const priority = searchParams.get('priority');
 
     // Construir filtros dinámicos
-    const where: Prisma.MaintenanceAlertWhereInput = { tenantId: TENANT_ID };
+    const where: Prisma.MaintenanceAlertWhereInput = { tenantId: user.tenantId };
 
-    if (vehicleId) {
-      where.vehicleId = parseInt(vehicleId);
+    // Safe parse vehicleId
+    if (vehicleIdParam) {
+      const vehicleId = safeParseInt(vehicleIdParam);
+      if (vehicleId === null) {
+        return NextResponse.json({ error: "vehicleId inválido" }, { status: 400 });
+      }
+      where.vehicleId = vehicleId;
     }
 
     if (status) {
+      // Validate status enum
+      const validStatuses = ['PENDING', 'ACKNOWLEDGED', 'SNOOZED', 'IN_PROGRESS', 'COMPLETED', 'CLOSED', 'CANCELLED'];
+      if (!validStatuses.includes(status)) {
+        return NextResponse.json({ error: "status inválido" }, { status: 400 });
+      }
       where.status = status as Prisma.EnumAlertStatusFilter;
     } else {
       // Por defecto, solo alertas activas (no completadas)
@@ -33,6 +59,11 @@ export async function GET(request: NextRequest) {
     }
 
     if (priority) {
+      // Validate priority enum
+      const validPriorities = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
+      if (!validPriorities.includes(priority)) {
+        return NextResponse.json({ error: "priority inválido" }, { status: 400 });
+      }
       where.priority = priority as Prisma.EnumPriorityFilter;
     }
 
@@ -115,13 +146,13 @@ export async function GET(request: NextRequest) {
       mantItemDescription: alert.itemName,
       executionKm: alert.scheduledKm,
       state: alert.alertLevel === 'CRITICAL' ? 'RED' :
-             alert.alertLevel === 'HIGH' ? 'RED' : 'YELLOW'
+        alert.alertLevel === 'HIGH' ? 'RED' : 'YELLOW'
     }));
 
     return NextResponse.json(formattedAlerts);
   } catch (error) {
     console.error("[MAINTENANCE_ALERTS_GET]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }
 
@@ -131,21 +162,56 @@ export async function GET(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { alertId, status, notes, snoozedUntil, acknowledgedBy } = body;
-
-    if (!alertId) {
-      return NextResponse.json({ error: "alertId is required" }, { status: 400 });
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
 
-    const updateData: Prisma.MaintenanceAlertUpdateInput = { status, updatedAt: new Date() };
+    const body = await request.json();
 
-    if (notes) updateData.notes = notes;
-    if (snoozedUntil) updateData.snoozedUntil = new Date(snoozedUntil);
+    // Validate request body with Zod schema
+    const validation = updateAlertSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: "Datos inválidos", details: validation.error.flatten() },
+        { status: 400 }
+      );
+    }
 
-    if (status === 'ACKNOWLEDGED' && !acknowledgedBy) {
-      updateData.acknowledgedBy = "current-user-id"; // TODO: Get from session
+    const { alertId, status, notes, snoozedUntil, snoozeReason, cancelReason } = validation.data;
+
+    // Verify alert belongs to tenant
+    const existingAlert = await prisma.maintenanceAlert.findFirst({
+      where: {
+        id: alertId,
+        tenantId: user.tenantId
+      }
+    });
+
+    if (!existingAlert) {
+      return NextResponse.json({ error: "Alerta no encontrada" }, { status: 404 });
+    }
+
+    // Build update data with only validated fields
+    const updateData: Prisma.MaintenanceAlertUpdateInput = { updatedAt: new Date() };
+
+    if (status) updateData.status = status;
+    if (notes !== undefined) updateData.notes = notes;
+
+    if (status === 'ACKNOWLEDGED') {
+      updateData.acknowledgedBy = user.id;
       updateData.acknowledgedAt = new Date();
+    }
+
+    if (status === 'SNOOZED' && snoozedUntil) {
+      updateData.snoozedUntil = new Date(snoozedUntil);
+      updateData.snoozedBy = user.id;
+      if (snoozeReason) updateData.snoozeReason = snoozeReason;
+    }
+
+    if (status === 'CANCELLED') {
+      updateData.cancelledBy = user.id;
+      if (cancelReason) updateData.cancelReason = cancelReason;
     }
 
     const updatedAlert = await prisma.maintenanceAlert.update({
@@ -156,6 +222,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json(updatedAlert);
   } catch (error) {
     console.error("[MAINTENANCE_ALERTS_PATCH]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }

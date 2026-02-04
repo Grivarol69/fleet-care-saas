@@ -20,6 +20,10 @@ export function isTechnician(user: User | null): boolean {
   return user?.role === "TECHNICIAN";
 }
 
+export function isPurchaser(user: User | null): boolean {
+  return user?.role === "PURCHASER";
+}
+
 export function isDriver(user: User | null): boolean {
   return user?.role === "DRIVER";
 }
@@ -37,11 +41,11 @@ export function canManageMasterData(user: User | null): boolean {
 }
 
 /**
- * SUPER_ADMIN, OWNER, MANAGER pueden ver costos reales
+ * SUPER_ADMIN, OWNER, MANAGER, PURCHASER pueden ver costos reales
  * TECHNICIAN, DRIVER NO pueden ver costos
  */
 export function canViewCosts(user: User | null): boolean {
-  return isSuperAdmin(user) || isOwner(user) || isManager(user);
+  return isSuperAdmin(user) || isOwner(user) || isManager(user) || isPurchaser(user);
 }
 
 /**
@@ -71,10 +75,10 @@ export function canManageUsers(user: User | null): boolean {
 }
 
 /**
- * SUPER_ADMIN, OWNER, MANAGER pueden aprobar facturas
+ * SUPER_ADMIN, OWNER, MANAGER, PURCHASER pueden gestionar facturas
  */
 export function canApproveInvoices(user: User | null): boolean {
-  return isSuperAdmin(user) || isOwner(user) || isManager(user);
+  return isSuperAdmin(user) || isOwner(user) || isManager(user) || isPurchaser(user);
 }
 
 /**
@@ -129,6 +133,20 @@ export function canManageVehicles(user: User | null): boolean {
  */
 export function canDeleteVehicles(user: User | null): boolean {
   return isSuperAdmin(user) || isOwner(user);
+}
+
+/**
+ * SUPER_ADMIN, OWNER, MANAGER, PURCHASER pueden gestionar compras e inventario
+ */
+export function canManagePurchases(user: User | null): boolean {
+  return isSuperAdmin(user) || isOwner(user) || isManager(user) || isPurchaser(user);
+}
+
+/**
+ * SUPER_ADMIN, OWNER, MANAGER, PURCHASER pueden gestionar proveedores
+ */
+export function canManageProviders(user: User | null): boolean {
+  return isSuperAdmin(user) || isOwner(user) || isManager(user) || isPurchaser(user);
 }
 
 // ========================================

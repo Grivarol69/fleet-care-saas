@@ -158,25 +158,14 @@ export function DocumentsList({ vehiclePlate }: DocumentsListProps) {
     }
   };
 
-  const getDocumentTypeLabel = (type: DocumentProps["type"]) => {
-    const labels = {
-      SOAT: "SOAT",
-      TECNOMECANICA: "Tecnomecánica",
-      INSURANCE: "Seguro",
-      REGISTRATION: "Registro",
-      OTHER: "Otro",
-    };
-    return labels[type] || type;
-  };
-
   const columns: ColumnDef<DocumentProps>[] = [
     {
-      accessorKey: "type",
+      accessorKey: "documentType",
       header: "Tipo",
-      cell: ({ row }) => getDocumentTypeLabel(row.original.type),
+      cell: ({ row }) => row.original.documentType.name,
     },
     {
-      accessorKey: "fileName",
+      accessorKey: "documentNumber",
       header: "Número/Nombre",
     },
     {

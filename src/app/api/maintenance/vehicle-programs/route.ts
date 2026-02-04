@@ -1,16 +1,20 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-
-const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1';
+import { getCurrentUser } from '@/lib/auth';
 
 // GET - Obtener programas de mantenimiento para un vehículo o todos
 export async function GET(req: Request) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const vehicleId = searchParams.get('vehicleId');
 
     const whereClause = {
-      tenantId: TENANT_ID,
+      tenantId: user.tenantId,
       ...(vehicleId && { vehicleId: parseInt(vehicleId) })
     };
 
@@ -49,33 +53,30 @@ export async function GET(req: Request) {
 // UTILITY FUNCTIONS
 // ========================================
 
-interface TemplatePackage {
-  id: number;
-  triggerKm: number;
-  name: string;
-  [key: string]: unknown;
-}
-
 /**
  * Infiere qué paquete del template corresponde al km ejecutado
  * Usa una tolerancia de ±500km para encontrar el match más cercano
  */
-function inferPackageFromKm(
+function inferPackageFromKm<T extends { triggerKm: number | null }>(
   executedKm: number,
-  templatePackages: TemplatePackage[]
-): TemplatePackage | null {
+  templatePackages: T[]
+): T | null {
   const TOLERANCE = 500; // ±500 km de tolerancia
 
-  if (templatePackages.length === 0) return null;
+  // Filter only packages with triggerKm (Preventive)
+  const candidates = templatePackages.filter(p => p.triggerKm !== null);
+
+  if (candidates.length === 0) return null;
 
   // Buscar paquete más cercano
-  const closest = templatePackages.reduce((prev, curr) => {
-    const prevDiff = Math.abs(prev.triggerKm - executedKm);
-    const currDiff = Math.abs(curr.triggerKm - executedKm);
+  const closest = candidates.reduce((prev, curr) => {
+    // We cast to number because we filtered out nulls
+    const prevDiff = Math.abs((prev.triggerKm as number) - executedKm);
+    const currDiff = Math.abs((curr.triggerKm as number) - executedKm);
     return currDiff < prevDiff ? curr : prev;
   });
 
-  const diff = Math.abs(closest.triggerKm - executedKm);
+  const diff = Math.abs((closest.triggerKm as number) - executedKm);
 
   if (diff <= TOLERANCE) {
     return closest;
@@ -87,13 +88,13 @@ function inferPackageFromKm(
 /**
  * Filtra solo los paquetes que están DESPUÉS del último paquete ejecutado
  */
-function filterFuturePackages(
-  templatePackages: TemplatePackage[],
+function filterFuturePackages<T extends { triggerKm: number | null }>(
+  templatePackages: T[],
   lastPackageKm: number
-): TemplatePackage[] {
+): T[] {
   return templatePackages
-    .filter(pkg => pkg.triggerKm > lastPackageKm)
-    .sort((a, b) => a.triggerKm - b.triggerKm);
+    .filter(pkg => pkg.triggerKm !== null && pkg.triggerKm > lastPackageKm)
+    .sort((a, b) => (a.triggerKm as number) - (b.triggerKm as number));
 }
 
 // ========================================
@@ -101,6 +102,11 @@ function filterFuturePackages(
 // ========================================
 export async function POST(req: Request) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
     const body = await req.json();
     console.log('[DEBUG] Payload recibido:', JSON.stringify(body, null, 2));
     const { vehicleId, templateId, generatedBy, vehicleType = "new", lastMaintenance } = body;
@@ -138,7 +144,7 @@ export async function POST(req: Request) {
 
     // Obtener datos del vehículo
     const vehicle = await prisma.vehicle.findUnique({
-      where: { id: vehicleId },
+      where: { id: vehicleId, tenantId: user.tenantId },
       include: {
         brand: true,
         line: true
@@ -169,7 +175,7 @@ export async function POST(req: Request) {
         );
       }
 
-      lastMaintenancePackageKm = inferredPackage.triggerKm;
+      lastMaintenancePackageKm = inferredPackage.triggerKm ?? 0;
       packagesToAssign = filterFuturePackages(
         template.packages,
         lastMaintenancePackageKm
@@ -189,7 +195,7 @@ export async function POST(req: Request) {
       // 1. Crear VehicleMantProgram
       const program = await tx.vehicleMantProgram.create({
         data: {
-          tenantId: TENANT_ID,
+          tenantId: user.tenantId,
           vehicleId: vehicleId,
           name: `Programa ${vehicle.brand.name} ${vehicle.line.name} ${vehicle.licensePlate}`,
           description: vehicleType === "used"
@@ -211,7 +217,7 @@ export async function POST(req: Request) {
 
         const vehiclePackage = await tx.vehicleProgramPackage.create({
           data: {
-            tenantId: TENANT_ID,
+            tenantId: user.tenantId,
             programId: program.id,
             name: templatePackage.name,
             description: templatePackage.description,
@@ -229,7 +235,7 @@ export async function POST(req: Request) {
         for (const packageItem of templatePackage.packageItems) {
           await tx.vehicleProgramItem.create({
             data: {
-              tenantId: TENANT_ID,
+              tenantId: user.tenantId,
               packageId: vehiclePackage.id,
               mantItemId: packageItem.mantItemId,
               mantType: packageItem.mantItem.mantType,
@@ -256,7 +262,7 @@ export async function POST(req: Request) {
       // 4. Crear package para mantenimientos correctivos
       await tx.vehicleProgramPackage.create({
         data: {
-          tenantId: TENANT_ID,
+          tenantId: user.tenantId,
           programId: program.id,
           name: "Items Mantenimiento Correctivo",
           description: "Package automático para mantenimientos correctivos",
@@ -286,13 +292,13 @@ export async function POST(req: Request) {
         if (!historicalPackage) {
           // Buscar el template package original
           const templatePackage = template.packages.find(
-            (pkg: TemplatePackage) => pkg.triggerKm === lastMaintenancePackageKm
+            (pkg) => pkg.triggerKm === lastMaintenancePackageKm
           );
 
           if (templatePackage) {
             const historicalVehiclePackage = await tx.vehicleProgramPackage.create({
               data: {
-                tenantId: TENANT_ID,
+                tenantId: user.tenantId,
                 programId: program.id,
                 name: templatePackage.name,
                 description: templatePackage.description,
@@ -310,7 +316,7 @@ export async function POST(req: Request) {
             for (const packageItem of templatePackage.packageItems) {
               await tx.vehicleProgramItem.create({
                 data: {
-                  tenantId: TENANT_ID,
+                  tenantId: user.tenantId,
                   packageId: historicalVehiclePackage.id,
                   mantItemId: packageItem.mantItemId,
                   mantType: packageItem.mantItem.mantType,
@@ -354,9 +360,9 @@ export async function POST(req: Request) {
         if (lastMaintenance.provider || lastMaintenance.cost) {
           await tx.workOrder.create({
             data: {
-              tenantId: TENANT_ID,
+              tenantId: user.tenantId,
               vehicleId: vehicleId,
-              type: 'PREVENTIVE',
+              mantType: 'PREVENTIVE', // fixed: matches enum
               status: 'COMPLETED',
               priority: 'MEDIUM',
               title: `Mantenimiento ${lastMaintenancePackageKm} km (Histórico)`,
@@ -364,13 +370,11 @@ export async function POST(req: Request) {
               startDate: lastMaintenance.executedDate
                 ? new Date(lastMaintenance.executedDate)
                 : new Date(),
-              completedAt: lastMaintenance.executedDate
-                ? new Date(lastMaintenance.executedDate)
-                : new Date(),
+              creationMileage: vehicle.mileage, // fixed: required field
+              // updated simplified properties
               estimatedCost: lastMaintenance.cost || 0,
               actualCost: lastMaintenance.cost || 0,
-              // assignedTo: null, // No hay técnico asignado
-              // providerId: null, // Agregar si tienes proveedor
+              requestedBy: generatedBy, // User ID who generated the program
             }
           });
         }

@@ -1,8 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from '@/lib/auth';
 import { NextResponse } from "next/server";
-
-const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1';
+import { safeParseInt } from '@/lib/validation';
 
 // GET - Obtener técnico específico por ID
 export async function GET(
@@ -11,22 +10,32 @@ export async function GET(
 ) {
     try {
         const { id } = await params;
+        const user = await getCurrentUser();
+
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const technicianId = safeParseInt(id);
+        if (technicianId === null) {
+            return NextResponse.json({ error: "ID de técnico inválido" }, { status: 400 });
+        }
 
         const technician = await prisma.technician.findUnique({
             where: {
-                id: parseInt(id),
-                tenantId: TENANT_ID
+                id: technicianId,
+                tenantId: user.tenantId
             }
         });
 
         if (!technician) {
-            return new NextResponse("Technician not found", { status: 404 });
+            return NextResponse.json({ error: "Técnico no encontrado" }, { status: 404 });
         }
 
         return NextResponse.json(technician);
     } catch (error) {
         console.error("[TECHNICIAN_GET]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }
 
@@ -40,46 +49,51 @@ export async function PUT(
         const user = await getCurrentUser();
 
         if (!user) {
-            return new NextResponse("Unauthorized", { status: 401 });
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const technicianId = safeParseInt(id);
+        if (technicianId === null) {
+            return NextResponse.json({ error: "ID de técnico inválido" }, { status: 400 });
         }
 
         const { name, email, phone, specialty } = await req.json();
 
         if (!name || name.trim() === '') {
-            return new NextResponse("Name is required", { status: 400 });
+            return NextResponse.json({ error: "El nombre es requerido" }, { status: 400 });
         }
 
         // Verificar que el técnico existe
         const existingTechnician = await prisma.technician.findUnique({
             where: {
-                id: parseInt(id),
-                tenantId: TENANT_ID
+                id: technicianId,
+                tenantId: user.tenantId
             }
         });
 
         if (!existingTechnician) {
-            return new NextResponse("Technician not found", { status: 404 });
+            return NextResponse.json({ error: "Técnico no encontrado" }, { status: 404 });
         }
 
         // Verificar duplicados
         const duplicateTechnician = await prisma.technician.findFirst({
             where: {
-                tenantId: TENANT_ID,
+                tenantId: user.tenantId,
                 name: name.trim(),
                 id: {
-                    not: parseInt(id)
+                    not: technicianId
                 }
             }
         });
 
         if (duplicateTechnician) {
-            return new NextResponse("Technician name already exists", { status: 409 });
+            return NextResponse.json({ error: "Ya existe un técnico con este nombre" }, { status: 409 });
         }
 
         const updatedTechnician = await prisma.technician.update({
             where: {
-                id: parseInt(id),
-                tenantId: TENANT_ID
+                id: technicianId,
+                tenantId: user.tenantId
             },
             data: {
                 name: name.trim(),
@@ -91,8 +105,8 @@ export async function PUT(
 
         return NextResponse.json(updatedTechnician);
     } catch (error) {
-        console.log("[TECHNICIAN_PUT]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        console.error("[TECHNICIAN_PUT]", error);
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }
 
@@ -106,30 +120,39 @@ export async function DELETE(
         const user = await getCurrentUser();
 
         if (!user) {
-            return new NextResponse("Unauthorized", { status: 401 });
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const technicianId = safeParseInt(id);
+        if (technicianId === null) {
+            return NextResponse.json({ error: "ID de técnico inválido" }, { status: 400 });
         }
 
         const existingTechnician = await prisma.technician.findUnique({
             where: {
-                id: parseInt(id),
-                tenantId: TENANT_ID
+                id: technicianId,
+                tenantId: user.tenantId
             }
         });
 
         if (!existingTechnician) {
-            return new NextResponse("Technician not found", { status: 404 });
+            return NextResponse.json({ error: "Técnico no encontrado" }, { status: 404 });
         }
 
-        await prisma.technician.delete({
+        // Soft delete - cambiar status a INACTIVE
+        await prisma.technician.update({
             where: {
-                id: parseInt(id),
-                tenantId: TENANT_ID
+                id: technicianId,
+                tenantId: user.tenantId
+            },
+            data: {
+                status: 'INACTIVE'
             }
         });
 
-        return new NextResponse(null, { status: 204 });
+        return NextResponse.json({ success: true, message: "Técnico desactivado" });
     } catch (error) {
-        console.log("[TECHNICIAN_DELETE]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        console.error("[TECHNICIAN_DELETE]", error);
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }

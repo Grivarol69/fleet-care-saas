@@ -119,8 +119,8 @@ export async function extractInvoiceDataWithDocumentAI(
         case 'net_amount':
         case 'total_amount':
           if (normalizedValue?.moneyValue) {
-            const amount = parseFloat(normalizedValue.moneyValue.units || '0');
-            const nanos = parseFloat(normalizedValue.moneyValue.nanos || '0') / 1e9;
+            const amount = parseFloat(String(normalizedValue.moneyValue.units ?? '0'));
+            const nanos = parseFloat(String(normalizedValue.moneyValue.nanos ?? '0')) / 1e9;
             subtotal = amount + nanos;
             currency = normalizedValue.moneyValue.currencyCode || 'COP';
           } else {
@@ -130,18 +130,18 @@ export async function extractInvoiceDataWithDocumentAI(
 
         case 'total_tax_amount':
           if (normalizedValue?.moneyValue) {
-            const amount = parseFloat(normalizedValue.moneyValue.units || '0');
-            const nanos = parseFloat(normalizedValue.moneyValue.nanos || '0') / 1e9;
+            const amount = parseFloat(String(normalizedValue.moneyValue.units ?? '0'));
+            const nanos = parseFloat(String(normalizedValue.moneyValue.nanos ?? '0')) / 1e9;
             tax = amount + nanos;
           } else {
             tax = parseAmount(mentionText);
           }
           break;
 
-        case 'total_amount':
+        case 'total_amount_due':
           if (normalizedValue?.moneyValue) {
-            const amount = parseFloat(normalizedValue.moneyValue.units || '0');
-            const nanos = parseFloat(normalizedValue.moneyValue.nanos || '0') / 1e9;
+            const amount = parseFloat(String(normalizedValue.moneyValue.units ?? '0'));
+            const nanos = parseFloat(String(normalizedValue.moneyValue.nanos ?? '0')) / 1e9;
             total = amount + nanos;
           } else {
             total = parseAmount(mentionText);
@@ -184,6 +184,19 @@ export async function extractInvoiceDataWithDocumentAI(
   }
 }
 
+interface LineItemEntity {
+  properties?: Array<{
+    type?: string;
+    mentionText?: string;
+    normalizedValue?: {
+      moneyValue?: {
+        units?: string | number;
+        nanos?: string | number;
+      };
+    };
+  }>;
+}
+
 /**
  * Extrae información de un line_item
  */
@@ -200,7 +213,8 @@ function extractLineItem(entity: unknown): {
   let total = 0;
 
   // Buscar propiedades del line_item
-  const properties = entity.properties || [];
+  const typedEntity = entity as LineItemEntity;
+  const properties = typedEntity.properties || [];
 
   for (const prop of properties) {
     const type = prop.type || '';
@@ -223,8 +237,8 @@ function extractLineItem(entity: unknown): {
 
       case 'line_item/unit_price':
         if (normalizedValue?.moneyValue) {
-          const amount = parseFloat(normalizedValue.moneyValue.units || '0');
-          const nanos = parseFloat(normalizedValue.moneyValue.nanos || '0') / 1e9;
+          const amount = parseFloat(String(normalizedValue.moneyValue.units ?? '0'));
+          const nanos = parseFloat(String(normalizedValue.moneyValue.nanos ?? '0')) / 1e9;
           unitPrice = amount + nanos;
         } else {
           unitPrice = parseAmount(mentionText);
@@ -233,8 +247,8 @@ function extractLineItem(entity: unknown): {
 
       case 'line_item/amount':
         if (normalizedValue?.moneyValue) {
-          const amount = parseFloat(normalizedValue.moneyValue.units || '0');
-          const nanos = parseFloat(normalizedValue.moneyValue.nanos || '0') / 1e9;
+          const amount = parseFloat(String(normalizedValue.moneyValue.units ?? '0'));
+          const nanos = parseFloat(String(normalizedValue.moneyValue.nanos ?? '0')) / 1e9;
           total = amount + nanos;
         } else {
           total = parseAmount(mentionText);

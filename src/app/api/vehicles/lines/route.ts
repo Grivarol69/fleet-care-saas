@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import { safeParseInt } from '@/lib/validation';
 
 export async function GET() {
     try {
@@ -10,13 +11,14 @@ export async function GET() {
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
-        // Devolver líneas GLOBALES + del tenant
+        // Devolver líneas GLOBALES + del tenant (solo activas)
         const lines = await prisma.vehicleLine.findMany({
             where: {
                 OR: [
                     { isGlobal: true },           // Líneas globales (Knowledge Base)
                     { tenantId: user.tenantId }   // Líneas custom del tenant
-                ]
+                ],
+                status: 'ACTIVE'
             },
             orderBy: {
                 name: 'asc'
@@ -42,7 +44,7 @@ export async function GET() {
         return NextResponse.json(mappedLines);
     } catch (error) {
         console.error("[LINE_GET]", error);
-        return NextResponse.json({ error: "Error interno" }, { status: 500 });
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }
 
@@ -93,11 +95,17 @@ export async function POST(req: Request) {
             }
         }
 
+        const parsedBrandId = safeParseInt(String(brandId));
+
+        if (parsedBrandId === null) {
+            return NextResponse.json({ error: "ID de marca inválido" }, { status: 400 });
+        }
+
         // Verificar que no existe
         const existingLine = await prisma.vehicleLine.findFirst({
             where: {
                 tenantId: targetTenant,
-                brandId: parseInt(brandId),
+                brandId: parsedBrandId,
                 name: name.trim()
             }
         });
@@ -109,7 +117,7 @@ export async function POST(req: Request) {
         // Verificar que la marca existe (global o del tenant)
         const brand = await prisma.vehicleBrand.findFirst({
             where: {
-                id: parseInt(brandId),
+                id: parsedBrandId,
                 OR: [
                     { isGlobal: true },
                     { tenantId: targetTenant }
@@ -124,7 +132,7 @@ export async function POST(req: Request) {
         const line = await prisma.vehicleLine.create({
             data: {
                 name: name.trim(),
-                brandId: parseInt(brandId),
+                brandId: parsedBrandId,
                 tenantId: targetTenant,
                 isGlobal: isGlobal || false
             },
@@ -146,9 +154,9 @@ export async function POST(req: Request) {
             isGlobal: line.isGlobal
         };
 
-        return NextResponse.json(mappedLine);
+        return NextResponse.json(mappedLine, { status: 201 });
     } catch (error) {
         console.log("[LINE_POST]", error);
-        return NextResponse.json({ error: "Error interno" }, { status: 500 });
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }

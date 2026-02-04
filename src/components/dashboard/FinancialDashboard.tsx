@@ -19,6 +19,7 @@ import type { FinancialMetricsResponse } from "@/app/api/dashboard/financial-met
 import { KPICards } from "./FinancialDashboard/KPICards";
 import { EvolutionChart } from "./FinancialDashboard/EvolutionChart";
 import { RecentInvoicesTable } from "./FinancialDashboard/RecentInvoicesTable";
+import { FinancialAlertsWidget } from "./FinancialDashboard/FinancialAlertsWidget";
 
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
@@ -394,6 +395,9 @@ export function FinancialDashboard() {
           Actualizar
         </Button>
       </div>
+
+      {/* Financial Watchdog Alerts Widget */}
+      <FinancialAlertsWidget />
 
       {/* Cards de KPIs principales */}
       <KPICards data={data} />

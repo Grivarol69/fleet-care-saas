@@ -6,7 +6,14 @@ const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
   '/sign-up(.*)',
   '/api/webhooks/clerk(.*)',
+  '/api/uploadthing(.*)',
   '/',
+])
+
+// Rutas de admin que NO requieren organización (solo SUPER_ADMIN)
+const isAdminRoute = createRouteMatcher([
+  '/admin(.*)',
+  '/api/admin(.*)',
 ])
 
 export default clerkMiddleware(async (auth, request) => {
@@ -43,9 +50,16 @@ export default clerkMiddleware(async (auth, request) => {
       return NextResponse.redirect(new URL('/sign-in', request.url))
     }
 
-    // Validar que usuario pertenece a una organización
-    if (!orgId && !url.pathname.startsWith('/onboarding')) {
-      return NextResponse.redirect(new URL('/onboarding', request.url))
+    // Rutas /admin NO requieren organización (solo autenticación)
+    // La verificación de SUPER_ADMIN se hace en auth.ts y en las páginas/APIs
+    if (isAdminRoute(request)) {
+      // Permitir acceso - la verificación de SUPER_ADMIN se hace después
+      // No redirigir a onboarding
+    } else {
+      // Validar que usuario pertenece a una organización para rutas normales
+      if (!orgId && !url.pathname.startsWith('/onboarding')) {
+        return NextResponse.redirect(new URL('/onboarding', request.url))
+      }
     }
   }
 

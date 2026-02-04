@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,12 +13,8 @@ import {
   Truck,
   ExternalLink,
   Download,
-  Upload
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { UploadButton } from '@/lib/uploadthing';
-import { useToast } from '@/components/hooks/use-toast';
-import axios from 'axios';
 
 type Invoice = {
   id: number;
@@ -69,7 +64,6 @@ type Invoice = {
 
 type DetailsTabProps = {
   invoice: Invoice;
-  onRefresh: () => void;
 };
 
 const statusConfig = {
@@ -91,7 +85,7 @@ const workOrderStatusConfig = {
   CANCELLED: { label: 'Cancelada', variant: 'outline' as const },
 };
 
-export function DetailsTab({ invoice, onRefresh }: DetailsTabProps) {
+export function DetailsTab({ invoice }: DetailsTabProps) {
   const router = useRouter();
   const statusInfo = statusConfig[invoice.status as keyof typeof statusConfig] || {
     label: invoice.status,

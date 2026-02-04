@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma, AlertLevel, AlertType, AlertCategory, Priority } from "@prisma/client";
 
-const TENANT_ID = "cf68b103-12fd-4208-a352-42379ef3b6e1";
+
 
 // Umbrales para generar alertas (en km)
 const ALERT_THRESHOLDS = {
@@ -16,7 +16,7 @@ export class MaintenanceAlertService {
   /**
    * Verifica y genera alertas para un vehículo cuando se actualiza el odómetro
    */
-  static async checkAndGenerateAlerts(vehicleId: number, currentKm: number): Promise<void> {
+  static async checkAndGenerateAlerts(vehicleId: number, currentKm: number, tenantId: string): Promise<void> { // Added tenantId param
     try {
       // 1. Obtener programa activo del vehículo
       const program = await prisma.vehicleMantProgram.findFirst({
@@ -65,7 +65,8 @@ export class MaintenanceAlertService {
               kmToMaintenance,
               item.estimatedCost ? Number(item.estimatedCost) : null,
               item.estimatedTime ? Number(item.estimatedTime) : null,
-              this.determineCategory(item.mantItem.name)
+              this.determineCategory(item.mantItem.name),
+              tenantId
             );
           }
         }
@@ -89,7 +90,8 @@ export class MaintenanceAlertService {
     kmToMaintenance: number,
     estimatedCost: number | null,
     estimatedDuration: number | null,
-    category: AlertCategory
+    category: AlertCategory,
+    tenantId: string
   ): Promise<void> {
 
     // Verificar si ya existe alerta activa para este item
@@ -126,7 +128,7 @@ export class MaintenanceAlertService {
       // CREAR nueva alerta
       await prisma.maintenanceAlert.create({
         data: {
-          tenantId: TENANT_ID,
+          tenantId: tenantId,
           vehicleId,
           programItemId,
           type,

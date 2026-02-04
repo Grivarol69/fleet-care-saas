@@ -28,7 +28,7 @@ async function migrateDocumentData() {
       select: {
         id: true,
         fileName: true,
-        type: true,
+        documentTypeId: true,
       },
     });
 

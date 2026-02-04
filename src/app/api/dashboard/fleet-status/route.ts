@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from '@/lib/auth';
 
 export type FleetVehicleStatus = {
   id: number;
@@ -47,8 +48,12 @@ const ODOMETER_CRITICAL_DAYS = 10;
 
 export async function GET() {
   try {
-    // TODO: Obtener tenantId de la sesión
-    const tenantId = "cf68b103-12fd-4208-a352-42379ef3b6e1";
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const tenantId = user.tenantId;
 
     // Obtener todos los vehículos activos con sus datos relacionados
     const vehicles = await prisma.vehicle.findMany({
@@ -145,6 +150,7 @@ export async function GET() {
       let maintenanceStatus: 'OK' | 'WARNING' | 'CRITICAL' = 'OK';
       if (alerts.critical > 0) {
         maintenanceStatus = 'CRITICAL';
+        // force overall status to critical if there are critical alerts
       } else if (alerts.warning > 0) {
         maintenanceStatus = 'WARNING';
       }

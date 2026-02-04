@@ -61,7 +61,6 @@ type Invoice = {
 type InvoicesListProps = {
   invoices: Invoice[];
   isLoading: boolean;
-  onRefresh: () => void;
   onViewDetail?: (id: number) => void;
 };
 
@@ -76,7 +75,6 @@ const statusConfig = {
 export function InvoicesList({
   invoices,
   isLoading,
-  onRefresh,
   onViewDetail,
 }: InvoicesListProps) {
   const router = useRouter();

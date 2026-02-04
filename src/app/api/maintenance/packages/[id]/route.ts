@@ -1,21 +1,25 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
-
-const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1'; // Tenant hardcodeado para MVP
+import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(
     _request: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
+        const user = await getCurrentUser();
+        if (!user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
         const id = parseInt(params.id);
 
         const package_ = await prisma.maintenancePackage.findFirst({
             where: {
                 id,
                 template: {
-                    tenantId: TENANT_ID
+                    tenantId: user.tenantId
                 }
             },
             include: {
@@ -69,6 +73,11 @@ export async function PUT(
     { params }: { params: { id: string } }
 ) {
     try {
+        const user = await getCurrentUser();
+        if (!user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
         const id = parseInt(params.id);
         const body = await request.json();
         const { name, triggerKm, description, estimatedCost, estimatedTime, priority, packageType } = body;
@@ -78,7 +87,7 @@ export async function PUT(
             where: {
                 id,
                 template: {
-                    tenantId: TENANT_ID
+                    tenantId: user.tenantId
                 }
             }
         });
@@ -143,6 +152,11 @@ export async function DELETE(
     { params }: { params: { id: string } }
 ) {
     try {
+        const user = await getCurrentUser();
+        if (!user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
         const id = parseInt(params.id);
 
         // Verificar que el paquete existe y pertenece al tenant
@@ -150,7 +164,7 @@ export async function DELETE(
             where: {
                 id,
                 template: {
-                    tenantId: TENANT_ID
+                    tenantId: user.tenantId
                 }
             }
         });
@@ -162,16 +176,15 @@ export async function DELETE(
             );
         }
 
-        // Verificar si hay ScheduledPackages que referencian este package
-        const scheduledPackages = await prisma.scheduledPackage.findFirst({
+        // Verificar si hay VehicleProgramPackages que referencian este package por nombre
+        const vehicleProgramPackages = await prisma.vehicleProgramPackage.findFirst({
             where: {
-                // Nota: Como ScheduledPackage no tiene FK directo, verificamos por nombre/km
-                packageName: existingPackage.name,
-                idealExecutionKm: existingPackage.triggerKm
+                name: existingPackage.name,
+                triggerKm: existingPackage.triggerKm
             }
         });
 
-        if (scheduledPackages) {
+        if (vehicleProgramPackages) {
             return NextResponse.json(
                 { error: "No se puede eliminar este paquete porque ya está siendo usado en programas de vehículos" },
                 { status: 400 }

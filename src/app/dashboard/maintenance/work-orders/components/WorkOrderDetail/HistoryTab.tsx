@@ -171,7 +171,7 @@ export function HistoryTab({ workOrder }: HistoryTabProps) {
 
             {/* Eventos */}
             <div className="space-y-6">
-              {timeline.map((event, index) => (
+              {timeline.map((event) => (
                 <div key={event.id} className="relative flex gap-4">
                   {/* Icono */}
                   <div

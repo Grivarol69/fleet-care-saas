@@ -141,7 +141,6 @@ export default function InvoicesPage() {
       <InvoicesList
         invoices={filteredInvoices}
         isLoading={isLoading}
-        onRefresh={fetchInvoices}
         onViewDetail={handleViewDetail}
       />
     </div>

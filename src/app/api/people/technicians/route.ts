@@ -2,13 +2,17 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from '@/lib/auth';
 import { NextResponse } from "next/server";
 
-const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1'; // Tenant hardcodeado para MVP
-
 export async function GET() {
     try {
+        const user = await getCurrentUser();
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
         const technicians = await prisma.technician.findMany({
             where: {
-                tenantId: TENANT_ID
+                tenantId: user.tenantId,
+                status: 'ACTIVE'
             },
             orderBy: {
                 name: 'asc'
@@ -17,7 +21,7 @@ export async function GET() {
         return NextResponse.json(technicians);
     } catch (error) {
         console.error("[TECHNICIANS_GET]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }
 
@@ -26,27 +30,27 @@ export async function POST(req: Request) {
         const user = await getCurrentUser();
 
         if (!user) {
-            return new NextResponse("Unauthorized", { status: 401 });
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
         const { name, email, phone, specialty } = await req.json();
 
         if (!name || name.trim() === '') {
-            return new NextResponse("Name is required", { status: 400 });
+            return NextResponse.json({ error: "El nombre es requerido" }, { status: 400 });
         }
 
         // Verificar que no exista un técnico con el mismo nombre
         const existingTechnician = await prisma.technician.findUnique({
             where: {
                 tenantId_name: {
-                    tenantId: TENANT_ID,
+                    tenantId: user.tenantId,
                     name: name.trim()
                 }
             }
         });
 
         if (existingTechnician) {
-            return new NextResponse("Technician already exists", { status: 409 });
+            return NextResponse.json({ error: "Ya existe un técnico con este nombre" }, { status: 409 });
         }
 
         const technician = await prisma.technician.create({
@@ -55,13 +59,13 @@ export async function POST(req: Request) {
                 email: email?.trim() || null,
                 phone: phone?.trim() || null,
                 specialty: specialty?.trim() || null,
-                tenantId: TENANT_ID,
+                tenantId: user.tenantId,
             },
         });
 
-        return NextResponse.json(technician);
+        return NextResponse.json(technician, { status: 201 });
     } catch (error) {
-        console.log("[TECHNICIAN_POST]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        console.error("[TECHNICIAN_POST]", error);
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }

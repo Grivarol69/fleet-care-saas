@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from '@/lib/auth';
 
 export type MonthlyData = {
   month: string;       // "Ene 2025"
@@ -11,8 +12,11 @@ export type MonthlyData = {
 
 export async function GET() {
   try {
-    // TODO: Obtener tenantId de la sesión
-    const tenantId = "cf68b103-12fd-4208-a352-42379ef3b6e1";
+    const user = await getCurrentUser();
+    if (!user || !user.tenantId) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+    const tenantId = user.tenantId;
 
     const monthNames = [
       "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -54,7 +58,7 @@ export async function GET() {
 
       last12Months.push({
         month: `${monthNames[monthIndex]} ${year}`,
-        monthShort: monthNamesShort[monthIndex],
+        monthShort: monthNamesShort[monthIndex] ?? "",
         year,
         spent: Number(invoices._sum?.totalAmount ?? 0),
         invoiceCount: invoices._count,

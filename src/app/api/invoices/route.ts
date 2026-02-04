@@ -220,16 +220,24 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        // 4. Actualizar WorkOrderItems a COMPLETED
+        // 4. Actualizar WorkOrderItems a COMPLETED con closureType EXTERNAL_INVOICE
         await tx.workOrderItem.updateMany({
           where: { workOrderId },
-          data: { status: 'COMPLETED' },
+          data: {
+            status: 'COMPLETED',
+            closureType: 'EXTERNAL_INVOICE',
+            closedAt: new Date(),
+            closedBy: user.id,
+          },
         });
 
         // 5. Actualizar MaintenanceAlerts vinculadas a COMPLETED
         await tx.maintenanceAlert.updateMany({
           where: { workOrderId },
-          data: { status: 'COMPLETED' },
+          data: {
+            status: 'COMPLETED',
+            closedAt: new Date(),
+          },
         });
 
         // 6. Actualizar VehicleProgramItems vinculadas a COMPLETED

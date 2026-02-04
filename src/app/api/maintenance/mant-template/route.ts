@@ -2,14 +2,12 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from '@/lib/auth';
 import { NextResponse } from "next/server";
 
-const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1'; // Tenant hardcodeado para MVP
-
 export async function GET() {
     try {
         const user = await getCurrentUser();
 
         if (!user) {
-            return new NextResponse("Unauthorized", { status: 401 });
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
         // Devolver templates GLOBALES + del tenant
@@ -65,7 +63,7 @@ export async function GET() {
         return NextResponse.json(mantTemplates);
     } catch (error) {
         console.error("[MANT_TEMPLATE_GET]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }
 
@@ -73,22 +71,22 @@ export async function POST(req: Request) {
     try {
         const user = await getCurrentUser();
         if (!user) {
-            return new NextResponse("Unauthorized", { status: 401 });
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
         const { name, description, vehicleBrandId, vehicleLineId, isGlobal } = await req.json();
 
         // Validación de campos requeridos
         if (!name || name.trim() === '') {
-            return new NextResponse("Template name is required", { status: 400 });
+            return NextResponse.json({ error: "El nombre del template es requerido" }, { status: 400 });
         }
 
         if (!vehicleBrandId || vehicleBrandId <= 0) {
-            return new NextResponse("Valid vehicle brand is required", { status: 400 });
+            return NextResponse.json({ error: "La marca del vehículo es requerida" }, { status: 400 });
         }
 
         if (!vehicleLineId || vehicleLineId <= 0) {
-            return new NextResponse("Valid vehicle line is required", { status: 400 });
+            return NextResponse.json({ error: "La línea del vehículo es requerida" }, { status: 400 });
         }
 
         // Validar permisos según destino
@@ -97,13 +95,13 @@ export async function POST(req: Request) {
         if (isGlobal) {
             // Solo SUPER_ADMIN puede crear templates globales
             if (user.role !== 'SUPER_ADMIN') {
-                return new NextResponse("Only SUPER_ADMIN can create global templates", { status: 403 });
+                return NextResponse.json({ error: "Solo SUPER_ADMIN puede crear templates globales" }, { status: 403 });
             }
             targetTenant = null;
         } else {
             // OWNER/MANAGER pueden crear custom
             if (!['SUPER_ADMIN', 'OWNER', 'MANAGER'].includes(user.role)) {
-                return new NextResponse("Insufficient permissions", { status: 403 });
+                return NextResponse.json({ error: "Permisos insuficientes" }, { status: 403 });
             }
             targetTenant = user.tenantId;
         }
@@ -120,7 +118,7 @@ export async function POST(req: Request) {
         });
 
         if (!brand) {
-            return new NextResponse("Vehicle brand not found", { status: 404 });
+            return NextResponse.json({ error: "Marca de vehículo no encontrada" }, { status: 404 });
         }
 
         // Verificar que la línea existe (global o del tenant) y pertenece a la marca
@@ -136,7 +134,7 @@ export async function POST(req: Request) {
         });
 
         if (!line) {
-            return new NextResponse("Vehicle line not found or doesn't belong to the specified brand", { status: 404 });
+            return NextResponse.json({ error: "Línea de vehículo no encontrada o no pertenece a la marca especificada" }, { status: 404 });
         }
 
         // Verificar que no exista un template con el mismo nombre para la misma marca/línea en el scope
@@ -151,7 +149,7 @@ export async function POST(req: Request) {
         });
 
         if (existingTemplate) {
-            return new NextResponse("Template with this name already exists for this brand/line combination", { status: 409 });
+            return NextResponse.json({ error: "Ya existe un template con este nombre para esta combinación de marca/línea" }, { status: 409 });
         }
 
         const mantTemplate = await prisma.maintenanceTemplate.create({
@@ -198,9 +196,9 @@ export async function POST(req: Request) {
             }
         });
 
-        return NextResponse.json(mantTemplate);
+        return NextResponse.json(mantTemplate, { status: 201 });
     } catch (error) {
         console.error("[MANT_TEMPLATE_POST]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }

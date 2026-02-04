@@ -1,5 +1,5 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next";
-import { createClient } from '@/utils/supabase/server';
+import { currentUser } from "@clerk/nextjs/server";
 
 const f = createUploadthing();
 
@@ -12,28 +12,17 @@ export const ourFileRouter = {
         }
     })
         .middleware(async () => {
-            // Verificar autenticación usando nuestro cliente Supabase
-            const supabase = await createClient();
-            const { data: { user }, error } = await supabase.auth.getUser();
+            const user = await currentUser();
+            if (!user) throw new Error("Unauthorized");
 
-            if (!user || error) {
-                throw new Error("Unauthorized");
-            }
-
-            // Retornar metadata que se pasará al onUploadComplete
             return {
                 userId: user.id,
-                userEmail: user.email
+                userEmail: user.emailAddresses[0]?.emailAddress
             };
         })
         .onUploadComplete(async ({ metadata, file }) => {
-            // Código que se ejecuta después de la subida exitosa
             console.log("Upload complete for userId:", metadata.userId);
             console.log("File URL:", file.url);
-
-            // Aquí podrías guardar la URL en tu base de datos
-            // await prisma.vehicle.update({ ... })
-
             return { uploadedBy: metadata.userId };
         }),
 
@@ -49,16 +38,12 @@ export const ourFileRouter = {
         }
     })
         .middleware(async () => {
-            const supabase = await createClient();
-            const { data: { user }, error } = await supabase.auth.getUser();
-
-            if (!user || error) {
-                throw new Error("Unauthorized");
-            }
+            const user = await currentUser();
+            if (!user) throw new Error("Unauthorized");
 
             return {
                 userId: user.id,
-                userEmail: user.email
+                userEmail: user.emailAddresses[0]?.emailAddress
             };
         })
         .onUploadComplete(async ({ metadata, file }) => {
@@ -78,16 +63,12 @@ export const ourFileRouter = {
         }
     })
         .middleware(async () => {
-            const supabase = await createClient();
-            const { data: { user }, error } = await supabase.auth.getUser();
-
-            if (!user || error) {
-                throw new Error("Unauthorized");
-            }
+            const user = await currentUser();
+            if (!user) throw new Error("Unauthorized");
 
             return {
                 userId: user.id,
-                userEmail: user.email
+                userEmail: user.emailAddresses[0]?.emailAddress
             };
         })
         .onUploadComplete(async ({ metadata, file }) => {

@@ -1,19 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from '@/utils/supabase/server';
 import { Resend } from "resend";
 import { VehicleCVEmail } from "@/emails/VehicleCVEmail";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { VehicleCV } from "@/app/dashboard/vehicles/fleet/components/VehicleCV/VehicleCV";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from '@/lib/auth';
 import React from "react";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1'; // Tenant hardcodeado para MVP
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
 
     if (!user) {
       return NextResponse.json(
@@ -36,7 +34,7 @@ export async function POST(req: NextRequest) {
     const vehicle = await prisma.vehicle.findFirst({
       where: {
         id: vehicleId,
-        tenantId: TENANT_ID,
+        tenantId: user.tenantId,
       },
       include: {
         brand: true,
@@ -48,7 +46,8 @@ export async function POST(req: NextRequest) {
           },
           select: {
             id: true,
-            type: true,
+            documentTypeId: true,
+            documentType: true,
             documentNumber: true,
             expiryDate: true,
             entity: true,
@@ -67,7 +66,7 @@ export async function POST(req: NextRequest) {
 
     // Obtener datos del tenant
     const tenant = await prisma.tenant.findUnique({
-      where: { id: TENANT_ID },
+      where: { id: user.tenantId },
       select: {
         name: true,
         logo: true,
@@ -106,7 +105,7 @@ export async function POST(req: NextRequest) {
       expiryDate?: string;
       entity?: string;
     }> = vehicle.documents.map((doc) => ({
-      type: doc.type as string,
+      type: doc.documentType.code,
       ...(doc.documentNumber && { documentNumber: doc.documentNumber }),
       ...(doc.expiryDate && { expiryDate: doc.expiryDate.toISOString() }),
       ...(doc.entity && { entity: doc.entity }),
@@ -139,15 +138,7 @@ export async function POST(req: NextRequest) {
         const buffer = Buffer.from(await response.arrayBuffer());
 
         // Generar nombre descriptivo para el archivo
-        const docTypeNames: Record<string, string> = {
-          SOAT: "SOAT",
-          TECNOMECANICA: "Tecnomecanica",
-          INSURANCE: "Poliza",
-          PROPERTY_CARD: "Tarjeta_Propiedad",
-          OTHER: "Documento",
-        };
-
-        const docTypeName = docTypeNames[doc.type] || "Documento";
+        const docTypeName = doc.documentType.name.replace(/\s+/g, '_') || "Documento";
         const extension = doc.fileUrl.split(".").pop()?.toLowerCase() || "pdf";
 
         attachments.push({

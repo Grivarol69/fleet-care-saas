@@ -1,11 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
-
-const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1'; // Tenant hardcodeado para MVP
+import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
     try {
+        const user = await getCurrentUser();
+        if (!user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
         const { searchParams } = new URL(request.url);
         const packageId = searchParams.get('packageId');
 
@@ -45,6 +49,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
+        const user = await getCurrentUser();
+        if (!user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
         const body = await request.json();
         const { packageId, mantItemId, triggerKm, priority, estimatedTime, technicalNotes, isOptional, order } = body;
 
@@ -74,7 +83,7 @@ export async function POST(request: NextRequest) {
         const mantItem = await prisma.mantItem.findFirst({
             where: {
                 id: mantItemId,
-                tenantId: TENANT_ID,
+                tenantId: user.tenantId,
                 status: 'ACTIVE'
             }
         });

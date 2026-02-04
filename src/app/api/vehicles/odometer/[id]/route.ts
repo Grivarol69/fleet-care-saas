@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from '@/lib/auth';
 
 // GET - Fetch specific odometer log
 export async function GET(
@@ -7,20 +8,22 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
     const id = parseInt(params.id);
-    
+
     if (isNaN(id)) {
       return new NextResponse("Invalid ID", { status: 400 });
     }
-
-    // TODO: Get tenant from auth session
-    const tenantId = "cf68b103-12fd-4208-a352-42379ef3b6e1";
 
     const odometerLog = await prisma.odometerLog.findFirst({
       where: {
         id: id,
         vehicle: {
-          tenantId: tenantId,
+          tenantId: user.tenantId,
         },
       },
       include: {
@@ -52,8 +55,13 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
     const id = parseInt(params.id);
-    
+
     if (isNaN(id)) {
       return new NextResponse("Invalid ID", { status: 400 });
     }
@@ -61,15 +69,12 @@ export async function PUT(
     const body = await request.json();
     const { vehicleId, driverId, kilometers, hours, measureType, recordedAt } = body;
 
-    // TODO: Get tenant from auth session
-    const tenantId = "cf68b103-12fd-4208-a352-42379ef3b6e1";
-
     // Verify odometer log exists and belongs to tenant
     const existingLog = await prisma.odometerLog.findFirst({
       where: {
         id: id,
         vehicle: {
-          tenantId: tenantId,
+          tenantId: user.tenantId,
         },
       },
     });
@@ -82,7 +87,7 @@ export async function PUT(
     const vehicle = await prisma.vehicle.findFirst({
       where: {
         id: vehicleId,
-        tenantId: tenantId,
+        tenantId: user.tenantId,
       },
     });
 
@@ -95,7 +100,7 @@ export async function PUT(
       const driver = await prisma.driver.findFirst({
         where: {
           id: driverId,
-          tenantId: tenantId,
+          tenantId: user.tenantId,
         },
       });
 
@@ -172,21 +177,23 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
     const id = parseInt(params.id);
-    
+
     if (isNaN(id)) {
       return new NextResponse("Invalid ID", { status: 400 });
     }
-
-    // TODO: Get tenant from auth session
-    const tenantId = "cf68b103-12fd-4208-a352-42379ef3b6e1";
 
     // Verify odometer log exists and belongs to tenant
     const existingLog = await prisma.odometerLog.findFirst({
       where: {
         id: id,
         vehicle: {
-          tenantId: tenantId,
+          tenantId: user.tenantId,
         },
       },
     });

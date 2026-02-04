@@ -1,22 +1,23 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { Prisma } from "@prisma/client";
 
 /**
  * GET - Obtener detalle de una WorkOrder específica
  */
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    console.log(`====== [GET WO] STARTING REQUEST ID: ${id} ======`);
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
 
-    const { id } = await params;
+    // const { id } = await params; (Removed, creating 'workOrderId' directly from existing 'id')
     const workOrderId = parseInt(id);
 
     const workOrder = await prisma.workOrder.findUnique({
@@ -98,9 +99,33 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(workOrder);
+    // FIX: Prisma Decimal/BigInt serialization issue in Next.js
+    const serializedWorkOrder = JSON.parse(JSON.stringify(workOrder, (key, value) =>
+      (typeof value === 'bigint' ? value.toString() : value)
+    ));
+
+    return NextResponse.json(serializedWorkOrder);
+
   } catch (error: unknown) {
-    console.error("[WORK_ORDER_GET]", error);
+    console.error("====== [GET WO] FATAL ERROR ======");
+    console.error(error);
+
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const logPath = path.join(process.cwd(), 'debug_error_get_wo.log');
+      const errorMsg = `
+[${new Date().toISOString()}] FATAL ERROR IN GET /api/maintenance/work-orders/[id]
+Params ID: ${await params.then(p => p.id).catch(() => 'unknown')}
+Error: ${error instanceof Error ? error.message : String(error)}
+Stack: ${error instanceof Error ? error.stack : 'N/A'}
+----------------------------------------
+`;
+      fs.appendFileSync(logPath, errorMsg);
+    } catch (logErr) {
+      console.error("Failed to write to log file", logErr);
+    }
+
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : "Error interno",
@@ -194,7 +219,12 @@ export async function PATCH(
       },
     });
 
-    return NextResponse.json(workOrder);
+    // FIX: Prisma Decimal/BigInt serialization issue in Next.js
+    const serializedWorkOrder = JSON.parse(JSON.stringify(workOrder, (key, value) =>
+      (typeof value === 'bigint' ? value.toString() : value)
+    ));
+
+    return NextResponse.json(serializedWorkOrder);
   } catch (error: unknown) {
     console.error("[WORK_ORDER_PATCH]", error);
     return NextResponse.json(
@@ -210,7 +240,7 @@ export async function PATCH(
  * DELETE - Cancelar una WorkOrder (soft delete cambiando a CANCELLED)
  */
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {

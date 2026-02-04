@@ -38,12 +38,11 @@ import axios from "axios";
 import { useToast } from "@/components/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { CalendarIcon, Loader2 } from "lucide-react";
-import { FormEditDocumentProps } from "../SharedTypes/SharedTypes";
-import { DocumentType } from "@prisma/client";
+import { FormEditDocumentProps, DocumentTypeConfigProps } from "../SharedTypes/SharedTypes";
 
 const formSchema = z.object({
-  type: z.nativeEnum(DocumentType),
-  documentNumber: z.string().min(1, "El número de documento es requerido"),
+  documentTypeId: z.number({ required_error: "Seleccione un tipo de documento" }),
+  documentNumber: z.string().min(1, "El numero de documento es requerido"),
   entity: z.string().optional(),
   expiryDate: z.date().optional(),
 });
@@ -55,12 +54,13 @@ export function FormEditDocument({
   onEditDocument,
 }: FormEditDocumentProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [documentTypes, setDocumentTypes] = useState<DocumentTypeConfigProps[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-        type: document.type,
-        documentNumber: document.documentNumber || document.fileName || "", // Fallback para datos antiguos
+        documentTypeId: document.documentTypeId,
+        documentNumber: document.documentNumber || document.fileName || "",
         entity: document.entity || "",
         expiryDate: document.expiryDate ? new Date(document.expiryDate) : undefined,
     },
@@ -68,13 +68,21 @@ export function FormEditDocument({
 
   useEffect(() => {
     form.reset({
-        type: document.type,
-        documentNumber: document.documentNumber || document.fileName || "", // Fallback para datos antiguos
+        documentTypeId: document.documentTypeId,
+        documentNumber: document.documentNumber || document.fileName || "",
         entity: document.entity || "",
         expiryDate: document.expiryDate ? new Date(document.expiryDate) : undefined,
     });
   }, [document, form]);
 
+  // Fetch document types from API
+  useEffect(() => {
+    if (isOpen) {
+      axios.get('/api/vehicles/document-types')
+        .then((res) => setDocumentTypes(res.data))
+        .catch((err) => console.error("Error fetching document types:", err));
+    }
+  }, [isOpen]);
 
   const { toast } = useToast();
 
@@ -91,7 +99,7 @@ export function FormEditDocument({
       setIsOpen(false);
 
       toast({
-        title: "¡Documento actualizado!",
+        title: "Documento actualizado!",
         description: "El documento ha sido actualizado exitosamente.",
       });
 
@@ -111,11 +119,6 @@ export function FormEditDocument({
     }
   };
 
-  const documentTypes = Object.values(DocumentType).map(type => ({
-    value: type,
-    label: type.charAt(0) + type.slice(1).toLowerCase().replace("_", " ")
-  }));
-
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="max-w-2xl">
@@ -128,20 +131,24 @@ export function FormEditDocument({
             {/* Tipo de Documento */}
             <FormField
               control={form.control}
-              name="type"
+              name="documentTypeId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Tipo de Documento *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
+                  <Select
+                    onValueChange={(val) => field.onChange(parseInt(val, 10))}
+                    value={field.value?.toString()}
+                    disabled={isLoading}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccione el tipo" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {documentTypes.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
+                      {documentTypes.map((dt) => (
+                        <SelectItem key={dt.id} value={dt.id.toString()}>
+                          {dt.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -151,13 +158,13 @@ export function FormEditDocument({
               )}
             />
 
-            {/* Número de Documento */}
+            {/* Numero de Documento */}
             <FormField
               control={form.control}
               name="documentNumber"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Número de Documento *</FormLabel>
+                  <FormLabel>Numero de Documento *</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="Ej: 2508004334695000"

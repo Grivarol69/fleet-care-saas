@@ -1,9 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { z } from 'zod';
+
+// Schema for invoice update validation - only allow specific fields
+const updateInvoiceSchema = z.object({
+  invoiceNumber: z.string().min(1).max(100).optional(),
+  invoiceDate: z.string().datetime().optional(),
+  dueDate: z.string().datetime().nullable().optional(),
+  supplierId: z.number().int().positive().optional(),
+  workOrderId: z.number().int().positive().nullable().optional(),
+  subtotal: z.number().positive().optional(),
+  taxAmount: z.number().min(0).optional(),
+  totalAmount: z.number().positive().optional(),
+  currency: z.string().max(10).optional(),
+  status: z.enum(['PENDING', 'APPROVED', 'PAID', 'OVERDUE', 'CANCELLED']).optional(),
+  approvedBy: z.string().nullable().optional(),
+  approvedAt: z.string().datetime().nullable().optional(),
+  notes: z.string().max(5000).nullable().optional(),
+  attachmentUrl: z.string().url().nullable().optional(),
+  pdfUrl: z.string().url().nullable().optional(),
+  ocrStatus: z.enum(['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED']).optional(),
+  needsReview: z.boolean().optional(),
+}).strict();
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -14,6 +36,14 @@ export async function GET(
     }
 
     const { id } = await params;
+
+    // Validate id format (cuid)
+    if (!id || typeof id !== 'string' || id.length < 20) {
+      return NextResponse.json(
+        { error: 'ID de factura inválido' },
+        { status: 400 }
+      );
+    }
 
     const invoice = await prisma.invoice.findUnique({
       where: {
@@ -115,7 +145,25 @@ export async function PATCH(
     }
 
     const { id } = await params;
+
+    // Validate id format
+    if (!id || typeof id !== 'string' || id.length < 20) {
+      return NextResponse.json(
+        { error: 'ID de factura inválido' },
+        { status: 400 }
+      );
+    }
+
     const body = await request.json();
+
+    // Validate request body with Zod schema
+    const validation = updateInvoiceSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: 'Datos inválidos', details: validation.error.flatten() },
+        { status: 400 }
+      );
+    }
 
     // Verificar que la factura pertenezca al tenant
     const existingInvoice = await prisma.invoice.findUnique({
@@ -132,10 +180,36 @@ export async function PATCH(
       );
     }
 
+    // Build update data with only validated fields
+    const updateData: Record<string, unknown> = {};
+    const validatedData = validation.data;
+
+    if (validatedData.invoiceNumber !== undefined) updateData.invoiceNumber = validatedData.invoiceNumber;
+    if (validatedData.invoiceDate !== undefined) updateData.invoiceDate = new Date(validatedData.invoiceDate);
+    if (validatedData.dueDate !== undefined) updateData.dueDate = validatedData.dueDate ? new Date(validatedData.dueDate) : null;
+    if (validatedData.supplierId !== undefined) updateData.supplierId = validatedData.supplierId;
+    if (validatedData.workOrderId !== undefined) updateData.workOrderId = validatedData.workOrderId;
+    if (validatedData.subtotal !== undefined) updateData.subtotal = validatedData.subtotal;
+    if (validatedData.taxAmount !== undefined) updateData.taxAmount = validatedData.taxAmount;
+    if (validatedData.totalAmount !== undefined) updateData.totalAmount = validatedData.totalAmount;
+    if (validatedData.currency !== undefined) updateData.currency = validatedData.currency;
+    if (validatedData.status !== undefined) updateData.status = validatedData.status;
+    if (validatedData.notes !== undefined) updateData.notes = validatedData.notes;
+    if (validatedData.attachmentUrl !== undefined) updateData.attachmentUrl = validatedData.attachmentUrl;
+    if (validatedData.pdfUrl !== undefined) updateData.pdfUrl = validatedData.pdfUrl;
+    if (validatedData.ocrStatus !== undefined) updateData.ocrStatus = validatedData.ocrStatus;
+    if (validatedData.needsReview !== undefined) updateData.needsReview = validatedData.needsReview;
+
+    // Handle approval fields - only set if status is being changed to APPROVED
+    if (validatedData.status === 'APPROVED' && existingInvoice.status !== 'APPROVED') {
+      updateData.approvedBy = user.id;
+      updateData.approvedAt = new Date();
+    }
+
     // Actualizar factura
     const updatedInvoice = await prisma.invoice.update({
       where: { id },
-      data: body,
+      data: updateData,
     });
 
     return NextResponse.json(updatedInvoice);
@@ -149,7 +223,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -168,6 +242,14 @@ export async function DELETE(
     }
 
     const { id } = await params;
+
+    // Validate id format
+    if (!id || typeof id !== 'string' || id.length < 20) {
+      return NextResponse.json(
+        { error: 'ID de factura inválido' },
+        { status: 400 }
+      );
+    }
 
     // Verificar que la factura pertenezca al tenant
     const existingInvoice = await prisma.invoice.findUnique({

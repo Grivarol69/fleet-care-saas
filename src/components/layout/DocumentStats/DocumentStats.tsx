@@ -96,15 +96,13 @@ export const DocumentStats = () => {
     );
   }
 
-  const getDocumentIcon = (docType: string) => {
-    const icons = {
-      'SOAT': '🛡️',
-      'Tecnomecánica': '🔧', 
-      'Seguro': '📋',
-      'Registro': '📄',
-      'Otro': '📄'
-    };
-    return icons[docType as keyof typeof icons] || '📄';
+  const getDocumentIcon = (docName: string) => {
+    const lower = docName.toLowerCase();
+    if (lower.includes('soat')) return '🛡️';
+    if (lower.includes('tecno') || lower.includes('mecánica') || lower.includes('mecanica')) return '🔧';
+    if (lower.includes('seguro') || lower.includes('póliza') || lower.includes('poliza') || lower.includes('insurance')) return '📋';
+    if (lower.includes('propiedad') || lower.includes('registro') || lower.includes('registration')) return '📄';
+    return '📄';
   };
 
   return (

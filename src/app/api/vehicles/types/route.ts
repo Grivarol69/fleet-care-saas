@@ -10,13 +10,14 @@ export async function GET() {
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
-        // Devolver tipos GLOBALES + del tenant
+        // Devolver tipos GLOBALES + del tenant (solo activos)
         const types = await prisma.vehicleType.findMany({
             where: {
                 OR: [
                     { isGlobal: true },           // Tipos globales (Knowledge Base)
                     { tenantId: user.tenantId }   // Tipos custom del tenant
-                ]
+                ],
+                status: 'ACTIVE'
             },
             orderBy: {
                 name: 'asc'
@@ -25,7 +26,7 @@ export async function GET() {
         return NextResponse.json(types);
     } catch (error) {
         console.error("[TYPES_GET]", error);
-        return NextResponse.json({ error: "Error interno" }, { status: 500 });
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }
 
@@ -92,9 +93,9 @@ export async function POST(req: Request) {
             },
         });
 
-        return NextResponse.json(type);
+        return NextResponse.json(type, { status: 201 });
     } catch (error) {
-        console.log("[TYPE_POST]", error);
-        return NextResponse.json({ error: "Error interno" }, { status: 500 });
+        console.error("[TYPE_POST]", error);
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }

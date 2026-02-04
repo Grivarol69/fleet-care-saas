@@ -62,7 +62,7 @@ export function FormAddProvider({
         email: values.email || null,
         phone: values.phone || null,
         address: values.address || null,
-        specialty: values.specialty || null,
+        specialty: values.specialty === "none" ? null : values.specialty || null,
       });
 
       onAddProvider(response.data);
@@ -175,7 +175,7 @@ export function FormAddProvider({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Sin especialidad</SelectItem>
+                      <SelectItem value="none">Sin especialidad</SelectItem>
                       {PROVIDER_SPECIALTIES.map((specialty) => (
                         <SelectItem key={specialty.value} value={specialty.value}>
                           {specialty.label}

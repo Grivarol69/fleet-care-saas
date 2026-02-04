@@ -1,24 +1,29 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from '@/lib/auth';
 import { NextResponse } from "next/server";
-
-const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1';
+import { safeParseInt } from '@/lib/validation';
 
 export async function GET(
     _req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const mantTemplateId = parseInt(params.id);
+        const user = await getCurrentUser();
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
 
-        if (isNaN(mantTemplateId)) {
-            return new NextResponse("Invalid ID", { status: 400 });
+        const { id } = await params;
+        const mantTemplateId = safeParseInt(id);
+
+        if (mantTemplateId === null) {
+            return NextResponse.json({ error: "ID inválido" }, { status: 400 });
         }
 
         const mantTemplate = await prisma.maintenanceTemplate.findFirst({
             where: {
                 id: mantTemplateId,
-                tenantId: TENANT_ID
+                tenantId: user.tenantId
             },
             include: {
                 brand: {
@@ -66,88 +71,89 @@ export async function GET(
         });
 
         if (!mantTemplate) {
-            return new NextResponse("Template not found", { status: 404 });
+            return NextResponse.json({ error: "Template no encontrado" }, { status: 404 });
         }
 
         return NextResponse.json(mantTemplate);
     } catch (error) {
         console.error("[MANT_TEMPLATE_GET_BY_ID]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }
 
 export async function PATCH(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = await getCurrentUser();
         if (!user) {
-            return new NextResponse("Unauthorized", { status: 401 });
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
-        const mantTemplateId = parseInt(params.id);
+        const { id } = await params;
+        const mantTemplateId = safeParseInt(id);
 
-        if (isNaN(mantTemplateId)) {
-            return new NextResponse("Invalid ID", { status: 400 });
+        if (mantTemplateId === null) {
+            return NextResponse.json({ error: "ID inválido" }, { status: 400 });
         }
 
         const { name, description, vehicleBrandId, vehicleLineId } = await req.json();
 
         // Validación de campos requeridos
         if (!name || name.trim() === '') {
-            return new NextResponse("Template name is required", { status: 400 });
+            return NextResponse.json({ error: "El nombre del template es requerido" }, { status: 400 });
         }
 
         if (!vehicleBrandId || vehicleBrandId <= 0) {
-            return new NextResponse("Valid vehicle brand is required", { status: 400 });
+            return NextResponse.json({ error: "La marca del vehículo es requerida" }, { status: 400 });
         }
 
         if (!vehicleLineId || vehicleLineId <= 0) {
-            return new NextResponse("Valid vehicle line is required", { status: 400 });
+            return NextResponse.json({ error: "La línea del vehículo es requerida" }, { status: 400 });
         }
 
         // Verificar que el template existe y pertenece al tenant
         const existingTemplate = await prisma.maintenanceTemplate.findFirst({
             where: {
                 id: mantTemplateId,
-                tenantId: TENANT_ID
+                tenantId: user.tenantId
             }
         });
 
         if (!existingTemplate) {
-            return new NextResponse("Template not found", { status: 404 });
+            return NextResponse.json({ error: "Template no encontrado" }, { status: 404 });
         }
 
         // Verificar que la marca existe y pertenece al tenant
         const brand = await prisma.vehicleBrand.findFirst({
             where: {
                 id: vehicleBrandId,
-                tenantId: TENANT_ID
+                tenantId: user.tenantId
             }
         });
 
         if (!brand) {
-            return new NextResponse("Vehicle brand not found", { status: 404 });
+            return NextResponse.json({ error: "Marca de vehículo no encontrada" }, { status: 404 });
         }
 
         // Verificar que la línea existe, pertenece al tenant y a la marca
         const line = await prisma.vehicleLine.findFirst({
             where: {
                 id: vehicleLineId,
-                tenantId: TENANT_ID,
+                tenantId: user.tenantId,
                 brandId: vehicleBrandId
             }
         });
 
         if (!line) {
-            return new NextResponse("Vehicle line not found or doesn't belong to the specified brand", { status: 404 });
+            return NextResponse.json({ error: "Línea de vehículo no encontrada o no pertenece a la marca especificada" }, { status: 404 });
         }
 
         // Verificar que no exista otro template con el mismo nombre para la misma marca/línea (excluyendo el actual)
         const duplicateTemplate = await prisma.maintenanceTemplate.findFirst({
             where: {
-                tenantId: TENANT_ID,
+                tenantId: user.tenantId,
                 vehicleBrandId,
                 vehicleLineId,
                 name: name.trim(),
@@ -158,7 +164,7 @@ export async function PATCH(
         });
 
         if (duplicateTemplate) {
-            return new NextResponse("Template with this name already exists for this brand/line combination", { status: 409 });
+            return NextResponse.json({ error: "Ya existe un template con este nombre para esta combinación de marca/línea" }, { status: 409 });
         }
 
         const updatedTemplate = await prisma.maintenanceTemplate.update({
@@ -212,42 +218,43 @@ export async function PATCH(
         return NextResponse.json(updatedTemplate);
     } catch (error) {
         console.error("[MANT_TEMPLATE_PATCH]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }
 
 export async function DELETE(
     _req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = await getCurrentUser();
         if (!user) {
-            return new NextResponse("Unauthorized", { status: 401 });
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
-        const mantTemplateId = parseInt(params.id);
+        const { id } = await params;
+        const mantTemplateId = safeParseInt(id);
 
-        if (isNaN(mantTemplateId)) {
-            return new NextResponse("Invalid ID", { status: 400 });
+        if (mantTemplateId === null) {
+            return NextResponse.json({ error: "ID inválido" }, { status: 400 });
         }
 
         // Verificar que el template existe y pertenece al tenant
         const existingTemplate = await prisma.maintenanceTemplate.findUnique({
             where: {
                 id: mantTemplateId,
-                tenantId: TENANT_ID
+                tenantId: user.tenantId
             }
         });
 
         if (!existingTemplate) {
-            return new NextResponse("Template not found", { status: 404 });
+            return NextResponse.json({ error: "Template no encontrado" }, { status: 404 });
         }
 
         // Verificar si hay vehículos asignados a este template antes de eliminar
         const vehiclePlansCount = await prisma.vehicleMantProgram.count({
             where: {
-                tenantId: TENANT_ID,
+                tenantId: user.tenantId,
                 generatedFrom: {
                     contains: existingTemplate.name
                 },
@@ -256,7 +263,7 @@ export async function DELETE(
         });
 
         if (vehiclePlansCount > 0) {
-            return new NextResponse("Cannot delete template with active vehicle assignments. Please remove vehicle assignments first.", { status: 409 });
+            return NextResponse.json({ error: "No se puede eliminar el template porque tiene asignaciones de vehículos activas. Por favor elimine las asignaciones primero." }, { status: 409 });
         }
 
         // Usar soft delete cambiando el status a INACTIVE
@@ -269,9 +276,9 @@ export async function DELETE(
             }
         });
 
-        return new NextResponse(null, { status: 204 });
+        return NextResponse.json({ success: true, message: "Template eliminado" });
     } catch (error) {
         console.error("[MANT_TEMPLATE_DELETE]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { Prisma } from "@prisma/client";
+import { Prisma, InvoiceStatus } from "@prisma/client";
 
 type InvoiceItemInput = {
   masterPartId?: string | null;
@@ -39,8 +39,8 @@ export async function GET(request: NextRequest) {
       where.workOrderId = parseInt(workOrderId);
     }
 
-    if (status) {
-      where.status = status;
+    if (status && Object.values(InvoiceStatus).includes(status as InvoiceStatus)) {
+      where.status = status as InvoiceStatus;
     }
 
     if (supplierId) {
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
       orderBy: {
         invoiceDate: "desc",
       },
-      take: limit ? parseInt(limit) : undefined,
+      ...(limit ? { take: parseInt(limit) } : {}),
     });
 
     return NextResponse.json(invoices);

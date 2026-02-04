@@ -14,13 +14,14 @@ export async function GET() {
             );
         }
 
-        // Devolver marcas GLOBALES + del tenant
+        // Devolver marcas GLOBALES + del tenant (solo activas)
         const brands = await prisma.vehicleBrand.findMany({
             where: {
                 OR: [
                     { isGlobal: true },           // Marcas globales (Knowledge Base)
                     { tenantId: user.tenantId }   // Marcas custom del tenant
-                ]
+                ],
+                status: 'ACTIVE'
             },
             orderBy: {
                 name: 'asc'
@@ -30,7 +31,7 @@ export async function GET() {
     } catch (error) {
         console.error("[BRANDS_GET]", error);
         return NextResponse.json(
-            { error: "Error interno" },
+            { error: "Error interno del servidor" },
             { status: 500 }
         );
     }
@@ -111,11 +112,11 @@ export async function POST(req: Request) {
             },
         });
 
-        return NextResponse.json(brand);
+        return NextResponse.json(brand, { status: 201 });
     } catch (error) {
         console.log("[BRAND_POST]", error);
         return NextResponse.json(
-            { error: "Error interno" },
+            { error: "Error interno del servidor" },
             { status: 500 }
         );
     }

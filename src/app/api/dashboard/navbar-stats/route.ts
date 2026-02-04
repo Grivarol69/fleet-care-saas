@@ -1,14 +1,18 @@
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from '@/lib/auth';
 import { NextResponse } from "next/server";
-
-const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1'; // Tenant hardcodeado para MVP
 
 export async function GET() {
     try {
+        const user = await getCurrentUser();
+        if (!user) {
+            return new NextResponse("Unauthorized", { status: 401 });
+        }
+
         // Get total active vehicles
         const totalVehicles = await prisma.vehicle.count({
             where: {
-                tenantId: TENANT_ID,
+                tenantId: user.tenantId,
                 status: "ACTIVE"
             }
         });
@@ -16,7 +20,7 @@ export async function GET() {
         // Get critical alerts (PENDING status)
         const criticalAlerts = await prisma.maintenanceAlert.count({
             where: {
-                tenantId: TENANT_ID,
+                tenantId: user.tenantId,
                 status: "PENDING"
             }
         });
@@ -24,7 +28,7 @@ export async function GET() {
         // Get open work orders (IN_PROGRESS status)
         const openWorkOrders = await prisma.workOrder.count({
             where: {
-                tenantId: TENANT_ID,
+                tenantId: user.tenantId,
                 status: "IN_PROGRESS"
             }
         });
@@ -38,7 +42,7 @@ export async function GET() {
         // Mock calculation - will be replaced with:
         // const monthCostsRaw = await prisma.invoice.aggregate({
         //     where: {
-        //         tenantId: TENANT_ID,
+        //         tenantId: user.tenantId,
         //         status: "APPROVED",
         //         createdAt: { gte: currentMonth }
         //     },

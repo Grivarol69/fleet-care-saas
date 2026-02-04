@@ -87,7 +87,7 @@ function extractInvoiceNumber(text: string): string | null {
 
   for (const pattern of patterns) {
     const match = text.match(pattern);
-    if (match) {
+    if (match && match[1]) {
       const number = match[1].trim().replace(/\s+/g, ' ');
       // Validar que tenga al menos un número
       if (/\d/.test(number)) {
@@ -125,9 +125,9 @@ function extractDate(text: string): string | null {
 
   for (const pattern of datePatterns) {
     const match = text.match(pattern);
-    if (match) {
+    if (match && match[1] && match[2] && match[3]) {
       // Formato con mes texto (05-Nov-2025)
-      if (match[2] && isNaN(Number(match[2]))) {
+      if (isNaN(Number(match[2]))) {
         const day = match[1].padStart(2, '0');
         const monthText = match[2].toLowerCase().substring(0, 3);
         const month = monthMap[monthText] || '01';
@@ -136,14 +136,16 @@ function extractDate(text: string): string | null {
       }
 
       // Formato numérico
-      const parts = [match[1], match[2], match[3]];
+      const p0 = match[1];
+      const p1 = match[2];
+      const p2 = match[3];
 
       // yyyy-mm-dd
-      if (parts[0].length === 4) {
-        return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+      if (p0.length === 4) {
+        return `${p0}-${p1.padStart(2, '0')}-${p2.padStart(2, '0')}`;
       } else {
         // dd-mm-yyyy
-        return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+        return `${p2}-${p1.padStart(2, '0')}-${p0.padStart(2, '0')}`;
       }
     }
   }
@@ -211,7 +213,9 @@ function extractItems(text: string): Array<{
 
   let tableStartIndex = -1;
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].toLowerCase();
+    const currentLine = lines[i];
+    if (!currentLine) continue;
+    const line = currentLine.toLowerCase();
     const matchCount = tableHeaderKeywords.filter(kw => line.includes(kw)).length;
 
     // Si la línea tiene 2+ keywords de tabla, es el header
@@ -234,7 +238,9 @@ function extractItems(text: string): Array<{
 
   let tableEndIndex = lines.length;
   for (let i = tableStartIndex; i < lines.length; i++) {
-    const line = lines[i].toLowerCase();
+    const currentLine = lines[i];
+    if (!currentLine) continue;
+    const line = currentLine.toLowerCase();
 
     // Si encuentra keyword de footer, termina la tabla
     if (tableFooterKeywords.some(kw => line.includes(kw))) {
@@ -245,7 +251,9 @@ function extractItems(text: string): Array<{
 
   // 3. Extraer items solo entre el header y footer
   for (let i = tableStartIndex; i < tableEndIndex; i++) {
-    const line = lines[i].trim();
+    const currentLine = lines[i];
+    if (!currentLine) continue;
+    const line = currentLine.trim();
 
     // Saltar líneas vacías o muy cortas
     if (line.length < 5) continue;
@@ -255,7 +263,7 @@ function extractItems(text: string): Array<{
     const fullPattern = /^(.+?)\s+(\d[\d,\.]*)\s+(\d[\d,\.]+)\s+.*?(\d[\d,\.]+)$/;
     const fullMatch = line.match(fullPattern);
 
-    if (fullMatch) {
+    if (fullMatch && fullMatch[1] && fullMatch[2] && fullMatch[3] && fullMatch[4]) {
       const description = fullMatch[1].trim();
       const quantityStr = fullMatch[2].replace(/[,\.]/g, '');
       const priceStr = fullMatch[3].replace(/[,\.]/g, '');
@@ -279,7 +287,7 @@ function extractItems(text: string): Array<{
       const simplePattern = /^(.+?)\s+(\d[\d,\.]+)$/;
       const simpleMatch = line.match(simplePattern);
 
-      if (simpleMatch) {
+      if (simpleMatch && simpleMatch[1] && simpleMatch[2]) {
         const description = simpleMatch[1].trim();
         const amountStr = simpleMatch[2].replace(/[,\.]/g, '');
         const amount = parseFloat(amountStr);
@@ -314,7 +322,8 @@ function extractAmount(text: string, keywords: string[]): number | null {
     if (matches.length > 0) {
       // Tomar el ÚLTIMO match (usualmente el total final)
       const lastMatch = matches[matches.length - 1];
-      let amountStr = lastMatch[1];
+      if (!lastMatch || !lastMatch[1]) continue;
+      let amountStr: string = lastMatch[1];
 
       // Formato colombiano: puntos = miles, coma = decimal
       // Ej: 1.366.239,00 o 753,583
@@ -326,9 +335,10 @@ function extractAmount(text: string, keywords: string[]): number | null {
       } else if (amountStr.includes('.')) {
         // Solo puntos, pueden ser miles o decimal
         const parts = amountStr.split('.');
-        if (parts[parts.length - 1].length === 2) {
+        const lastPart = parts[parts.length - 1];
+        if (lastPart && lastPart.length === 2) {
           // Último grupo de 2 dígitos = decimal
-          amountStr = parts.slice(0, -1).join('') + '.' + parts[parts.length - 1];
+          amountStr = parts.slice(0, -1).join('') + '.' + lastPart;
         } else {
           // Son separadores de miles
           amountStr = amountStr.replace(/\./g, '');

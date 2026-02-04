@@ -1,18 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { MaintenanceAlertService } from "@/lib/services/MaintenanceAlertService";
+import { getCurrentUser } from '@/lib/auth';
 
 // GET - Fetch all odometer logs for tenant
 export async function GET() {
   try {
-    // TODO: Get tenant from auth session
-    // For now, we'll use the hardcoded tenant for MVP
-    const tenantId = "cf68b103-12fd-4208-a352-42379ef3b6e1";
+    const user = await getCurrentUser();
+    if (!user) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
 
     const odometerLogs = await prisma.odometerLog.findMany({
       where: {
         vehicle: {
-          tenantId: tenantId,
+          tenantId: user.tenantId,
         },
       },
       include: {
@@ -40,17 +42,19 @@ export async function GET() {
 // POST - Create new odometer log
 export async function POST(request: NextRequest) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
     const body = await request.json();
     const { vehicleId, driverId, kilometers, hours, measureType, recordedAt } = body;
-
-    // TODO: Get tenant from auth session
-    const tenantId = "cf68b103-12fd-4208-a352-42379ef3b6e1";
 
     // Validate vehicle belongs to tenant
     const vehicle = await prisma.vehicle.findFirst({
       where: {
         id: vehicleId,
-        tenantId: tenantId,
+        tenantId: user.tenantId,
       },
     });
 
@@ -63,7 +67,7 @@ export async function POST(request: NextRequest) {
       const driver = await prisma.driver.findFirst({
         where: {
           id: driverId,
-          tenantId: tenantId,
+          tenantId: user.tenantId,
         },
       });
 
@@ -95,10 +99,10 @@ export async function POST(request: NextRequest) {
     if (lastReading) {
       const lastValue = measureType === "KILOMETERS" ? lastReading.kilometers : lastReading.hours;
       const newValue = measureType === "KILOMETERS" ? kilometers : hours;
-      
+
       if (lastValue && newValue && newValue < lastValue) {
         return new NextResponse(
-          `New ${measureType.toLowerCase()} reading cannot be less than previous reading (${lastValue})`, 
+          `New ${measureType.toLowerCase()} reading cannot be less than previous reading (${lastValue})`,
           { status: 400 }
         );
       }
@@ -140,7 +144,7 @@ export async function POST(request: NextRequest) {
 
     // Check for maintenance alerts (trigger automático)
     if (measureType === "KILOMETERS" && kilometers) {
-      await checkMaintenanceAlerts(vehicleId, kilometers);
+      await checkMaintenanceAlerts(vehicleId, kilometers, user.tenantId);
     }
 
     return NextResponse.json(odometerLog, { status: 201 });
@@ -154,9 +158,9 @@ export async function POST(request: NextRequest) {
  * Verifica y genera alertas de mantenimiento automáticamente
  * cuando se actualiza el odómetro del vehículo
  */
-async function checkMaintenanceAlerts(vehicleId: number, kilometers: number) {
+async function checkMaintenanceAlerts(vehicleId: number, kilometers: number, tenantId: string) {
   try {
-    await MaintenanceAlertService.checkAndGenerateAlerts(vehicleId, kilometers);
+    await MaintenanceAlertService.checkAndGenerateAlerts(vehicleId, kilometers, tenantId);
   } catch (error) {
     console.error("[ODOMETER] Error checking maintenance alerts:", error);
     // No lanzar error para no bloquear el guardado del odómetro

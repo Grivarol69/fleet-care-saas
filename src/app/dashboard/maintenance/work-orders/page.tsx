@@ -112,47 +112,6 @@ export default function WorkOrdersPage() {
     }
   };
 
-  const handleApprove = async (id: number) => {
-    try {
-      await axios.patch(`/api/maintenance/work-orders/${id}`, {
-        status: 'APPROVED',
-      });
-      toast({
-        title: 'Orden aprobada',
-        description: 'La orden de trabajo ha sido aprobada exitosamente',
-      });
-      fetchWorkOrders();
-    } catch (error) {
-      console.error('Error approving work order:', error);
-      toast({
-        title: 'Error',
-        description: 'No se pudo aprobar la orden',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleReject = async (id: number) => {
-    try {
-      await axios.patch(`/api/maintenance/work-orders/${id}`, {
-        status: 'REJECTED',
-      });
-      toast({
-        title: 'Orden rechazada',
-        description: 'La orden de trabajo ha sido rechazada',
-        variant: 'destructive',
-      });
-      fetchWorkOrders();
-    } catch (error) {
-      console.error('Error rejecting work order:', error);
-      toast({
-        title: 'Error',
-        description: 'No se pudo rechazar la orden',
-        variant: 'destructive',
-      });
-    }
-  };
-
   // Filtrado en cliente
   const filteredWorkOrders = useMemo(() => {
     return workOrders.filter(wo => {
@@ -209,11 +168,8 @@ export default function WorkOrdersPage() {
       <WorkOrdersList
         workOrders={filteredWorkOrders}
         isLoading={isLoading}
-        onRefresh={fetchWorkOrders}
         onViewDetail={handleViewDetail}
         onStartWork={handleStartWork}
-        onApprove={handleApprove}
-        onReject={handleReject}
       />
     </div>
   );

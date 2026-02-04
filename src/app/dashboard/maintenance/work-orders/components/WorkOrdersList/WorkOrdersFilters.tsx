@@ -54,13 +54,10 @@ export function WorkOrdersFilters({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos los estados</SelectItem>
-            <SelectItem value="PENDING">Pendiente</SelectItem>
-            <SelectItem value="IN_PROGRESS">En Progreso</SelectItem>
-            <SelectItem value="PENDING_APPROVAL">Por Aprobar</SelectItem>
-            <SelectItem value="APPROVED">Aprobada</SelectItem>
-            <SelectItem value="PENDING_INVOICE">Pendiente Factura</SelectItem>
-            <SelectItem value="COMPLETED">Completada</SelectItem>
-            <SelectItem value="REJECTED">Rechazada</SelectItem>
+            <SelectItem value="PENDING">Abierta</SelectItem>
+            <SelectItem value="IN_PROGRESS">En Trabajo</SelectItem>
+            <SelectItem value="PENDING_INVOICE">Por Cerrar</SelectItem>
+            <SelectItem value="COMPLETED">Cerrada</SelectItem>
             <SelectItem value="CANCELLED">Cancelada</SelectItem>
           </SelectContent>
         </Select>

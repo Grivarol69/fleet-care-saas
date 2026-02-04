@@ -72,7 +72,7 @@ export function FormEditTechnician({
         name: values.name,
         email: values.email || null,
         phone: values.phone || null,
-        specialty: values.specialty || null,
+        specialty: values.specialty === "none" ? null : values.specialty || null,
       });
 
       onEditTechnician(response.data);
@@ -178,7 +178,7 @@ export function FormEditTechnician({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Sin especialidad</SelectItem>
+                      <SelectItem value="none">Sin especialidad</SelectItem>
                       {TECHNICIAN_SPECIALTIES.map((specialty) => (
                         <SelectItem key={specialty.value} value={specialty.value}>
                           {specialty.label}

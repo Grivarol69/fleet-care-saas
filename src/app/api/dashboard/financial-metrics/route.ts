@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from '@/lib/auth';
 
 export type VehicleExpense = {
   rank: number;
@@ -66,8 +67,12 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 export async function GET() {
   try {
-    // TODO: Obtener tenantId de la sesión
-    const tenantId = "cf68b103-12fd-4208-a352-42379ef3b6e1";
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const tenantId = user.tenantId;
 
     // Calcular fechas del mes actual y anterior
     const now = new Date();
@@ -365,8 +370,8 @@ export async function GET() {
 
     const trendPercentage = totalPreviousMonthSpent > 0
       ? Math.round(
-          ((totalCurrentMonthSpent - totalPreviousMonthSpent) / totalPreviousMonthSpent) * 100
-        )
+        ((totalCurrentMonthSpent - totalPreviousMonthSpent) / totalPreviousMonthSpent) * 100
+      )
       : 0;
 
     const activeVehiclesCount = await prisma.vehicle.count({

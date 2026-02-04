@@ -121,8 +121,6 @@ async function main() {
       name: 'Cambio de aceite',
       description: 'Cambio de aceite motor',
       mantType: 'PREVENTIVE',
-      estimatedTime: 1.5,
-      estimatedCost: 80.00,
       categoryId: 1,
     },
     update: {}
@@ -136,8 +134,6 @@ async function main() {
       name: 'Cambio filtro aire',
       description: 'Reemplazo filtro de aire',
       mantType: 'PREVENTIVE',
-      estimatedTime: 0.5,
-      estimatedCost: 25.00,
       categoryId: 1,
     },
     update: {}
@@ -186,7 +182,6 @@ async function main() {
       order: 1,
       triggerKm: 15000,
       priority: 'MEDIUM',
-      estimatedCost: 80.00,
       estimatedTime: 1.5,
       status: 'ACTIVE',
     },
@@ -202,7 +197,6 @@ async function main() {
       order: 2,
       triggerKm: 15000,
       priority: 'MEDIUM',
-      estimatedCost: 25.00,
       estimatedTime: 0.5,
       status: 'ACTIVE',
     },

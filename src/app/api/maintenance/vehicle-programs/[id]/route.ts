@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-
-const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1';
+import { getCurrentUser } from '@/lib/auth';
 
 // GET - Obtener programa específico por ID
 export async function GET(
@@ -9,12 +8,17 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
     const programId = parseInt(params.id);
 
     const program = await prisma.vehicleMantProgram.findUnique({
       where: {
         id: programId,
-        tenantId: TENANT_ID
+        tenantId: user.tenantId
       },
       include: {
         vehicle: {
@@ -62,6 +66,11 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
     const programId = parseInt(params.id);
     const body = await req.json();
 
@@ -78,7 +87,7 @@ export async function PUT(
     const existingProgram = await prisma.vehicleMantProgram.findUnique({
       where: {
         id: programId,
-        tenantId: TENANT_ID
+        tenantId: user.tenantId
       }
     });
 
@@ -135,13 +144,18 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
     const programId = parseInt(params.id);
 
     // Verificar que el programa existe
     const existingProgram = await prisma.vehicleMantProgram.findUnique({
       where: {
         id: programId,
-        tenantId: TENANT_ID
+        tenantId: user.tenantId
       },
       include: {
         packages: {

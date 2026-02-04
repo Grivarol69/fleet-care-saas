@@ -41,7 +41,7 @@ async function main() {
   ];
 
   for (const userData of users) {
-    const user = await prisma.user.create({
+    await prisma.user.create({
       data: {
         email: userData.email,
         role: userData.role,

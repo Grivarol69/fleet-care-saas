@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import { safeParseInt } from '@/lib/validation';
 
 // GET - Obtener marca específica por ID
 export async function GET(
@@ -16,10 +17,15 @@ export async function GET(
         }
 
         const { id } = await params;
+        const brandId = safeParseInt(id);
+
+        if (brandId === null) {
+            return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+        }
 
         const brand = await prisma.vehicleBrand.findUnique({
             where: {
-                id: parseInt(id),
+                id: brandId,
                 tenantId: user.tenantId
             }
         });
@@ -31,7 +37,7 @@ export async function GET(
         return NextResponse.json(brand);
     } catch (error) {
         console.error("[BRAND_GET]", error);
-        return NextResponse.json({ error: "Error interno" }, { status: 500 });
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }
 
@@ -59,6 +65,12 @@ export async function PUT(
         }
 
         const { id } = await params;
+        const brandId = safeParseInt(id);
+
+        if (brandId === null) {
+            return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+        }
+
         const { name } = await req.json();
 
         if (!name || name.trim() === '') {
@@ -68,7 +80,7 @@ export async function PUT(
         // Verificar que la marca existe
         const existingBrand = await prisma.vehicleBrand.findUnique({
             where: {
-                id: parseInt(id),
+                id: brandId,
                 tenantId: user.tenantId
             }
         });
@@ -83,7 +95,7 @@ export async function PUT(
                 tenantId: user.tenantId,
                 name: name.trim(),
                 id: {
-                    not: parseInt(id)
+                    not: brandId
                 }
             }
         });
@@ -94,7 +106,7 @@ export async function PUT(
 
         const updatedBrand = await prisma.vehicleBrand.update({
             where: {
-                id: parseInt(id),
+                id: brandId,
                 tenantId: user.tenantId
             },
             data: {
@@ -105,7 +117,7 @@ export async function PUT(
         return NextResponse.json(updatedBrand);
     } catch (error) {
         console.log("[BRAND_PUT]", error);
-        return NextResponse.json({ error: "Error interno" }, { status: 500 });
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }
 
@@ -133,10 +145,15 @@ export async function DELETE(
         }
 
         const { id } = await params;
+        const brandId = safeParseInt(id);
+
+        if (brandId === null) {
+            return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+        }
 
         const existingBrand = await prisma.vehicleBrand.findUnique({
             where: {
-                id: parseInt(id),
+                id: brandId,
                 tenantId: user.tenantId
             }
         });
@@ -145,16 +162,20 @@ export async function DELETE(
             return NextResponse.json({ error: "Marca no encontrada" }, { status: 404 });
         }
 
-        await prisma.vehicleBrand.delete({
+        // Soft delete - cambiar status a INACTIVE
+        await prisma.vehicleBrand.update({
             where: {
-                id: parseInt(id),
+                id: brandId,
                 tenantId: user.tenantId
+            },
+            data: {
+                status: 'INACTIVE'
             }
         });
 
-        return new NextResponse(null, { status: 204 });
+        return NextResponse.json({ success: true, message: "Marca desactivada" });
     } catch (error) {
         console.log("[BRAND_DELETE]", error);
-        return NextResponse.json({ error: "Error interno" }, { status: 500 });
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }

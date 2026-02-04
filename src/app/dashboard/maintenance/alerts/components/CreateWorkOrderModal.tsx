@@ -24,6 +24,7 @@ import {
 import { useMaintenanceAlerts } from '@/lib/hooks/useMaintenanceAlerts';
 import { CheckCircle2, Clock, DollarSign, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/hooks/use-toast';
+import { useTechnicians, useProviders } from '@/lib/hooks/usePeople';
 
 interface Props {
   isOpen: boolean;
@@ -37,6 +38,10 @@ export function CreateWorkOrderModal({ isOpen, onClose, selectedAlertIds, onSucc
   const queryClient = useQueryClient();
   const { data: allAlerts } = useMaintenanceAlerts();
 
+  // Real Data Hooks
+  const { data: technicians = [] } = useTechnicians();
+  const { data: providers = [] } = useProviders();
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -44,10 +49,6 @@ export function CreateWorkOrderModal({ isOpen, onClose, selectedAlertIds, onSucc
   const [providerId, setProviderId] = useState<string | undefined>(undefined);
   const [scheduledDate, setScheduledDate] = useState('');
   const [priority, setPriority] = useState('MEDIUM');
-
-  // Datos auxiliares (en producción vienen de APIs)
-  const [technicians, setTechnicians] = useState<{ id: number; name: string }[]>([]);
-  const [providers, setProviders] = useState<{ id: number; name: string }[]>([]);
 
   const selectedAlerts = allAlerts?.filter(a => selectedAlertIds.includes(a.id)) || [];
 
@@ -78,23 +79,6 @@ export function CreateWorkOrderModal({ isOpen, onClose, selectedAlertIds, onSucc
       setDescription(`Items incluidos:\n${itemsList}`);
     }
   }, [selectedAlerts, description]);
-
-  // Fetch técnicos y proveedores
-  useEffect(() => {
-    if (isOpen) {
-      // TODO: Fetch real data from API
-      setTechnicians([
-        { id: 1, name: 'Juan Pérez' },
-        { id: 2, name: 'María García' },
-        { id: 3, name: 'Carlos López' },
-      ]);
-      setProviders([
-        { id: 1, name: 'Lubricentro Central' },
-        { id: 2, name: 'Repuestos del Sur' },
-        { id: 3, name: 'Taller Mecánico Express' },
-      ]);
-    }
-  }, [isOpen]);
 
   const handleSubmit = async () => {
     if (!title.trim()) {

@@ -1,8 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from '@/lib/auth';
 import { NextResponse } from "next/server";
-
-const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1';
+import { safeParseInt } from '@/lib/validation';
 
 // GET a single vehicle by ID
 export async function GET(
@@ -14,13 +13,18 @@ export async function GET(
         const user = await getCurrentUser();
 
         if (!user) {
-            return new NextResponse("Unauthorized", { status: 401 });
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const vehicleId = safeParseInt(id);
+        if (vehicleId === null) {
+            return NextResponse.json({ error: "ID de vehículo inválido" }, { status: 400 });
         }
 
         const vehicle = await prisma.vehicle.findUnique({
             where: {
-                id: parseInt(id),
-                tenantId: TENANT_ID,
+                id: vehicleId,
+                tenantId: user.tenantId,
             },
             include: {
                 brand: true,
@@ -30,13 +34,13 @@ export async function GET(
         });
 
         if (!vehicle) {
-            return new NextResponse("Vehicle not found", { status: 404 });
+            return NextResponse.json({ error: "Vehículo no encontrado" }, { status: 404 });
         }
 
         return NextResponse.json(vehicle);
     } catch (error) {
         console.error("[VEHICLE_GET_BY_ID]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }
 
@@ -50,31 +54,40 @@ export async function DELETE(
         const user = await getCurrentUser();
 
         if (!user) {
-            return new NextResponse("Unauthorized", { status: 401 });
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const vehicleId = safeParseInt(id);
+        if (vehicleId === null) {
+            return NextResponse.json({ error: "ID de vehículo inválido" }, { status: 400 });
         }
 
         const vehicleToDelete = await prisma.vehicle.findUnique({
             where: {
-                id: parseInt(id),
-                tenantId: TENANT_ID,
+                id: vehicleId,
+                tenantId: user.tenantId,
             }
         });
 
         if (!vehicleToDelete) {
-            return new NextResponse("Vehicle not found", { status: 404 });
+            return NextResponse.json({ error: "Vehículo no encontrado" }, { status: 404 });
         }
 
-        await prisma.vehicle.delete({
+        // Soft delete - cambiar status a INACTIVE
+        await prisma.vehicle.update({
             where: {
-                id: parseInt(id),
-                tenantId: TENANT_ID,
+                id: vehicleId,
+                tenantId: user.tenantId,
             },
+            data: {
+                status: 'INACTIVE'
+            }
         });
 
-        return new NextResponse("Vehicle deleted", { status: 200 });
+        return NextResponse.json({ success: true, message: "Vehículo desactivado" });
     } catch (error) {
         console.error("[VEHICLE_DELETE]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }
 
@@ -88,7 +101,12 @@ export async function PATCH(
         const user = await getCurrentUser();
 
         if (!user) {
-            return new NextResponse("Unauthorized", { status: 401 });
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const vehicleId = safeParseInt(id);
+        if (vehicleId === null) {
+            return NextResponse.json({ error: "ID de vehículo inválido" }, { status: 400 });
         }
 
         const body = await req.json();
@@ -96,13 +114,13 @@ export async function PATCH(
 
         const vehicleToUpdate = await prisma.vehicle.findUnique({
             where: {
-                id: parseInt(id),
-                tenantId: TENANT_ID,
+                id: vehicleId,
+                tenantId: user.tenantId,
             }
         });
 
         if (!vehicleToUpdate) {
-            return new NextResponse("Vehicle not found", { status: 404 });
+            return NextResponse.json({ error: "Vehículo no encontrado" }, { status: 404 });
         }
 
         // If license plate is being changed, check for duplicates
@@ -110,21 +128,21 @@ export async function PATCH(
             const existingVehicle = await prisma.vehicle.findUnique({
                 where: {
                     tenantId_licensePlate: {
-                        tenantId: TENANT_ID,
+                        tenantId: user.tenantId,
                         licensePlate: licensePlate,
                     }
                 }
             });
 
             if (existingVehicle) {
-                return new NextResponse("Vehicle with this license plate already exists", { status: 409 });
+                return NextResponse.json({ error: "Ya existe un vehículo con esta placa" }, { status: 409 });
             }
         }
 
         const updatedVehicle = await prisma.vehicle.update({
             where: {
-                id: parseInt(id),
-                tenantId: TENANT_ID,
+                id: vehicleId,
+                tenantId: user.tenantId,
             },
             data: {
                 licensePlate,
@@ -135,6 +153,6 @@ export async function PATCH(
         return NextResponse.json(updatedVehicle);
     } catch (error) {
         console.error("[VEHICLE_PATCH]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }

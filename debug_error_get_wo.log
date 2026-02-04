@@ -1,0 +1,78 @@
+
+[2026-02-03T19:34:05.401Z] FATAL ERROR IN GET /api/maintenance/work-orders/[id]
+Params ID: 10
+Error: 
+Invalid `prisma.workOrder.findUnique()` invocation:
+
+
+The column `(not available)` does not exist in the current database.
+Stack: PrismaClientKnownRequestError: 
+Invalid `prisma.workOrder.findUnique()` invocation:
+
+
+The column `(not available)` does not exist in the current database.
+    at ei.handleRequestError (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/@prisma/client/runtime/library.js:121:7268)
+    at ei.handleAndLogRequestError (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/@prisma/client/runtime/library.js:121:6593)
+    at ei.request (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/@prisma/client/runtime/library.js:121:6300)
+    at async a (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/@prisma/client/runtime/library.js:130:9551)
+    at async GET (webpack-internal:///(rsc)/./src/app/api/maintenance/work-orders/[id]/route.ts:32:27)
+    at async AppRouteRouteModule.do (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:5:38782)
+    at async AppRouteRouteModule.handle (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:5:45984)
+    at async responseGenerator (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fmaintenance%2Fwork-orders%2F%5Bid%5D%2Froute&page=%2Fapi%2Fmaintenance%2Fwork-orders%2F%5Bid%5D%2Froute&appPaths=&pagePath=private-next-app-dir%2Fapi%2Fmaintenance%2Fwork-orders%2F%5Bid%5D%2Froute.ts&appDir=%2Fhome%2Fguille-rivar%2FEscritorio%2FDesarrollo%20Web%2Ffleet-care-saas%2Fsrc%2Fapp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=%2Fhome%2Fguille-rivar%2FEscritorio%2FDesarrollo%20Web%2Ffleet-care-saas&isDev=true&tsconfigPath=tsconfig.json&basePath=&assetPrefix=&nextConfigOutput=standalone&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:206:38)
+    at async AppRouteRouteModule.handleResponse (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:1:183692)
+    at async handleResponse (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fmaintenance%2Fwork-orders%2F%5Bid%5D%2Froute&page=%2Fapi%2Fmaintenance%2Fwork-orders%2F%5Bid%5D%2Froute&appPaths=&pagePath=private-next-app-dir%2Fapi%2Fmaintenance%2Fwork-orders%2F%5Bid%5D%2Froute.ts&appDir=%2Fhome%2Fguille-rivar%2FEscritorio%2FDesarrollo%20Web%2Ffleet-care-saas%2Fsrc%2Fapp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=%2Fhome%2Fguille-rivar%2FEscritorio%2FDesarrollo%20Web%2Ffleet-care-saas&isDev=true&tsconfigPath=tsconfig.json&basePath=&assetPrefix=&nextConfigOutput=standalone&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:268:32)
+    at async handler (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fmaintenance%2Fwork-orders%2F%5Bid%5D%2Froute&page=%2Fapi%2Fmaintenance%2Fwork-orders%2F%5Bid%5D%2Froute&appPaths=&pagePath=private-next-app-dir%2Fapi%2Fmaintenance%2Fwork-orders%2F%5Bid%5D%2Froute.ts&appDir=%2Fhome%2Fguille-rivar%2FEscritorio%2FDesarrollo%20Web%2Ffleet-care-saas%2Fsrc%2Fapp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=%2Fhome%2Fguille-rivar%2FEscritorio%2FDesarrollo%20Web%2Ffleet-care-saas&isDev=true&tsconfigPath=tsconfig.json&basePath=&assetPrefix=&nextConfigOutput=standalone&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:320:13)
+    at async doRender (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/server/base-server.js:1592:34)
+    at async DevServer.renderToResponseWithComponentsImpl (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/server/base-server.js:1934:13)
+    at async DevServer.renderPageComponent (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/server/base-server.js:2400:24)
+    at async DevServer.renderToResponseImpl (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/server/base-server.js:2440:32)
+    at async DevServer.pipeImpl (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/server/base-server.js:1035:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/server/next-server.js:393:17)
+    at async DevServer.handleRequestImpl (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/server/base-server.js:925:17)
+    at async /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/server/dev/next-dev-server.js:398:20
+    at async Span.traceAsyncFn (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/trace/trace.js:157:20)
+    at async DevServer.handleRequest (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/server/dev/next-dev-server.js:394:24)
+    at async invokeRender (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/server/lib/router-server.js:239:21)
+    at async handleRequest (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/server/lib/router-server.js:436:24)
+    at async requestHandlerImpl (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/server/lib/router-server.js:464:13)
+    at async Server.requestListener (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/server/lib/start-server.js:218:13)
+----------------------------------------
+
+[2026-02-03T19:34:09.503Z] FATAL ERROR IN GET /api/maintenance/work-orders/[id]
+Params ID: 10
+Error: 
+Invalid `prisma.workOrder.findUnique()` invocation:
+
+
+The column `(not available)` does not exist in the current database.
+Stack: PrismaClientKnownRequestError: 
+Invalid `prisma.workOrder.findUnique()` invocation:
+
+
+The column `(not available)` does not exist in the current database.
+    at ei.handleRequestError (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/@prisma/client/runtime/library.js:121:7268)
+    at ei.handleAndLogRequestError (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/@prisma/client/runtime/library.js:121:6593)
+    at ei.request (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/@prisma/client/runtime/library.js:121:6300)
+    at async a (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/@prisma/client/runtime/library.js:130:9551)
+    at async GET (webpack-internal:///(rsc)/./src/app/api/maintenance/work-orders/[id]/route.ts:32:27)
+    at async AppRouteRouteModule.do (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:5:38782)
+    at async AppRouteRouteModule.handle (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:5:45984)
+    at async responseGenerator (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fmaintenance%2Fwork-orders%2F%5Bid%5D%2Froute&page=%2Fapi%2Fmaintenance%2Fwork-orders%2F%5Bid%5D%2Froute&appPaths=&pagePath=private-next-app-dir%2Fapi%2Fmaintenance%2Fwork-orders%2F%5Bid%5D%2Froute.ts&appDir=%2Fhome%2Fguille-rivar%2FEscritorio%2FDesarrollo%20Web%2Ffleet-care-saas%2Fsrc%2Fapp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=%2Fhome%2Fguille-rivar%2FEscritorio%2FDesarrollo%20Web%2Ffleet-care-saas&isDev=true&tsconfigPath=tsconfig.json&basePath=&assetPrefix=&nextConfigOutput=standalone&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:206:38)
+    at async AppRouteRouteModule.handleResponse (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:1:183692)
+    at async handleResponse (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fmaintenance%2Fwork-orders%2F%5Bid%5D%2Froute&page=%2Fapi%2Fmaintenance%2Fwork-orders%2F%5Bid%5D%2Froute&appPaths=&pagePath=private-next-app-dir%2Fapi%2Fmaintenance%2Fwork-orders%2F%5Bid%5D%2Froute.ts&appDir=%2Fhome%2Fguille-rivar%2FEscritorio%2FDesarrollo%20Web%2Ffleet-care-saas%2Fsrc%2Fapp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=%2Fhome%2Fguille-rivar%2FEscritorio%2FDesarrollo%20Web%2Ffleet-care-saas&isDev=true&tsconfigPath=tsconfig.json&basePath=&assetPrefix=&nextConfigOutput=standalone&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:268:32)
+    at async handler (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fmaintenance%2Fwork-orders%2F%5Bid%5D%2Froute&page=%2Fapi%2Fmaintenance%2Fwork-orders%2F%5Bid%5D%2Froute&appPaths=&pagePath=private-next-app-dir%2Fapi%2Fmaintenance%2Fwork-orders%2F%5Bid%5D%2Froute.ts&appDir=%2Fhome%2Fguille-rivar%2FEscritorio%2FDesarrollo%20Web%2Ffleet-care-saas%2Fsrc%2Fapp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=%2Fhome%2Fguille-rivar%2FEscritorio%2FDesarrollo%20Web%2Ffleet-care-saas&isDev=true&tsconfigPath=tsconfig.json&basePath=&assetPrefix=&nextConfigOutput=standalone&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:320:13)
+    at async doRender (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/server/base-server.js:1592:34)
+    at async DevServer.renderToResponseWithComponentsImpl (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/server/base-server.js:1934:13)
+    at async DevServer.renderPageComponent (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/server/base-server.js:2400:24)
+    at async DevServer.renderToResponseImpl (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/server/base-server.js:2440:32)
+    at async DevServer.pipeImpl (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/server/base-server.js:1035:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/server/next-server.js:393:17)
+    at async DevServer.handleRequestImpl (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/server/base-server.js:925:17)
+    at async /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/server/dev/next-dev-server.js:398:20
+    at async Span.traceAsyncFn (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/trace/trace.js:157:20)
+    at async DevServer.handleRequest (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/server/dev/next-dev-server.js:394:24)
+    at async invokeRender (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/server/lib/router-server.js:239:21)
+    at async handleRequest (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/server/lib/router-server.js:436:24)
+    at async requestHandlerImpl (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/server/lib/router-server.js:464:13)
+    at async Server.requestListener (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/next/dist/server/lib/start-server.js:218:13)
+----------------------------------------

@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getNotificationService } from "@/lib/notifications/notification-service";
 import { getWhatsAppService } from "@/lib/notifications/whatsapp";
-
-// Hardcoded tenant ID para MVP (desarrollo)
-const MVP_TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1';
+import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const action = searchParams.get('action') || 'send';
     const phone = searchParams.get('phone');
@@ -19,7 +22,7 @@ export async function GET(request: NextRequest) {
         // Verificar configuración de Twilio
         const whatsappService = getWhatsAppService();
         const configResult = await whatsappService.validateConfiguration();
-        
+
         return NextResponse.json({
           success: configResult.valid,
           message: configResult.valid ? 'Twilio configuration is valid' : 'Twilio configuration is invalid',
@@ -41,8 +44,8 @@ export async function GET(request: NextRequest) {
           }, { status: 400 });
         }
 
-        const testResult = await notificationService.sendTestAlert(phone, MVP_TENANT_ID);
-        
+        const testResult = await notificationService.sendTestAlert(phone, user.tenantId);
+
         return NextResponse.json({
           success: testResult.success,
           message: testResult.success ? 'Test message sent successfully' : 'Failed to send test message',
@@ -52,13 +55,13 @@ export async function GET(request: NextRequest) {
 
       case 'alerts':
         // Obtener alertas sin enviar
-        const alerts = await notificationService.getMaintenanceAlerts(MVP_TENANT_ID, urgent);
-        
+        const alerts = await notificationService.getMaintenanceAlerts(user.tenantId, urgent);
+
         return NextResponse.json({
           success: true,
           message: `Found ${alerts.length} maintenance alerts`,
           data: {
-            tenantId: MVP_TENANT_ID,
+            tenantId: user.tenantId,
             totalAlerts: alerts.length,
             criticalAlerts: alerts.filter(a => a.state === 'RED').length,
             urgentOnly: urgent,
@@ -68,13 +71,13 @@ export async function GET(request: NextRequest) {
 
       case 'recipients':
         // Obtener destinatarios sin enviar
-        const recipients = await notificationService.getNotificationRecipients(MVP_TENANT_ID);
-        
+        const recipients = await notificationService.getNotificationRecipients(user.tenantId);
+
         return NextResponse.json({
           success: true,
           message: `Found ${recipients.length} notification recipients`,
           data: {
-            tenantId: MVP_TENANT_ID,
+            tenantId: user.tenantId,
             totalRecipients: recipients.length,
             supervisors: recipients.filter(r => r.type === 'SUPERVISOR').length,
             drivers: recipients.filter(r => r.type === 'DRIVER').length,
@@ -90,8 +93,8 @@ export async function GET(request: NextRequest) {
       case 'send':
       default:
         // Enviar alertas reales (acción por defecto)
-        const result = await notificationService.sendMaintenanceAlerts(MVP_TENANT_ID, urgent);
-        
+        const result = await notificationService.sendMaintenanceAlerts(user.tenantId, urgent);
+
         if (result.alertsProcessed === 0) {
           return NextResponse.json({
             success: true,
@@ -102,7 +105,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({
           success: result.messagesSent > 0,
-          message: result.messagesSent > 0 
+          message: result.messagesSent > 0
             ? `✅ Sent ${result.messagesSent}/${result.messagesAttempted} alerts successfully`
             : `❌ Failed to send any alerts (${result.messagesFailed} failures)`,
           data: {
@@ -131,8 +134,13 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
     const body = await request.json();
-    const { phone, tenantId, message } = body;
+    const { phone, message } = body;
 
     if (!phone) {
       return NextResponse.json({
@@ -142,7 +150,7 @@ export async function POST(request: NextRequest) {
     }
 
     const whatsappService = getWhatsAppService();
-    
+
     // Si se proporciona un mensaje personalizado, enviarlo directamente
     if (message) {
       const result = await whatsappService.sendMessage({
@@ -160,8 +168,8 @@ export async function POST(request: NextRequest) {
 
     // Si no, enviar mensaje de prueba estándar
     const notificationService = getNotificationService();
-    const result = await notificationService.sendTestAlert(phone, tenantId || MVP_TENANT_ID);
-    
+    const result = await notificationService.sendTestAlert(phone, user.tenantId);
+
     return NextResponse.json({
       success: result.success,
       message: result.success ? 'Test alert sent successfully' : 'Failed to send test alert',

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import { safeParseInt } from '@/lib/validation';
 
 // GET - Obtener línea específica por ID
 export async function GET(
@@ -15,9 +16,15 @@ export async function GET(
         }
 
         const { id } = await params;
+        const lineId = safeParseInt(id);
+
+        if (lineId === null) {
+            return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+        }
+
         const line = await prisma.vehicleLine.findUnique({
             where: {
-                id: parseInt(id),
+                id: lineId,
                 tenantId: user.tenantId
             },
             include: {
@@ -44,7 +51,7 @@ export async function GET(
         return NextResponse.json(mappedLine);
     } catch (error) {
         console.error("[LINE_GET]", error);
-        return NextResponse.json({ error: "Error interno" }, { status: 500 });
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }
 
@@ -72,6 +79,11 @@ export async function PUT(
         }
 
         const { id } = await params;
+        const lineId = safeParseInt(id);
+
+        if (lineId === null) {
+            return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+        }
 
         const { name, brandId } = await req.json();
 
@@ -83,10 +95,16 @@ export async function PUT(
             return NextResponse.json({ error: "La marca es requerida" }, { status: 400 });
         }
 
+        const parsedBrandId = safeParseInt(brandId);
+
+        if (parsedBrandId === null) {
+            return NextResponse.json({ error: "ID de marca inválido" }, { status: 400 });
+        }
+
         // Verificar que la línea existe y pertenece al tenant
         const existingLine = await prisma.vehicleLine.findUnique({
             where: {
-                id: parseInt(id),
+                id: lineId,
                 tenantId: user.tenantId
             }
         });
@@ -98,7 +116,7 @@ export async function PUT(
         // Verificar que la marca existe y pertenece al tenant
         const brand = await prisma.vehicleBrand.findUnique({
             where: {
-                id: parseInt(brandId),
+                id: parsedBrandId,
                 tenantId: user.tenantId
             }
         });
@@ -111,10 +129,10 @@ export async function PUT(
         const duplicateLine = await prisma.vehicleLine.findFirst({
             where: {
                 tenantId: user.tenantId,
-                brandId: parseInt(brandId),
+                brandId: parsedBrandId,
                 name: name.trim(),
                 id: {
-                    not: parseInt(id)
+                    not: lineId
                 }
             }
         });
@@ -125,12 +143,12 @@ export async function PUT(
 
         const updatedLine = await prisma.vehicleLine.update({
             where: {
-                id: parseInt(id),
+                id: lineId,
                 tenantId: user.tenantId
             },
             data: {
                 name: name.trim(),
-                brandId: parseInt(brandId),
+                brandId: parsedBrandId,
             },
             include: {
                 brand: {
@@ -152,7 +170,7 @@ export async function PUT(
         return NextResponse.json(mappedLine);
     } catch (error) {
         console.log("[LINE_PUT]", error);
-        return NextResponse.json({ error: "Error interno" }, { status: 500 });
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }
 
@@ -180,6 +198,11 @@ export async function PATCH(
         }
 
         const { id } = await params;
+        const lineId = safeParseInt(id);
+
+        if (lineId === null) {
+            return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+        }
 
         const body = await req.json();
         const { name, brandId } = body;
@@ -187,7 +210,7 @@ export async function PATCH(
         // Verificar que la línea existe y pertenece al tenant
         const existingLine = await prisma.vehicleLine.findUnique({
             where: {
-                id: parseInt(id),
+                id: lineId,
                 tenantId: user.tenantId
             }
         });
@@ -202,10 +225,17 @@ export async function PATCH(
         }
 
         // Verificar que la marca existe si se proporciona
+        let parsedBrandId: number | undefined;
         if (brandId !== undefined) {
+            parsedBrandId = safeParseInt(brandId) ?? undefined;
+
+            if (parsedBrandId === undefined) {
+                return NextResponse.json({ error: "ID de marca inválido" }, { status: 400 });
+            }
+
             const brand = await prisma.vehicleBrand.findUnique({
                 where: {
-                    id: parseInt(brandId),
+                    id: parsedBrandId,
                     tenantId: user.tenantId
                 }
             });
@@ -217,19 +247,19 @@ export async function PATCH(
 
         // Preparar datos para actualizar (solo los campos proporcionados)
         const updateData: { name?: string; brandId?: number } = {};
-        
+
         if (name !== undefined) {
             updateData.name = name.trim();
         }
-        
-        if (brandId !== undefined) {
-            updateData.brandId = parseInt(brandId);
+
+        if (parsedBrandId !== undefined) {
+            updateData.brandId = parsedBrandId;
         }
 
         // Verificar que no exista otra línea con el mismo nombre y marca
-        if (name !== undefined || brandId !== undefined) {
+        if (name !== undefined || parsedBrandId !== undefined) {
             const checkName = name !== undefined ? name.trim() : existingLine.name;
-            const checkBrandId = brandId !== undefined ? parseInt(brandId) : existingLine.brandId;
+            const checkBrandId = parsedBrandId !== undefined ? parsedBrandId : existingLine.brandId;
 
             const duplicateLine = await prisma.vehicleLine.findFirst({
                 where: {
@@ -237,7 +267,7 @@ export async function PATCH(
                     brandId: checkBrandId,
                     name: checkName,
                     id: {
-                        not: parseInt(id)
+                        not: lineId
                     }
                 }
             });
@@ -249,7 +279,7 @@ export async function PATCH(
 
         const updatedLine = await prisma.vehicleLine.update({
             where: {
-                id: parseInt(id),
+                id: lineId,
                 tenantId: user.tenantId
             },
             data: updateData,
@@ -273,7 +303,7 @@ export async function PATCH(
         return NextResponse.json(mappedLine);
     } catch (error) {
         console.log("[LINE_PATCH]", error);
-        return NextResponse.json({ error: "Error interno" }, { status: 500 });
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }
 
@@ -301,11 +331,16 @@ export async function DELETE(
         }
 
         const { id } = await params;
+        const lineId = safeParseInt(id);
+
+        if (lineId === null) {
+            return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+        }
 
         // Verificar que la línea existe y pertenece al tenant
         const existingLine = await prisma.vehicleLine.findUnique({
             where: {
-                id: parseInt(id),
+                id: lineId,
                 tenantId: user.tenantId
             }
         });
@@ -317,7 +352,7 @@ export async function DELETE(
         // Verificar que no tenga vehículos dependientes
         const hasVehicles = await prisma.vehicle.findFirst({
             where: {
-                lineId: parseInt(id),
+                lineId: lineId,
                 tenantId: user.tenantId
             }
         });
@@ -325,7 +360,7 @@ export async function DELETE(
         // Verificar templates de mantenimiento
         const hasMantTemplates = await prisma.maintenanceTemplate.findFirst({
             where: {
-                vehicleLineId: parseInt(id),
+                vehicleLineId: lineId,
                 tenantId: user.tenantId
             }
         });
@@ -334,16 +369,20 @@ export async function DELETE(
             return NextResponse.json({ error: "No se puede eliminar la línea porque tiene vehículos o plantillas de mantenimiento asociadas" }, { status: 409 });
         }
 
-        await prisma.vehicleLine.delete({
+        // Soft delete - cambiar status a INACTIVE
+        await prisma.vehicleLine.update({
             where: {
-                id: parseInt(id),
+                id: lineId,
                 tenantId: user.tenantId
+            },
+            data: {
+                status: 'INACTIVE'
             }
         });
 
-        return new NextResponse(null, { status: 204 });
+        return NextResponse.json({ success: true, message: "Línea desactivada" });
     } catch (error) {
         console.log("[LINE_DELETE]", error);
-        return NextResponse.json({ error: "Error interno" }, { status: 500 });
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }

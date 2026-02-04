@@ -1,8 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from '@/lib/auth';
 import { NextResponse } from "next/server";
-
-const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1';
+import { safeParseInt } from '@/lib/validation';
 
 // GET - Obtener proveedor específico por ID
 export async function GET(
@@ -11,22 +10,32 @@ export async function GET(
 ) {
     try {
         const { id } = await params;
+        const user = await getCurrentUser();
+
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const providerId = safeParseInt(id);
+        if (providerId === null) {
+            return NextResponse.json({ error: "ID de proveedor inválido" }, { status: 400 });
+        }
 
         const provider = await prisma.provider.findUnique({
             where: {
-                id: parseInt(id),
-                tenantId: TENANT_ID
+                id: providerId,
+                tenantId: user.tenantId
             }
         });
 
         if (!provider) {
-            return new NextResponse("Provider not found", { status: 404 });
+            return NextResponse.json({ error: "Proveedor no encontrado" }, { status: 404 });
         }
 
         return NextResponse.json(provider);
     } catch (error) {
         console.error("[PROVIDER_GET]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }
 
@@ -40,46 +49,51 @@ export async function PUT(
         const user = await getCurrentUser();
 
         if (!user) {
-            return new NextResponse("Unauthorized", { status: 401 });
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const providerId = safeParseInt(id);
+        if (providerId === null) {
+            return NextResponse.json({ error: "ID de proveedor inválido" }, { status: 400 });
         }
 
         const { name, email, phone, address, specialty } = await req.json();
 
         if (!name || name.trim() === '') {
-            return new NextResponse("Name is required", { status: 400 });
+            return NextResponse.json({ error: "El nombre es requerido" }, { status: 400 });
         }
 
         // Verificar que el proveedor existe
         const existingProvider = await prisma.provider.findUnique({
             where: {
-                id: parseInt(id),
-                tenantId: TENANT_ID
+                id: providerId,
+                tenantId: user.tenantId
             }
         });
 
         if (!existingProvider) {
-            return new NextResponse("Provider not found", { status: 404 });
+            return NextResponse.json({ error: "Proveedor no encontrado" }, { status: 404 });
         }
 
         // Verificar duplicados
         const duplicateProvider = await prisma.provider.findFirst({
             where: {
-                tenantId: TENANT_ID,
+                tenantId: user.tenantId,
                 name: name.trim(),
                 id: {
-                    not: parseInt(id)
+                    not: providerId
                 }
             }
         });
 
         if (duplicateProvider) {
-            return new NextResponse("Provider name already exists", { status: 409 });
+            return NextResponse.json({ error: "Ya existe un proveedor con este nombre" }, { status: 409 });
         }
 
         const updatedProvider = await prisma.provider.update({
             where: {
-                id: parseInt(id),
-                tenantId: TENANT_ID
+                id: providerId,
+                tenantId: user.tenantId
             },
             data: {
                 name: name.trim(),
@@ -92,8 +106,8 @@ export async function PUT(
 
         return NextResponse.json(updatedProvider);
     } catch (error) {
-        console.log("[PROVIDER_PUT]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        console.error("[PROVIDER_PUT]", error);
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }
 
@@ -107,30 +121,39 @@ export async function DELETE(
         const user = await getCurrentUser();
 
         if (!user) {
-            return new NextResponse("Unauthorized", { status: 401 });
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const providerId = safeParseInt(id);
+        if (providerId === null) {
+            return NextResponse.json({ error: "ID de proveedor inválido" }, { status: 400 });
         }
 
         const existingProvider = await prisma.provider.findUnique({
             where: {
-                id: parseInt(id),
-                tenantId: TENANT_ID
+                id: providerId,
+                tenantId: user.tenantId
             }
         });
 
         if (!existingProvider) {
-            return new NextResponse("Provider not found", { status: 404 });
+            return NextResponse.json({ error: "Proveedor no encontrado" }, { status: 404 });
         }
 
-        await prisma.provider.delete({
+        // Soft delete - cambiar status a INACTIVE
+        await prisma.provider.update({
             where: {
-                id: parseInt(id),
-                tenantId: TENANT_ID
+                id: providerId,
+                tenantId: user.tenantId
+            },
+            data: {
+                status: 'INACTIVE'
             }
         });
 
-        return new NextResponse(null, { status: 204 });
+        return NextResponse.json({ success: true, message: "Proveedor desactivado" });
     } catch (error) {
-        console.log("[PROVIDER_DELETE]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        console.error("[PROVIDER_DELETE]", error);
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }

@@ -1,8 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from '@/lib/auth';
 import { NextResponse } from "next/server";
-
-const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1';
+import { safeParseInt } from '@/lib/validation';
 
 // GET - Obtener conductor específico por ID
 export async function GET(
@@ -11,22 +10,32 @@ export async function GET(
 ) {
     try {
         const { id } = await params;
+        const user = await getCurrentUser();
+
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const driverId = safeParseInt(id);
+        if (driverId === null) {
+            return NextResponse.json({ error: "ID de conductor inválido" }, { status: 400 });
+        }
 
         const driver = await prisma.driver.findUnique({
             where: {
-                id: parseInt(id),
-                tenantId: TENANT_ID
+                id: driverId,
+                tenantId: user.tenantId
             }
         });
 
         if (!driver) {
-            return new NextResponse("Driver not found", { status: 404 });
+            return NextResponse.json({ error: "Conductor no encontrado" }, { status: 404 });
         }
 
         return NextResponse.json(driver);
     } catch (error) {
         console.error("[DRIVER_GET]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }
 
@@ -40,48 +49,53 @@ export async function PUT(
         const user = await getCurrentUser();
 
         if (!user) {
-            return new NextResponse("Unauthorized", { status: 401 });
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const driverId = safeParseInt(id);
+        if (driverId === null) {
+            return NextResponse.json({ error: "ID de conductor inválido" }, { status: 400 });
         }
 
         const { name, email, phone, licenseNumber, licenseExpiry } = await req.json();
 
         if (!name || name.trim() === '') {
-            return new NextResponse("Name is required", { status: 400 });
+            return NextResponse.json({ error: "El nombre es requerido" }, { status: 400 });
         }
 
         // Verificar que el conductor existe
         const existingDriver = await prisma.driver.findUnique({
             where: {
-                id: parseInt(id),
-                tenantId: TENANT_ID
+                id: driverId,
+                tenantId: user.tenantId
             }
         });
 
         if (!existingDriver) {
-            return new NextResponse("Driver not found", { status: 404 });
+            return NextResponse.json({ error: "Conductor no encontrado" }, { status: 404 });
         }
 
         // Verificar duplicado de licencia (si se proporciona y es diferente)
         if (licenseNumber && licenseNumber.trim() !== '') {
             const duplicateDriverWithLicense = await prisma.driver.findFirst({
                 where: {
-                    tenantId: TENANT_ID,
+                    tenantId: user.tenantId,
                     licenseNumber: licenseNumber.trim(),
                     id: {
-                        not: parseInt(id)
+                        not: driverId
                     }
                 }
             });
 
             if (duplicateDriverWithLicense) {
-                return new NextResponse("Driver with this license number already exists", { status: 409 });
+                return NextResponse.json({ error: "Ya existe un conductor con este número de licencia" }, { status: 409 });
             }
         }
 
         const updatedDriver = await prisma.driver.update({
             where: {
-                id: parseInt(id),
-                tenantId: TENANT_ID
+                id: driverId,
+                tenantId: user.tenantId
             },
             data: {
                 name: name.trim(),
@@ -94,8 +108,8 @@ export async function PUT(
 
         return NextResponse.json(updatedDriver);
     } catch (error) {
-        console.log("[DRIVER_PUT]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        console.error("[DRIVER_PUT]", error);
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }
 
@@ -109,30 +123,39 @@ export async function DELETE(
         const user = await getCurrentUser();
 
         if (!user) {
-            return new NextResponse("Unauthorized", { status: 401 });
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const driverId = safeParseInt(id);
+        if (driverId === null) {
+            return NextResponse.json({ error: "ID de conductor inválido" }, { status: 400 });
         }
 
         const existingDriver = await prisma.driver.findUnique({
             where: {
-                id: parseInt(id),
-                tenantId: TENANT_ID
+                id: driverId,
+                tenantId: user.tenantId
             }
         });
 
         if (!existingDriver) {
-            return new NextResponse("Driver not found", { status: 404 });
+            return NextResponse.json({ error: "Conductor no encontrado" }, { status: 404 });
         }
 
-        await prisma.driver.delete({
+        // Soft delete - cambiar status a INACTIVE
+        await prisma.driver.update({
             where: {
-                id: parseInt(id),
-                tenantId: TENANT_ID
+                id: driverId,
+                tenantId: user.tenantId
+            },
+            data: {
+                status: 'INACTIVE'
             }
         });
 
-        return new NextResponse(null, { status: 204 });
+        return NextResponse.json({ success: true, message: "Conductor desactivado" });
     } catch (error) {
-        console.log("[DRIVER_DELETE]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        console.error("[DRIVER_DELETE]", error);
+        return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
     }
 }

@@ -58,6 +58,8 @@ type WorkOrder = {
     itemName: string;
     status: string;
     priority: string;
+    scheduledKm?: number | null;
+    estimatedCost?: number | null;
   }>;
 };
 
@@ -67,13 +69,10 @@ type GeneralInfoTabProps = {
 };
 
 const statusConfig = {
-  PENDING: { label: 'Pendiente', variant: 'secondary' as const },
-  IN_PROGRESS: { label: 'En Progreso', variant: 'default' as const },
-  PENDING_APPROVAL: { label: 'Por Aprobar', variant: 'outline' as const },
-  APPROVED: { label: 'Aprobada', variant: 'default' as const },
-  REJECTED: { label: 'Rechazada', variant: 'destructive' as const },
-  PENDING_INVOICE: { label: 'Pendiente Factura', variant: 'outline' as const },
-  COMPLETED: { label: 'Completada', variant: 'default' as const },
+  PENDING: { label: 'Abierta', variant: 'secondary' as const },
+  IN_PROGRESS: { label: 'En Trabajo', variant: 'default' as const },
+  PENDING_INVOICE: { label: 'Por Cerrar', variant: 'outline' as const },
+  COMPLETED: { label: 'Cerrada', variant: 'default' as const },
   CANCELLED: { label: 'Cancelada', variant: 'outline' as const },
 };
 
@@ -163,14 +162,11 @@ export function GeneralInfoTab({ workOrder, onUpdate }: GeneralInfoTabProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="PENDING">Pendiente</SelectItem>
-                    <SelectItem value="IN_PROGRESS">En Progreso</SelectItem>
-                    <SelectItem value="PENDING_APPROVAL">
-                      Por Aprobar
-                    </SelectItem>
-                    <SelectItem value="APPROVED">Aprobada</SelectItem>
-                    <SelectItem value="PENDING_INVOICE">Pendiente Factura</SelectItem>
-                    <SelectItem value="COMPLETED">Completada</SelectItem>
+                    <SelectItem value="PENDING">Abierta</SelectItem>
+                    <SelectItem value="IN_PROGRESS">En Trabajo</SelectItem>
+                    <SelectItem value="PENDING_INVOICE">Por Cerrar</SelectItem>
+                    <SelectItem value="COMPLETED">Cerrada</SelectItem>
+                    <SelectItem value="CANCELLED">Cancelada</SelectItem>
                   </SelectContent>
                 </Select>
               ) : (

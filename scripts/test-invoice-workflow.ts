@@ -85,13 +85,12 @@ async function runTest() {
       await prisma.vehicleProgramItem.create({
         data: {
           tenantId: TENANT_ID,
-          programId: program.id,
           packageId: vehiclePackage.id,
           mantItemId: pkgItem.mantItemId,
-          mantType: pkgItem.mantItem.mantType, // Tomar del MantItem
-          triggerKm: pkgItem.triggerKm,
+          mantType: pkgItem.mantItem.mantType,
+          scheduledKm: pkgItem.triggerKm,
           priority: pkgItem.priority,
-          estimatedCost: 0, // Se asignaría desde la UI
+          estimatedCost: 0,
           estimatedTime: pkgItem.estimatedTime || 0,
           order: pkgItem.order,
           status: 'PENDING',
@@ -104,7 +103,7 @@ async function runTest() {
     where: { programId: program.id }
   });
   const itemCount = await prisma.vehicleProgramItem.count({
-    where: { programId: program.id }
+    where: { package: { programId: program.id } }
   });
 
   console.log(`   ✓ ${packageCount} paquetes creados`);
@@ -128,12 +127,10 @@ async function runTest() {
   // Crear OdometerLog
   await prisma.odometerLog.create({
     data: {
-      tenantId: TENANT_ID,
       vehicleId: vehicle.id,
       kilometers: newMileage,
-      measureType: 'MANUAL',
+      measureType: 'KILOMETERS',
       recordedAt: new Date(),
-      recordedBy: 'admin@mvp.com',
     }
   });
 
@@ -174,14 +171,18 @@ async function runTest() {
             tenantId: TENANT_ID,
             vehicleId: vehicle.id,
             programItemId: item.id,
-            alertType: 'PREVENTIVE',
-            category: 'MAINTENANCE_DUE',
-            level: pkg.priority === 'HIGH' ? 'HIGH' : 'MEDIUM',
+            type: 'PREVENTIVE',
+            category: 'ROUTINE',
+            alertLevel: pkg.priority === 'HIGH' ? 'HIGH' : 'MEDIUM',
             status: 'PENDING',
-            title: `${pkg.name}: ${item.mantItem.name}`,
+            itemName: item.mantItem.name,
+            packageName: pkg.name,
             description: item.mantItem.description || '',
-            triggerKm: pkg.triggerKm,
+            scheduledKm: pkg.triggerKm ?? 0,
+            currentKmAtCreation: newMileage,
             currentKm: newMileage,
+            kmToMaintenance: (pkg.triggerKm ?? 0) - newMileage,
+            alertThresholdKm: 1000,
           }
         });
         totalAlertsCreated++;
@@ -212,7 +213,7 @@ async function runTest() {
 
   console.log(`   ✓ Total alertas PENDING: ${alerts.length}`);
   alerts.forEach((alert, idx) => {
-    console.log(`      ${idx + 1}. ${alert.title} (${alert.status})`);
+    console.log(`      ${idx + 1}. ${alert.itemName} (${alert.status})`);
   });
 
   if (alerts.length === 0) {

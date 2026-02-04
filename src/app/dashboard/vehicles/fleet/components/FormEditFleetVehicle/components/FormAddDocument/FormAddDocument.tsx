@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -40,11 +40,10 @@ import { useToast } from "@/components/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { CalendarIcon, Loader2 } from "lucide-react";
-import { FormAddDocumentProps } from "../SharedTypes/SharedTypes";
-import { DocumentType } from "@prisma/client";
+import { FormAddDocumentProps, DocumentTypeConfigProps } from "../SharedTypes/SharedTypes";
 
 const formSchema = z.object({
-  type: z.nativeEnum(DocumentType),
+  documentTypeId: z.number({ required_error: "Seleccione un tipo de documento" }),
   documentNumber: z.string().min(1, "El número de documento es requerido"),
   entity: z.string().optional(),
   fileUrl: z.string().min(1, "Debe subir un archivo"),
@@ -59,6 +58,7 @@ export function FormAddDocument({
 }: FormAddDocumentProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [fileUploaded, setFileUploaded] = useState(false);
+  const [documentTypes, setDocumentTypes] = useState<DocumentTypeConfigProps[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -71,6 +71,15 @@ export function FormAddDocument({
 
   const router = useRouter();
   const { toast } = useToast();
+
+  // Fetch document types from API
+  useEffect(() => {
+    if (isOpen) {
+      axios.get('/api/vehicles/document-types')
+        .then((res) => setDocumentTypes(res.data))
+        .catch((err) => console.error("Error fetching document types:", err));
+    }
+  }, [isOpen]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
@@ -93,7 +102,7 @@ export function FormAddDocument({
       setFileUploaded(false);
 
       toast({
-        title: "¡Documento creado!",
+        title: "Documento creado!",
         description: "El documento ha sido registrado exitosamente",
       });
 
@@ -114,12 +123,6 @@ export function FormAddDocument({
     }
   };
 
-  const documentTypes = Object.values(DocumentType).map(type => ({
-    value: type,
-    label: type.charAt(0) + type.slice(1).toLowerCase().replace("_", " ")
-  }));
-
-
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="max-w-2xl">
@@ -132,20 +135,23 @@ export function FormAddDocument({
             {/* Tipo de Documento */}
             <FormField
               control={form.control}
-              name="type"
+              name="documentTypeId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Tipo de Documento *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select
+                    onValueChange={(val) => field.onChange(parseInt(val, 10))}
+                    value={field.value?.toString()}
+                  >
                     <FormControl>
                       <SelectTrigger disabled={isLoading}>
                         <SelectValue placeholder="Seleccione el tipo" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {documentTypes.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
+                      {documentTypes.map((dt) => (
+                        <SelectItem key={dt.id} value={dt.id.toString()}>
+                          {dt.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -155,13 +161,13 @@ export function FormAddDocument({
               )}
             />
 
-            {/* Número de Documento */}
+            {/* Numero de Documento */}
             <FormField
               control={form.control}
               name="documentNumber"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Número de Documento *</FormLabel>
+                  <FormLabel>Numero de Documento *</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="Ej: 2508004334695000"
@@ -210,7 +216,7 @@ export function FormAddDocument({
                               field.onChange(res[0].url);
                               setFileUploaded(true);
                               toast({
-                                title: "¡Archivo subido!",
+                                title: "Archivo subido!",
                                 description:
                                   "El archivo se ha cargado correctamente",
                               });
@@ -228,7 +234,7 @@ export function FormAddDocument({
                       ) : (
                         <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border">
                           <span className="text-sm text-green-700 font-medium">
-                            ✓ Archivo subido correctamente
+                            Archivo subido correctamente
                           </span>
                           <Button
                             type="button"

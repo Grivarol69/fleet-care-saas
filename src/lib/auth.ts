@@ -1,7 +1,15 @@
 import { currentUser, auth } from '@clerk/nextjs/server'
-import { createClient } from '@/utils/supabase/server'
+
 import { prisma } from '@/lib/prisma'
 import { User, UserRole } from '@prisma/client'
+
+// Platform Tenant ID para SUPER_ADMIN
+const PLATFORM_TENANT_ID = '00000000-0000-0000-0000-000000000000'
+
+// Tipo extendido de User que incluye info de SUPER_ADMIN
+export type UserWithSuperAdmin = User & {
+  isSuperAdmin: boolean
+}
 
 /**
  * Mapea roles de Clerk a roles de Prisma
@@ -18,6 +26,8 @@ function mapClerkRoleToPrisma(clerkRole: string | undefined | null): UserRole {
       return 'MANAGER'
     case 'technician':
       return 'TECHNICIAN'
+    case 'purchaser':
+      return 'PURCHASER'
     case 'driver':
       return 'DRIVER'
     default:
@@ -31,15 +41,17 @@ function mapClerkRoleToPrisma(clerkRole: string | undefined | null): UserRole {
  * IMPORTANTE: Esta función abstrae la lógica de autenticación.
  * Soporta DUAL MODE: Clerk (prioritario) + Supabase (fallback)
  *
- * @returns User de Prisma con información completa (incluido role y tenantId)
+ * SUPER_ADMIN: Si el email existe en el Platform Tenant con rol SUPER_ADMIN,
+ * el usuario tendrá isSuperAdmin = true aunque opere en otro tenant.
+ *
+ * @returns User de Prisma con información completa (incluido role, tenantId, isSuperAdmin)
  */
-export async function getCurrentUser(): Promise<User | null> {
+export async function getCurrentUser(): Promise<UserWithSuperAdmin | null> {
   try {
     // ========================================
-    // MODO DUAL: CLERK PRIMERO, SUPABASE FALLBACK
+    // CLERK AUTHENTICATION
     // ========================================
 
-    // 1. INTENTAR AUTENTICACIÓN CON CLERK
     // Usamos auth() para obtener orgId y orgRole directamente
     const { userId, orgId, orgRole } = await auth()
 
@@ -55,8 +67,29 @@ export async function getCurrentUser(): Promise<User | null> {
         return null
       }
 
-      // Si no tiene org, no puede acceder (será redirigido a /onboarding por middleware)
+      // ========================================
+      // VERIFICAR SI ES SUPER_ADMIN
+      // ========================================
+      // Buscar si el email existe en el Platform Tenant con rol SUPER_ADMIN
+      const superAdminUser = await prisma.user.findFirst({
+        where: {
+          email,
+          tenantId: PLATFORM_TENANT_ID,
+          role: 'SUPER_ADMIN',
+        },
+      })
+      const isSuperAdmin = !!superAdminUser
+
+      // Si no tiene org pero es SUPER_ADMIN, retornar usuario del Platform Tenant
+      // Esto permite acceso a /admin sin necesidad de organización en Clerk
       if (!orgId) {
+        if (isSuperAdmin && superAdminUser) {
+          return {
+            ...superAdminUser,
+            isSuperAdmin: true,
+          }
+        }
+        // No es SUPER_ADMIN y no tiene org - no puede acceder
         return null
       }
 
@@ -104,7 +137,8 @@ export async function getCurrentUser(): Promise<User | null> {
       if (!user) {
         const firstName = clerkUser.firstName || null
         const lastName = clerkUser.lastName || null
-        const role = mapClerkRoleToPrisma(orgRole)
+        // Si es SUPER_ADMIN, asignar rol OWNER en el tenant cliente también
+        const role = isSuperAdmin ? 'OWNER' : mapClerkRoleToPrisma(orgRole)
 
         user = await prisma.user.create({
           data: {
@@ -117,34 +151,14 @@ export async function getCurrentUser(): Promise<User | null> {
         })
       }
 
-      return user
+      // Retornar usuario con flag de SUPER_ADMIN
+      return {
+        ...user,
+        isSuperAdmin,
+      }
     }
 
-    // 2. FALLBACK: AUTENTICACIÓN CON SUPABASE (Legacy)
-    const supabase = await createClient()
-    const {
-      data: { user: authUser },
-      error,
-    } = await supabase.auth.getUser()
-
-    if (error || !authUser?.email) {
-      return null
-    }
-
-    // Obtener User de Prisma
-    const user = await prisma.user.findFirst({
-      where: { email: authUser.email },
-    })
-
-    // Auto-crear usuario si no existe (modo MVP)
-    if (!user) {
-      // NOTA: En producción esto debería fallar si no hay tenant, pero para MVP legacy
-      // podríamos necesitar una estrategia diferente. Por ahora, si no hay tenant, fallamos.
-      // Eliminamos el hardcoded tenant ID.
-      return null
-    }
-
-    return user
+    return null
   } catch (error) {
     console.error('[AUTH ERROR] Error obteniendo usuario:', error)
     return null
@@ -155,7 +169,7 @@ export async function getCurrentUser(): Promise<User | null> {
  * Obtiene el usuario autenticado o lanza excepción
  * Útil para APIs que REQUIEREN autenticación
  */
-export async function requireCurrentUser(): Promise<User> {
+export async function requireCurrentUser(): Promise<UserWithSuperAdmin> {
   const user = await getCurrentUser()
 
   if (!user) {
@@ -163,6 +177,15 @@ export async function requireCurrentUser(): Promise<User> {
   }
 
   return user
+}
+
+/**
+ * Verifica si el usuario actual es SUPER_ADMIN
+ * Útil para verificaciones rápidas de permisos
+ */
+export async function isSuperAdmin(): Promise<boolean> {
+  const user = await getCurrentUser()
+  return user?.isSuperAdmin ?? false
 }
 
 /**

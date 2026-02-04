@@ -259,7 +259,7 @@ export default function InvoiceDetailPage() {
         </TabsList>
 
         <TabsContent value="details" className="mt-6">
-          <DetailsTab invoice={invoice} onRefresh={fetchInvoice} />
+          <DetailsTab invoice={invoice} />
         </TabsContent>
 
         <TabsContent value="items" className="mt-6">

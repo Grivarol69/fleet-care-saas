@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { Prisma } from "@prisma/client";
+import { canCreateWorkOrders } from "@/lib/permissions";
 
 /**
  * GET - Listar WorkOrders con filtros
@@ -107,33 +108,47 @@ export async function GET(request: NextRequest) {
  * POST - Crear WorkOrder desde alertas de mantenimiento
  */
 export async function POST(request: NextRequest) {
+  let bodyLog: any = null;
   try {
+    console.log("====== [POST WO] STARTING REQUEST ======");
+
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
 
+    console.log("[POST WO] User found:", user?.email);
+
     // Validar permisos (OWNER, MANAGER pueden crear WO)
-    const { canCreateWorkOrders } = await import("@/lib/permissions");
+
     if (!canCreateWorkOrders(user)) {
+      console.log("[POST WO] Permission denied for user:", user.email);
       return NextResponse.json(
         { error: "No tienes permisos para crear órdenes de trabajo" },
         { status: 403 }
       );
     }
+    console.log("[POST WO] Permission granted.");
 
     const body = await request.json();
+    bodyLog = body;
+    console.log("[POST WO] Payload received:", JSON.stringify(body));
+
     const {
       vehicleId,
       alertIds,
       title,
       description,
-      technicianId,
-      providerId,
+      technicianId: rawTechId,
+      providerId: rawProvId,
       scheduledDate,
       priority = "MEDIUM",
       mantType = "PREVENTIVE",
     } = body;
+
+    // Sanitize IDs
+    const technicianId = rawTechId ? Number(rawTechId) : null;
+    const providerId = rawProvId ? Number(rawProvId) : null;
 
     // Validaciones
     if (!vehicleId || !alertIds || alertIds.length === 0) {
@@ -150,7 +165,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. Obtener las alertas seleccionadas
+    // 1. Obtener las alertas seleccionadas con precios de referencia de partes
     const alerts = await prisma.maintenanceAlert.findMany({
       where: {
         id: { in: alertIds },
@@ -161,7 +176,17 @@ export async function POST(request: NextRequest) {
       include: {
         programItem: {
           include: {
-            mantItem: true,
+            mantItem: {
+              include: {
+                parts: {
+                  include: {
+                    masterPart: {
+                      select: { referencePrice: true },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -174,11 +199,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Calcular totales
-    const estimatedCost = alerts.reduce(
-      (sum, a) => sum + (a.estimatedCost?.toNumber() || 0),
-      0
-    );
+    // 2. Calcular costos con fallback en cascada por alerta
+    const alertCosts = alerts.map((alert) => {
+      if (!alert.programItem) return 0;
+
+      // Fallback 1: programItem.estimatedCost
+      const programItemCost = alert.programItem.estimatedCost?.toNumber();
+      if (programItemCost && programItemCost > 0) return programItemCost;
+
+      // Fallback 2: Suma de referencePrice * quantity de las partes del mantItem
+      if (alert.programItem.mantItem && alert.programItem.mantItem.parts) {
+        const partsCost = alert.programItem.mantItem.parts.reduce(
+          (sum, part) => {
+            const price = part.masterPart.referencePrice?.toNumber() || 0;
+            const qty = Number(part.quantity) || 1;
+            return sum + price * qty;
+          },
+          0
+        );
+        if (partsCost > 0) return partsCost;
+      }
+
+      // Fallback 3: alert.estimatedCost (snapshot al crear la alerta)
+      const alertCost = alert.estimatedCost?.toNumber();
+      if (alertCost && alertCost > 0) return alertCost;
+
+      // Fallback 4: 0
+      return 0;
+    });
+
+    const estimatedCost = alertCosts.reduce((sum, cost) => sum + cost, 0);
 
     // 3. Obtener km actual del vehículo
     const vehicle = await prisma.vehicle.findUnique({
@@ -242,28 +292,64 @@ export async function POST(request: NextRequest) {
       data: { status: "IN_PROGRESS" },
     });
 
-    // 7. Crear WorkOrderItems
+    // 7. Crear WorkOrderItems con costos calculados
     await Promise.all(
-      alerts.map((alert) =>
-        prisma.workOrderItem.create({
+      alerts.map((alert, index) => {
+        const itemCost = alertCosts[index] ?? 0;
+        return prisma.workOrderItem.create({
           data: {
             workOrderId: workOrder.id,
             mantItemId: alert.programItem.mantItemId,
             description: alert.itemName,
             supplier: providerId ? "from-provider" : "N/A",
-            unitPrice: alert.estimatedCost || 0,
+            unitPrice: itemCost,
             quantity: 1,
-            totalCost: alert.estimatedCost || 0,
+            totalCost: itemCost,
             purchasedBy: user.id,
             status: "PENDING",
           },
-        })
-      )
+        });
+      })
     );
 
-    return NextResponse.json(workOrder, { status: 201 });
+    // 7. Crear WorkOrderItems
+    // ... (item creation logic is fine)
+
+    // FIX: Prisma Decimal/BigInt serialization issue in Next.js
+    const serializedWorkOrder = JSON.parse(JSON.stringify(workOrder, (key, value) =>
+      (typeof value === 'bigint' ? value.toString() : value)
+    ));
+
+    // Also convert Decimals manually if needed, but typically JSON.stringify handles simple decimals as strings or validation fails.
+    // Safest is to return just what we need or a sanitized copy.
+    return NextResponse.json({
+      ...serializedWorkOrder,
+      estimatedCost: workOrder.estimatedCost?.toNumber() || 0
+    }, { status: 201 });
   } catch (error: unknown) {
-    console.error("[WORK_ORDERS_POST]", error);
+    console.error("====== [POST WO] FATAL ERROR ======");
+
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const logPath = path.join(process.cwd(), 'debug_error.log');
+      const errorMsg = `
+[${new Date().toISOString()}] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: ${error instanceof Error ? error.message : String(error)}
+Stack: ${error instanceof Error ? error.stack : 'N/A'}
+Payload: ${JSON.stringify(bodyLog || 'Payload not read')}
+----------------------------------------
+`;
+      fs.appendFileSync(logPath, errorMsg);
+    } catch (logErr) {
+      console.error("Failed to write to log file", logErr);
+    }
+
+    console.error(error);
+    if (error instanceof Error) {
+      console.error("Msg:", error.message);
+      console.error("Stack:", error.stack);
+    }
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : "Error interno",

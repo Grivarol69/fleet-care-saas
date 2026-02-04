@@ -62,8 +62,8 @@ type WorkOrder = {
     itemName: string;
     status: string;
     priority: string;
-    scheduledKm: number | null;
-    estimatedCost: number | null;
+    scheduledKm?: number | null;
+    estimatedCost?: number | null;
   }>;
   workOrderItems: Array<{
     id: number;
@@ -91,12 +91,14 @@ type WorkOrder = {
     } | null;
   }>;
   workOrderExpenses: Array<{
-    id: number;
+    id: string;
     description: string;
     amount: number;
     expenseDate: string;
-    category: string;
-    notes: string | null;
+    expenseType: string;
+    status: string;
+    vendor: string | null;
+    invoiceNumber: string | null;
   }>;
   approvals: Array<{
     id: number;

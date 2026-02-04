@@ -2,8 +2,6 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from '@/lib/auth';
 import { NextResponse } from "next/server";
 
-const TENANT_ID = 'cf68b103-12fd-4208-a352-42379ef3b6e1'; // Tenant hardcodeado para MVP
-
 // GET all documents for a specific vehicle
 export async function GET(req: Request) {
     try {
@@ -23,7 +21,7 @@ export async function GET(req: Request) {
         const vehicle = await prisma.vehicle.findUnique({
             where: {
                 tenantId_licensePlate: {
-                    tenantId: TENANT_ID,
+                    tenantId: user.tenantId,
                     licensePlate: vehiclePlate,
                 }
             }
@@ -35,8 +33,11 @@ export async function GET(req: Request) {
 
         const documents = await prisma.document.findMany({
             where: {
-                tenantId: TENANT_ID,
+                tenantId: user.tenantId,
                 vehicleId: vehicle.id,
+            },
+            include: {
+                documentType: true,
             },
             orderBy: {
                 createdAt: 'desc',
@@ -62,9 +63,9 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { vehiclePlate, type, documentNumber, entity, fileUrl, expiryDate, status } = body;
+        const { vehiclePlate, documentTypeId, documentNumber, entity, fileUrl, expiryDate, status } = body;
 
-        if (!vehiclePlate || !type || !documentNumber || !fileUrl) {
+        if (!vehiclePlate || !documentTypeId || !documentNumber || !fileUrl) {
             return new NextResponse("Missing required fields", { status: 400 });
         }
 
@@ -74,7 +75,7 @@ export async function POST(req: Request) {
         const vehicle = await prisma.vehicle.findUnique({
             where: {
                 tenantId_licensePlate: {
-                    tenantId: TENANT_ID,
+                    tenantId: user.tenantId,
                     licensePlate: vehiclePlate,
                 }
             }
@@ -84,18 +85,35 @@ export async function POST(req: Request) {
             return new NextResponse("Vehicle not found for this tenant", { status: 404 });
         }
 
+        // Verify document type exists and is accessible
+        const docType = await prisma.documentTypeConfig.findUnique({
+            where: { id: documentTypeId },
+        });
+
+        if (!docType || docType.status !== 'ACTIVE') {
+            return new NextResponse("Invalid document type", { status: 400 });
+        }
+
+        // Verify access: global or belongs to tenant
+        if (!docType.isGlobal && docType.tenantId !== user.tenantId) {
+            return new NextResponse("Document type not accessible", { status: 403 });
+        }
+
         const newDocument = await prisma.document.create({
             data: {
-                tenantId: TENANT_ID,
+                tenantId: user.tenantId,
                 vehicleId: vehicle.id,
-                type,
-                fileName,              // Extraído del fileUrl
-                documentNumber,        // Número oficial del documento
-                entity: entity || null, // Entidad emisora (opcional)
+                documentTypeId,
+                fileName,
+                documentNumber,
+                entity: entity || null,
                 fileUrl,
                 expiryDate: expiryDate ? new Date(expiryDate) : null,
                 status: status || 'ACTIVE',
-            }
+            },
+            include: {
+                documentType: true,
+            },
         });
 
         return NextResponse.json(newDocument);
