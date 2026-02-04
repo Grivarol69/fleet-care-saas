@@ -53,6 +53,7 @@ model Tenant {
   inventoryMovements        InventoryMovement[]
   internalWorkTickets       InternalWorkTicket[]
   documentTypeConfigs       DocumentTypeConfig[]
+  purchaseOrders            PurchaseOrder[]
 
   @@index([slug])
   @@index([subscriptionStatus])
@@ -296,6 +297,7 @@ model MantItem {
   workOrderItems      WorkOrderItem[]
   vehicleProgramItems VehicleProgramItem[] // ✅ CURRENT ARCHITECTURE
   parts               MantItemPart[] // ✅ Artículos vinculados al item
+  purchaseOrderItems  PurchaseOrderItem[]
 
   @@unique([tenantId, name])
   @@index([categoryId])
@@ -400,6 +402,7 @@ model WorkOrder {
   mantType        MantType
   priority        Priority
   status          WorkOrderStatus @default(PENDING)
+  workType        WorkType        @default(EXTERNAL) // EXTERNAL | INTERNAL | MIXED
   technicianId    Int?
   providerId      Int?
   creationMileage Int
@@ -438,6 +441,7 @@ model WorkOrder {
   financialAlerts        FinancialAlert[] // ✅ Nueva relación
   invoices               Invoice[] // ✅ Facturas vinculadas a esta WO
   internalWorkTickets    InternalWorkTicket[]
+  purchaseOrders         PurchaseOrder[]
 
   @@index([tenantId])
   @@index([vehicleId])
@@ -479,6 +483,9 @@ model WorkOrderItem {
   closedAt              DateTime?
   closedBy              String?
 
+  // Fuente del item
+  itemSource ItemSource @default(EXTERNAL) // EXTERNAL | INTERNAL_STOCK | INTERNAL_PURCHASE
+
   // Campos legacy
   cost             Decimal?        @db.Decimal(10, 2)
   executionMileage Int?
@@ -492,6 +499,7 @@ model WorkOrderItem {
   invoiceItems       InvoiceItem[] // ✅ Items de factura vinculados
   ticketLaborEntries TicketLaborEntry[]
   ticketPartEntries  TicketPartEntry[]
+  purchaseOrderItems PurchaseOrderItem[]
 
   @@index([workOrderId])
   @@index([mantItemId])
@@ -609,9 +617,10 @@ model MasterPart {
   invoiceItems    InvoiceItem[]
   priceHistory    PartPriceHistory[]
   compatibilities PartCompatibility[] // FASE 3
-  inventoryItems  InventoryItem[]
-  financialAlerts FinancialAlert[] // ✅ Relación inversa
-  workOrderItems  WorkOrderItem[]
+  inventoryItems     InventoryItem[]
+  financialAlerts    FinancialAlert[] // ✅ Relación inversa
+  workOrderItems     WorkOrderItem[]
+  purchaseOrderItems PurchaseOrderItem[]
 
   @@index([category])
   @@index([tenantId])
@@ -661,6 +670,10 @@ model Invoice {
   workOrderId Int?
   workOrder   WorkOrder? @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
 
+  // Vinculación con orden de compra (opcional)
+  purchaseOrderId String?
+  purchaseOrder   PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id], onDelete: SetNull)
+
   // Montos
   subtotal    Decimal @db.Decimal(10, 2)
   taxAmount   Decimal @default(0) @db.Decimal(10, 2)
@@ -704,6 +717,7 @@ model Invoice {
   @@index([tenantId])
   @@index([supplierId])
   @@index([workOrderId])
+  @@index([purchaseOrderId])
   @@index([invoiceDate])
 }
 
@@ -801,6 +815,98 @@ model InvoicePayment {
   @@index([paymentDate])
 }
 
+// ========================================
+// PURCHASE ORDER SYSTEM
+// ========================================
+
+model PurchaseOrder {
+  id        String @id @default(cuid())
+  tenantId  String
+  tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Relacion con OT
+  workOrderId Int
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
+
+  // Numero y tipo
+  orderNumber String            // "OC-2026-000001"
+  type        PurchaseOrderType // SERVICES | PARTS
+
+  // Proveedor
+  providerId Int
+  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Restrict)
+
+  // Estado con flujo de aprobacion
+  status PurchaseOrderStatus @default(DRAFT)
+
+  // Aprobacion
+  requestedBy String // userId que creo
+  approvedBy  String? // userId que aprobo
+  approvedAt  DateTime?
+  sentAt      DateTime?
+
+  // Montos
+  subtotal  Decimal @db.Decimal(12, 2)
+  taxRate   Decimal @db.Decimal(5, 2) @default(0)
+  taxAmount Decimal @db.Decimal(12, 2) @default(0)
+  total     Decimal @db.Decimal(12, 2)
+
+  // Items y facturas
+  items    PurchaseOrderItem[]
+  invoices Invoice[] // Facturas que cancelan esta OC
+
+  notes     String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, orderNumber])
+  @@index([tenantId])
+  @@index([workOrderId])
+  @@index([providerId])
+  @@index([status])
+}
+
+model PurchaseOrderItem {
+  id              String        @id @default(cuid())
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+
+  // Vinculo con WorkOrderItem (trazabilidad)
+  workOrderItemId Int?
+  workOrderItem   WorkOrderItem? @relation(fields: [workOrderItemId], references: [id], onDelete: SetNull)
+
+  // Item de mantenimiento
+  mantItemId Int?
+  mantItem   MantItem? @relation(fields: [mantItemId], references: [id], onDelete: SetNull)
+
+  // Repuesto (si aplica)
+  masterPartId String?
+  masterPart   MasterPart? @relation(fields: [masterPartId], references: [id], onDelete: SetNull)
+
+  // Datos del item
+  description String
+  quantity    Decimal @db.Decimal(10, 2)
+  unitPrice   Decimal @db.Decimal(12, 2)
+  total       Decimal @db.Decimal(12, 2)
+
+  // Estado de recepcion/facturacion
+  status      POItemStatus @default(PENDING)
+  receivedQty Decimal      @db.Decimal(10, 2) @default(0)
+
+  // Referencia a factura que cancela este item
+  invoiceItemId String?
+  closedAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([purchaseOrderId])
+  @@index([workOrderItemId])
+  @@index([mantItemId])
+  @@index([masterPartId])
+  @@index([status])
+}
+
 // 7. Compatibilidad de artículos por vehículo (FASE 3 - para sugerir alternativas)
 model PartCompatibility {
   id           String     @id @default(cuid())
@@ -881,6 +987,7 @@ model Provider {
   invoices               Invoice[] // ✅ Facturas del proveedor
   priceHistory           PartPriceHistory[] // ✅ Histórico de precios
   workOrderExpenses      WorkOrderExpense[] // ✅ Gastos asignados
+  purchaseOrders         PurchaseOrder[]
 
   @@unique([tenantId, name])
   @@index([tenantId])
