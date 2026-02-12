@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from '@/lib/auth';
+import { requireManagementRole } from "@/lib/permissions";
 
 // GET - Fetch specific odometer log
 export async function GET(
@@ -58,6 +59,12 @@ export async function PUT(
     const user = await getCurrentUser();
     if (!user) {
       return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    try {
+      requireManagementRole(user);
+    } catch {
+      return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
     }
 
     const id = parseInt(params.id);
@@ -180,6 +187,12 @@ export async function DELETE(
     const user = await getCurrentUser();
     if (!user) {
       return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    try {
+      requireManagementRole(user);
+    } catch {
+      return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
     }
 
     const id = parseInt(params.id);

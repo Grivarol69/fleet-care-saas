@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { z } from "zod";
 import { AlertType, AlertLevel, AlertStatus } from "@prisma/client";
+import { canManagePurchases } from "@/lib/permissions";
 
 // Schema validation
 const purchaseSchema = z.object({
@@ -24,6 +25,10 @@ export async function POST(req: Request) {
         const user = await getCurrentUser();
         if (!user) {
             return new NextResponse("Unauthorized", { status: 401 });
+        }
+
+        if (!canManagePurchases(user)) {
+            return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
         }
 
         const json = await req.json();

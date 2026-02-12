@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { MovementType, MovementReferenceType, ItemSource, ItemClosureType } from '@prisma/client';
+import { canExecuteWorkOrders } from '@/lib/permissions';
 
 interface ConsumeItem {
   workOrderItemId: number;
@@ -20,6 +21,13 @@ export async function POST(request: NextRequest) {
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    }
+
+    if (!canExecuteWorkOrders(user)) {
+      return NextResponse.json(
+        { error: 'No tienes permisos para esta acción' },
+        { status: 403 }
+      );
     }
 
     const body = await request.json();

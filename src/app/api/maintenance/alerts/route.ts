@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from '@/lib/auth';
 import { z } from 'zod';
 import { safeParseInt } from '@/lib/validation';
+import { canExecuteWorkOrders } from "@/lib/permissions";
 
 // Schema for PATCH body validation
 const updateAlertSchema = z.object({
@@ -165,6 +166,10 @@ export async function PATCH(request: NextRequest) {
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
+
+    if (!canExecuteWorkOrders(user)) {
+      return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
     }
 
     const body = await request.json();

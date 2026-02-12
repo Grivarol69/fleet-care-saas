@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from '@/lib/auth';
 import { NextResponse } from "next/server";
+import { canManageProviders } from "@/lib/permissions";
 
 export async function GET() {
     try {
@@ -31,6 +32,10 @@ export async function POST(req: Request) {
 
         if (!user) {
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        if (!canManageProviders(user)) {
+            return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
         }
 
         const { name, email, phone, address, specialty } = await req.json();

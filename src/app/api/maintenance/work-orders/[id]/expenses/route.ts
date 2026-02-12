@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { FinancialWatchdogService } from "@/lib/services/FinancialWatchdogService";
 import { z } from "zod";
+import { canExecuteWorkOrders } from "@/lib/permissions";
 
 // Schema validation for Expense
 const expenseSchema = z.object({
@@ -24,6 +25,10 @@ export async function POST(
         const user = await getCurrentUser();
         if (!user) {
             return new NextResponse("Unauthorized", { status: 401 });
+        }
+
+        if (!canExecuteWorkOrders(user)) {
+            return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
         }
 
         const json = await req.json();

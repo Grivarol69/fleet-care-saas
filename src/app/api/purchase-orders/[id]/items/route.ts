@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { canManagePurchases } from "@/lib/permissions";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -57,6 +58,13 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
+
+    if (!canManagePurchases(user)) {
+      return NextResponse.json(
+        { error: "No tienes permisos para esta acción" },
+        { status: 403 }
+      );
     }
 
     const { id } = await params;

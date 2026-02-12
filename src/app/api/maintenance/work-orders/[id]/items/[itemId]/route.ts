@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { safeParseInt } from '@/lib/validation';
 import { ItemSource, ItemClosureType, WorkOrderStatus } from '@prisma/client';
 import { z } from 'zod';
+import { canExecuteWorkOrders } from "@/lib/permissions";
 
 const updateItemSchema = z.object({
   itemSource: z.enum(['EXTERNAL', 'INTERNAL_STOCK', 'INTERNAL_PURCHASE']).optional(),
@@ -26,6 +27,10 @@ export async function PATCH(
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    }
+
+    if (!canExecuteWorkOrders(user)) {
+      return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
     }
 
     const { id, itemId } = await params;

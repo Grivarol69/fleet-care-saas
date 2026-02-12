@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { InvoiceStatus, ItemSource, ItemClosureType } from '@prisma/client';
+import { canApproveInvoices } from '@/lib/permissions';
 
 interface InvoiceItemInput {
   description: string;
@@ -80,9 +81,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Validar permisos
-    if (!['OWNER', 'MANAGER'].includes(user.role)) {
+    if (!canApproveInvoices(user)) {
       return NextResponse.json(
-        { error: 'No tienes permisos para crear facturas' },
+        { error: 'No tienes permisos para esta acción' },
         { status: 403 }
       );
     }

@@ -1,12 +1,23 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
+import { getCurrentUser } from '@/lib/auth';
+import { canManageMaintenancePrograms } from "@/lib/permissions";
 
 export async function PUT(
     request: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
+        const user = await getCurrentUser();
+        if (!user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        if (!canManageMaintenancePrograms(user)) {
+            return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
+        }
+
         const id = parseInt(params.id);
         const body = await request.json();
         const { triggerKm, priority, estimatedTime, technicalNotes, isOptional, order } = body;
@@ -65,6 +76,15 @@ export async function DELETE(
     { params }: { params: { id: string } }
 ) {
     try {
+        const user = await getCurrentUser();
+        if (!user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        if (!canManageMaintenancePrograms(user)) {
+            return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
+        }
+
         const id = parseInt(params.id);
 
         // Verificar que el package item existe

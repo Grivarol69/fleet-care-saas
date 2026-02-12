@@ -3,6 +3,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { safeParseInt } from '@/lib/validation';
+import { canExecuteWorkOrders } from "@/lib/permissions";
 
 // Schema validation
 const createItemSchema = z.object({
@@ -136,6 +137,10 @@ export async function POST(
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    }
+
+    if (!canExecuteWorkOrders(user)) {
+      return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
     }
 
     const { id } = await params;

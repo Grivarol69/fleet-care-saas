@@ -4,6 +4,28 @@ import { WebhookEvent } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { UserRole } from '@prisma/client'
 
+// Cache en memoria para idempotency de webhooks (previene procesamiento duplicado)
+// Los svix-id se guardan por 5 minutos — suficiente para cubrir retries de Svix
+const processedEvents = new Map<string, number>()
+const IDEMPOTENCY_TTL_MS = 5 * 60 * 1000
+
+function isEventAlreadyProcessed(svixId: string): boolean {
+    const timestamp = processedEvents.get(svixId)
+    if (timestamp && Date.now() - timestamp < IDEMPOTENCY_TTL_MS) {
+        return true
+    }
+    // Limpiar entradas expiradas periódicamente (cada 100 eventos)
+    if (processedEvents.size > 100) {
+        const now = Date.now()
+        for (const [key, ts] of processedEvents) {
+            if (now - ts > IDEMPOTENCY_TTL_MS) {
+                processedEvents.delete(key)
+            }
+        }
+    }
+    return false
+}
+
 /** Mapea un rol de Clerk (org:admin, org:manager, etc.) al UserRole de Prisma */
 function mapClerkRoleToDbRole(clerkRoleRaw: string): UserRole {
     const role = clerkRoleRaw.replace('org:', '')
@@ -61,10 +83,16 @@ export async function POST(req: Request) {
         })
     }
 
+    // Idempotency: rechazar eventos ya procesados
+    if (isEventAlreadyProcessed(svix_id)) {
+        console.log(`[WEBHOOK] Duplicate event ${svix_id} skipped`)
+        return new Response('', { status: 200 })
+    }
+    processedEvents.set(svix_id, Date.now())
+
     // Handle the event
     const eventType = evt.type
-    console.log(`Webhook with an ID of ${evt.data.id} and type of ${eventType}`)
-    console.log('Webhook body:', body)
+    console.log(`[WEBHOOK] Processing ${eventType} (svix-id: ${svix_id})`)
 
     try {
         switch (eventType) {
@@ -122,6 +150,7 @@ export async function POST(req: Request) {
                 const email = public_user_data.identifier
                 const dbRole = mapClerkRoleToDbRole(role)
 
+                // Upsert: si el usuario fue soft-deleted previamente, lo reactiva
                 await prisma.user.upsert({
                     where: {
                         tenantId_email: {
@@ -135,9 +164,11 @@ export async function POST(req: Request) {
                         firstName: public_user_data.first_name,
                         lastName: public_user_data.last_name,
                         role: dbRole,
+                        isActive: true,
                     },
                     update: {
-                        role: dbRole
+                        role: dbRole,
+                        isActive: true,
                     }
                 })
                 break
@@ -164,10 +195,15 @@ export async function POST(req: Request) {
                 const { organization, public_user_data } = evt.data
                 const email = public_user_data.identifier
 
-                await prisma.user.deleteMany({
+                // Soft-delete: desactivar en vez de borrar para preservar audit trail
+                // (facturas aprobadas, OTs creadas, etc. mantienen referencia al usuario)
+                await prisma.user.updateMany({
                     where: {
                         tenantId: organization.id,
-                        email: email
+                        email: email,
+                    },
+                    data: {
+                        isActive: false,
                     }
                 })
                 break

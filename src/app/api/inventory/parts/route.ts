@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { getCurrentUser } from '@/lib/auth';
 import { NextResponse } from "next/server";
 import { z } from 'zod';
+import { canManagePurchases } from "@/lib/permissions";
 
 // Schema for creating a MasterPart
 const createMasterPartSchema = z.object({
@@ -73,11 +74,8 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
         }
 
-        // Only authorized roles can create parts
-        // Assuming OWNER, MANAGER, PURCHASER
-        const allowedRoles = ['SUPER_ADMIN', 'OWNER', 'MANAGER', 'PURCHASER'];
-        if (!allowedRoles.includes(user.role)) {
-            return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+        if (!canManagePurchases(user)) {
+            return NextResponse.json({ error: 'No tienes permisos para esta acción' }, { status: 403 });
         }
 
         const body = await req.json();

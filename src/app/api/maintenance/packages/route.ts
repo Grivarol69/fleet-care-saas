@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
 import { getCurrentUser } from '@/lib/auth';
+import { canManageMaintenancePrograms } from "@/lib/permissions";
 
 export async function GET(request: NextRequest) {
     try {
@@ -58,6 +59,10 @@ export async function POST(request: NextRequest) {
         const user = await getCurrentUser();
         if (!user) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        if (!canManageMaintenancePrograms(user)) {
+            return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
         }
 
         const body = await request.json();

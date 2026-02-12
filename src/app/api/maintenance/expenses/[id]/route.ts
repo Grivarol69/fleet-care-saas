@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { ApprovalStatus, UserRole } from "@prisma/client";
 import { z } from "zod";
+import { canExecuteWorkOrders } from "@/lib/permissions";
 
 const updateExpenseSchema = z.object({
     status: z.nativeEnum(ApprovalStatus),
@@ -17,6 +18,10 @@ export async function PATCH(
         const user = await getCurrentUser();
         if (!user) {
             return new NextResponse("Unauthorized", { status: 401 });
+        }
+
+        if (!canExecuteWorkOrders(user)) {
+            return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
         }
 
         const { id } = params;

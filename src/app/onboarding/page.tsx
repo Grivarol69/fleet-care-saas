@@ -1,5 +1,5 @@
 
-import { currentUser } from "@clerk/nextjs/server";
+import { currentUser, auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Check, Truck, Building2 } from "lucide-react";
@@ -12,8 +12,6 @@ import { updateTenantProfile, completeOnboarding } from "@/actions/onboarding";
 
 import { Prisma } from "@prisma/client";
 
-// ... existing imports
-
 type UserWithTenant = Prisma.UserGetPayload<{
   include: { tenant: true }
 }>
@@ -22,11 +20,20 @@ export default async function OnboardingPage() {
   const user = await currentUser();
   if (!user) return redirect("/sign-in");
 
-  // Verificar estado actual en DB
-  const dbUser: UserWithTenant | null = await prisma.user.findFirst({
-    where: { email: user.emailAddresses?.[0]?.emailAddress || "" },
-    include: { tenant: true }
-  });
+  const { orgId } = await auth();
+  const email = user.emailAddresses?.[0]?.emailAddress || "";
+
+  // Buscar usuario filtrando por orgId (tenant) para evitar retornar
+  // el usuario del tenant equivocado en caso de multi-org
+  const dbUser: UserWithTenant | null = orgId
+    ? await prisma.user.findFirst({
+        where: { email, tenantId: orgId },
+        include: { tenant: true }
+      })
+    : await prisma.user.findFirst({
+        where: { email },
+        include: { tenant: true }
+      });
 
   // Si no tiene tenant, es usuario nuevo sin invitación -> Crear Tenant
   // Si tiene tenant pero status es PENDING -> Mostrar Wizard

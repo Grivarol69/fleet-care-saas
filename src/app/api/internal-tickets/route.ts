@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { InternalTicketStatus, MovementType, MovementReferenceType } from "@prisma/client";
+import { canExecuteWorkOrders } from "@/lib/permissions";
 
 // POST: Crear nuevo Internal Work Ticket
 export async function POST(request: Request) {
@@ -10,6 +11,10 @@ export async function POST(request: Request) {
         const user = await getCurrentUser();
         if (!user) {
             return new NextResponse("Unauthorized", { status: 401 });
+        }
+
+        if (!canExecuteWorkOrders(user)) {
+            return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
         }
 
         const body = await request.json();

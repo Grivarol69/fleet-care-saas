@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from '@/lib/auth';
 import { NextResponse } from "next/server";
 import { safeParseInt } from '@/lib/validation';
+import { canManageProviders } from "@/lib/permissions";
 
 // GET - Obtener proveedor específico por ID
 export async function GET(
@@ -50,6 +51,10 @@ export async function PUT(
 
         if (!user) {
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        if (!canManageProviders(user)) {
+            return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
         }
 
         const providerId = safeParseInt(id);
@@ -122,6 +127,10 @@ export async function DELETE(
 
         if (!user) {
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        if (!canManageProviders(user)) {
+            return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
         }
 
         const providerId = safeParseInt(id);

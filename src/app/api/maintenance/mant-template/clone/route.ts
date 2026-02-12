@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { z } from "zod";
+import { canManageMaintenancePrograms } from "@/lib/permissions";
 
 const cloneSchema = z.object({
     templateId: z.number()
@@ -13,6 +14,10 @@ export async function POST(req: Request) {
         const user = await getCurrentUser();
         if (!user) {
             return new NextResponse("Unauthorized", { status: 401 });
+        }
+
+        if (!canManageMaintenancePrograms(user)) {
+            return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
         }
 
         const json = await req.json();

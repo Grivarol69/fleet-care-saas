@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from '@/lib/auth';
 import { NextResponse } from "next/server";
+import { canManageVehicles } from "@/lib/permissions";
 
 // GET all documents for a specific vehicle
 export async function GET(req: Request) {
@@ -60,6 +61,10 @@ export async function POST(req: Request) {
 
         if (!user) {
             return new NextResponse("Unauthorized", { status: 401 });
+        }
+
+        if (!canManageVehicles(user)) {
+            return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
         }
 
         const body = await req.json();

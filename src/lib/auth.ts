@@ -45,6 +45,7 @@ export async function getCurrentUser(): Promise<UserWithSuperAdmin | null> {
           email,
           tenantId: PLATFORM_TENANT_ID,
           role: 'SUPER_ADMIN',
+          isActive: true,
         },
       })
       const isSuperAdmin = !!superAdminUser
@@ -70,6 +71,7 @@ export async function getCurrentUser(): Promise<UserWithSuperAdmin | null> {
         where: {
           email,
           tenantId: orgId,
+          isActive: true,
         },
       })
 
@@ -82,6 +84,7 @@ export async function getCurrentUser(): Promise<UserWithSuperAdmin | null> {
           where: {
             email,
             tenantId: orgId,
+            isActive: true,
           },
         })
       }

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { getCurrentUser } from '@/lib/auth';
+import { canManageMaintenancePrograms } from "@/lib/permissions";
 
 // GET - Obtener programa específico por ID
 export async function GET(
@@ -69,6 +70,10 @@ export async function PUT(
     const user = await getCurrentUser();
     if (!user) {
       return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    if (!canManageMaintenancePrograms(user)) {
+      return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
     }
 
     const programId = parseInt(params.id);
@@ -147,6 +152,10 @@ export async function DELETE(
     const user = await getCurrentUser();
     if (!user) {
       return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    if (!canManageMaintenancePrograms(user)) {
+      return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
     }
 
     const programId = parseInt(params.id);

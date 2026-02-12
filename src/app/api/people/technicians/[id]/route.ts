@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from '@/lib/auth';
 import { NextResponse } from "next/server";
 import { safeParseInt } from '@/lib/validation';
+import { canManageMasterData } from "@/lib/permissions";
 
 // GET - Obtener técnico específico por ID
 export async function GET(
@@ -50,6 +51,10 @@ export async function PUT(
 
         if (!user) {
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        if (!canManageMasterData(user)) {
+            return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
         }
 
         const technicianId = safeParseInt(id);
@@ -121,6 +126,10 @@ export async function DELETE(
 
         if (!user) {
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        if (!canManageMasterData(user)) {
+            return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
         }
 
         const technicianId = safeParseInt(id);

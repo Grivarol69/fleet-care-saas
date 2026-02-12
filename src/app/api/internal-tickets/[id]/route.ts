@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { ItemSource, ItemClosureType } from '@prisma/client';
+import { canManageMasterData } from '@/lib/permissions';
 
 /**
  * GET /api/internal-tickets/[id] - Obtener ticket interno por ID
@@ -76,11 +77,8 @@ export async function PATCH(
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
-    if (!['OWNER', 'MANAGER'].includes(user.role)) {
-      return NextResponse.json(
-        { error: 'No tienes permisos para aprobar tickets internos' },
-        { status: 403 }
-      );
+    if (!canManageMasterData(user)) {
+      return NextResponse.json({ error: 'No tienes permisos para esta acción' }, { status: 403 });
     }
 
     const { id } = await params;

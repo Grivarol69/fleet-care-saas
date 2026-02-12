@@ -7,6 +7,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { PurchaseOrderPDF } from "@/components/pdf/PurchaseOrderPDF";
 import { PurchaseOrderEmail } from "@/emails/PurchaseOrderEmail";
 import React from "react";
+import { canManagePurchases } from "@/lib/permissions";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -79,6 +80,13 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
+
+    if (!canManagePurchases(user)) {
+      return NextResponse.json(
+        { error: "No tienes permisos para esta acción" },
+        { status: 403 }
+      );
     }
 
     const { id } = await params;
@@ -338,6 +346,13 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
+
+    if (!canManagePurchases(user)) {
+      return NextResponse.json(
+        { error: "No tienes permisos para esta acción" },
+        { status: 403 }
+      );
     }
 
     const { id } = await params;

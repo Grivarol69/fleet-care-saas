@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { Prisma, PurchaseOrderStatus, PurchaseOrderType } from "@prisma/client";
+import { canManagePurchases } from "@/lib/permissions";
 
 /**
  * GET - Listar Ordenes de Compra con filtros
@@ -89,9 +90,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Validar permisos (OWNER, MANAGER, PURCHASER)
-    if (!["OWNER", "MANAGER", "PURCHASER"].includes(user.role)) {
+    if (!canManagePurchases(user)) {
       return NextResponse.json(
-        { error: "No tienes permisos para crear ordenes de compra" },
+        { error: "No tienes permisos para esta acción" },
         { status: 403 }
       );
     }

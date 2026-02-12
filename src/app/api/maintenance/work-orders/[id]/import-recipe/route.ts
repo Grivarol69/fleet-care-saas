@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { z } from "zod";
+import { canCreateWorkOrders } from "@/lib/permissions";
 
 const importSchema = z.object({
     packageId: z.number()
@@ -16,6 +17,10 @@ export async function POST(
         const user = await getCurrentUser();
         if (!user) {
             return new NextResponse("Unauthorized", { status: 401 });
+        }
+
+        if (!canCreateWorkOrders(user)) {
+            return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
         }
 
         const workOrderId = parseInt(params.id);
