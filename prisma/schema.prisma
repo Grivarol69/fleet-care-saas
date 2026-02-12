@@ -19,6 +19,10 @@ model Tenant {
   domain             String?            @unique // Dominio personalizado opcional
   logo               String?
   country            String             @default("CO") // ISO 3166-1 alpha-2
+  currency           String             @default("COP") // Moneda local
+  
+  onboardingStatus   OnboardingStatus   @default(PENDING)
+  
   settings           Json? // Configuraciones específicas del tenant
   subscriptionId     String?            @unique
   subscriptionStatus SubscriptionStatus @default(TRIAL)
@@ -1953,4 +1957,11 @@ enum MantItemRequestStatus {
   PENDING // Solicitado, esperando revisión
   APPROVED // Aprobado, MantItem creado
   REJECTED // Rechazado con motivo
+}
+
+enum OnboardingStatus {
+  PENDING
+  PROFILE_COMPLETED
+  FLEET_CONFIGURED
+  COMPLETED
 }
