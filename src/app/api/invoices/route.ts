@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { InvoiceStatus } from '@prisma/client';
+import { InvoiceStatus, ItemSource, ItemClosureType } from '@prisma/client';
 
 interface InvoiceItemInput {
   description: string;
@@ -94,6 +94,7 @@ export async function POST(request: NextRequest) {
       dueDate,
       supplierId,
       workOrderId,
+      purchaseOrderId,
       subtotal,
       taxAmount,
       totalAmount,
@@ -167,6 +168,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Si tiene purchaseOrderId, validar que existe y está en estado SENT
+    let purchaseOrder = null;
+    if (purchaseOrderId) {
+      purchaseOrder = await prisma.purchaseOrder.findUnique({
+        where: {
+          id: purchaseOrderId,
+          tenantId: user.tenantId,
+        },
+        include: { items: true },
+      });
+
+      if (!purchaseOrder) {
+        return NextResponse.json(
+          { error: 'Orden de compra no encontrada' },
+          { status: 404 }
+        );
+      }
+
+      if (purchaseOrder.status !== 'SENT') {
+        return NextResponse.json(
+          { error: 'Solo se pueden facturar OC en estado SENT' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Crear Invoice + InvoiceItems en transacción
     const invoice = await prisma.$transaction(async (tx) => {
       // 1. Crear Invoice
@@ -178,6 +205,7 @@ export async function POST(request: NextRequest) {
           dueDate: dueDate ? new Date(dueDate) : null,
           supplierId,
           workOrderId: workOrderId || null,
+          purchaseOrderId: purchaseOrderId || null,
           subtotal,
           taxAmount,
           totalAmount,
@@ -209,54 +237,184 @@ export async function POST(request: NextRequest) {
         )
       );
 
-      // 3. Si tiene workOrderId, actualizar estado de WorkOrder a COMPLETED
-      if (workOrderId) {
-        await tx.workOrder.update({
-          where: { id: workOrderId },
-          data: {
-            status: 'COMPLETED',
-            actualCost: totalAmount,
-            endDate: new Date(), // ✅ BUG #5: Actualizar fecha de finalización
-          },
-        });
+      // 3. FASE 6.4: Actualizar precios de referencia y registrar histórico
+      const PRICE_DEVIATION_THRESHOLD = 0.20; // 20%
 
-        // 4. Actualizar WorkOrderItems a COMPLETED con closureType EXTERNAL_INVOICE
+      for (const invoiceItem of invoiceItems) {
+        // Si tiene masterPartId, actualizar precio de referencia
+        if (invoiceItem.masterPartId) {
+          // Registrar en PartPriceHistory
+          await tx.partPriceHistory.create({
+            data: {
+              tenantId: user.tenantId,
+              masterPartId: invoiceItem.masterPartId,
+              supplierId,
+              price: invoiceItem.unitPrice,
+              quantity: invoiceItem.quantity,
+              invoiceId: newInvoice.id,
+              purchasedBy: user.id,
+            },
+          });
+
+          // Actualizar MasterPart.referencePrice con el nuevo precio
+          await tx.masterPart.update({
+            where: { id: invoiceItem.masterPartId },
+            data: {
+              referencePrice: invoiceItem.unitPrice,
+              lastPriceUpdate: new Date(),
+            },
+          });
+        }
+
+        // FASE 6.5: Detectar desviación de precio y generar FinancialAlert
+        if (invoiceItem.workOrderItemId) {
+          const woItem = await tx.workOrderItem.findUnique({
+            where: { id: invoiceItem.workOrderItemId },
+            select: { unitPrice: true, description: true },
+          });
+
+          if (woItem && Number(woItem.unitPrice) > 0) {
+            const expected = Number(woItem.unitPrice);
+            const actual = Number(invoiceItem.unitPrice);
+            const deviation = Math.abs((actual - expected) / expected);
+
+            if (deviation > PRICE_DEVIATION_THRESHOLD) {
+              await tx.financialAlert.create({
+                data: {
+                  tenantId: user.tenantId,
+                  workOrderId: workOrderId || undefined,
+                  masterPartId: invoiceItem.masterPartId,
+                  type: 'PRICE_DEVIATION',
+                  severity: deviation > 0.5 ? 'CRITICAL' : 'HIGH',
+                  status: 'PENDING',
+                  message: `Precio de "${invoiceItem.description}" ($${actual.toLocaleString()}) difiere ${(deviation * 100).toFixed(0)}% del estimado ($${expected.toLocaleString()})`,
+                  details: { expected, actual, deviationPercent: (deviation * 100).toFixed(1) },
+                },
+              });
+            }
+          }
+        }
+      }
+
+      // 4. Si tiene workOrderId, actualizar estado de WorkOrder
+      if (workOrderId) {
+        // FASE 6.1: Solo marcar como EXTERNAL_INVOICE los items con itemSource = EXTERNAL
+        // Los items INTERNAL_STOCK se cierran con ticket interno
         await tx.workOrderItem.updateMany({
-          where: { workOrderId },
+          where: {
+            workOrderId,
+            itemSource: ItemSource.EXTERNAL,
+          },
           data: {
             status: 'COMPLETED',
-            closureType: 'EXTERNAL_INVOICE',
+            closureType: ItemClosureType.EXTERNAL_INVOICE,
             closedAt: new Date(),
             closedBy: user.id,
           },
         });
 
-        // 5. Actualizar MaintenanceAlerts vinculadas a COMPLETED
-        await tx.maintenanceAlert.updateMany({
-          where: { workOrderId },
-          data: {
-            status: 'COMPLETED',
-            closedAt: new Date(),
+        // Verificar si TODOS los items de la OT están cerrados para marcar OT como COMPLETED
+        const pendingWOItems = await tx.workOrderItem.count({
+          where: {
+            workOrderId,
+            closureType: ItemClosureType.PENDING,
+            status: { not: 'CANCELLED' },
           },
         });
 
-        // 6. Actualizar VehicleProgramItems vinculadas a COMPLETED
-        // Primero obtenemos los alertIds para encontrar los programItemIds
-        const alerts = await tx.maintenanceAlert.findMany({
-          where: { workOrderId },
-          select: { programItemId: true },
-        });
-
-        if (alerts.length > 0) {
-          const programItemIds = alerts.map((a) => a.programItemId);
-          await tx.vehicleProgramItem.updateMany({
-            where: { id: { in: programItemIds } },
+        // Solo cerrar OT si no quedan items pendientes
+        if (pendingWOItems === 0) {
+          await tx.workOrder.update({
+            where: { id: workOrderId },
             data: {
               status: 'COMPLETED',
-              executedDate: new Date(),
+              actualCost: totalAmount,
+              endDate: new Date(),
+            },
+          });
+
+          // 5. Actualizar MaintenanceAlerts vinculadas a COMPLETED
+          await tx.maintenanceAlert.updateMany({
+            where: { workOrderId },
+            data: {
+              status: 'COMPLETED',
+              closedAt: new Date(),
+            },
+          });
+
+          // 6. Actualizar VehicleProgramItems vinculadas a COMPLETED
+          const alerts = await tx.maintenanceAlert.findMany({
+            where: { workOrderId },
+            select: { programItemId: true },
+          });
+
+          if (alerts.length > 0) {
+            const programItemIds = alerts.map((a) => a.programItemId);
+            await tx.vehicleProgramItem.updateMany({
+              where: { id: { in: programItemIds } },
+              data: {
+                status: 'COMPLETED',
+                executedDate: new Date(),
+              },
+            });
+          }
+        } else {
+          // Si aún hay items pendientes, actualizar solo el actualCost parcial
+          // pero no cerrar la OT
+          const currentWO = await tx.workOrder.findUnique({
+            where: { id: workOrderId },
+            select: { actualCost: true },
+          });
+
+          const currentCost = currentWO?.actualCost ? Number(currentWO.actualCost) : 0;
+          await tx.workOrder.update({
+            where: { id: workOrderId },
+            data: {
+              actualCost: currentCost + totalAmount,
             },
           });
         }
+      }
+
+      // 7. FASE 6.3: Actualizar PurchaseOrder con vinculación correcta de items
+      if (purchaseOrderId && purchaseOrder) {
+        // Hacer matching de PurchaseOrderItems con InvoiceItems
+        for (const poItem of purchaseOrder.items) {
+          // Buscar el InvoiceItem correspondiente por workOrderItemId o descripción
+          const matchingInvoiceItem = invoiceItems.find(
+            (ii) =>
+              (poItem.workOrderItemId && ii.workOrderItemId === poItem.workOrderItemId) ||
+              ii.description === poItem.description
+          );
+
+          if (matchingInvoiceItem) {
+            // Actualizar PurchaseOrderItem con el ID correcto de InvoiceItem
+            await tx.purchaseOrderItem.update({
+              where: { id: poItem.id },
+              data: {
+                status: 'COMPLETED',
+                invoiceItemId: matchingInvoiceItem.id, // ID correcto de InvoiceItem
+                closedAt: new Date(),
+              },
+            });
+          }
+        }
+
+        // Verificar si todos los items están completos
+        const pendingPOItems = await tx.purchaseOrderItem.count({
+          where: {
+            purchaseOrderId,
+            status: { not: 'COMPLETED' },
+          },
+        });
+
+        // Actualizar estado de OC
+        await tx.purchaseOrder.update({
+          where: { id: purchaseOrderId },
+          data: {
+            status: pendingPOItems === 0 ? 'COMPLETED' : 'PARTIAL',
+          },
+        });
       }
 
       return { ...newInvoice, items: invoiceItems };

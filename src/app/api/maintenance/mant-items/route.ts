@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
+import { canCreateMantItems } from "@/lib/permissions";
 
 export async function GET(request: NextRequest) {
     try {
@@ -95,17 +96,14 @@ export async function POST(req: Request) {
                 );
             }
         } else {
-            // OWNER/MANAGER pueden crear custom
-            const { requireManagementRole } = await import("@/lib/permissions");
-            try {
-                requireManagementRole(user);
-                targetTenant = user.tenantId;
-            } catch (error) {
+            // Solo OWNER/MANAGER pueden crear items directamente
+            if (!canCreateMantItems(user)) {
                 return NextResponse.json(
-                    { error: (error as Error).message },
+                    { error: "No tiene permisos para crear items. Use la opción 'Solicitar Item' para que un administrador lo apruebe.", needsRequest: true },
                     { status: 403 }
                 );
             }
+            targetTenant = user.tenantId;
         }
 
         // Verificar que la categoría existe (global o del tenant)

@@ -6,9 +6,9 @@ export type MantItemsListProps = {
     categoryId: number;
     type: 'ACTION' | 'PART' | 'SERVICE';
     status: 'ACTIVE' | 'INACTIVE';
+    isGlobal?: boolean;
     createdAt: string;
     updatedAt: string;
-    // Join con MantCategory
     category: {
         id: number;
         name: string;

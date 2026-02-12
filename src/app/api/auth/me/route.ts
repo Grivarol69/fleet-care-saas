@@ -17,6 +17,7 @@ export async function GET() {
             lastName: user.lastName,
             role: user.role,
             tenantId: user.tenantId,
+            isSuperAdmin: user.isSuperAdmin,
         });
     } catch (error) {
         console.error("[AUTH_ME]", error);

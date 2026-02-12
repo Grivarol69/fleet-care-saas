@@ -3,4 +3,5 @@ export type LineListProps = {
     name: string;
     brandId: number;
     brandName?: string;
+    isGlobal?: boolean;
 };

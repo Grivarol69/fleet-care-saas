@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { ItemClosureType } from "@prisma/client";
 
 /**
  * GET - Obtener detalle de una WorkOrder específica
@@ -100,7 +101,7 @@ export async function GET(
     }
 
     // FIX: Prisma Decimal/BigInt serialization issue in Next.js
-    const serializedWorkOrder = JSON.parse(JSON.stringify(workOrder, (key, value) =>
+    const serializedWorkOrder = JSON.parse(JSON.stringify(workOrder, (_key, value) =>
       (typeof value === 'bigint' ? value.toString() : value)
     ));
 
@@ -172,17 +173,61 @@ export async function PATCH(
     const updateData: Record<string, any> = {};
 
     if (status) {
-      updateData.status = status;
-
-      // Si se completa la WO
+      // FASE 6.7: Validar que no haya items pendientes de cierre antes de marcar COMPLETED
       if (status === "COMPLETED") {
+        const pendingItems = await prisma.workOrderItem.count({
+          where: {
+            workOrderId,
+            closureType: ItemClosureType.PENDING,
+            status: { not: "CANCELLED" },
+          },
+        });
+
+        if (pendingItems > 0) {
+          return NextResponse.json(
+            {
+              error: `No se puede completar la OT. Hay ${pendingItems} item(s) pendientes de cierre. Genere las OC/Tickets correspondientes primero.`,
+            },
+            { status: 400 }
+          );
+        }
+
+        updateData.status = status;
         updateData.endDate = completedAt ? new Date(completedAt) : new Date();
 
-        // Actualizar WorkOrderItems a COMPLETED
+        // Actualizar WorkOrderItems a COMPLETED (solo status, closureType ya está definido)
         await prisma.workOrderItem.updateMany({
-          where: { workOrderId },
+          where: { workOrderId, status: { not: "CANCELLED" } },
           data: { status: "COMPLETED" },
         });
+
+        // FASE 6.2: Cerrar MaintenanceAlerts vinculadas
+        await prisma.maintenanceAlert.updateMany({
+          where: { workOrderId },
+          data: {
+            status: "COMPLETED",
+            closedAt: new Date(),
+          },
+        });
+
+        // Cerrar VehicleProgramItems vinculadas
+        const alerts = await prisma.maintenanceAlert.findMany({
+          where: { workOrderId },
+          select: { programItemId: true },
+        });
+
+        if (alerts.length > 0) {
+          const programItemIds = alerts.map((a) => a.programItemId);
+          await prisma.vehicleProgramItem.updateMany({
+            where: { id: { in: programItemIds } },
+            data: {
+              status: "COMPLETED",
+              executedDate: new Date(),
+            },
+          });
+        }
+      } else {
+        updateData.status = status;
       }
 
       // Si se inicia la WO
@@ -220,7 +265,7 @@ export async function PATCH(
     });
 
     // FIX: Prisma Decimal/BigInt serialization issue in Next.js
-    const serializedWorkOrder = JSON.parse(JSON.stringify(workOrder, (key, value) =>
+    const serializedWorkOrder = JSON.parse(JSON.stringify(workOrder, (_key, value) =>
       (typeof value === 'bigint' ? value.toString() : value)
     ));
 

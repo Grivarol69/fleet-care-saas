@@ -1571,20 +1571,20 @@ export default function PurchasesPage() {
 - [x] 1.10 Modificar MasterPart (agregar relacion purchaseOrderItems)
 - [x] 1.11 Ejecutar migracion (usamos `prisma db push`)
 
-### Fase 2: APIs Backend ⏳ PENDIENTE
-- [ ] 2.1 Crear /api/purchase-orders/route.ts (GET, POST)
-- [ ] 2.2 Crear /api/purchase-orders/[id]/route.ts (GET, PATCH, DELETE)
-- [ ] 2.3 Crear /api/purchase-orders/[id]/items/route.ts (GET, POST)
-- [ ] 2.4 Modificar /api/maintenance/work-orders/route.ts (soportar workType)
-- [ ] 2.5 Modificar /api/invoices/route.ts (soportar purchaseOrderId)
+### Fase 2: APIs Backend ✅ COMPLETADA
+- [x] 2.1 Crear /api/purchase-orders/route.ts (GET, POST)
+- [x] 2.2 Crear /api/purchase-orders/[id]/route.ts (GET, PATCH, DELETE)
+- [x] 2.3 Crear /api/purchase-orders/[id]/items/route.ts (GET, POST)
+- [x] 2.4 Modificar /api/maintenance/work-orders/route.ts (soportar workType)
+- [x] 2.5 Modificar /api/invoices/route.ts (soportar purchaseOrderId)
 
-### Fase 3: UI Components
-- [ ] 3.1 Crear PurchaseOrdersTab.tsx
-- [ ] 3.2 Crear /dashboard/purchases/page.tsx
-- [ ] 3.3 Crear /dashboard/purchases/[id]/page.tsx
-- [ ] 3.4 Modificar WorkOrderItemsTab (columnas fuente/documento)
-- [ ] 3.5 Agregar ruta Compras al Sidebar
-- [ ] 3.6 Integrar PurchaseOrdersTab en detalle de OT
+### Fase 3: UI Components ✅ COMPLETADA
+- [x] 3.1 Crear PurchaseOrdersTab.tsx
+- [x] 3.2 Crear /dashboard/purchase-orders/page.tsx (listado)
+- [x] 3.3 Crear /dashboard/purchase-orders/[id]/page.tsx (detalle individual)
+- [x] 3.4 WorkOrderItemsTab ya muestra fuente (EXTERNAL/STOCK) - OC se ve en tab dedicado
+- [x] 3.5 Agregar ruta "Órdenes Compra" al Sidebar (en Mantenimiento)
+- [x] 3.6 Integrar PurchaseOrdersTab en detalle de OT
 
 ### Fase 4: Testing
 - [ ] 4.1 Test flujo externo completo
@@ -1650,26 +1650,50 @@ DRAFT/PENDING/APPROVED -> CANCELLED (cancel)
 
 ## Proximos Pasos
 
-Cuando retomemos la sesion:
+### Fase 4: Testing Manual (PENDIENTE)
 
-1. Leer este documento para contexto
-2. Revisar el checklist y continuar donde quedamos (Fase 2: APIs)
-3. Crear los archivos de API en src/app/api/purchase-orders/
-4. El codigo de las APIs ya esta documentado en la seccion "Fase 2: APIs Backend" arriba
+El desarrollo está completo. Solo falta realizar pruebas manuales:
 
-### Comandos para retomar:
+1. **Test flujo externo completo:**
+   - Crear OT desde alertas
+   - Crear OC manual (o via API)
+   - Flujo: DRAFT -> PENDING_APPROVAL -> APPROVED -> SENT
+   - Crear factura con purchaseOrderId -> OC se cierra a COMPLETED
+
+2. **Test flujo interno:**
+   - Crear OT con items de inventario
+   - Verificar que no genera OC
+
+3. **Test flujo mixto:**
+   - OT con items externos e internos
+   - Solo items externos generan OC
+
+4. **Test cierre parcial:**
+   - OC con múltiples items
+   - Factura parcial -> OC pasa a PARTIAL
+
+### Comandos útiles:
 ```bash
-# Crear directorios
-mkdir -p src/app/api/purchase-orders/[id]/items
+# Iniciar servidor de desarrollo
+pnpm dev
 
-# Verificar que el schema esta ok
+# Verificar esquema
 npx prisma validate
 
-# Si hay problemas con la BD
-npx prisma db push
+# Ver datos en BD
+npx prisma studio
 ```
+
+### URLs para testing:
+- Dashboard: http://localhost:3000/dashboard
+- OTs: http://localhost:3000/dashboard/maintenance/work-orders
+- Órdenes Compra: http://localhost:3000/dashboard/purchase-orders
+- Facturas: http://localhost:3000/dashboard/invoices
 
 ---
 
 **Ultima actualizacion:** 2026-02-04
-**Progreso:** 11/28 items completados (Fase 1 completa, Fase 2-4 pendientes)
+**Progreso:** 22/28 items completados (Fase 1-3 completas, Fase 4 testing pendiente)
+
+
+claude --resume 0edbadd4-d216-4565-87b9-da7ee334ccc6

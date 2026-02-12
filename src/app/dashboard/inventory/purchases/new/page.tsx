@@ -1,21 +1,22 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Trash2, Plus, Save } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Trash2, Plus, Save, Search, Loader2 } from "lucide-react";
 import { useToast } from "@/components/hooks/use-toast";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 
 // Types
 type Supplier = { id: number; name: string };
-type MasterPart = { id: string; code: string; description: string; referencePrice: string | null };
+type MasterPart = { id: string; code: string; description: string; referencePrice: number | null; category: string; unit: string };
 
 type PurchaseItem = {
     masterPartId: string;
@@ -37,20 +38,69 @@ export default function NewPurchasePage() {
     // Items
     const [items, setItems] = useState<PurchaseItem[]>([]);
 
+    // Part search
+    const [partSearchOpen, setPartSearchOpen] = useState(false);
+    const [partSearchQuery, setPartSearchQuery] = useState("");
+    const [partSearchResults, setPartSearchResults] = useState<MasterPart[]>([]);
+    const [partSearchLoading, setPartSearchLoading] = useState(false);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+    const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         // Load Suppliers
         axios.get("/api/people/providers?type=supplier").then(res => setSuppliers(res.data)).catch(console.error);
     }, []);
 
-    // Helper to add item manually
+    // Fetch parts when search query changes (debounced)
+    const searchParts = useCallback(async (query: string) => {
+        setPartSearchLoading(true);
+        try {
+            const params = query.trim() ? `?search=${encodeURIComponent(query.trim())}` : '';
+            const res = await axios.get(`/api/inventory/parts${params}`);
+            setPartSearchResults(res.data);
+        } catch (err) {
+            console.error("Error buscando autopartes:", err);
+            setPartSearchResults([]);
+        } finally {
+            setPartSearchLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!partSearchOpen) return;
+
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+            searchParts(partSearchQuery);
+        }, 300);
+
+        return () => {
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+        };
+    }, [partSearchQuery, partSearchOpen, searchParts]);
+
+    // Load all parts when popover opens
+    useEffect(() => {
+        if (partSearchOpen) {
+            setPartSearchQuery("");
+            searchParts("");
+            setTimeout(() => searchInputRef.current?.focus(), 100);
+        }
+    }, [partSearchOpen, searchParts]);
+
+    const selectPart = (part: MasterPart) => {
+        addItem(part);
+        setPartSearchOpen(false);
+        setPartSearchQuery("");
+    };
+
     const addItem = (part: MasterPart) => {
         setItems([...items, {
             masterPartId: part.id,
             description: part.description,
             code: part.code,
             quantity: 1,
-            unitPrice: part.referencePrice ? parseFloat(part.referencePrice) : 0,
+            unitPrice: part.referencePrice ?? 0,
             taxRate: 19
         }]);
     };
@@ -131,10 +181,58 @@ export default function NewPurchasePage() {
             <Card>
                 <CardHeader className="flex flex-row justify-between items-center">
                     <CardTitle>Items</CardTitle>
-                    {/* Hacky Add Button for demo since Search API is missing in this context */}
-                    <Button variant="outline" size="sm" onClick={() => addItem({ id: "part-1", code: "OIL-FILTER", description: "Filtro Aceite Genérico", referencePrice: "25000" })}>
-                        <Plus className="mr-2 h-4 w-4" /> Agregar Item Demo
-                    </Button>
+                    <Popover open={partSearchOpen} onOpenChange={setPartSearchOpen}>
+                        <PopoverTrigger asChild>
+                            <Button variant="outline" size="sm">
+                                <Plus className="mr-2 h-4 w-4" /> Agregar Autoparte
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[400px] p-0" align="end">
+                            <div className="p-3 border-b">
+                                <div className="relative">
+                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        ref={searchInputRef}
+                                        placeholder="Buscar por código o descripción..."
+                                        className="pl-8 h-9"
+                                        value={partSearchQuery}
+                                        onChange={(e) => setPartSearchQuery(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                            <div className="max-h-[300px] overflow-y-auto">
+                                {partSearchLoading ? (
+                                    <div className="flex items-center justify-center py-6">
+                                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                                    </div>
+                                ) : partSearchResults.length === 0 ? (
+                                    <div className="py-6 text-center text-sm text-muted-foreground">
+                                        No se encontraron autopartes.
+                                    </div>
+                                ) : (
+                                    partSearchResults.map((part) => (
+                                        <button
+                                            key={part.id}
+                                            className="w-full text-left px-3 py-2 hover:bg-accent transition-colors border-b last:border-b-0"
+                                            onClick={() => selectPart(part)}
+                                        >
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <div className="font-medium text-sm">{part.description}</div>
+                                                    <div className="text-xs text-muted-foreground">{part.code} &middot; {part.category}</div>
+                                                </div>
+                                                {part.referencePrice != null && (
+                                                    <span className="text-xs font-medium text-muted-foreground whitespace-nowrap ml-2">
+                                                        ${Number(part.referencePrice).toLocaleString()}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </button>
+                                    ))
+                                )}
+                            </div>
+                        </PopoverContent>
+                    </Popover>
                 </CardHeader>
                 <CardContent>
                     <Table>

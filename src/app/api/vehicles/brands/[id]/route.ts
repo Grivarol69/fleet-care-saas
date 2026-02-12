@@ -3,8 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { safeParseInt } from '@/lib/validation';
+import { requireMasterDataMutationPermission } from "@/lib/permissions";
 
-// GET - Obtener marca específica por ID
+// GET - Obtener marca específica por ID (incluye globales)
 export async function GET(
     _req: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -23,10 +24,13 @@ export async function GET(
             return NextResponse.json({ error: "ID inválido" }, { status: 400 });
         }
 
-        const brand = await prisma.vehicleBrand.findUnique({
+        const brand = await prisma.vehicleBrand.findFirst({
             where: {
                 id: brandId,
-                tenantId: user.tenantId
+                OR: [
+                    { isGlobal: true },
+                    { tenantId: user.tenantId }
+                ]
             }
         });
 
@@ -41,7 +45,7 @@ export async function GET(
     }
 }
 
-// PUT - Actualizar marca específica (solo SUPER_ADMIN)
+// PUT - Actualizar marca (OWNER/MANAGER para custom, SUPER_ADMIN para global)
 export async function PUT(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -51,17 +55,6 @@ export async function PUT(
 
         if (!user) {
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-        }
-
-        // Validar permisos - Solo SUPER_ADMIN puede modificar tablas maestras
-        const { requireSuperAdmin } = await import("@/lib/permissions");
-        try {
-            requireSuperAdmin(user);
-        } catch (error) {
-            return NextResponse.json(
-                { error: (error as Error).message },
-                { status: 403 }
-            );
         }
 
         const { id } = await params;
@@ -77,11 +70,14 @@ export async function PUT(
             return NextResponse.json({ error: "El nombre es requerido" }, { status: 400 });
         }
 
-        // Verificar que la marca existe
-        const existingBrand = await prisma.vehicleBrand.findUnique({
+        // Verificar que la marca existe (global o del tenant)
+        const existingBrand = await prisma.vehicleBrand.findFirst({
             where: {
                 id: brandId,
-                tenantId: user.tenantId
+                OR: [
+                    { isGlobal: true },
+                    { tenantId: user.tenantId }
+                ]
             }
         });
 
@@ -89,14 +85,22 @@ export async function PUT(
             return NextResponse.json({ error: "Marca no encontrada" }, { status: 404 });
         }
 
-        // Verificar duplicados
+        // Validar permisos según isGlobal
+        try {
+            requireMasterDataMutationPermission(user, existingBrand);
+        } catch (error) {
+            return NextResponse.json(
+                { error: (error as Error).message },
+                { status: 403 }
+            );
+        }
+
+        // Verificar duplicados en el mismo scope
         const duplicateBrand = await prisma.vehicleBrand.findFirst({
             where: {
-                tenantId: user.tenantId,
+                tenantId: existingBrand.tenantId,
                 name: name.trim(),
-                id: {
-                    not: brandId
-                }
+                id: { not: brandId }
             }
         });
 
@@ -105,13 +109,8 @@ export async function PUT(
         }
 
         const updatedBrand = await prisma.vehicleBrand.update({
-            where: {
-                id: brandId,
-                tenantId: user.tenantId
-            },
-            data: {
-                name: name.trim(),
-            }
+            where: { id: brandId },
+            data: { name: name.trim() }
         });
 
         return NextResponse.json(updatedBrand);
@@ -121,7 +120,7 @@ export async function PUT(
     }
 }
 
-// DELETE - Eliminar marca específica (solo SUPER_ADMIN)
+// DELETE - Eliminar marca (OWNER/MANAGER para custom, SUPER_ADMIN para global)
 export async function DELETE(
     _req: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -133,17 +132,6 @@ export async function DELETE(
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
-        // Validar permisos - Solo SUPER_ADMIN puede modificar tablas maestras
-        const { requireSuperAdmin } = await import("@/lib/permissions");
-        try {
-            requireSuperAdmin(user);
-        } catch (error) {
-            return NextResponse.json(
-                { error: (error as Error).message },
-                { status: 403 }
-            );
-        }
-
         const { id } = await params;
         const brandId = safeParseInt(id);
 
@@ -151,10 +139,13 @@ export async function DELETE(
             return NextResponse.json({ error: "ID inválido" }, { status: 400 });
         }
 
-        const existingBrand = await prisma.vehicleBrand.findUnique({
+        const existingBrand = await prisma.vehicleBrand.findFirst({
             where: {
                 id: brandId,
-                tenantId: user.tenantId
+                OR: [
+                    { isGlobal: true },
+                    { tenantId: user.tenantId }
+                ]
             }
         });
 
@@ -162,15 +153,20 @@ export async function DELETE(
             return NextResponse.json({ error: "Marca no encontrada" }, { status: 404 });
         }
 
+        // Validar permisos según isGlobal
+        try {
+            requireMasterDataMutationPermission(user, existingBrand);
+        } catch (error) {
+            return NextResponse.json(
+                { error: (error as Error).message },
+                { status: 403 }
+            );
+        }
+
         // Soft delete - cambiar status a INACTIVE
         await prisma.vehicleBrand.update({
-            where: {
-                id: brandId,
-                tenantId: user.tenantId
-            },
-            data: {
-                status: 'INACTIVE'
-            }
+            where: { id: brandId },
+            data: { status: 'INACTIVE' }
         });
 
         return NextResponse.json({ success: true, message: "Marca desactivada" });

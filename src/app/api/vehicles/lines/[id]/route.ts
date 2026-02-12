@@ -2,8 +2,9 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { safeParseInt } from '@/lib/validation';
+import { requireMasterDataMutationPermission } from "@/lib/permissions";
 
-// GET - Obtener línea específica por ID
+// GET - Obtener línea específica por ID (incluye globales)
 export async function GET(
     _req: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -22,16 +23,17 @@ export async function GET(
             return NextResponse.json({ error: "ID inválido" }, { status: 400 });
         }
 
-        const line = await prisma.vehicleLine.findUnique({
+        const line = await prisma.vehicleLine.findFirst({
             where: {
                 id: lineId,
-                tenantId: user.tenantId
+                OR: [
+                    { isGlobal: true },
+                    { tenantId: user.tenantId }
+                ]
             },
             include: {
                 brand: {
-                    select: {
-                        name: true,
-                    },
+                    select: { name: true },
                 },
             },
         });
@@ -40,12 +42,12 @@ export async function GET(
             return NextResponse.json({ error: "Línea no encontrada" }, { status: 404 });
         }
 
-        // Mapear para incluir brandName
         const mappedLine = {
             id: line.id,
             name: line.name,
             brandId: line.brandId,
-            brandName: line.brand?.name || 'Sin marca'
+            brandName: line.brand?.name || 'Sin marca',
+            isGlobal: line.isGlobal,
         };
 
         return NextResponse.json(mappedLine);
@@ -55,7 +57,7 @@ export async function GET(
     }
 }
 
-// PUT - Actualizar línea específica (solo SUPER_ADMIN)
+// PUT - Actualizar línea (OWNER/MANAGER para custom, SUPER_ADMIN para global)
 export async function PUT(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -65,17 +67,6 @@ export async function PUT(
 
         if (!user) {
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-        }
-
-        // Validar permisos
-        const { requireSuperAdmin } = await import("@/lib/permissions");
-        try {
-            requireSuperAdmin(user);
-        } catch (error) {
-            return NextResponse.json(
-                { error: (error as Error).message },
-                { status: 403 }
-            );
         }
 
         const { id } = await params;
@@ -96,16 +87,18 @@ export async function PUT(
         }
 
         const parsedBrandId = safeParseInt(brandId);
-
         if (parsedBrandId === null) {
             return NextResponse.json({ error: "ID de marca inválido" }, { status: 400 });
         }
 
-        // Verificar que la línea existe y pertenece al tenant
-        const existingLine = await prisma.vehicleLine.findUnique({
+        // Verificar que la línea existe (global o del tenant)
+        const existingLine = await prisma.vehicleLine.findFirst({
             where: {
                 id: lineId,
-                tenantId: user.tenantId
+                OR: [
+                    { isGlobal: true },
+                    { tenantId: user.tenantId }
+                ]
             }
         });
 
@@ -113,11 +106,24 @@ export async function PUT(
             return NextResponse.json({ error: "Línea no encontrada" }, { status: 404 });
         }
 
-        // Verificar que la marca existe y pertenece al tenant
-        const brand = await prisma.vehicleBrand.findUnique({
+        // Validar permisos según isGlobal
+        try {
+            requireMasterDataMutationPermission(user, existingLine);
+        } catch (error) {
+            return NextResponse.json(
+                { error: (error as Error).message },
+                { status: 403 }
+            );
+        }
+
+        // Verificar que la marca existe
+        const brand = await prisma.vehicleBrand.findFirst({
             where: {
                 id: parsedBrandId,
-                tenantId: user.tenantId
+                OR: [
+                    { isGlobal: true },
+                    { tenantId: user.tenantId }
+                ]
             }
         });
 
@@ -125,15 +131,13 @@ export async function PUT(
             return NextResponse.json({ error: "Marca no encontrada" }, { status: 404 });
         }
 
-        // Verificar que no exista otra línea con el mismo nombre y marca
+        // Verificar duplicados en el mismo scope
         const duplicateLine = await prisma.vehicleLine.findFirst({
             where: {
-                tenantId: user.tenantId,
+                tenantId: existingLine.tenantId,
                 brandId: parsedBrandId,
                 name: name.trim(),
-                id: {
-                    not: lineId
-                }
+                id: { not: lineId }
             }
         });
 
@@ -142,24 +146,16 @@ export async function PUT(
         }
 
         const updatedLine = await prisma.vehicleLine.update({
-            where: {
-                id: lineId,
-                tenantId: user.tenantId
-            },
+            where: { id: lineId },
             data: {
                 name: name.trim(),
                 brandId: parsedBrandId,
             },
             include: {
-                brand: {
-                    select: {
-                        name: true,
-                    },
-                },
+                brand: { select: { name: true } },
             }
         });
 
-        // Mapear para incluir brandName
         const mappedLine = {
             id: updatedLine.id,
             name: updatedLine.name,
@@ -174,7 +170,7 @@ export async function PUT(
     }
 }
 
-// PATCH - Actualizar línea específica (solo SUPER_ADMIN)
+// PATCH - Actualizar parcialmente línea
 export async function PATCH(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -184,17 +180,6 @@ export async function PATCH(
 
         if (!user) {
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-        }
-
-        // Validar permisos
-        const { requireSuperAdmin } = await import("@/lib/permissions");
-        try {
-            requireSuperAdmin(user);
-        } catch (error) {
-            return NextResponse.json(
-                { error: (error as Error).message },
-                { status: 403 }
-            );
         }
 
         const { id } = await params;
@@ -207,11 +192,14 @@ export async function PATCH(
         const body = await req.json();
         const { name, brandId } = body;
 
-        // Verificar que la línea existe y pertenece al tenant
-        const existingLine = await prisma.vehicleLine.findUnique({
+        // Verificar que la línea existe (global o del tenant)
+        const existingLine = await prisma.vehicleLine.findFirst({
             where: {
                 id: lineId,
-                tenantId: user.tenantId
+                OR: [
+                    { isGlobal: true },
+                    { tenantId: user.tenantId }
+                ]
             }
         });
 
@@ -219,24 +207,34 @@ export async function PATCH(
             return NextResponse.json({ error: "Línea no encontrada" }, { status: 404 });
         }
 
-        // Validar nombre si se proporciona
+        // Validar permisos según isGlobal
+        try {
+            requireMasterDataMutationPermission(user, existingLine);
+        } catch (error) {
+            return NextResponse.json(
+                { error: (error as Error).message },
+                { status: 403 }
+            );
+        }
+
         if (name !== undefined && (!name || name.trim() === '')) {
             return NextResponse.json({ error: "El nombre no puede estar vacío" }, { status: 400 });
         }
 
-        // Verificar que la marca existe si se proporciona
         let parsedBrandId: number | undefined;
         if (brandId !== undefined) {
             parsedBrandId = safeParseInt(brandId) ?? undefined;
-
             if (parsedBrandId === undefined) {
                 return NextResponse.json({ error: "ID de marca inválido" }, { status: 400 });
             }
 
-            const brand = await prisma.vehicleBrand.findUnique({
+            const brand = await prisma.vehicleBrand.findFirst({
                 where: {
                     id: parsedBrandId,
-                    tenantId: user.tenantId
+                    OR: [
+                        { isGlobal: true },
+                        { tenantId: user.tenantId }
+                    ]
                 }
             });
 
@@ -245,30 +243,21 @@ export async function PATCH(
             }
         }
 
-        // Preparar datos para actualizar (solo los campos proporcionados)
         const updateData: { name?: string; brandId?: number } = {};
+        if (name !== undefined) updateData.name = name.trim();
+        if (parsedBrandId !== undefined) updateData.brandId = parsedBrandId;
 
-        if (name !== undefined) {
-            updateData.name = name.trim();
-        }
-
-        if (parsedBrandId !== undefined) {
-            updateData.brandId = parsedBrandId;
-        }
-
-        // Verificar que no exista otra línea con el mismo nombre y marca
+        // Verificar duplicados
         if (name !== undefined || parsedBrandId !== undefined) {
             const checkName = name !== undefined ? name.trim() : existingLine.name;
             const checkBrandId = parsedBrandId !== undefined ? parsedBrandId : existingLine.brandId;
 
             const duplicateLine = await prisma.vehicleLine.findFirst({
                 where: {
-                    tenantId: user.tenantId,
+                    tenantId: existingLine.tenantId,
                     brandId: checkBrandId,
                     name: checkName,
-                    id: {
-                        not: lineId
-                    }
+                    id: { not: lineId }
                 }
             });
 
@@ -278,21 +267,13 @@ export async function PATCH(
         }
 
         const updatedLine = await prisma.vehicleLine.update({
-            where: {
-                id: lineId,
-                tenantId: user.tenantId
-            },
+            where: { id: lineId },
             data: updateData,
             include: {
-                brand: {
-                    select: {
-                        name: true,
-                    },
-                },
+                brand: { select: { name: true } },
             }
         });
 
-        // Mapear para incluir brandName
         const mappedLine = {
             id: updatedLine.id,
             name: updatedLine.name,
@@ -307,7 +288,7 @@ export async function PATCH(
     }
 }
 
-// DELETE - Eliminar línea específica (solo SUPER_ADMIN)
+// DELETE - Eliminar línea (OWNER/MANAGER para custom, SUPER_ADMIN para global)
 export async function DELETE(
     _req: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -319,17 +300,6 @@ export async function DELETE(
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
-        // Validar permisos
-        const { requireSuperAdmin } = await import("@/lib/permissions");
-        try {
-            requireSuperAdmin(user);
-        } catch (error) {
-            return NextResponse.json(
-                { error: (error as Error).message },
-                { status: 403 }
-            );
-        }
-
         const { id } = await params;
         const lineId = safeParseInt(id);
 
@@ -337,11 +307,13 @@ export async function DELETE(
             return NextResponse.json({ error: "ID inválido" }, { status: 400 });
         }
 
-        // Verificar que la línea existe y pertenece al tenant
-        const existingLine = await prisma.vehicleLine.findUnique({
+        const existingLine = await prisma.vehicleLine.findFirst({
             where: {
                 id: lineId,
-                tenantId: user.tenantId
+                OR: [
+                    { isGlobal: true },
+                    { tenantId: user.tenantId }
+                ]
             }
         });
 
@@ -349,35 +321,33 @@ export async function DELETE(
             return NextResponse.json({ error: "Línea no encontrada" }, { status: 404 });
         }
 
-        // Verificar que no tenga vehículos dependientes
+        // Validar permisos según isGlobal
+        try {
+            requireMasterDataMutationPermission(user, existingLine);
+        } catch (error) {
+            return NextResponse.json(
+                { error: (error as Error).message },
+                { status: 403 }
+            );
+        }
+
+        // Verificar dependencias
         const hasVehicles = await prisma.vehicle.findFirst({
-            where: {
-                lineId: lineId,
-                tenantId: user.tenantId
-            }
+            where: { lineId, tenantId: user.tenantId }
         });
 
-        // Verificar templates de mantenimiento
         const hasMantTemplates = await prisma.maintenanceTemplate.findFirst({
-            where: {
-                vehicleLineId: lineId,
-                tenantId: user.tenantId
-            }
+            where: { vehicleLineId: lineId, tenantId: user.tenantId }
         });
 
         if (hasVehicles || hasMantTemplates) {
             return NextResponse.json({ error: "No se puede eliminar la línea porque tiene vehículos o plantillas de mantenimiento asociadas" }, { status: 409 });
         }
 
-        // Soft delete - cambiar status a INACTIVE
+        // Soft delete
         await prisma.vehicleLine.update({
-            where: {
-                id: lineId,
-                tenantId: user.tenantId
-            },
-            data: {
-                status: 'INACTIVE'
-            }
+            where: { id: lineId },
+            data: { status: 'INACTIVE' }
         });
 
         return NextResponse.json({ success: true, message: "Línea desactivada" });

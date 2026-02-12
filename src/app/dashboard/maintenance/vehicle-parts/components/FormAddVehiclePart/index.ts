@@ -1,0 +1,1 @@
+export { FormAddVehiclePart } from './FormAddVehiclePart';

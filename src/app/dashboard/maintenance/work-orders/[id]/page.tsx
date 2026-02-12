@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/hooks/use-toast';
 import { ArrowLeft, Trash2 } from 'lucide-react';
 import { GeneralInfoTab } from '../components/WorkOrderDetail/GeneralInfoTab';
-import { WorkOrderItemsTab } from '../components/WorkOrderDetail/WorkOrderItemsTab';
+import { ServicesTab } from '../components/WorkOrderDetail/ServicesTab';
+import { PartsTab } from '../components/WorkOrderDetail/PartsTab';
+import { PurchaseOrdersTab } from '../components/WorkOrderDetail/PurchaseOrdersTab';
 import { ExpensesTab } from '../components/WorkOrderDetail/ExpensesTab';
 import { HistoryTab } from '../components/WorkOrderDetail/HistoryTab';
 import {
@@ -249,11 +251,15 @@ export default function WorkOrderDetailPage() {
 
       {/* Tabs */}
       <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="general">Información General</TabsTrigger>
-          <TabsTrigger value="items">
-            Items ({workOrder.workOrderItems.length})
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="general">Info General</TabsTrigger>
+          <TabsTrigger value="services">
+            Servicios ({workOrder.workOrderItems.filter(i => i.mantItem.type === 'ACTION' || i.mantItem.type === 'SERVICE').length})
           </TabsTrigger>
+          <TabsTrigger value="parts">
+            Repuestos ({workOrder.workOrderItems.filter(i => i.mantItem.type === 'PART').length})
+          </TabsTrigger>
+          <TabsTrigger value="purchase-orders">Órdenes Compra</TabsTrigger>
           <TabsTrigger value="expenses">
             Gastos ({workOrder.workOrderExpenses.length})
           </TabsTrigger>
@@ -264,11 +270,16 @@ export default function WorkOrderDetailPage() {
           <GeneralInfoTab workOrder={workOrder} onUpdate={handleUpdate} />
         </TabsContent>
 
-        <TabsContent value="items" className="mt-6">
-          <WorkOrderItemsTab
-            workOrder={workOrder}
-            onRefresh={fetchWorkOrder}
-          />
+        <TabsContent value="services" className="mt-6">
+          <ServicesTab workOrderId={workOrder.id} onRefresh={fetchWorkOrder} />
+        </TabsContent>
+
+        <TabsContent value="parts" className="mt-6">
+          <PartsTab workOrderId={workOrder.id} onRefresh={fetchWorkOrder} />
+        </TabsContent>
+
+        <TabsContent value="purchase-orders" className="mt-6">
+          <PurchaseOrdersTab workOrderId={workOrder.id} />
         </TabsContent>
 
         <TabsContent value="expenses" className="mt-6">

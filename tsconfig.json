@@ -44,6 +44,8 @@
     "dist",
     "build",
     "prisma/seed-extended.ts",
-    "prisma/seed.ts"
+    "prisma/seed.ts",
+    "prisma/seed-test-ot.ts",
+    "prisma/seed-multitenancy.ts"
   ]
 }

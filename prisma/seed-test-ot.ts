@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
-import { subMonths, subDays } from 'date-fns';
+import { subDays } from 'date-fns';
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -16,7 +16,7 @@ async function main() {
     // ========================================
     console.log('🧹 Cleaning up ALL data...');
 
-    const TEST_TENANT_IDS = [
+    const _TEST_TENANT_IDS = [
         'org_36M1mCUcHm4ShrsTQQK3etw9FEk', // User Real Tenant
         'cf68b103-12fd-4208-a352-42379ef3b6e1', // Old Seed Tenant
         '00000000-0000-0000-0000-000000000000'  // Platform Tenant
@@ -74,8 +74,8 @@ async function main() {
     const toyota = await prisma.vehicleBrand.create({ data: { name: 'Toyota', isGlobal: true } });
     const ford = await prisma.vehicleBrand.create({ data: { name: 'Ford', isGlobal: true } });
     const chevy = await prisma.vehicleBrand.create({ data: { name: 'Chevrolet', isGlobal: true } });
-    const nissan = await prisma.vehicleBrand.create({ data: { name: 'Nissan', isGlobal: true } });
-    const mitsubishi = await prisma.vehicleBrand.create({ data: { name: 'Mitsubishi', isGlobal: true } });
+    const _nissan = await prisma.vehicleBrand.create({ data: { name: 'Nissan', isGlobal: true } });
+    const _mitsubishi = await prisma.vehicleBrand.create({ data: { name: 'Mitsubishi', isGlobal: true } });
 
     // 2.2 LINES
     const hilux = await prisma.vehicleLine.create({ data: { name: 'Hilux', brandId: toyota.id, isGlobal: true } });
@@ -228,8 +228,8 @@ async function main() {
         }
     });
 
-    const tech = await prisma.technician.create({ data: { tenantId: TENANT_ID, name: 'Taller Central', status: 'ACTIVE' } });
-    const prov = await prisma.provider.create({ data: { tenantId: TENANT_ID, name: 'Repuestos & Partes SAS', status: 'ACTIVE' } });
+    const _tech = await prisma.technician.create({ data: { tenantId: TENANT_ID, name: 'Taller Central', status: 'ACTIVE' } });
+    const _prov = await prisma.provider.create({ data: { tenantId: TENANT_ID, name: 'Repuestos & Partes SAS', status: 'ACTIVE' } });
 
     // ========================================
     // 4. INVENTARIO (TEST)

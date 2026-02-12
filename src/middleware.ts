@@ -50,16 +50,19 @@ export default clerkMiddleware(async (auth, request) => {
       return NextResponse.redirect(new URL('/sign-in', request.url))
     }
 
-    // Rutas /admin NO requieren organización (solo autenticación)
-    // La verificación de SUPER_ADMIN se hace en auth.ts y en las páginas/APIs
-    if (isAdminRoute(request)) {
-      // Permitir acceso - la verificación de SUPER_ADMIN se hace después
-      // No redirigir a onboarding
-    } else {
-      // Validar que usuario pertenece a una organización para rutas normales
-      if (!orgId && !url.pathname.startsWith('/onboarding')) {
-        return NextResponse.redirect(new URL('/onboarding', request.url))
-      }
+    // Rutas que NO requieren organización:
+    // - /admin: verificación de SUPER_ADMIN en auth.ts
+    // - /dashboard: verificación en el layout con getCurrentUser()
+    // - /api: cada endpoint verifica permisos, nunca redirigir APIs a HTML
+    // - /onboarding: es la propia pagina de onboarding
+    const skipOrgCheck =
+      isAdminRoute(request) ||
+      url.pathname.startsWith('/dashboard') ||
+      url.pathname.startsWith('/api') ||
+      url.pathname.startsWith('/onboarding')
+
+    if (!skipOrgCheck && !orgId) {
+      return NextResponse.redirect(new URL('/onboarding', request.url))
     }
   }
 

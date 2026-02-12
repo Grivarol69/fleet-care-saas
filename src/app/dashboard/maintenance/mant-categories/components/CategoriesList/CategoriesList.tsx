@@ -29,8 +29,18 @@ export function CategoriesList() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] =
     useState<CategoriesListProps | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.isSuperAdmin) setIsSuperAdmin(true);
+      })
+      .catch(() => {});
+  }, []);
 
   const fetchCategorys = useCallback(async () => {
     try {
@@ -96,6 +106,8 @@ export function CategoriesList() {
     }
   };
 
+  const canMutate = (item: CategoriesListProps) => !item.isGlobal || isSuperAdmin;
+
   const columns: ColumnDef<CategoriesListProps>[] = [
     {
       accessorKey: 'id',
@@ -106,8 +118,21 @@ export function CategoriesList() {
       header: 'Nombre',
     },
     {
-      id: 'actions',
+      id: 'origen',
+      header: 'Origen',
       cell: ({ row }) => (
+        <span className={`px-2 py-1 rounded-full text-xs ${
+          row.original.isGlobal
+            ? 'bg-purple-100 text-purple-800'
+            : 'bg-slate-100 text-slate-700'
+        }`}>
+          {row.original.isGlobal ? 'Global' : 'Empresa'}
+        </span>
+      ),
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => canMutate(row.original) ? (
         <div>
           <Button
             variant="outline"
@@ -123,7 +148,7 @@ export function CategoriesList() {
             Eliminar
           </Button>
         </div>
-      ),
+      ) : null,
     },
   ];
 

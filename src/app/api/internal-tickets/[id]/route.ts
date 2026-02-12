@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { ItemSource, ItemClosureType } from '@prisma/client';
 
 /**
  * GET /api/internal-tickets/[id] - Obtener ticket interno por ID
@@ -110,7 +111,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Ticket no encontrado' }, { status: 404 });
     }
 
-    // If approving the ticket, close the entire work order
+    // If approving the ticket, close internal items and potentially the entire work order
     if (status === 'APPROVED') {
       const result = await prisma.$transaction(async (tx) => {
         // 1. Approve the ticket
@@ -126,49 +127,88 @@ export async function PATCH(
 
         const workOrderId = ticket.workOrderId;
 
-        // 2. Close all WorkOrderItems with INTERNAL_TICKET closureType
+        // 2. FASE 6.6: Solo cerrar items INTERNOS (INTERNAL_STOCK) con INTERNAL_TICKET
+        // Los items EXTERNAL se cierran con factura
         await tx.workOrderItem.updateMany({
-          where: { workOrderId },
+          where: {
+            workOrderId,
+            itemSource: { in: [ItemSource.INTERNAL_STOCK, ItemSource.INTERNAL_PURCHASE] },
+          },
           data: {
             status: 'COMPLETED',
-            closureType: 'INTERNAL_TICKET',
+            closureType: ItemClosureType.INTERNAL_TICKET,
             closedAt: new Date(),
             closedBy: user.id,
           },
         });
 
-        // 3. Close the WorkOrder
-        await tx.workOrder.update({
-          where: { id: workOrderId },
-          data: {
-            status: 'COMPLETED',
-            endDate: new Date(),
-            actualCost: ticket.totalCost,
+        // 3. Verificar si TODOS los items de la OT están cerrados
+        const pendingItems = await tx.workOrderItem.count({
+          where: {
+            workOrderId,
+            closureType: ItemClosureType.PENDING,
+            status: { not: 'CANCELLED' },
           },
         });
 
-        // 4. Close related MaintenanceAlerts
-        await tx.maintenanceAlert.updateMany({
-          where: { workOrderId },
-          data: {
-            status: 'COMPLETED',
-            closedAt: new Date(),
-          },
-        });
+        // Solo cerrar OT completamente si no quedan items pendientes
+        if (pendingItems === 0) {
+          // Obtener el actualCost actual para sumar el costo del ticket
+          const currentWO = await tx.workOrder.findUnique({
+            where: { id: workOrderId },
+            select: { actualCost: true },
+          });
 
-        // 5. Update VehicleProgramItems to COMPLETED
-        const alerts = await tx.maintenanceAlert.findMany({
-          where: { workOrderId },
-          select: { programItemId: true },
-        });
+          const currentCost = currentWO?.actualCost ? Number(currentWO.actualCost) : 0;
+          const newTotalCost = currentCost + Number(ticket.totalCost);
 
-        if (alerts.length > 0) {
-          const programItemIds = alerts.map((a) => a.programItemId);
-          await tx.vehicleProgramItem.updateMany({
-            where: { id: { in: programItemIds } },
+          // Cerrar la WorkOrder
+          await tx.workOrder.update({
+            where: { id: workOrderId },
             data: {
               status: 'COMPLETED',
-              executedDate: new Date(),
+              endDate: new Date(),
+              actualCost: newTotalCost,
+            },
+          });
+
+          // Cerrar MaintenanceAlerts
+          await tx.maintenanceAlert.updateMany({
+            where: { workOrderId },
+            data: {
+              status: 'COMPLETED',
+              closedAt: new Date(),
+            },
+          });
+
+          // Cerrar VehicleProgramItems
+          const alerts = await tx.maintenanceAlert.findMany({
+            where: { workOrderId },
+            select: { programItemId: true },
+          });
+
+          if (alerts.length > 0) {
+            const programItemIds = alerts.map((a) => a.programItemId);
+            await tx.vehicleProgramItem.updateMany({
+              where: { id: { in: programItemIds } },
+              data: {
+                status: 'COMPLETED',
+                executedDate: new Date(),
+              },
+            });
+          }
+        } else {
+          // Si hay items externos pendientes, solo sumar el costo del ticket al actualCost
+          const currentWO = await tx.workOrder.findUnique({
+            where: { id: workOrderId },
+            select: { actualCost: true },
+          });
+
+          const currentCost = currentWO?.actualCost ? Number(currentWO.actualCost) : 0;
+          await tx.workOrder.update({
+            where: { id: workOrderId },
+            data: {
+              actualCost: currentCost + Number(ticket.totalCost),
             },
           });
         }

@@ -11,6 +11,8 @@ import {
     FileText,
     FileCheck,
     Package,
+    ShoppingCart,
+    BookOpen,
     type LucideIcon,
 } from "lucide-react";
 
@@ -52,9 +54,9 @@ export const dataAdminSidebar: SidebarItem[] = [
         roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.TECHNICIAN, UserRole.DRIVER],
         subItems: [
             { label: "Listado Vehículos", href: "/dashboard/vehicles/fleet", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.TECHNICIAN] },
-            { label: "Marcas", href: "/dashboard/vehicles/brands", roles: [UserRole.SUPER_ADMIN] }, // Solo SUPER_ADMIN modifica maestras
-            { label: "Líneas", href: "/dashboard/vehicles/lines", roles: [UserRole.SUPER_ADMIN] },
-            { label: "Tipos", href: "/dashboard/vehicles/types", roles: [UserRole.SUPER_ADMIN] },
+            { label: "Marcas", href: "/dashboard/vehicles/brands", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER] },
+            { label: "Líneas", href: "/dashboard/vehicles/lines", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER] },
+            { label: "Tipos", href: "/dashboard/vehicles/types", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER] },
             { label: "Vehículos de la Empresa", href: "/dashboard/vehicles/vehicles", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER] },
             { label: "Documentos Obligatorios", href: "/dashboard/vehicles/documents", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER] },
             { label: "Odómetro", icon: Gauge, href: "/dashboard/vehicles/odometer", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.TECHNICIAN, UserRole.DRIVER] }, // Todos registran km
@@ -65,13 +67,15 @@ export const dataAdminSidebar: SidebarItem[] = [
         label: "Mantenimiento",
         roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.PURCHASER, UserRole.TECHNICIAN],
         subItems: [
-            { label: "Master Items", href: "/dashboard/maintenance/mant-items", roles: [UserRole.SUPER_ADMIN] }, // Solo SUPER_ADMIN modifica maestras
-            { label: "Categorías", href: "/dashboard/maintenance/mant-categories", roles: [UserRole.SUPER_ADMIN] },
+            { label: "Master Items", href: "/dashboard/maintenance/mant-items", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER] },
+            { label: "Categorías", href: "/dashboard/maintenance/mant-categories", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER] },
             { label: "Plantillas Planes Mantenimiento", href: "/dashboard/maintenance/mant-template", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER] },
             { label: "Paquetes de Mantenimiento", icon: ClipboardCheck, href: "/dashboard/maintenance/packages", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER] },
             { label: "Programas Vehículos", href: "/dashboard/maintenance/vehicle-programs", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER] },
             { label: "Órdenes de Trabajo", href: "/dashboard/maintenance/work-orders", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.PURCHASER, UserRole.TECHNICIAN] }, // TECHNICIAN ejecuta OT, PURCHASER ve para gestión de compras
             { label: "Facturas", icon: FileText, href: "/dashboard/invoices", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.PURCHASER] }, // PURCHASER gestiona facturas
+            { label: "Órdenes Compra", icon: ShoppingCart, href: "/dashboard/purchase-orders", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.PURCHASER] },
+            { label: "KB Autopartes", icon: BookOpen, href: "/dashboard/maintenance/vehicle-parts", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER] },
             { label: "Alertas", href: "/dashboard/maintenance/alerts", roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER, UserRole.TECHNICIAN] },
         ],
     },

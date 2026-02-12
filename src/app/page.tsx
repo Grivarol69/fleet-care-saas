@@ -4,14 +4,12 @@ import { SignIn } from "@clerk/nextjs";
 import { Truck } from "lucide-react";
 
 export default async function Home() {
-  const { userId, orgId } = await auth();
+  const { userId } = await auth();
 
-  if (userId && orgId) {
+  if (userId) {
+    // Si tiene org → dashboard directo
+    // Si no tiene org → dashboard también (el layout verifica si es SUPER_ADMIN)
     redirect("/dashboard");
-  }
-
-  if (userId && !orgId) {
-    redirect("/onboarding");
   }
 
   return (

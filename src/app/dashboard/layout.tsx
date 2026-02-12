@@ -1,7 +1,7 @@
 // src/app/dashboard/layout.tsx - Fleet Care SaaS
 import { Navbar } from "@/components/layout/Navbar";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { auth } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import React from "react";
 
@@ -10,16 +10,13 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Verificar autenticación con Clerk
-  const { userId, orgId } = await auth();
+  // getCurrentUser() maneja:
+  // - Usuario con org → retorna user del tenant
+  // - SUPER_ADMIN sin org → retorna user del Platform Tenant
+  // - Sin auth o sin org y no es SUPER_ADMIN → retorna null
+  const user = await getCurrentUser();
 
-  // Si no hay usuario, redirigir a sign-in
-  if (!userId) {
-    redirect("/sign-in");
-  }
-
-  // Si no tiene organización, redirigir a onboarding
-  if (!orgId) {
+  if (!user) {
     redirect("/onboarding");
   }
 

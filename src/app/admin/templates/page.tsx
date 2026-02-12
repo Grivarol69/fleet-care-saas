@@ -17,8 +17,8 @@ export default async function TemplatesPage() {
       isGlobal: true,
     },
     include: {
-      vehicleBrand: true,
-      vehicleLine: true,
+      brand: true,
+      line: true,
       packages: {
         orderBy: {
           triggerKm: 'asc',
@@ -45,7 +45,7 @@ export default async function TemplatesPage() {
                 <div>
                   <CardTitle>{template.name}</CardTitle>
                   <CardDescription>
-                    {template.vehicleBrand?.name} {template.vehicleLine?.name} - v{template.version}
+                    {template.brand?.name} {template.line?.name} - v{template.version}
                   </CardDescription>
                 </div>
                 <div className="flex gap-2">
@@ -82,7 +82,7 @@ export default async function TemplatesPage() {
                     <TableRow key={pkg.id}>
                       <TableCell className="font-medium">{pkg.name}</TableCell>
                       <TableCell className="text-right">
-                        {pkg.triggerKm.toLocaleString()} km
+                        {pkg.triggerKm?.toLocaleString() ?? '-'} km
                       </TableCell>
                       <TableCell className="text-right">
                         ${pkg.estimatedCost?.toLocaleString() || '-'}

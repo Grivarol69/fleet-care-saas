@@ -7,15 +7,18 @@ import { UserRole } from "@prisma/client";
 
 export function SidebarRoutes() {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Obtener el usuario actual del endpoint
     fetch("/api/auth/me")
       .then((res) => res.json())
       .then((data) => {
         if (data.role) {
           setUserRole(data.role);
+        }
+        if (data.isSuperAdmin) {
+          setIsSuperAdmin(true);
         }
       })
       .catch((error) => {
@@ -26,32 +29,27 @@ export function SidebarRoutes() {
       });
   }, []);
 
-  // Función para filtrar items según el rol del usuario
+  const hasAccess = (roles: UserRole[] | undefined): boolean => {
+    if (!roles) return true;
+    if (!userRole) return false;
+    // Si es SUPER_ADMIN de plataforma, tiene acceso a items marcados como SUPER_ADMIN
+    // (su role en el tenant es OWNER, pero isSuperAdmin=true)
+    if (isSuperAdmin && roles.includes(UserRole.SUPER_ADMIN)) return true;
+    return roles.includes(userRole);
+  };
+
   const filterItemsByRole = (items: typeof dataAdminSidebar) => {
     return items
-      .filter((item) => {
-        // Si el item no tiene roles definidos, es visible para todos
-        if (!item.roles) return true;
-        // Si el usuario no tiene rol, no mostrar items con restricción
-        if (!userRole) return false;
-        // Verificar si el rol del usuario está en la lista de roles permitidos
-        return item.roles.includes(userRole);
-      })
+      .filter((item) => hasAccess(item.roles))
       .map((item) => {
-        // Si el item tiene subItems, filtrarlos también
         if (item.subItems) {
           return {
             ...item,
-            subItems: item.subItems.filter((subItem) => {
-              if (!subItem.roles) return true;
-              if (!userRole) return false;
-              return subItem.roles.includes(userRole);
-            }),
+            subItems: item.subItems.filter((subItem) => hasAccess(subItem.roles)),
           };
         }
         return item;
       })
-      // Filtrar items que quedaron sin subItems
       .filter((item) => !item.subItems || item.subItems.length > 0);
   };
 

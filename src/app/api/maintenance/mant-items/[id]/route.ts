@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import { requireMasterDataMutationPermission } from "@/lib/permissions";
 
 export async function DELETE(
     _req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = await getCurrentUser();
@@ -13,10 +14,31 @@ export async function DELETE(
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
-        // Validar permisos - Solo SUPER_ADMIN puede modificar tablas maestras
-        const { requireSuperAdmin } = await import("@/lib/permissions");
+        const { id } = await params;
+        const mantItemId = parseInt(id);
+
+        if (isNaN(mantItemId)) {
+            return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+        }
+
+        // Verificar que el item existe (global o del tenant)
+        const existingItem = await prisma.mantItem.findFirst({
+            where: {
+                id: mantItemId,
+                OR: [
+                    { isGlobal: true },
+                    { tenantId: user.tenantId }
+                ]
+            }
+        });
+
+        if (!existingItem) {
+            return NextResponse.json({ error: "Item no encontrado" }, { status: 404 });
+        }
+
+        // Validar permisos según isGlobal
         try {
-            requireSuperAdmin(user);
+            requireMasterDataMutationPermission(user, existingItem);
         } catch (error) {
             return NextResponse.json(
                 { error: (error as Error).message },
@@ -24,28 +46,8 @@ export async function DELETE(
             );
         }
 
-        const mantItemId = parseInt(params.id);
-
-        if (isNaN(mantItemId)) {
-            return NextResponse.json({ error: "ID inválido" }, { status: 400 });
-        }
-
-        // Verificar que el item existe y pertenece al tenant
-        const existingItem = await prisma.mantItem.findUnique({
-            where: {
-                id: mantItemId,
-                tenantId: user.tenantId
-            }
-        });
-
-        if (!existingItem) {
-            return NextResponse.json({ error: "Ítem no encontrado" }, { status: 404 });
-        }
-
         await prisma.mantItem.delete({
-            where: {
-                id: mantItemId
-            }
+            where: { id: mantItemId }
         });
 
         return new NextResponse(null, { status: 204 });
@@ -57,7 +59,7 @@ export async function DELETE(
 
 export async function PATCH(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = await getCurrentUser();
@@ -66,18 +68,8 @@ export async function PATCH(
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
-        // Validar permisos - Solo SUPER_ADMIN puede modificar tablas maestras
-        const { requireSuperAdmin } = await import("@/lib/permissions");
-        try {
-            requireSuperAdmin(user);
-        } catch (error) {
-            return NextResponse.json(
-                { error: (error as Error).message },
-                { status: 403 }
-            );
-        }
-
-        const mantItemId = parseInt(params.id);
+        const { id } = await params;
+        const mantItemId = parseInt(id);
 
         if (isNaN(mantItemId)) {
             return NextResponse.json({ error: "ID inválido" }, { status: 400 });
@@ -85,7 +77,6 @@ export async function PATCH(
 
         const { name, description, mantType, categoryId, type } = await req.json();
 
-        // Validación de campos requeridos
         if (!name || name.trim() === '') {
             return NextResponse.json({ error: "El nombre es requerido" }, { status: 400 });
         }
@@ -102,23 +93,39 @@ export async function PATCH(
             return NextResponse.json({ error: "Tipo de item inválido" }, { status: 400 });
         }
 
-        // Verificar que el item existe y pertenece al tenant
-        const existingItem = await prisma.mantItem.findUnique({
+        // Verificar que el item existe (global o del tenant)
+        const existingItem = await prisma.mantItem.findFirst({
             where: {
                 id: mantItemId,
-                tenantId: user.tenantId
+                OR: [
+                    { isGlobal: true },
+                    { tenantId: user.tenantId }
+                ]
             }
         });
 
         if (!existingItem) {
-            return NextResponse.json({ error: "Ítem no encontrado" }, { status: 404 });
+            return NextResponse.json({ error: "Item no encontrado" }, { status: 404 });
+        }
+
+        // Validar permisos según isGlobal
+        try {
+            requireMasterDataMutationPermission(user, existingItem);
+        } catch (error) {
+            return NextResponse.json(
+                { error: (error as Error).message },
+                { status: 403 }
+            );
         }
 
         // Verificar que la categoría existe
-        const category = await prisma.mantCategory.findUnique({
+        const category = await prisma.mantCategory.findFirst({
             where: {
                 id: categoryId,
-                tenantId: user.tenantId
+                OR: [
+                    { isGlobal: true },
+                    { tenantId: user.tenantId }
+                ]
             }
         });
 
@@ -126,25 +133,21 @@ export async function PATCH(
             return NextResponse.json({ error: "Categoría no encontrada" }, { status: 404 });
         }
 
-        // Verificar que no exista otro item con el mismo nombre (excluyendo el actual)
+        // Verificar duplicados en el mismo scope
         const duplicateItem = await prisma.mantItem.findFirst({
             where: {
-                tenantId: user.tenantId,
+                tenantId: existingItem.tenantId,
                 name: name.trim(),
-                id: {
-                    not: mantItemId
-                }
+                id: { not: mantItemId }
             }
         });
 
         if (duplicateItem) {
-            return NextResponse.json({ error: "Ya existe un ítem con este nombre" }, { status: 409 });
+            return NextResponse.json({ error: "Ya existe un item con este nombre" }, { status: 409 });
         }
 
         const updatedMantItem = await prisma.mantItem.update({
-            where: {
-                id: mantItemId
-            },
+            where: { id: mantItemId },
             data: {
                 name: name.trim(),
                 description: description?.trim() || null,
@@ -154,10 +157,7 @@ export async function PATCH(
             },
             include: {
                 category: {
-                    select: {
-                        id: true,
-                        name: true
-                    }
+                    select: { id: true, name: true }
                 }
             }
         });

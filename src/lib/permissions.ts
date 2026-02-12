@@ -1,4 +1,5 @@
 import { User } from "@prisma/client";
+import type { UserWithSuperAdmin } from "@/lib/auth";
 
 // ========================================
 // VALIDADORES DE ROL INDIVIDUAL
@@ -33,11 +34,11 @@ export function isDriver(user: User | null): boolean {
 // ========================================
 
 /**
- * Solo SUPER_ADMIN puede modificar tablas maestras
- * (Brands, Lines, Types, MantCategories, MantItems)
+ * SUPER_ADMIN, OWNER, MANAGER pueden gestionar tablas maestras de su tenant.
+ * SUPER_ADMIN además puede gestionar datos globales (isGlobal=true).
  */
 export function canManageMasterData(user: User | null): boolean {
-  return isSuperAdmin(user);
+  return isSuperAdmin(user) || isOwner(user) || isManager(user);
 }
 
 /**
@@ -171,6 +172,54 @@ export function requireAuthenticated(user: User | null): void {
   }
 }
 
+/**
+ * Valida permisos para editar/eliminar datos maestros.
+ * - Items globales (isGlobal=true): solo SUPER_ADMIN (vía isSuperAdmin flag)
+ * - Items del tenant (isGlobal=false): OWNER o MANAGER del mismo tenant
+ */
+export function requireMasterDataMutationPermission(
+  user: UserWithSuperAdmin,
+  item: { isGlobal: boolean; tenantId: string | null }
+): void {
+  if (item.isGlobal) {
+    if (!user.isSuperAdmin && user.role !== "SUPER_ADMIN") {
+      throw new Error(
+        "Solo el administrador de plataforma puede modificar datos globales"
+      );
+    }
+  } else {
+    if (item.tenantId !== user.tenantId) {
+      throw new Error("Este item pertenece a otro tenant");
+    }
+    if (
+      !user.isSuperAdmin &&
+      user.role !== "OWNER" &&
+      user.role !== "MANAGER"
+    ) {
+      throw new Error("Se requiere rol OWNER o MANAGER");
+    }
+  }
+}
+
+// ========================================
+// MASTER DATA MANAGEMENT PERMISSIONS
+// ========================================
+
+/**
+ * SUPER_ADMIN, OWNER, MANAGER pueden crear MantItems directamente.
+ * TECHNICIAN y PURCHASER deben usar el flujo de solicitud (MantItemRequest).
+ */
+export function canCreateMantItems(user: User | null): boolean {
+  return isSuperAdmin(user) || isOwner(user) || isManager(user);
+}
+
+/**
+ * SUPER_ADMIN, OWNER, MANAGER pueden aprobar/rechazar solicitudes de items.
+ */
+export function canResolveMantItemRequests(user: User | null): boolean {
+  return isSuperAdmin(user) || isOwner(user) || isManager(user);
+}
+
 // ========================================
 // KNOWLEDGE BASE PERMISSIONS
 // ========================================
@@ -203,5 +252,5 @@ export function canManageTenantData(user: User | null): boolean {
 // CONSTANTES
 // ========================================
 
-// Definir después de crear tenant super admin en seed
-export const SUPER_ADMIN_TENANT_ID = "super-admin-tenant-uuid";
+// Re-export de la constante centralizada en auth.ts
+export { PLATFORM_TENANT_ID } from "@/lib/auth";

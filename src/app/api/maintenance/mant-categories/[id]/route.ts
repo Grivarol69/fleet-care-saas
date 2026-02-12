@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import { requireMasterDataMutationPermission } from "@/lib/permissions";
 
-// GET - Obtener categoría específica por ID
+// GET - Obtener categoría específica por ID (incluye globales)
 export async function GET(
     _req: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -15,11 +16,19 @@ export async function GET(
         }
 
         const { id } = await params;
+        const categoryId = parseInt(id);
 
-        const category = await prisma.mantCategory.findUnique({
+        if (isNaN(categoryId)) {
+            return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+        }
+
+        const category = await prisma.mantCategory.findFirst({
             where: {
-                id: parseInt(id),
-                tenantId: user.tenantId
+                id: categoryId,
+                OR: [
+                    { isGlobal: true },
+                    { tenantId: user.tenantId }
+                ]
             }
         });
 
@@ -34,7 +43,7 @@ export async function GET(
     }
 }
 
-// PUT - Actualizar categoría específica (solo SUPER_ADMIN)
+// PUT - Actualizar categoría (OWNER/MANAGER para custom, SUPER_ADMIN para global)
 export async function PUT(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -46,18 +55,12 @@ export async function PUT(
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
-        // Validar permisos
-        const { requireSuperAdmin } = await import("@/lib/permissions");
-        try {
-            requireSuperAdmin(user);
-        } catch (error) {
-            return NextResponse.json(
-                { error: (error as Error).message },
-                { status: 403 }
-            );
-        }
-
         const { id } = await params;
+        const categoryId = parseInt(id);
+
+        if (isNaN(categoryId)) {
+            return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+        }
 
         const { name } = await req.json();
 
@@ -65,11 +68,14 @@ export async function PUT(
             return NextResponse.json({ error: "El nombre es requerido" }, { status: 400 });
         }
 
-        // Verificar que la categoría existe
-        const existingCategory = await prisma.mantCategory.findUnique({
+        // Verificar que la categoría existe (global o del tenant)
+        const existingCategory = await prisma.mantCategory.findFirst({
             where: {
-                id: parseInt(id),
-                tenantId: user.tenantId
+                id: categoryId,
+                OR: [
+                    { isGlobal: true },
+                    { tenantId: user.tenantId }
+                ]
             }
         });
 
@@ -77,14 +83,22 @@ export async function PUT(
             return NextResponse.json({ error: "Categoría no encontrada" }, { status: 404 });
         }
 
-        // Verificar duplicados
+        // Validar permisos según isGlobal
+        try {
+            requireMasterDataMutationPermission(user, existingCategory);
+        } catch (error) {
+            return NextResponse.json(
+                { error: (error as Error).message },
+                { status: 403 }
+            );
+        }
+
+        // Verificar duplicados en el mismo scope
         const duplicateCategory = await prisma.mantCategory.findFirst({
             where: {
-                tenantId: user.tenantId,
+                tenantId: existingCategory.tenantId,
                 name: name.trim(),
-                id: {
-                    not: parseInt(id)
-                }
+                id: { not: categoryId }
             }
         });
 
@@ -93,13 +107,8 @@ export async function PUT(
         }
 
         const updatedCategory = await prisma.mantCategory.update({
-            where: {
-                id: parseInt(id),
-                tenantId: user.tenantId
-            },
-            data: {
-                name: name.trim(),
-            }
+            where: { id: categoryId },
+            data: { name: name.trim() }
         });
 
         return NextResponse.json(updatedCategory);
@@ -109,7 +118,7 @@ export async function PUT(
     }
 }
 
-// DELETE - Eliminar categoría específica (solo SUPER_ADMIN)
+// DELETE - Eliminar categoría (OWNER/MANAGER para custom, SUPER_ADMIN para global)
 export async function DELETE(
     _req: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -121,23 +130,20 @@ export async function DELETE(
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
-        // Validar permisos
-        const { requireSuperAdmin } = await import("@/lib/permissions");
-        try {
-            requireSuperAdmin(user);
-        } catch (error) {
-            return NextResponse.json(
-                { error: (error as Error).message },
-                { status: 403 }
-            );
+        const { id } = await params;
+        const categoryId = parseInt(id);
+
+        if (isNaN(categoryId)) {
+            return NextResponse.json({ error: "ID inválido" }, { status: 400 });
         }
 
-        const { id } = await params;
-
-        const existingCategory = await prisma.mantCategory.findUnique({
+        const existingCategory = await prisma.mantCategory.findFirst({
             where: {
-                id: parseInt(id),
-                tenantId: user.tenantId
+                id: categoryId,
+                OR: [
+                    { isGlobal: true },
+                    { tenantId: user.tenantId }
+                ]
             }
         });
 
@@ -145,11 +151,18 @@ export async function DELETE(
             return NextResponse.json({ error: "Categoría no encontrada" }, { status: 404 });
         }
 
+        // Validar permisos según isGlobal
+        try {
+            requireMasterDataMutationPermission(user, existingCategory);
+        } catch (error) {
+            return NextResponse.json(
+                { error: (error as Error).message },
+                { status: 403 }
+            );
+        }
+
         await prisma.mantCategory.delete({
-            where: {
-                id: parseInt(id),
-                tenantId: user.tenantId
-            }
+            where: { id: categoryId }
         });
 
         return new NextResponse(null, { status: 204 });

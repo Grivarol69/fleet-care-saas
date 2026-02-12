@@ -19,12 +19,10 @@ import {
   Bell,
   Wrench,
   Search,
-  DollarSign,
-  Plus,
   AlertTriangle,
   FileBarChart,
 } from 'lucide-react';
-import { UserButton } from '@clerk/nextjs';
+import { UserButton, OrganizationSwitcher } from '@clerk/nextjs';
 import { SidebarRoutes } from '../SidebarRoutes';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -217,51 +215,28 @@ export function Navbar() {
           </form>
         </div>
 
-        {/* Acciones rápidas */}
+        {/* Org Switcher + User */}
         <div className="flex items-center gap-3">
-          <TooltipProvider>
-            {/* Indicador de costos del mes */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <DollarSign className="h-4 w-4" />
-                  <span className="text-xs">Mes:</span>
-                  <span className="font-bold">${stats.monthCosts}k</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Costos de mantenimiento del mes actual</p>
-              </TooltipContent>
-            </Tooltip>
-
-            {/* Crear Orden de Trabajo - CTA principal */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="sm"
-                  onClick={() => router.push('/dashboard/maintenance/work-orders?action=create')}
-                  className="gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Nueva Orden
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Crear nueva orden de trabajo</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <OrganizationSwitcher
+            hidePersonal={false}
+            afterSelectOrganizationUrl="/dashboard"
+            afterSelectPersonalUrl="/dashboard"
+            appearance={{
+              elements: {
+                rootBox: 'flex items-center',
+                organizationSwitcherTrigger: 'px-3 py-1.5 rounded-md border border-input bg-background text-sm hover:bg-accent',
+              },
+            }}
+          />
 
           <Separator orientation="vertical" className="h-6" />
 
-          {/* User Menu - Clerk */}
           <UserButton
             appearance={{
               elements: {
                 avatarBox: 'w-9 h-9',
               },
             }}
-            afterSignOutUrl="/sign-in"
           />
         </div>
       </div>
@@ -288,24 +263,28 @@ export function Navbar() {
               <Badge variant="destructive">{stats.criticalAlerts}</Badge>
             )}
           </Button>
-
-          <Button
-            size="sm"
-            onClick={() => router.push('/dashboard/maintenance/work-orders?action=create')}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
         </div>
 
-        {/* User Menu - Mobile */}
-        <UserButton
-          appearance={{
-            elements: {
-              avatarBox: 'w-8 h-8',
-            },
-          }}
-          afterSignOutUrl="/sign-in"
-        />
+        <div className="flex items-center gap-2">
+          <OrganizationSwitcher
+            hidePersonal={false}
+            afterSelectOrganizationUrl="/dashboard"
+            afterSelectPersonalUrl="/dashboard"
+            appearance={{
+              elements: {
+                rootBox: 'flex items-center',
+                organizationSwitcherTrigger: 'px-2 py-1 rounded-md border border-input bg-background text-xs',
+              },
+            }}
+          />
+          <UserButton
+            appearance={{
+              elements: {
+                avatarBox: 'w-8 h-8',
+              },
+            }}
+          />
+        </div>
       </div>
     </nav>
   );

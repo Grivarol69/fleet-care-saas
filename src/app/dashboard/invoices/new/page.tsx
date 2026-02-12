@@ -31,7 +31,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, TrendingUp, TrendingDown, Minus, CheckCircle2, Plus, X, Search, FileText, Loader2 } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, Minus, CheckCircle2, Plus, X, Search, FileText, Loader2, ShoppingCart } from 'lucide-react';
 import { useToast } from '@/components/hooks/use-toast';
 import axios from 'axios';
 import { cn } from '@/lib/utils';
@@ -46,7 +46,7 @@ interface InvoiceItem {
   category?: string;
   quantity: number;
 
-  // Estimado (desde WO)
+  // Estimado (desde WO o PO)
   estimatedUnitPrice: number;
   estimatedTotal: number;
 
@@ -59,8 +59,32 @@ interface InvoiceItem {
   total: number;
 
   // Control
-  included: boolean;  // Si incluir en factura
-  isFree: boolean;    // Si es sin costo
+  included: boolean;
+  isFree: boolean;
+}
+
+interface PendingPO {
+  id: string;
+  orderNumber: string;
+  type: string;
+  status: string;
+  total: number;
+  provider: { id: number; name: string };
+  workOrder: {
+    id: number;
+    title: string;
+    vehicle: { licensePlate: string; brand: { name: string } };
+  };
+  items: Array<{
+    id: string;
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    total: number;
+    workOrderItemId?: number;
+    mantItemId?: number;
+    masterPart?: { code: string; description: string };
+  }>;
 }
 
 function NewInvoiceContent() {
@@ -68,6 +92,7 @@ function NewInvoiceContent() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const workOrderId = searchParams.get('workOrderId');
+  const purchaseOrderIdParam = searchParams.get('purchaseOrderId');
 
   interface Provider {
     id: number;
@@ -92,6 +117,11 @@ function NewInvoiceContent() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
 
+  // Purchase Order state
+  const [pendingPOs, setPendingPOs] = useState<PendingPO[]>([]);
+  const [selectedPOId, setSelectedPOId] = useState<string>(purchaseOrderIdParam || '');
+  const [selectedPO, setSelectedPO] = useState<PendingPO | null>(null);
+
   // Form state
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [invoiceDate, setInvoiceDate] = useState(
@@ -110,16 +140,74 @@ function NewInvoiceContent() {
   const [mantItems, setMantItems] = useState<MantItemType[]>([]);
   const [searchingItems, setSearchingItems] = useState(false);
 
+  // Cargar items desde una OC seleccionada
+  const loadPOItems = (po: PendingPO) => {
+    setSelectedPO(po);
+    setSupplierId(po.provider.id.toString());
+
+    const poItems: InvoiceItem[] = po.items.map((item) => {
+      const unitPrice = Number(item.unitPrice);
+      const qty = Number(item.quantity);
+      const totals = calculateItemTotals(qty, unitPrice, 19);
+      return {
+        id: crypto.randomUUID(),
+        ...(item.workOrderItemId ? { workOrderItemId: item.workOrderItemId } : {}),
+        ...(item.mantItemId ? { mantItemId: item.mantItemId } : {}),
+        description: item.masterPart
+          ? `${item.description} (${item.masterPart.code})`
+          : item.description,
+        quantity: qty,
+        estimatedUnitPrice: unitPrice,
+        estimatedTotal: qty * unitPrice,
+        realUnitPrice: unitPrice,
+        ...totals,
+        taxRate: 19,
+        included: true,
+        isFree: false,
+      };
+    });
+
+    setItems(poItems);
+
+    toast({
+      title: 'Items pre-cargados',
+      description: `${poItems.length} items cargados desde ${po.orderNumber}`,
+    });
+  };
+
   // Cargar datos iniciales
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Cargar providers
-        const providersRes = await axios.get('/api/people/providers');
+        // Cargar providers y OC pendientes en paralelo
+        const [providersRes, posRes] = await Promise.all([
+          axios.get('/api/people/providers'),
+          axios.get('/api/purchase-orders?status=SENT'),
+        ]);
         setProviders(providersRes.data);
+        setPendingPOs(posRes.data);
 
-        // Si viene workOrderId, cargar datos
-        if (workOrderId) {
+        // Si viene purchaseOrderId, cargar esa OC directamente
+        if (purchaseOrderIdParam) {
+          const poFromList = posRes.data.find((po: PendingPO) => po.id === purchaseOrderIdParam);
+          if (poFromList) {
+            loadPOItems(poFromList);
+          } else {
+            // La OC no esta en la lista (puede que no sea SENT), intentar cargar igual
+            try {
+              const poRes = await axios.get(`/api/purchase-orders/${purchaseOrderIdParam}`);
+              loadPOItems(poRes.data);
+            } catch {
+              toast({
+                title: 'Error',
+                description: 'No se pudo cargar la Orden de Compra',
+                variant: 'destructive',
+              });
+            }
+          }
+        }
+        // Si viene workOrderId (sin PO), cargar datos de la OT
+        else if (workOrderId) {
           const woRes = await axios.get(
             `/api/maintenance/work-orders/${workOrderId}`
           );
@@ -130,13 +218,12 @@ function NewInvoiceContent() {
             setSupplierId(woRes.data.providerId.toString());
           }
 
-          // 🎯 CARGAR ITEMS DE LA WORKORDER
+          // Cargar items de la WorkOrder
           setLoadingWOItems(true);
           const woItemsRes = await axios.get(
             `/api/maintenance/work-orders/${workOrderId}/items`
           );
 
-          // Mapear items de WO a formato de factura
           interface WOItemResponse {
             id: number;
             description: string;
@@ -155,17 +242,15 @@ function NewInvoiceContent() {
             quantity: item.quantity,
             estimatedUnitPrice: item.estimatedUnitPrice,
             estimatedTotal: item.estimatedTotal,
-            // Usuario llenará estos
-            realUnitPrice: item.estimatedUnitPrice, // Pre-poblar con estimado
+            realUnitPrice: item.estimatedUnitPrice,
             realTotal: item.estimatedTotal,
-            taxRate: 19, // IVA Colombia
+            taxRate: 19,
             taxAmount: 0,
             total: 0,
-            included: true,  // Por defecto incluido
-            isFree: false,   // Por defecto no es gratis
+            included: true,
+            isFree: false,
           }));
 
-          // Calcular totales iniciales
           const itemsWithTotals = woItems.map((item: InvoiceItem) => {
             const totals = calculateItemTotals(
               item.quantity,
@@ -178,7 +263,7 @@ function NewInvoiceContent() {
           setItems(itemsWithTotals);
           setLoadingWOItems(false);
         } else {
-          // Sin WO, item vacío por defecto
+          // Sin WO ni PO, item vacio por defecto
           setItems([
             {
               id: crypto.randomUUID(),
@@ -208,7 +293,8 @@ function NewInvoiceContent() {
     };
 
     fetchData();
-  }, [workOrderId, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workOrderId, purchaseOrderIdParam]);
 
   // Buscar MantItems cuando cambia el término de búsqueda
   useEffect(() => {
@@ -421,7 +507,8 @@ function NewInvoiceContent() {
         invoiceDate,
         dueDate: dueDate || null,
         supplierId: parseInt(supplierId),
-        workOrderId: workOrderId ? parseInt(workOrderId) : null,
+        workOrderId: workOrderId ? parseInt(workOrderId) : (selectedPO?.workOrder.id || null),
+        purchaseOrderId: selectedPO?.id || null,
         subtotal: totals.realSubtotal,
         taxAmount: totals.taxAmount,
         totalAmount: totals.total,
@@ -513,14 +600,20 @@ function NewInvoiceContent() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Nueva Factura de Compra</h1>
-            {workOrder && (
+            {workOrder && !selectedPO && (
               <p className="text-muted-foreground mt-2 flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
                 Vinculada a: {workOrder.title} ({workOrder.vehicle?.licensePlate})
               </p>
             )}
+            {selectedPO && (
+              <p className="text-muted-foreground mt-2 flex items-center gap-2">
+                <ShoppingCart className="h-4 w-4 text-blue-600" />
+                Desde OC: {selectedPO.orderNumber} — {selectedPO.workOrder.title} ({selectedPO.workOrder.vehicle.licensePlate})
+              </p>
+            )}
           </div>
-          {workOrder && (
+          {workOrder && !selectedPO && (
             <div className="text-right">
               <p className="text-sm text-muted-foreground">Costo Estimado</p>
               <p className="text-2xl font-bold text-blue-600">
@@ -528,10 +621,79 @@ function NewInvoiceContent() {
               </p>
             </div>
           )}
+          {selectedPO && (
+            <div className="text-right">
+              <p className="text-sm text-muted-foreground">Total OC</p>
+              <p className="text-2xl font-bold text-blue-600">
+                ${Number(selectedPO.total).toLocaleString('es-CO')}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Selector de Orden de Compra */}
+        {!workOrderId && pendingPOs.length > 0 && (
+          <Card className="border-blue-200 bg-blue-50/30">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <ShoppingCart className="h-5 w-5 text-blue-600" />
+                Vincular a Orden de Compra (opcional)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Label>Selecciona una OC enviada para pre-cargar los items</Label>
+                <Select
+                  value={selectedPOId}
+                  onValueChange={(value) => {
+                    setSelectedPOId(value);
+                    if (value === '_none') {
+                      setSelectedPO(null);
+                      setSupplierId('');
+                      setItems([{
+                        id: crypto.randomUUID(),
+                        description: '',
+                        quantity: 1,
+                        estimatedUnitPrice: 0,
+                        estimatedTotal: 0,
+                        realUnitPrice: 0,
+                        realTotal: 0,
+                        taxRate: 19,
+                        taxAmount: 0,
+                        total: 0,
+                        included: true,
+                        isFree: false,
+                      }]);
+                    } else {
+                      const po = pendingPOs.find((p) => p.id === value);
+                      if (po) loadPOItems(po);
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sin orden de compra — factura independiente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">Sin orden de compra</SelectItem>
+                    {pendingPOs.map((po) => (
+                      <SelectItem key={po.id} value={po.id}>
+                        {po.orderNumber} — {po.provider.name} — {po.workOrder.vehicle.licensePlate} — ${Number(po.total).toLocaleString('es-CO')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedPO && (
+                  <p className="text-xs text-muted-foreground">
+                    OT: {selectedPO.workOrder.title} · Proveedor: {selectedPO.provider.name} · {selectedPO.items.length} items
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Información General */}
         <Card>
           <CardHeader>
@@ -617,9 +779,14 @@ function NewInvoiceContent() {
           <CardHeader>
             <CardTitle>
               Items de la Factura
-              {workOrder && (
+              {workOrder && !selectedPO && (
                 <span className="text-sm font-normal text-muted-foreground ml-2">
                   (Pre-cargados desde la Orden de Trabajo)
+                </span>
+              )}
+              {selectedPO && (
+                <span className="text-sm font-normal text-muted-foreground ml-2">
+                  (Pre-cargados desde {selectedPO.orderNumber})
                 </span>
               )}
             </CardTitle>
@@ -897,7 +1064,7 @@ function NewInvoiceContent() {
           <CardContent className="pt-6">
             <div className="space-y-3">
               {/* Comparación Estimado vs Real */}
-              {workOrder && (
+              {(workOrder || selectedPO) && (
                 <div className="grid grid-cols-2 gap-4 pb-3 border-b">
                   <div>
                     <p className="text-sm text-muted-foreground">Subtotal Estimado</p>
@@ -916,7 +1083,7 @@ function NewInvoiceContent() {
 
               {/* IVA y Total */}
               <div className="space-y-2">
-                {!workOrder && (
+                {!workOrder && !selectedPO && (
                   <div className="flex justify-between text-lg">
                     <span>Subtotal:</span>
                     <span className="font-semibold">
@@ -939,7 +1106,7 @@ function NewInvoiceContent() {
               </div>
 
               {/* Variación Total */}
-              {workOrder && (
+              {(workOrder || selectedPO) && (
                 <div className="mt-4 p-4 rounded-lg bg-muted">
                   <div className="flex items-center justify-between">
                     <span className="font-medium">Variación Total:</span>

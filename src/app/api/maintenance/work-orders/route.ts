@@ -144,6 +144,7 @@ export async function POST(request: NextRequest) {
       scheduledDate,
       priority = "MEDIUM",
       mantType = "PREVENTIVE",
+      workType = "EXTERNAL",
     } = body;
 
     // Sanitize IDs
@@ -252,6 +253,7 @@ export async function POST(request: NextRequest) {
         mantType,
         priority,
         status: "PENDING",
+        workType: workType as "EXTERNAL" | "INTERNAL" | "MIXED",
         technicianId: technicianId || null,
         providerId: providerId || null,
         creationMileage: vehicle.mileage,
@@ -316,7 +318,7 @@ export async function POST(request: NextRequest) {
     // ... (item creation logic is fine)
 
     // FIX: Prisma Decimal/BigInt serialization issue in Next.js
-    const serializedWorkOrder = JSON.parse(JSON.stringify(workOrder, (key, value) =>
+    const serializedWorkOrder = JSON.parse(JSON.stringify(workOrder, (_key, value) =>
       (typeof value === 'bigint' ? value.toString() : value)
     ));
 

@@ -16,7 +16,7 @@ const createItemSchema = z.object({
 });
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -27,6 +27,8 @@ export async function GET(
     }
 
     const { id } = await params;
+    const { searchParams } = new URL(request.url);
+    const typeFilter = searchParams.get('type'); // "SERVICE,ACTION" or "PART"
 
     const workOrderId = safeParseInt(id);
     if (workOrderId === null) {
@@ -36,35 +38,52 @@ export async function GET(
       );
     }
 
+    // Parse type filter if provided
+    const types = typeFilter ? typeFilter.split(',').map(t => t.trim()) as ('ACTION' | 'PART' | 'SERVICE')[] : null;
+
+    // Build query with optional type filter
+    const workOrderItems = await prisma.workOrderItem.findMany({
+      where: {
+        workOrderId,
+        workOrder: { tenantId: user.tenantId },
+        ...(types && {
+          mantItem: {
+            type: { in: types }
+          }
+        })
+      },
+      include: {
+        mantItem: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+            description: true,
+            category: { select: { name: true } },
+          },
+        },
+        masterPart: {
+          select: {
+            id: true,
+            code: true,
+            description: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
+
+    // Get work order for estimated cost
     const workOrder = await prisma.workOrder.findUnique({
       where: {
         id: workOrderId,
         tenantId: user.tenantId,
       },
-      include: {
-        workOrderItems: {
-          include: {
-            mantItem: {
-              select: {
-                id: true,
-                name: true,
-                type: true,
-                description: true,
-                category: { select: { name: true } },
-              },
-            },
-            masterPart: {
-              select: {
-                id: true,
-                code: true,
-                description: true,
-              },
-            },
-          },
-          orderBy: {
-            createdAt: 'asc',
-          },
-        },
+      select: {
+        id: true,
+        estimatedCost: true,
       },
     });
 
@@ -75,12 +94,13 @@ export async function GET(
       );
     }
 
-    const formattedItems = workOrder.workOrderItems.map((item) => ({
+    const formattedItems = workOrderItems.map((item) => ({
       workOrderItemId: item.id,
       mantItemId: item.mantItem.id,
       mantItemName: item.mantItem.name,
       mantItemType: item.mantItem.type,
       categoryName: item.mantItem.category.name,
+      masterPartId: item.masterPart?.id || null,
       masterPartCode: item.masterPart?.code || null,
       masterPartDescription: item.masterPart?.description || null,
       description: item.description || item.mantItem.name || 'Sin descripción',
@@ -90,6 +110,7 @@ export async function GET(
       totalCost: parseFloat(item.totalCost?.toString() || '0'),
       supplier: item.supplier,
       closureType: item.closureType,
+      itemSource: item.itemSource,
       status: item.status,
     }));
 
@@ -169,10 +190,57 @@ export async function POST(
       );
     }
 
-    // 3. If masterPartId provided, verify it exists
-    if (body.masterPartId) {
+    // 3. Auto-suggest masterPartId from MantItemVehiclePart if not provided
+    let resolvedMasterPartId = body.masterPartId || null;
+
+    if (!resolvedMasterPartId && workOrder.vehicleId) {
+      const vehicle = await prisma.vehicle.findUnique({
+        where: { id: workOrder.vehicleId },
+        select: { brandId: true, lineId: true, year: true },
+      });
+
+      if (vehicle) {
+        const suggestion = await prisma.mantItemVehiclePart.findFirst({
+          where: {
+            mantItemId: body.mantItemId,
+            vehicleBrandId: vehicle.brandId,
+            vehicleLineId: vehicle.lineId,
+            OR: [
+              { isGlobal: true },
+              { tenantId: user.tenantId },
+            ],
+            AND: [
+              {
+                OR: [
+                  { yearFrom: null },
+                  { yearFrom: { lte: vehicle.year } },
+                ],
+              },
+              {
+                OR: [
+                  { yearTo: null },
+                  { yearTo: { gte: vehicle.year } },
+                ],
+              },
+            ],
+          },
+          select: { masterPartId: true },
+          orderBy: [
+            { isGlobal: 'asc' }, // Tenant-specific first
+            { createdAt: 'desc' },
+          ],
+        });
+
+        if (suggestion) {
+          resolvedMasterPartId = suggestion.masterPartId;
+        }
+      }
+    }
+
+    // 4. If masterPartId provided or resolved, verify it exists
+    if (resolvedMasterPartId) {
       const masterPart = await prisma.masterPart.findUnique({
-        where: { id: body.masterPartId }
+        where: { id: resolvedMasterPartId }
       });
       if (!masterPart) {
         return NextResponse.json(
@@ -235,12 +303,12 @@ export async function POST(
         });
       }
 
-      // 5. Create WorkOrderItem
+      // 5. Create WorkOrderItem (with auto-suggested masterPartId if available)
       const newItem = await tx.workOrderItem.create({
         data: {
           workOrderId,
           mantItemId: body.mantItemId,
-          masterPartId: body.masterPartId || null,
+          masterPartId: resolvedMasterPartId,
           description: body.description,
           quantity: body.quantity,
           unitPrice: finalUnitCost,

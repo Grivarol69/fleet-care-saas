@@ -54,6 +54,8 @@ model Tenant {
   internalWorkTickets       InternalWorkTicket[]
   documentTypeConfigs       DocumentTypeConfig[]
   purchaseOrders            PurchaseOrder[]
+  mantItemRequests          MantItemRequest[]
+  mantItemVehicleParts      MantItemVehiclePart[]
 
   @@index([slug])
   @@index([subscriptionStatus])
@@ -153,6 +155,7 @@ model VehicleBrand {
   lines                VehicleLine[]
   vehicles             Vehicle[]
   maintenanceTemplates MaintenanceTemplate[] // ✅ CURRENT
+  mantItemVehicleParts MantItemVehiclePart[] // KB: repuestos por marca
 
   @@unique([tenantId, name])
   @@index([isGlobal])
@@ -173,6 +176,7 @@ model VehicleLine {
   brand                VehicleBrand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
   vehicles             Vehicle[]
   maintenanceTemplates MaintenanceTemplate[] // ✅ CURRENT
+  mantItemVehicleParts MantItemVehiclePart[] // KB: repuestos por línea
 
   @@unique([tenantId, brandId, name])
   @@index([brandId])
@@ -263,8 +267,9 @@ model MantCategory {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  tenant    Tenant?    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  mantItems MantItem[]
+  tenant           Tenant?           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  mantItems        MantItem[]
+  mantItemRequests MantItemRequest[]
 
   @@unique([tenantId, name])
   @@index([isGlobal])
@@ -296,12 +301,95 @@ model MantItem {
   packageItems        PackageItem[] // ✅ CURRENT (Template items)
   workOrderItems      WorkOrderItem[]
   vehicleProgramItems VehicleProgramItem[] // ✅ CURRENT ARCHITECTURE
-  parts               MantItemPart[] // ✅ Artículos vinculados al item
+  parts               MantItemPart[] // Legacy: vínculo genérico sin contexto vehículo
+  vehicleParts        MantItemVehiclePart[] // KB: repuestos por marca/línea/año
   purchaseOrderItems  PurchaseOrderItem[]
 
   @@unique([tenantId, name])
   @@index([categoryId])
   @@index([type])
+  @@index([isGlobal])
+}
+
+// Solicitudes de nuevos MantItems (TECHNICIAN/PURCHASER → OWNER/MANAGER aprueba)
+model MantItemRequest {
+  id        Int    @id @default(autoincrement())
+  tenantId  String
+
+  // Datos del item solicitado
+  suggestedName String
+  description   String?
+  mantType      MantType
+  categoryId    Int
+  type          ItemType @default(ACTION)
+  justification String?  @db.Text // Por qué se necesita
+
+  // Items similares encontrados (snapshot del fuzzy search)
+  similarItems Json? // [{ id, name, score }] - para auditoría
+
+  // Workflow
+  status     MantItemRequestStatus @default(PENDING)
+  requestedBy String // User ID
+  resolvedBy  String? // User ID OWNER/MANAGER
+  resolvedAt  DateTime?
+  rejectionReason String? @db.Text
+
+  // Referencia al item creado si fue aprobado
+  createdMantItemId Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant   Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category MantCategory @relation(fields: [categoryId], references: [id])
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([requestedBy])
+}
+
+// ========================================
+// KNOWLEDGE BASE: Repuestos por Vehículo
+// Vincula MantItem + Marca + Línea + Año → MasterPart específico
+// ========================================
+
+model MantItemVehiclePart {
+  id               Int      @id @default(autoincrement())
+  tenantId         String?
+  isGlobal         Boolean  @default(false)
+
+  // Item de mantenimiento (ej: "Cambio de filtro de aire")
+  mantItemId       Int
+  mantItem         MantItem @relation(fields: [mantItemId], references: [id])
+
+  // Contexto vehículo (todo por FK, cero strings libres)
+  vehicleBrandId   Int
+  vehicleBrand     VehicleBrand @relation(fields: [vehicleBrandId], references: [id])
+  vehicleLineId    Int
+  vehicleLine      VehicleLine @relation(fields: [vehicleLineId], references: [id])
+  yearFrom         Int? // Año desde (ej: 2020)
+  yearTo           Int? // Año hasta (ej: 2024, null = vigente)
+
+  // Repuesto específico (FK a MasterPart)
+  masterPartId     String
+  masterPart       MasterPart @relation("VehiclePartSpec", fields: [masterPartId], references: [id])
+
+  // Equivalentes informativos (texto libre, NO formalizados)
+  alternativePartNumbers String? @db.Text // "BOSCH F026400391, MANN C2443"
+  notes            String?
+
+  // Cantidad necesaria (ej: 4.5 litros de aceite)
+  quantity         Decimal  @default(1) @db.Decimal(10, 2)
+
+  tenant           Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([mantItemId, vehicleBrandId, vehicleLineId, yearFrom, masterPartId])
+  @@index([mantItemId])
+  @@index([vehicleBrandId, vehicleLineId])
+  @@index([masterPartId])
   @@index([isGlobal])
 }
 
@@ -613,14 +701,15 @@ model MasterPart {
   updatedAt DateTime @updatedAt
 
   // Relaciones
-  mantItemParts   MantItemPart[]
-  invoiceItems    InvoiceItem[]
-  priceHistory    PartPriceHistory[]
-  compatibilities PartCompatibility[] // FASE 3
-  inventoryItems     InventoryItem[]
-  financialAlerts    FinancialAlert[] // ✅ Relación inversa
-  workOrderItems     WorkOrderItem[]
-  purchaseOrderItems PurchaseOrderItem[]
+  mantItemParts        MantItemPart[]
+  mantItemVehicleParts MantItemVehiclePart[] @relation("VehiclePartSpec") // KB: repuestos por vehículo
+  invoiceItems         InvoiceItem[]
+  priceHistory         PartPriceHistory[]
+  compatibilities      PartCompatibility[] // FASE 3
+  inventoryItems       InventoryItem[]
+  financialAlerts      FinancialAlert[] // ✅ Relación inversa
+  workOrderItems       WorkOrderItem[]
+  purchaseOrderItems   PurchaseOrderItem[]
 
   @@index([category])
   @@index([tenantId])
@@ -1858,4 +1947,10 @@ enum ItemSource {
   EXTERNAL // Compra externa (genera OC)
   INTERNAL_STOCK // Del inventario propio (genera ticket interno)
   INTERNAL_PURCHASE // Compra para uso interno (genera OC + ticket)
+}
+
+enum MantItemRequestStatus {
+  PENDING // Solicitado, esperando revisión
+  APPROVED // Aprobado, MantItem creado
+  REJECTED // Rechazado con motivo
 }

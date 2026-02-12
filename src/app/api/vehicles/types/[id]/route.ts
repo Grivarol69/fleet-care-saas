@@ -2,8 +2,9 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { safeParseInt } from '@/lib/validation';
+import { requireMasterDataMutationPermission } from "@/lib/permissions";
 
-// GET - Obtener tipo específico por ID
+// GET - Obtener tipo específico por ID (incluye globales)
 export async function GET(
     _req: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -22,10 +23,13 @@ export async function GET(
             return NextResponse.json({ error: "ID inválido" }, { status: 400 });
         }
 
-        const type = await prisma.vehicleType.findUnique({
+        const type = await prisma.vehicleType.findFirst({
             where: {
                 id: typeId,
-                tenantId: user.tenantId
+                OR: [
+                    { isGlobal: true },
+                    { tenantId: user.tenantId }
+                ]
             }
         });
 
@@ -40,7 +44,7 @@ export async function GET(
     }
 }
 
-// PUT - Actualizar tipo específico (solo SUPER_ADMIN)
+// PUT - Actualizar tipo (OWNER/MANAGER para custom, SUPER_ADMIN para global)
 export async function PUT(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -50,17 +54,6 @@ export async function PUT(
 
         if (!user) {
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-        }
-
-        // Validar permisos
-        const { requireSuperAdmin } = await import("@/lib/permissions");
-        try {
-            requireSuperAdmin(user);
-        } catch (error) {
-            return NextResponse.json(
-                { error: (error as Error).message },
-                { status: 403 }
-            );
         }
 
         const { id } = await params;
@@ -76,11 +69,14 @@ export async function PUT(
             return NextResponse.json({ error: "El nombre es requerido" }, { status: 400 });
         }
 
-        // Verificar que el tipo existe y pertenece al tenant
-        const existingType = await prisma.vehicleType.findUnique({
+        // Verificar que el tipo existe (global o del tenant)
+        const existingType = await prisma.vehicleType.findFirst({
             where: {
                 id: typeId,
-                tenantId: user.tenantId
+                OR: [
+                    { isGlobal: true },
+                    { tenantId: user.tenantId }
+                ]
             }
         });
 
@@ -88,14 +84,22 @@ export async function PUT(
             return NextResponse.json({ error: "Tipo no encontrado" }, { status: 404 });
         }
 
-        // Verificar que no exista otro tipo con el mismo nombre
+        // Validar permisos según isGlobal
+        try {
+            requireMasterDataMutationPermission(user, existingType);
+        } catch (error) {
+            return NextResponse.json(
+                { error: (error as Error).message },
+                { status: 403 }
+            );
+        }
+
+        // Verificar duplicados en el mismo scope
         const duplicateType = await prisma.vehicleType.findFirst({
             where: {
-                tenantId: user.tenantId,
+                tenantId: existingType.tenantId,
                 name: name.trim(),
-                id: {
-                    not: typeId
-                }
+                id: { not: typeId }
             }
         });
 
@@ -104,12 +108,8 @@ export async function PUT(
         }
 
         const updatedType = await prisma.vehicleType.update({
-            where: {
-                id: typeId
-            },
-            data: {
-                name: name.trim(),
-            }
+            where: { id: typeId },
+            data: { name: name.trim() }
         });
 
         return NextResponse.json(updatedType);
@@ -119,7 +119,7 @@ export async function PUT(
     }
 }
 
-// DELETE - Eliminar tipo específico (solo SUPER_ADMIN)
+// DELETE - Eliminar tipo (OWNER/MANAGER para custom, SUPER_ADMIN para global)
 export async function DELETE(
     _req: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -131,17 +131,6 @@ export async function DELETE(
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
-        // Validar permisos
-        const { requireSuperAdmin } = await import("@/lib/permissions");
-        try {
-            requireSuperAdmin(user);
-        } catch (error) {
-            return NextResponse.json(
-                { error: (error as Error).message },
-                { status: 403 }
-            );
-        }
-
         const { id } = await params;
         const typeId = safeParseInt(id);
 
@@ -149,16 +138,28 @@ export async function DELETE(
             return NextResponse.json({ error: "ID inválido" }, { status: 400 });
         }
 
-        // Verificar que el tipo existe y pertenece al tenant
-        const existingType = await prisma.vehicleType.findUnique({
+        const existingType = await prisma.vehicleType.findFirst({
             where: {
                 id: typeId,
-                tenantId: user.tenantId
+                OR: [
+                    { isGlobal: true },
+                    { tenantId: user.tenantId }
+                ]
             }
         });
 
         if (!existingType) {
             return NextResponse.json({ error: "Tipo no encontrado" }, { status: 404 });
+        }
+
+        // Validar permisos según isGlobal
+        try {
+            requireMasterDataMutationPermission(user, existingType);
+        } catch (error) {
+            return NextResponse.json(
+                { error: (error as Error).message },
+                { status: 403 }
+            );
         }
 
         // Verificar que no tenga vehículos dependientes
@@ -175,12 +176,8 @@ export async function DELETE(
 
         // Soft delete - cambiar status a INACTIVE
         await prisma.vehicleType.update({
-            where: {
-                id: typeId
-            },
-            data: {
-                status: 'INACTIVE'
-            }
+            where: { id: typeId },
+            data: { status: 'INACTIVE' }
         });
 
         return NextResponse.json({ success: true, message: "Tipo desactivado" });

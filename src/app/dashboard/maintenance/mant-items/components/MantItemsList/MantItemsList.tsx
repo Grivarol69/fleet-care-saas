@@ -29,8 +29,18 @@ export function MantItemsList() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingMantItem, setEditingMantItem] =
     useState<MantItemsListProps | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.isSuperAdmin) setIsSuperAdmin(true);
+      })
+      .catch(() => {});
+  }, []);
 
   const fetchMantItems = useCallback(async () => {
     try {
@@ -108,6 +118,8 @@ export function MantItemsList() {
         return mantType;
     }
   };
+
+  const canMutate = (item: MantItemsListProps) => !item.isGlobal || isSuperAdmin;
 
   const columns: ColumnDef<MantItemsListProps>[] = [
     {
@@ -187,9 +199,22 @@ export function MantItemsList() {
       },
     },
     {
+      id: 'origen',
+      header: 'Origen',
+      cell: ({ row }) => (
+        <span className={`px-2 py-1 rounded-full text-xs ${
+          row.original.isGlobal
+            ? 'bg-purple-100 text-purple-800'
+            : 'bg-slate-100 text-slate-700'
+        }`}>
+          {row.original.isGlobal ? 'Global' : 'Empresa'}
+        </span>
+      ),
+    },
+    {
       id: 'actions',
       header: 'Acciones',
-      cell: ({ row }) => (
+      cell: ({ row }) => canMutate(row.original) ? (
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -206,7 +231,7 @@ export function MantItemsList() {
             Eliminar
           </Button>
         </div>
-      ),
+      ) : null,
     },
   ];
 

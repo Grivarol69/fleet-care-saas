@@ -1,10 +1,10 @@
 import { currentUser, auth } from '@clerk/nextjs/server'
 
 import { prisma } from '@/lib/prisma'
-import { User, UserRole } from '@prisma/client'
+import { User } from '@prisma/client'
 
-// Platform Tenant ID para SUPER_ADMIN
-const PLATFORM_TENANT_ID = '00000000-0000-0000-0000-000000000000'
+// Platform Tenant ID para SUPER_ADMIN (único lugar de definición)
+export const PLATFORM_TENANT_ID = '00000000-0000-0000-0000-000000000000'
 
 // Tipo extendido de User que incluye info de SUPER_ADMIN
 export type UserWithSuperAdmin = User & {
@@ -12,34 +12,9 @@ export type UserWithSuperAdmin = User & {
 }
 
 /**
- * Mapea roles de Clerk a roles de Prisma
- */
-function mapClerkRoleToPrisma(clerkRole: string | undefined | null): UserRole {
-  // Clerk devuelve roles con prefijo "org:" (ej: "org:admin")
-  // Necesitamos limpiar el prefijo
-  const role = clerkRole?.replace('org:', '') || ''
-
-  switch (role) {
-    case 'admin':
-      return 'OWNER'
-    case 'manager':
-      return 'MANAGER'
-    case 'technician':
-      return 'TECHNICIAN'
-    case 'purchaser':
-      return 'PURCHASER'
-    case 'driver':
-      return 'DRIVER'
-    default:
-      return 'MANAGER' // Default seguro
-  }
-}
-
-/**
  * Obtiene el usuario autenticado actual
  *
- * IMPORTANTE: Esta función abstrae la lógica de autenticación.
- * Soporta DUAL MODE: Clerk (prioritario) + Supabase (fallback)
+ * IMPORTANTE: Esta función abstrae la lógica de autenticación vía Clerk.
  *
  * SUPER_ADMIN: Si el email existe en el Platform Tenant con rol SUPER_ADMIN,
  * el usuario tendrá isSuperAdmin = true aunque opere en otro tenant.
@@ -48,15 +23,10 @@ function mapClerkRoleToPrisma(clerkRole: string | undefined | null): UserRole {
  */
 export async function getCurrentUser(): Promise<UserWithSuperAdmin | null> {
   try {
-    // ========================================
-    // CLERK AUTHENTICATION
-    // ========================================
-
-    // Usamos auth() para obtener orgId y orgRole directamente
-    const { userId, orgId, orgRole } = await auth()
+    const { userId, orgId } = await auth()
 
     if (userId) {
-      // Obtener info completa del usuario
+      // Obtener info completa del usuario de Clerk (solo para email si es necesario)
       const clerkUser = await currentUser()
       if (!clerkUser) {
         return null
@@ -70,7 +40,6 @@ export async function getCurrentUser(): Promise<UserWithSuperAdmin | null> {
       // ========================================
       // VERIFICAR SI ES SUPER_ADMIN
       // ========================================
-      // Buscar si el email existe en el Platform Tenant con rol SUPER_ADMIN
       const superAdminUser = await prisma.user.findFirst({
         where: {
           email,
@@ -81,7 +50,6 @@ export async function getCurrentUser(): Promise<UserWithSuperAdmin | null> {
       const isSuperAdmin = !!superAdminUser
 
       // Si no tiene org pero es SUPER_ADMIN, retornar usuario del Platform Tenant
-      // Esto permite acceso a /admin sin necesidad de organización en Clerk
       if (!orgId) {
         if (isSuperAdmin && superAdminUser) {
           return {
@@ -89,43 +57,15 @@ export async function getCurrentUser(): Promise<UserWithSuperAdmin | null> {
             isSuperAdmin: true,
           }
         }
-        // No es SUPER_ADMIN y no tiene org - no puede acceder
         return null
       }
 
-      // Asegurar que el Tenant existe
-      let tenant = await prisma.tenant.findUnique({
-        where: { id: orgId },
-      })
+      // ========================================
+      // AUTH STANDARD (WEBHOOK SYNC DEPENDENCY)
+      // ========================================
 
-      if (!tenant) {
-        // Obtener nombre de la organización desde Clerk
-        // Definimos una interfaz mínima para lo que necesitamos de Clerk
-        interface ClerkOrgMembership {
-          organization: {
-            id: string;
-            name: string;
-          };
-        }
-
-        // Usamos unknown primero para evitar el error de linter, luego cast a nuestra interfaz
-        const clerkUserUnknown = clerkUser as unknown;
-        const memberships = (clerkUserUnknown as { organizationMemberships: ClerkOrgMembership[] }).organizationMemberships;
-
-        const orgName = memberships?.find((m) => m.organization.id === orgId)?.organization?.name || 'Mi Organización'
-
-        tenant = await prisma.tenant.create({
-          data: {
-            id: orgId,
-            name: orgName,
-            slug: orgId.toLowerCase(),
-            domain: `${orgId}.localhost`, // Domain temporal
-            subscriptionStatus: 'ACTIVE',
-          },
-        })
-      }
-
-      // Buscar usuario en Prisma por email + tenantId
+      // Buscar usuario en Prisma por email + tenantId.
+      // Con Webhooks, confiamos en que Clerk ya sincronizó los datos.
       let user = await prisma.user.findFirst({
         where: {
           email,
@@ -133,25 +73,25 @@ export async function getCurrentUser(): Promise<UserWithSuperAdmin | null> {
         },
       })
 
-      // Auto-crear usuario si no existe
+      // Fallback JIT: si el usuario no existe, el webhook puede estar en tránsito.
+      // Esperamos brevemente y reintentamos una vez antes de rendirse.
       if (!user) {
-        const firstName = clerkUser.firstName || null
-        const lastName = clerkUser.lastName || null
-        // Si es SUPER_ADMIN, asignar rol OWNER en el tenant cliente también
-        const role = isSuperAdmin ? 'OWNER' : mapClerkRoleToPrisma(orgRole)
-
-        user = await prisma.user.create({
-          data: {
+        console.warn(`[AUTH] User ${email} not found in DB for tenant ${orgId}. Retrying in 1.5s (webhook latency)...`)
+        await new Promise((resolve) => setTimeout(resolve, 1500))
+        user = await prisma.user.findFirst({
+          where: {
             email,
-            firstName,
-            lastName,
-            role,
             tenantId: orgId,
           },
         })
       }
 
-      // Retornar usuario con flag de SUPER_ADMIN
+      if (!user) {
+        console.warn(`[AUTH] User ${email} still not found after retry for tenant ${orgId}. Webhook may have failed.`)
+        return null
+      }
+
+      // Retornar usuario
       return {
         ...user,
         isSuperAdmin,

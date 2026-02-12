@@ -28,8 +28,18 @@ export function LineList() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingLine, setEditingLine] = useState<LineListProps | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.isSuperAdmin) setIsSuperAdmin(true);
+      })
+      .catch(() => {});
+  }, []);
 
   const fetchLines = useCallback(async () => {
     try {
@@ -91,6 +101,8 @@ export function LineList() {
     }
   };
 
+  const canMutate = (item: LineListProps) => !item.isGlobal || isSuperAdmin;
+
   const columns: ColumnDef<LineListProps>[] = [
     {
       accessorKey: "id",
@@ -105,8 +117,21 @@ export function LineList() {
       header: "Marca",
     },
     {
-      id: "actions",
+      id: "origen",
+      header: "Origen",
       cell: ({ row }) => (
+        <span className={`px-2 py-1 rounded-full text-xs ${
+          row.original.isGlobal
+            ? "bg-purple-100 text-purple-800"
+            : "bg-slate-100 text-slate-700"
+        }`}>
+          {row.original.isGlobal ? "Global" : "Empresa"}
+        </span>
+      ),
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => canMutate(row.original) ? (
         <div>
           <Button
             variant="outline"
@@ -122,7 +147,7 @@ export function LineList() {
             Eliminar
           </Button>
         </div>
-      ),
+      ) : null,
     },
   ];
 
