@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { dataAdminSidebar } from "./SidebarRoutes.data";
-import { SidebarItems } from "../SidebarItems/SidebarItems";
-import { UserRole } from "@prisma/client";
+import { useEffect, useState } from 'react';
+import { dataAdminSidebar } from './SidebarRoutes.data';
+import { SidebarItems } from '../SidebarItems/SidebarItems';
+import { UserRole } from '@prisma/client';
 
 export function SidebarRoutes() {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
@@ -11,9 +11,9 @@ export function SidebarRoutes() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/auth/me")
-      .then((res) => res.json())
-      .then((data) => {
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
         if (data.role) {
           setUserRole(data.role);
         }
@@ -21,8 +21,8 @@ export function SidebarRoutes() {
           setIsSuperAdmin(true);
         }
       })
-      .catch((error) => {
-        console.error("Error fetching user:", error);
+      .catch(error => {
+        console.error('Error fetching user:', error);
       })
       .finally(() => {
         setLoading(false);
@@ -40,17 +40,17 @@ export function SidebarRoutes() {
 
   const filterItemsByRole = (items: typeof dataAdminSidebar) => {
     return items
-      .filter((item) => hasAccess(item.roles))
-      .map((item) => {
+      .filter(item => hasAccess(item.roles))
+      .map(item => {
         if (item.subItems) {
           return {
             ...item,
-            subItems: item.subItems.filter((subItem) => hasAccess(subItem.roles)),
+            subItems: item.subItems.filter(subItem => hasAccess(subItem.roles)),
           };
         }
         return item;
       })
-      .filter((item) => !item.subItems || item.subItems.length > 0);
+      .filter(item => !item.subItems || item.subItems.length > 0);
   };
 
   const filteredItems = filterItemsByRole(dataAdminSidebar);
@@ -59,7 +59,9 @@ export function SidebarRoutes() {
     return (
       <div className="flex flex-col justify-between h-full">
         <div className="p-2 md:p-6">
-          <p className="mb-2 text-sm font-semibold text-slate-500">Cargando...</p>
+          <p className="mb-2 text-sm font-semibold text-slate-500">
+            Cargando...
+          </p>
         </div>
       </div>
     );
@@ -70,9 +72,12 @@ export function SidebarRoutes() {
       <div>
         <div className="p-2 md:p-6">
           <p className="mb-2 text-sm font-semibold text-slate-500">
-            MENÚ {userRole && <span className="text-xs text-slate-400">({userRole})</span>}
+            MENÚ{' '}
+            {userRole && (
+              <span className="text-xs text-slate-400">({userRole})</span>
+            )}
           </p>
-          {filteredItems.map((item) => (
+          {filteredItems.map(item => (
             <SidebarItems key={item.label} item={item} />
           ))}
         </div>

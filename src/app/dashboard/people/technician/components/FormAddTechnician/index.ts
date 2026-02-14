@@ -1,1 +1,1 @@
-export { FormAddTechnician } from "./FormAddTechnician";
+export { FormAddTechnician } from './FormAddTechnician';

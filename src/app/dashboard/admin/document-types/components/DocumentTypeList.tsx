@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
   flexRender,
   ColumnDef,
-} from "@tanstack/react-table";
+} from '@tanstack/react-table';
 import {
   Table,
   TableBody,
@@ -14,13 +14,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import axios from "axios";
-import { useToast } from "@/components/hooks/use-toast";
-import { FormAddDocumentType } from "./FormAddDocumentType";
-import { FormEditDocumentType } from "./FormEditDocumentType";
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import axios from 'axios';
+import { useToast } from '@/components/hooks/use-toast';
+import { FormAddDocumentType } from './FormAddDocumentType';
+import { FormEditDocumentType } from './FormEditDocumentType';
 
 interface DocumentTypeConfig {
   id: number;
@@ -43,21 +43,23 @@ export function DocumentTypeList() {
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<DocumentTypeConfig | null>(null);
+  const [editingItem, setEditingItem] = useState<DocumentTypeConfig | null>(
+    null
+  );
 
   const { toast } = useToast();
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get("/api/vehicles/document-types");
+      const response = await axios.get('/api/vehicles/document-types');
       setData(response.data);
     } catch (error) {
-      console.error("Error fetching document types:", error);
+      console.error('Error fetching document types:', error);
       toast({
-        title: "Error",
-        description: "No se pudieron cargar los tipos de documento",
-        variant: "destructive",
+        title: 'Error',
+        description: 'No se pudieron cargar los tipos de documento',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -74,41 +76,41 @@ export function DocumentTypeList() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Desea desactivar este tipo de documento?")) return;
+    if (!confirm('Desea desactivar este tipo de documento?')) return;
 
     try {
       await axios.delete(`/api/vehicles/document-types/${id}`);
-      setData((prev) => prev.filter((item) => item.id !== id));
+      setData(prev => prev.filter(item => item.id !== id));
       toast({
-        title: "Tipo desactivado",
-        description: "El tipo de documento ha sido desactivado",
+        title: 'Tipo desactivado',
+        description: 'El tipo de documento ha sido desactivado',
       });
     } catch (error) {
-      console.error("Error deleting document type:", error);
+      console.error('Error deleting document type:', error);
       toast({
-        title: "Error",
-        description: "No se pudo desactivar el tipo de documento",
-        variant: "destructive",
+        title: 'Error',
+        description: 'No se pudo desactivar el tipo de documento',
+        variant: 'destructive',
       });
     }
   };
 
   const columns: ColumnDef<DocumentTypeConfig>[] = [
     {
-      accessorKey: "code",
-      header: "Codigo",
+      accessorKey: 'code',
+      header: 'Codigo',
     },
     {
-      accessorKey: "name",
-      header: "Nombre",
+      accessorKey: 'name',
+      header: 'Nombre',
     },
     {
-      accessorKey: "countryCode",
-      header: "Pais",
+      accessorKey: 'countryCode',
+      header: 'Pais',
     },
     {
-      accessorKey: "isGlobal",
-      header: "Alcance",
+      accessorKey: 'isGlobal',
+      header: 'Alcance',
       cell: ({ row }) =>
         row.original.isGlobal ? (
           <Badge variant="secondary">Global</Badge>
@@ -117,8 +119,8 @@ export function DocumentTypeList() {
         ),
     },
     {
-      accessorKey: "requiresExpiry",
-      header: "Vencimiento",
+      accessorKey: 'requiresExpiry',
+      header: 'Vencimiento',
       cell: ({ row }) =>
         row.original.requiresExpiry ? (
           <span className="text-green-600 font-medium">Si</span>
@@ -127,8 +129,8 @@ export function DocumentTypeList() {
         ),
     },
     {
-      accessorKey: "isMandatory",
-      header: "Obligatorio",
+      accessorKey: 'isMandatory',
+      header: 'Obligatorio',
       cell: ({ row }) =>
         row.original.isMandatory ? (
           <Badge variant="destructive">Obligatorio</Badge>
@@ -137,16 +139,16 @@ export function DocumentTypeList() {
         ),
     },
     {
-      accessorKey: "expiryWarningDays",
-      header: "Warning (dias)",
+      accessorKey: 'expiryWarningDays',
+      header: 'Warning (dias)',
     },
     {
-      accessorKey: "expiryCriticalDays",
-      header: "Critical (dias)",
+      accessorKey: 'expiryCriticalDays',
+      header: 'Critical (dias)',
     },
     {
-      id: "actions",
-      header: "Acciones",
+      id: 'actions',
+      header: 'Acciones',
       cell: ({ row }) => (
         <div className="flex gap-2">
           <Button
@@ -195,9 +197,9 @@ export function DocumentTypeList() {
       <div className="rounded-md border">
         <Table>
           <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
+            {table.getHeaderGroups().map(headerGroup => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
+                {headerGroup.headers.map(header => (
                   <TableHead key={header.id}>
                     {flexRender(
                       header.column.columnDef.header,
@@ -210,9 +212,9 @@ export function DocumentTypeList() {
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
+              table.getRowModel().rows.map(row => (
                 <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
+                  {row.getVisibleCells().map(cell => (
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
@@ -224,7 +226,10 @@ export function DocumentTypeList() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No hay tipos de documento configurados
                 </TableCell>
               </TableRow>
@@ -236,7 +241,7 @@ export function DocumentTypeList() {
       <FormAddDocumentType
         isOpen={isAddDialogOpen}
         setIsOpen={setIsAddDialogOpen}
-        onAdd={(newItem) => {
+        onAdd={newItem => {
           setData([...data, newItem]);
         }}
       />
@@ -246,8 +251,10 @@ export function DocumentTypeList() {
           isOpen={isEditDialogOpen}
           setIsOpen={setIsEditDialogOpen}
           documentType={editingItem}
-          onEdit={(updated) => {
-            setData(data.map((item) => (item.id === updated.id ? updated : item)));
+          onEdit={updated => {
+            setData(
+              data.map(item => (item.id === updated.id ? updated : item))
+            );
           }}
         />
       )}

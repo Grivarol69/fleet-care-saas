@@ -5,28 +5,33 @@
 Los siguientes tokens han sido expuestos en el repositorio y deben ser regenerados:
 
 ### 1. UploadThing Tokens
-- **Token comprometido**: `eyJhcGlLZXk...` 
+
+- **Token comprometido**: `eyJhcGlLZXk...`
 - **Secret comprometido**: `sk_live_94dd5e0...`
 - **Acción**: Regenerar en https://uploadthing.com/dashboard
 
 ### 2. Supabase Keys
+
 - **Anon Key**: Aunque es pública, considera regenerarla por seguridad
 - **URL**: Verificar si es la correcta para producción
 
 ## 📋 Pasos de Remediación
 
 ### Paso 1: Regenerar Tokens de UploadThing
+
 1. Ir a https://uploadthing.com/dashboard
 2. Crear nuevos tokens
 3. Actualizar variables en tu hosting (Vercel/Netlify)
 4. Actualizar `.env.local` localmente
 
 ### Paso 2: Verificar Supabase
+
 1. Ir a https://supabase.com/dashboard
 2. Verificar que las keys sean correctas
 3. Considerar regenerar anon key por precaución
 
 ### Paso 3: Configurar Variables en Hosting
+
 ```bash
 # En Vercel (ejemplo)
 vercel env add UPLOADTHING_TOKEN
@@ -41,7 +46,7 @@ vercel env add DATABASE_URL
 ✅ `.env*` en .gitignore  
 ✅ `.env.example` como referencia  
 ✅ Documentación de variables requeridas  
-✅ Separación entre desarrollo y producción  
+✅ Separación entre desarrollo y producción
 
 ## 🚨 NO HACER
 

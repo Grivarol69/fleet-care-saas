@@ -1,7 +1,7 @@
-import { prisma } from "@/lib/prisma";
-import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
-import { ItemClosureType } from "@prisma/client";
+import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
+import { ItemClosureType } from '@prisma/client';
 
 /**
  * GET - Obtener detalle de una WorkOrder específica
@@ -15,7 +15,7 @@ export async function GET(
     console.log(`====== [GET WO] STARTING REQUEST ID: ${id} ======`);
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
     // const { id } = await params; (Removed, creating 'workOrderId' directly from existing 'id')
@@ -95,20 +95,21 @@ export async function GET(
 
     if (!workOrder) {
       return NextResponse.json(
-        { error: "Orden de trabajo no encontrada" },
+        { error: 'Orden de trabajo no encontrada' },
         { status: 404 }
       );
     }
 
     // FIX: Prisma Decimal/BigInt serialization issue in Next.js
-    const serializedWorkOrder = JSON.parse(JSON.stringify(workOrder, (_key, value) =>
-      (typeof value === 'bigint' ? value.toString() : value)
-    ));
+    const serializedWorkOrder = JSON.parse(
+      JSON.stringify(workOrder, (_key, value) =>
+        typeof value === 'bigint' ? value.toString() : value
+      )
+    );
 
     return NextResponse.json(serializedWorkOrder);
-
   } catch (error: unknown) {
-    console.error("====== [GET WO] FATAL ERROR ======");
+    console.error('====== [GET WO] FATAL ERROR ======');
     console.error(error);
 
     try {
@@ -124,12 +125,12 @@ Stack: ${error instanceof Error ? error.stack : 'N/A'}
 `;
       fs.appendFileSync(logPath, errorMsg);
     } catch (logErr) {
-      console.error("Failed to write to log file", logErr);
+      console.error('Failed to write to log file', logErr);
     }
 
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Error interno",
+        error: error instanceof Error ? error.message : 'Error interno',
       },
       { status: 500 }
     );
@@ -146,7 +147,7 @@ export async function PATCH(
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -160,13 +161,12 @@ export async function PATCH(
 
     if (!existingWO) {
       return NextResponse.json(
-        { error: "Orden de trabajo no encontrada" },
+        { error: 'Orden de trabajo no encontrada' },
         { status: 404 }
       );
     }
 
-    const { status, actualCost, completedAt, technicianId, providerId } =
-      body;
+    const { status, actualCost, completedAt, technicianId, providerId } = body;
 
     // Preparar datos para actualizar
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -174,12 +174,12 @@ export async function PATCH(
 
     if (status) {
       // FASE 6.7: Validar que no haya items pendientes de cierre antes de marcar COMPLETED
-      if (status === "COMPLETED") {
+      if (status === 'COMPLETED') {
         const pendingItems = await prisma.workOrderItem.count({
           where: {
             workOrderId,
             closureType: ItemClosureType.PENDING,
-            status: { not: "CANCELLED" },
+            status: { not: 'CANCELLED' },
           },
         });
 
@@ -197,15 +197,15 @@ export async function PATCH(
 
         // Actualizar WorkOrderItems a COMPLETED (solo status, closureType ya está definido)
         await prisma.workOrderItem.updateMany({
-          where: { workOrderId, status: { not: "CANCELLED" } },
-          data: { status: "COMPLETED" },
+          where: { workOrderId, status: { not: 'CANCELLED' } },
+          data: { status: 'COMPLETED' },
         });
 
         // FASE 6.2: Cerrar MaintenanceAlerts vinculadas
         await prisma.maintenanceAlert.updateMany({
           where: { workOrderId },
           data: {
-            status: "COMPLETED",
+            status: 'COMPLETED',
             closedAt: new Date(),
           },
         });
@@ -217,11 +217,11 @@ export async function PATCH(
         });
 
         if (alerts.length > 0) {
-          const programItemIds = alerts.map((a) => a.programItemId);
+          const programItemIds = alerts.map(a => a.programItemId);
           await prisma.vehicleProgramItem.updateMany({
             where: { id: { in: programItemIds } },
             data: {
-              status: "COMPLETED",
+              status: 'COMPLETED',
               executedDate: new Date(),
             },
           });
@@ -231,7 +231,7 @@ export async function PATCH(
       }
 
       // Si se inicia la WO
-      if (status === "IN_PROGRESS" && !existingWO.startDate) {
+      if (status === 'IN_PROGRESS' && !existingWO.startDate) {
         updateData.startDate = new Date();
       }
     }
@@ -265,16 +265,18 @@ export async function PATCH(
     });
 
     // FIX: Prisma Decimal/BigInt serialization issue in Next.js
-    const serializedWorkOrder = JSON.parse(JSON.stringify(workOrder, (_key, value) =>
-      (typeof value === 'bigint' ? value.toString() : value)
-    ));
+    const serializedWorkOrder = JSON.parse(
+      JSON.stringify(workOrder, (_key, value) =>
+        typeof value === 'bigint' ? value.toString() : value
+      )
+    );
 
     return NextResponse.json(serializedWorkOrder);
   } catch (error: unknown) {
-    console.error("[WORK_ORDER_PATCH]", error);
+    console.error('[WORK_ORDER_PATCH]', error);
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Error interno",
+        error: error instanceof Error ? error.message : 'Error interno',
       },
       { status: 500 }
     );
@@ -291,14 +293,14 @@ export async function DELETE(
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
     // Validar permisos (solo OWNER/MANAGER pueden cancelar)
-    const { canManageVehicles } = await import("@/lib/permissions");
+    const { canManageVehicles } = await import('@/lib/permissions');
     if (!canManageVehicles(user)) {
       return NextResponse.json(
-        { error: "No tienes permisos para cancelar órdenes de trabajo" },
+        { error: 'No tienes permisos para cancelar órdenes de trabajo' },
         { status: 403 }
       );
     }
@@ -316,40 +318,40 @@ export async function DELETE(
 
     if (!existingWO) {
       return NextResponse.json(
-        { error: "Orden de trabajo no encontrada" },
+        { error: 'Orden de trabajo no encontrada' },
         { status: 404 }
       );
     }
 
     // No permitir cancelar si ya está completada
-    if (existingWO.status === "COMPLETED") {
+    if (existingWO.status === 'COMPLETED') {
       return NextResponse.json(
-        { error: "No se puede cancelar una orden de trabajo completada" },
+        { error: 'No se puede cancelar una orden de trabajo completada' },
         { status: 400 }
       );
     }
 
     // Cancelar WorkOrder y revertir alertas a PENDING
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async tx => {
       // 1. Cambiar WO a CANCELLED
       await tx.workOrder.update({
         where: { id: workOrderId },
-        data: { status: "CANCELLED" },
+        data: { status: 'CANCELLED' },
       });
 
       // 2. Cambiar WorkOrderItems a CANCELLED
       await tx.workOrderItem.updateMany({
         where: { workOrderId },
-        data: { status: "CANCELLED" },
+        data: { status: 'CANCELLED' },
       });
 
       // 3. Revertir MaintenanceAlerts a PENDING (o ACKNOWLEDGED)
-      const alertIds = existingWO.maintenanceAlerts.map((a) => a.id);
+      const alertIds = existingWO.maintenanceAlerts.map(a => a.id);
       if (alertIds.length > 0) {
         await tx.maintenanceAlert.updateMany({
           where: { id: { in: alertIds } },
           data: {
-            status: "PENDING",
+            status: 'PENDING',
             workOrderId: null,
             workOrderCreatedAt: null,
             workOrderCreatedBy: null,
@@ -358,23 +360,23 @@ export async function DELETE(
 
         // 4. Revertir VehicleProgramItems a PENDING
         const programItemIds = existingWO.maintenanceAlerts.map(
-          (a) => a.programItemId
+          a => a.programItemId
         );
         await tx.vehicleProgramItem.updateMany({
           where: { id: { in: programItemIds } },
-          data: { status: "PENDING" },
+          data: { status: 'PENDING' },
         });
       }
     });
 
     return NextResponse.json({
-      message: "Orden de trabajo cancelada exitosamente",
+      message: 'Orden de trabajo cancelada exitosamente',
     });
   } catch (error: unknown) {
-    console.error("[WORK_ORDER_DELETE]", error);
+    console.error('[WORK_ORDER_DELETE]', error);
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Error interno",
+        error: error instanceof Error ? error.message : 'Error interno',
       },
       { status: 500 }
     );

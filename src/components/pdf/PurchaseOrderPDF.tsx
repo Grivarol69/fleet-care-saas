@@ -1,11 +1,5 @@
-import React from "react";
-import {
-  Document,
-  Page,
-  Text,
-  View,
-  StyleSheet,
-} from "@react-pdf/renderer";
+import React from 'react';
+import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 
 interface POItem {
   description: string;
@@ -19,7 +13,7 @@ interface POItem {
 interface PurchaseOrderPDFProps {
   orderNumber: string;
   orderDate: string;
-  orderType: "SERVICES" | "PARTS";
+  orderType: 'SERVICES' | 'PARTS';
   status: string;
   tenant: { name: string };
   provider: {
@@ -52,142 +46,142 @@ const styles = StyleSheet.create({
   page: {
     padding: 40,
     fontSize: 10,
-    fontFamily: "Helvetica",
+    fontFamily: 'Helvetica',
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 20,
-    borderBottom: "2px solid #CC0000",
+    borderBottom: '2px solid #CC0000',
     paddingBottom: 12,
   },
   headerLeft: {
     flex: 1,
   },
   headerRight: {
-    alignItems: "flex-end",
+    alignItems: 'flex-end',
   },
   title: {
     fontSize: 20,
-    fontFamily: "Helvetica-Bold",
-    color: "#CC0000",
+    fontFamily: 'Helvetica-Bold',
+    color: '#CC0000',
   },
   subtitle: {
     fontSize: 12,
-    color: "#666",
+    color: '#666',
     marginTop: 4,
   },
   orderNumber: {
     fontSize: 14,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: 'Helvetica-Bold',
   },
   orderDate: {
     fontSize: 10,
-    color: "#666",
+    color: '#666',
     marginTop: 2,
   },
   sectionTitle: {
     fontSize: 11,
-    fontFamily: "Helvetica-Bold",
-    backgroundColor: "#f0f0f0",
-    padding: "6 8",
+    fontFamily: 'Helvetica-Bold',
+    backgroundColor: '#f0f0f0',
+    padding: '6 8',
     marginTop: 16,
     marginBottom: 8,
   },
   row: {
-    flexDirection: "row",
+    flexDirection: 'row',
     marginBottom: 3,
   },
   label: {
     width: 120,
-    fontFamily: "Helvetica-Bold",
-    color: "#555",
+    fontFamily: 'Helvetica-Bold',
+    color: '#555',
   },
   value: {
     flex: 1,
   },
   tableHeader: {
-    flexDirection: "row",
-    backgroundColor: "#CC0000",
-    color: "#fff",
-    padding: "6 4",
+    flexDirection: 'row',
+    backgroundColor: '#CC0000',
+    color: '#fff',
+    padding: '6 4',
     marginTop: 8,
   },
   tableHeaderText: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: 'Helvetica-Bold',
     fontSize: 9,
-    color: "#ffffff",
+    color: '#ffffff',
   },
   tableRow: {
-    flexDirection: "row",
-    borderBottom: "1px solid #eee",
-    padding: "6 4",
+    flexDirection: 'row',
+    borderBottom: '1px solid #eee',
+    padding: '6 4',
   },
   tableRowAlt: {
-    flexDirection: "row",
-    borderBottom: "1px solid #eee",
-    padding: "6 4",
-    backgroundColor: "#fafafa",
+    flexDirection: 'row',
+    borderBottom: '1px solid #eee',
+    padding: '6 4',
+    backgroundColor: '#fafafa',
   },
   colDesc: { flex: 3, paddingRight: 4 },
   colCode: { width: 80, paddingRight: 4 },
-  colQty: { width: 50, textAlign: "right", paddingRight: 4 },
-  colPrice: { width: 70, textAlign: "right", paddingRight: 4 },
-  colTotal: { width: 70, textAlign: "right" },
+  colQty: { width: 50, textAlign: 'right', paddingRight: 4 },
+  colPrice: { width: 70, textAlign: 'right', paddingRight: 4 },
+  colTotal: { width: 70, textAlign: 'right' },
   totalsSection: {
     marginTop: 12,
-    alignItems: "flex-end",
+    alignItems: 'flex-end',
   },
   totalRow: {
-    flexDirection: "row",
+    flexDirection: 'row',
     width: 200,
-    justifyContent: "space-between",
+    justifyContent: 'space-between',
     marginBottom: 3,
   },
   totalLabel: {
-    fontFamily: "Helvetica-Bold",
-    color: "#555",
+    fontFamily: 'Helvetica-Bold',
+    color: '#555',
   },
   grandTotal: {
-    flexDirection: "row",
+    flexDirection: 'row',
     width: 200,
-    justifyContent: "space-between",
-    borderTop: "2px solid #CC0000",
+    justifyContent: 'space-between',
+    borderTop: '2px solid #CC0000',
     paddingTop: 4,
     marginTop: 4,
   },
   grandTotalText: {
     fontSize: 13,
-    fontFamily: "Helvetica-Bold",
-    color: "#CC0000",
+    fontFamily: 'Helvetica-Bold',
+    color: '#CC0000',
   },
   notesSection: {
     marginTop: 20,
     padding: 10,
-    backgroundColor: "#fffde7",
+    backgroundColor: '#fffde7',
     borderRadius: 4,
   },
   notesTitle: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: 'Helvetica-Bold',
     marginBottom: 4,
   },
   footer: {
-    position: "absolute",
+    position: 'absolute',
     bottom: 30,
     left: 40,
     right: 40,
-    textAlign: "center",
-    color: "#999",
+    textAlign: 'center',
+    color: '#999',
     fontSize: 8,
-    borderTop: "1px solid #eee",
+    borderTop: '1px solid #eee',
     paddingTop: 8,
   },
 });
 
 const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat("es-CO", {
-    style: "currency",
-    currency: "COP",
+  new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
     minimumFractionDigits: 0,
   }).format(amount);
 
@@ -215,16 +209,15 @@ export function PurchaseOrderPDF({
           <View style={styles.headerLeft}>
             <Text style={styles.title}>ORDEN DE COMPRA</Text>
             <Text style={styles.subtitle}>
-              {orderType === "PARTS" ? "Repuestos" : "Servicios"} - {tenant.name}
+              {orderType === 'PARTS' ? 'Repuestos' : 'Servicios'} -{' '}
+              {tenant.name}
             </Text>
           </View>
           <View style={styles.headerRight}>
             <Text style={styles.orderNumber}>{orderNumber}</Text>
             <Text style={styles.orderDate}>Fecha: {orderDate}</Text>
             {approvedBy && (
-              <Text style={styles.orderDate}>
-                Aprobada: {approvedAt || ""}
-              </Text>
+              <Text style={styles.orderDate}>Aprobada: {approvedAt || ''}</Text>
             )}
           </View>
         </View>
@@ -302,11 +295,13 @@ export function PurchaseOrderPDF({
               {item.masterPartDescription &&
               item.masterPartDescription !== item.description
                 ? ` (${item.masterPartDescription})`
-                : ""}
+                : ''}
             </Text>
-            <Text style={styles.colCode}>{item.masterPartCode || "-"}</Text>
+            <Text style={styles.colCode}>{item.masterPartCode || '-'}</Text>
             <Text style={styles.colQty}>{item.quantity}</Text>
-            <Text style={styles.colPrice}>{formatCurrency(item.unitPrice)}</Text>
+            <Text style={styles.colPrice}>
+              {formatCurrency(item.unitPrice)}
+            </Text>
             <Text style={styles.colTotal}>{formatCurrency(item.total)}</Text>
           </View>
         ))}
@@ -319,9 +314,7 @@ export function PurchaseOrderPDF({
           </View>
           {taxRate > 0 && (
             <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>
-                IVA ({Number(taxRate)}%):
-              </Text>
+              <Text style={styles.totalLabel}>IVA ({Number(taxRate)}%):</Text>
               <Text>{formatCurrency(taxAmount)}</Text>
             </View>
           )}
@@ -341,7 +334,7 @@ export function PurchaseOrderPDF({
 
         {/* Footer */}
         <Text style={styles.footer}>
-          Documento generado automaticamente por {tenant.name} via FleetCare |{" "}
+          Documento generado automaticamente por {tenant.name} via FleetCare |{' '}
           {orderNumber} | {orderDate}
         </Text>
       </Page>

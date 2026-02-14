@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
   flexRender,
   ColumnDef,
-} from "@tanstack/react-table";
+} from '@tanstack/react-table';
 import {
   Table,
   TableBody,
@@ -14,15 +14,15 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { FormAddDriver } from "../FormAddDriver";
-import axios from "axios";
-import { useToast } from "@/components/hooks/use-toast";
-import { DriverListProps } from "./DriverList.types";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { FormAddDriver } from '../FormAddDriver';
+import axios from 'axios';
+import { useToast } from '@/components/hooks/use-toast';
+import { DriverListProps } from './DriverList.types';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 export function DriverList() {
   const [data, setData] = useState<DriverListProps[]>([]);
@@ -37,21 +37,21 @@ export function DriverList() {
       const response = await axios.get(`/api/people/drivers`);
       setData(response.data);
     } catch (error) {
-      console.error("Error fetching Drivers: ", error);
+      console.error('Error fetching Drivers: ', error);
 
       if (axios.isAxiosError(error) && error.response?.status === 401) {
         toast({
-          title: "No autorizado",
-          description: "Debes iniciar sesión para ver los conductores",
-          variant: "destructive",
+          title: 'No autorizado',
+          description: 'Debes iniciar sesión para ver los conductores',
+          variant: 'destructive',
         });
         return;
       }
 
       toast({
-        title: "Error",
-        description: "No se pudieron cargar los conductores",
-        variant: "destructive",
+        title: 'Error',
+        description: 'No se pudieron cargar los conductores',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -63,107 +63,119 @@ export function DriverList() {
   }, [fetchDrivers]);
 
   const handleAddDriver = useCallback((newDriver: DriverListProps) => {
-    setData((prevData) => [...prevData, newDriver]);
+    setData(prevData => [...prevData, newDriver]);
   }, []);
 
   const handleDeleteDriver = async (id: number) => {
-    if (!confirm("¿Estás seguro de que deseas eliminar este conductor?")) {
+    if (!confirm('¿Estás seguro de que deseas eliminar este conductor?')) {
       return;
     }
 
     try {
       await axios.delete(`/api/people/drivers/${id}`);
-      setData((prevData) => prevData.filter((driver) => driver.id !== id));
-      
+      setData(prevData => prevData.filter(driver => driver.id !== id));
+
       toast({
-        title: "Conductor eliminado",
-        description: "El conductor fue eliminado exitosamente.",
+        title: 'Conductor eliminado',
+        description: 'El conductor fue eliminado exitosamente.',
       });
     } catch (error) {
-      console.error("Error deleting driver:", error);
+      console.error('Error deleting driver:', error);
       toast({
-        title: "Error",
-        description: "No se pudo eliminar el conductor",
-        variant: "destructive",
+        title: 'Error',
+        description: 'No se pudo eliminar el conductor',
+        variant: 'destructive',
       });
     }
   };
 
   const columns: ColumnDef<DriverListProps>[] = [
     {
-      accessorKey: "name",
-      header: "Nombre",
+      accessorKey: 'name',
+      header: 'Nombre',
     },
     {
-      accessorKey: "email",
-      header: "Email",
+      accessorKey: 'email',
+      header: 'Email',
       cell: ({ row }) => {
-        const email = row.getValue("email") as string | null;
-        return email || "-";
+        const email = row.getValue('email') as string | null;
+        return email || '-';
       },
     },
     {
-      accessorKey: "phone",
-      header: "Teléfono",
+      accessorKey: 'phone',
+      header: 'Teléfono',
       cell: ({ row }) => {
-        const phone = row.getValue("phone") as string | null;
-        return phone || "-";
+        const phone = row.getValue('phone') as string | null;
+        return phone || '-';
       },
     },
     {
-      accessorKey: "licenseNumber",
-      header: "Núm. Licencia",
+      accessorKey: 'licenseNumber',
+      header: 'Núm. Licencia',
       cell: ({ row }) => {
-        const license = row.getValue("licenseNumber") as string | null;
-        return license || "-";
+        const license = row.getValue('licenseNumber') as string | null;
+        return license || '-';
       },
     },
     {
-      accessorKey: "licenseExpiry",
-      header: "Vencimiento",
+      accessorKey: 'licenseExpiry',
+      header: 'Vencimiento',
       cell: ({ row }) => {
-        const expiry = row.getValue("licenseExpiry") as string | null;
-        if (!expiry) return "-";
-        
+        const expiry = row.getValue('licenseExpiry') as string | null;
+        if (!expiry) return '-';
+
         const date = new Date(expiry);
         const now = new Date();
         const isExpired = date < now;
-        const isExpiringSoon = date > now && date < new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-        
+        const isExpiringSoon =
+          date > now &&
+          date < new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
         return (
           <div className="flex flex-col">
-            <span className={`text-sm ${isExpired ? 'text-red-600' : isExpiringSoon ? 'text-yellow-600' : ''}`}>
-              {format(date, "dd/MM/yyyy", { locale: es })}
+            <span
+              className={`text-sm ${isExpired ? 'text-red-600' : isExpiringSoon ? 'text-yellow-600' : ''}`}
+            >
+              {format(date, 'dd/MM/yyyy', { locale: es })}
             </span>
-            {isExpired && <Badge variant="destructive" className="text-xs">Vencida</Badge>}
-            {isExpiringSoon && <Badge variant="secondary" className="text-xs">Por vencer</Badge>}
+            {isExpired && (
+              <Badge variant="destructive" className="text-xs">
+                Vencida
+              </Badge>
+            )}
+            {isExpiringSoon && (
+              <Badge variant="secondary" className="text-xs">
+                Por vencer
+              </Badge>
+            )}
           </div>
         );
       },
     },
     {
-      accessorKey: "status",
-      header: "Estado",
+      accessorKey: 'status',
+      header: 'Estado',
       cell: ({ row }) => {
-        const status = row.getValue("status") as string;
+        const status = row.getValue('status') as string;
         return (
-          <Badge variant={status === "ACTIVE" ? "default" : "secondary"}>
-            {status === "ACTIVE" ? "Activo" : "Inactivo"}
+          <Badge variant={status === 'ACTIVE' ? 'default' : 'secondary'}>
+            {status === 'ACTIVE' ? 'Activo' : 'Inactivo'}
           </Badge>
         );
       },
     },
     {
-      accessorKey: "createdAt",
-      header: "Fecha de Creación",
+      accessorKey: 'createdAt',
+      header: 'Fecha de Creación',
       cell: ({ row }) => {
-        const date = new Date(row.getValue("createdAt") as string);
-        return format(date, "dd/MM/yyyy", { locale: es });
+        const date = new Date(row.getValue('createdAt') as string);
+        return format(date, 'dd/MM/yyyy', { locale: es });
       },
     },
     {
-      id: "actions",
-      header: "Acciones",
+      id: 'actions',
+      header: 'Acciones',
       cell: ({ row }) => {
         const driver = row.original;
         return (
@@ -212,9 +224,9 @@ export function DriverList() {
       <div className="rounded-md border">
         <Table>
           <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
+            {table.getHeaderGroups().map(headerGroup => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
+                {headerGroup.headers.map(header => (
                   <TableHead key={header.id}>
                     {header.isPlaceholder
                       ? null
@@ -229,12 +241,12 @@ export function DriverList() {
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
+              table.getRowModel().rows.map(row => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
+                  data-state={row.getIsSelected() && 'selected'}
                 >
-                  {row.getVisibleCells().map((cell) => (
+                  {row.getVisibleCells().map(cell => (
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,

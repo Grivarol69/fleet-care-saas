@@ -16,6 +16,7 @@ Antes de dar de alta una nueva empresa, es **obligatorio** corregir estos 3 prob
 **Problema:** La funcion `mapClerkRoleToPrisma()` no tiene case para `"purchaser"`. Si se crea un miembro con rol `org:purchaser` en Clerk, se mapeara a MANAGER por default.
 
 **Fix requerido:**
+
 ```typescript
 // Agregar despues de case 'driver':
 case 'purchaser':
@@ -28,6 +29,7 @@ case 'purchaser':
 **Problema:** El rol `PURCHASER` no esta incluido en ningun array de `roles[]` de la sidebar. Un PURCHASER veria la sidebar completamente vacia.
 
 **Fix requerido:** Agregar `UserRole.PURCHASER` a los items relevantes:
+
 - Mantenimiento > Facturas
 - Mantenimiento > Ordenes de Trabajo (lectura)
 - Inventario > Compras
@@ -47,27 +49,27 @@ case 'purchaser':
 
 ### Empresa: "Transportes del Caribe SAS"
 
-| Campo | Valor |
-|-------|-------|
-| Nombre | Transportes del Caribe SAS |
-| NIT | 900.555.777-1 |
-| Pais | Colombia (CO) |
-| Ciudad | Barranquilla |
+| Campo         | Valor                         |
+| ------------- | ----------------------------- |
+| Nombre        | Transportes del Caribe SAS    |
+| NIT           | 900.555.777-1                 |
+| Pais          | Colombia (CO)                 |
+| Ciudad        | Barranquilla                  |
 | Email billing | admin@transportesdelcaribe.co |
-| Telefono | +57 315 555 7777 |
+| Telefono      | +57 315 555 7777              |
 
 ### Usuarios a crear (6 roles)
 
-| # | Nombre | Email | Rol Clerk | Rol Prisma | Descripcion |
-|---|--------|-------|-----------|------------|-------------|
-| 1 | Carlos Mendoza | carlos.mendoza@transportesdelcaribe.co | org:admin | OWNER | Dueno de la empresa |
-| 2 | Laura Gomez | laura.gomez@transportesdelcaribe.co | org:manager | MANAGER | Gerente de operaciones |
-| 3 | Felipe Ruiz | felipe.ruiz@transportesdelcaribe.co | org:purchaser | PURCHASER | Encargado de compras |
-| 4 | Diego Herrera | diego.herrera@transportesdelcaribe.co | org:technician | TECHNICIAN | Mecanico jefe |
-| 5 | Ana Torres | ana.torres@transportesdelcaribe.co | org:driver | DRIVER | Conductora |
-| 6 | Tu usuario SUPER_ADMIN | (tu email existente) | org:admin | SUPER_ADMIN* | Admin del SaaS |
+| #   | Nombre                 | Email                                  | Rol Clerk      | Rol Prisma    | Descripcion            |
+| --- | ---------------------- | -------------------------------------- | -------------- | ------------- | ---------------------- |
+| 1   | Carlos Mendoza         | carlos.mendoza@transportesdelcaribe.co | org:admin      | OWNER         | Dueno de la empresa    |
+| 2   | Laura Gomez            | laura.gomez@transportesdelcaribe.co    | org:manager    | MANAGER       | Gerente de operaciones |
+| 3   | Felipe Ruiz            | felipe.ruiz@transportesdelcaribe.co    | org:purchaser  | PURCHASER     | Encargado de compras   |
+| 4   | Diego Herrera          | diego.herrera@transportesdelcaribe.co  | org:technician | TECHNICIAN    | Mecanico jefe          |
+| 5   | Ana Torres             | ana.torres@transportesdelcaribe.co     | org:driver     | DRIVER        | Conductora             |
+| 6   | Tu usuario SUPER_ADMIN | (tu email existente)                   | org:admin      | SUPER_ADMIN\* | Admin del SaaS         |
 
-> *SUPER_ADMIN se asigna manualmente en la BD despues de la creacion automatica.
+> \*SUPER_ADMIN se asigna manualmente en la BD despues de la creacion automatica.
 
 ---
 
@@ -93,13 +95,13 @@ Clerk por defecto solo tiene `org:admin` y `org:member`. Necesitas crear roles c
 1. Ir a Clerk Dashboard > **Roles**
 2. Verificar que existen estos roles (crear si faltan):
 
-| Clerk Role Key | Display Name | Permisos |
-|----------------|-------------|----------|
-| `org:admin` | Admin | (ya existe por defecto) |
-| `org:manager` | Manager | Lectura y escritura de datos del tenant |
-| `org:purchaser` | Purchaser | Gestion de compras e inventario |
-| `org:technician` | Technician | Ejecucion de ordenes de trabajo |
-| `org:driver` | Driver | Registro de odometro |
+| Clerk Role Key   | Display Name | Permisos                                |
+| ---------------- | ------------ | --------------------------------------- |
+| `org:admin`      | Admin        | (ya existe por defecto)                 |
+| `org:manager`    | Manager      | Lectura y escritura de datos del tenant |
+| `org:purchaser`  | Purchaser    | Gestion de compras e inventario         |
+| `org:technician` | Technician   | Ejecucion de ordenes de trabajo         |
+| `org:driver`     | Driver       | Registro de odometro                    |
 
 > Si Clerk no permite crear roles custom en tu plan, puedes usar `org:member` y luego ajustar manualmente el rol en la BD.
 
@@ -267,11 +269,11 @@ Despues de verificar que todos los roles funcionan, el OWNER o MANAGER debe carg
 
 Crear al menos 3 vehiculos:
 
-| Placa | Marca | Linea | Tipo | Ano | Color | Km |
-|-------|-------|-------|------|-----|-------|-----|
-| QWE-001 | Chevrolet | Spark | Sedan | 2024 | Blanco | 15000 |
-| QWE-002 | Toyota | Hilux | Camioneta 4x4 | 2023 | Negro | 45000 |
-| QWE-003 | Ford | Ranger | Camioneta 4x4 | 2022 | Gris | 78000 |
+| Placa   | Marca     | Linea  | Tipo          | Ano  | Color  | Km    |
+| ------- | --------- | ------ | ------------- | ---- | ------ | ----- |
+| QWE-001 | Chevrolet | Spark  | Sedan         | 2024 | Blanco | 15000 |
+| QWE-002 | Toyota    | Hilux  | Camioneta 4x4 | 2023 | Negro  | 45000 |
+| QWE-003 | Ford      | Ranger | Camioneta 4x4 | 2022 | Gris   | 78000 |
 
 ### Paso 5.2: Personal
 
@@ -318,6 +320,7 @@ Crear al menos 3 vehiculos:
 ## SECCION 6: CHECKLIST FINAL DE VERIFICACION
 
 ### Roles y Sidebar
+
 - [ ] OWNER ve 8 secciones (todo excepto maestras globales)
 - [ ] MANAGER ve 7 secciones (sin Configuracion)
 - [ ] PURCHASER ve secciones de compras/facturas (post-fix)
@@ -326,11 +329,13 @@ Crear al menos 3 vehiculos:
 - [ ] SUPER_ADMIN ve absolutamente todo
 
 ### Multi-tenancy
+
 - [ ] Datos del nuevo tenant son independientes
 - [ ] No se ven datos de otros tenants
 - [ ] Las marcas/lineas/tipos globales SI son visibles
 
 ### Auth Flow
+
 - [ ] Login funciona para todos los usuarios
 - [ ] Redirect a /onboarding si no tiene organizacion
 - [ ] Redirect a /dashboard despues del login exitoso
@@ -339,6 +344,7 @@ Crear al menos 3 vehiculos:
 - [ ] El rol mapeado desde Clerk es correcto
 
 ### API
+
 - [ ] `/api/auth/me` retorna role y tenantId correctos
 - [ ] Las APIs filtran por tenantId
 - [ ] Las APIs verifican permisos por rol

@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -8,9 +8,9 @@ import {
   getSortedRowModel,
   flexRender,
   ColumnDef,
-} from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+} from '@tanstack/react-table';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -18,17 +18,17 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, Edit, Trash2, Plus } from "lucide-react";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
-import { OdometerLog } from "./types";
+} from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
+import { MoreHorizontal, Edit, Trash2, Plus } from 'lucide-react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { OdometerLog } from './types';
 
 interface OdometerListProps {
   odometerLogs: OdometerLog[];
@@ -37,26 +37,33 @@ interface OdometerListProps {
   onDelete: (id: number) => void;
 }
 
-export function OdometerList({ odometerLogs, onAdd, onEdit, onDelete }: OdometerListProps) {
-  const [globalFilter, setGlobalFilter] = useState("");
+export function OdometerList({
+  odometerLogs,
+  onAdd,
+  onEdit,
+  onDelete,
+}: OdometerListProps) {
+  const [globalFilter, setGlobalFilter] = useState('');
 
   const columns = useMemo<ColumnDef<OdometerLog>[]>(
     () => [
       {
-        header: "Fecha",
-        accessorKey: "recordedAt",
+        header: 'Fecha',
+        accessorKey: 'recordedAt',
         cell: ({ getValue }) => {
           const value = getValue() as Date;
-          return format(new Date(value), "dd/MM/yyyy HH:mm", { locale: es });
+          return format(new Date(value), 'dd/MM/yyyy HH:mm', { locale: es });
         },
       },
       {
-        header: "Vehículo",
-        accessorFn: (row) => row.vehicle.licensePlate,
-        id: "vehiclePlate",
+        header: 'Vehículo',
+        accessorFn: row => row.vehicle.licensePlate,
+        id: 'vehiclePlate',
         cell: ({ row }) => (
           <div>
-            <div className="font-medium">{row.original.vehicle.licensePlate}</div>
+            <div className="font-medium">
+              {row.original.vehicle.licensePlate}
+            </div>
             <div className="text-sm text-muted-foreground">
               {row.original.vehicle.brand.name} {row.original.vehicle.line.name}
             </div>
@@ -64,12 +71,12 @@ export function OdometerList({ odometerLogs, onAdd, onEdit, onDelete }: Odometer
         ),
       },
       {
-        header: "Conductor",
-        accessorFn: (row) => row.driver?.name || "Sin conductor",
-        id: "driverName",
+        header: 'Conductor',
+        accessorFn: row => row.driver?.name || 'Sin conductor',
+        id: 'driverName',
         cell: ({ getValue }) => {
           const value = getValue() as string;
-          return value === "Sin conductor" ? (
+          return value === 'Sin conductor' ? (
             <Badge variant="outline">{value}</Badge>
           ) : (
             <span>{value}</span>
@@ -77,46 +84,47 @@ export function OdometerList({ odometerLogs, onAdd, onEdit, onDelete }: Odometer
         },
       },
       {
-        header: "Tipo",
-        accessorKey: "measureType",
+        header: 'Tipo',
+        accessorKey: 'measureType',
         cell: ({ getValue }) => {
-          const value = getValue() as "KILOMETERS" | "HOURS";
+          const value = getValue() as 'KILOMETERS' | 'HOURS';
           return (
-            <Badge variant={value === "KILOMETERS" ? "default" : "secondary"}>
-              {value === "KILOMETERS" ? "Kilómetros" : "Horas"}
+            <Badge variant={value === 'KILOMETERS' ? 'default' : 'secondary'}>
+              {value === 'KILOMETERS' ? 'Kilómetros' : 'Horas'}
             </Badge>
           );
         },
       },
       {
-        header: "Valor",
-        accessorKey: "measureValue",
+        header: 'Valor',
+        accessorKey: 'measureValue',
         cell: ({ row }) => {
           const measureType = row.original.measureType;
           const kilometers = row.original.kilometers;
           const hours = row.original.hours;
-          const value = measureType === "KILOMETERS" ? kilometers : hours;
-          
+          const value = measureType === 'KILOMETERS' ? kilometers : hours;
+
           return (
             <span className="font-medium">
-              {value?.toLocaleString()} {measureType === "KILOMETERS" ? "km" : "h"}
+              {value?.toLocaleString()}{' '}
+              {measureType === 'KILOMETERS' ? 'km' : 'h'}
             </span>
           );
         },
       },
       {
-        header: "Registrado",
-        accessorKey: "createdAt",
+        header: 'Registrado',
+        accessorKey: 'createdAt',
         cell: ({ getValue }) => {
           const value = getValue() as Date;
-          return format(new Date(value), "dd/MM/yyyy", { locale: es });
+          return format(new Date(value), 'dd/MM/yyyy', { locale: es });
         },
       },
       {
-        id: "actions",
+        id: 'actions',
         cell: ({ row }) => {
           const log = row.original;
-          
+
           return (
             <Popover>
               <PopoverTrigger asChild>
@@ -174,7 +182,9 @@ export function OdometerList({ odometerLogs, onAdd, onEdit, onDelete }: Odometer
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Registros de Odómetro</h2>
+          <h2 className="text-2xl font-bold tracking-tight">
+            Registros de Odómetro
+          </h2>
           <p className="text-muted-foreground">
             Gestiona los registros de kilometraje y horas de los vehículos
           </p>
@@ -199,9 +209,9 @@ export function OdometerList({ odometerLogs, onAdd, onEdit, onDelete }: Odometer
       <div className="rounded-md border">
         <Table>
           <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
+            {table.getHeaderGroups().map(headerGroup => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
+                {headerGroup.headers.map(header => (
                   <TableHead key={header.id} className="whitespace-nowrap">
                     {flexRender(
                       header.column.columnDef.header,
@@ -214,18 +224,24 @@ export function OdometerList({ odometerLogs, onAdd, onEdit, onDelete }: Odometer
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
+              table.getRowModel().rows.map(row => (
                 <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
+                  {row.getVisibleCells().map(cell => (
                     <TableCell key={cell.id} className="whitespace-nowrap">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No se encontraron registros.
                 </TableCell>
               </TableRow>
@@ -237,7 +253,7 @@ export function OdometerList({ odometerLogs, onAdd, onEdit, onDelete }: Odometer
       {/* Stats */}
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <div>
-          Mostrando {table.getFilteredRowModel().rows.length} de{" "}
+          Mostrando {table.getFilteredRowModel().rows.length} de{' '}
           {odometerLogs.length} registros
         </div>
       </div>

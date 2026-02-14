@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function OnboardingPage() {
   const router = useRouter();
 
   useEffect(() => {
     // Para MVP: redirigir directo al dashboard
-    router.push("/dashboard");
+    router.push('/dashboard');
   }, [router]);
 
   return (

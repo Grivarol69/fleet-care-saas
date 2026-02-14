@@ -1,14 +1,23 @@
-"use client";
+'use client';
 
-import useSWR from "swr";
-import axios from "axios";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { Loader2, AlertCircle, TrendingUp } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import type { MonthlyData } from "@/app/api/dashboard/financial-evolution/route";
+import useSWR from 'swr';
+import axios from 'axios';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from 'recharts';
+import { Loader2, AlertCircle, TrendingUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import type { MonthlyData } from '@/app/api/dashboard/financial-evolution/route';
 
-const fetcher = (url: string) => axios.get(url).then((res) => res.data);
+const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
 // Componente de Loading
 function LoadingSkeleton() {
@@ -48,7 +57,9 @@ function EmptyState() {
     <div className="h-[350px] flex items-center justify-center">
       <div className="text-center text-muted-foreground">
         <p className="text-lg font-medium">Sin datos históricos</p>
-        <p className="text-sm mt-1">Los gastos aparecerán aquí una vez que registres facturas</p>
+        <p className="text-sm mt-1">
+          Los gastos aparecerán aquí una vez que registres facturas
+        </p>
       </div>
     </div>
   );
@@ -84,7 +95,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
 
 export function EvolutionChart() {
   const { data, error, isLoading, mutate } = useSWR<MonthlyData[]>(
-    "/api/dashboard/financial-evolution",
+    '/api/dashboard/financial-evolution',
     fetcher,
     {
       revalidateOnFocus: false,
@@ -94,7 +105,8 @@ export function EvolutionChart() {
 
   // Calcular totales para el resumen
   const totalSpent = data?.reduce((sum, month) => sum + month.spent, 0) || 0;
-  const totalInvoices = data?.reduce((sum, month) => sum + month.invoiceCount, 0) || 0;
+  const totalInvoices =
+    data?.reduce((sum, month) => sum + month.invoiceCount, 0) || 0;
   const hasData = data && data.some(month => month.spent > 0);
 
   return (
@@ -113,8 +125,12 @@ export function EvolutionChart() {
           {hasData && (
             <div className="text-right">
               <p className="text-xs text-indigo-200">Total 12 meses</p>
-              <p className="text-xl font-bold">${totalSpent.toLocaleString()}</p>
-              <p className="text-xs text-indigo-200">{totalInvoices} facturas</p>
+              <p className="text-xl font-bold">
+                ${totalSpent.toLocaleString()}
+              </p>
+              <p className="text-xs text-indigo-200">
+                {totalInvoices} facturas
+              </p>
             </div>
           )}
         </div>
@@ -140,8 +156,9 @@ export function EvolutionChart() {
                   stroke="#6b7280"
                 />
                 <YAxis
-                  tickFormatter={(value) => {
-                    if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+                  tickFormatter={value => {
+                    if (value >= 1000000)
+                      return `$${(value / 1000000).toFixed(1)}M`;
                     if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
                     return `$${value}`;
                   }}
@@ -153,14 +170,14 @@ export function EvolutionChart() {
                   verticalAlign="top"
                   height={36}
                   iconType="line"
-                  formatter={() => "Gastos"}
+                  formatter={() => 'Gastos'}
                 />
                 <Line
                   type="monotone"
                   dataKey="spent"
                   stroke="#4f46e5"
                   strokeWidth={3}
-                  dot={{ fill: "#4f46e5", r: 5 }}
+                  dot={{ fill: '#4f46e5', r: 5 }}
                   activeDot={{ r: 7 }}
                   name="Gastos"
                 />

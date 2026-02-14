@@ -8,7 +8,7 @@ async function testURL(name: string, url: string) {
 
   const prisma = new PrismaClient({
     datasources: { db: { url } },
-    log: ['error', 'warn']
+    log: ['error', 'warn'],
   });
 
   try {
@@ -23,14 +23,19 @@ async function testURL(name: string, url: string) {
     await prisma.$disconnect();
     return true;
   } catch (error) {
-    console.error('❌ Error:', error instanceof Error ? error.message : 'Unknown');
+    console.error(
+      '❌ Error:',
+      error instanceof Error ? error.message : 'Unknown'
+    );
     await prisma.$disconnect();
     return false;
   }
 }
 
 async function main() {
-  console.log('\n╔════════════════════════════════════════════════════════════╗');
+  console.log(
+    '\n╔════════════════════════════════════════════════════════════╗'
+  );
   console.log('║        TEST FIX CREDENCIALES SUPABASE                     ║');
   console.log('╚════════════════════════════════════════════════════════════╝');
 
@@ -59,9 +64,15 @@ async function main() {
     );
   }
 
-  console.log('\n╔════════════════════════════════════════════════════════════╗');
+  console.log(
+    '\n╔════════════════════════════════════════════════════════════╗'
+  );
   console.log('║                  FIN DEL TEST                             ║');
-  console.log('╚════════════════════════════════════════════════════════════╝\n');
+  console.log(
+    '╚════════════════════════════════════════════════════════════╝\n'
+  );
 }
 
-main().catch(console.error).finally(() => process.exit(0));
+main()
+  .catch(console.error)
+  .finally(() => process.exit(0));

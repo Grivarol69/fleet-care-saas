@@ -69,7 +69,10 @@ async function test_4_1_masterTables() {
   const globalBrands = await prisma.vehicleBrand.findMany({
     where: { isGlobal: true, tenantId: null, status: 'ACTIVE' },
   });
-  assert(globalBrands.length >= 5, `>= 5 marcas globales (got ${globalBrands.length})`);
+  assert(
+    globalBrands.length >= 5,
+    `>= 5 marcas globales (got ${globalBrands.length})`
+  );
 
   const brandNames = globalBrands.map(b => b.name);
   assert(brandNames.includes('Toyota'), 'Existe marca Toyota');
@@ -79,21 +82,24 @@ async function test_4_1_masterTables() {
   // Marcas visibles para el tenant (globales + propias)
   const tenantBrands = await prisma.vehicleBrand.findMany({
     where: {
-      OR: [
-        { tenantId: TENANT_ID },
-        { isGlobal: true, tenantId: null },
-      ],
+      OR: [{ tenantId: TENANT_ID }, { isGlobal: true, tenantId: null }],
       status: 'ACTIVE',
     },
   });
-  assert(tenantBrands.length >= 5, `Tenant ve >= 5 marcas (got ${tenantBrands.length})`);
+  assert(
+    tenantBrands.length >= 5,
+    `Tenant ve >= 5 marcas (got ${tenantBrands.length})`
+  );
 
   // Líneas globales
   const globalLines = await prisma.vehicleLine.findMany({
     where: { isGlobal: true, tenantId: null, status: 'ACTIVE' },
     include: { brand: true },
   });
-  assert(globalLines.length >= 5, `>= 5 líneas globales (got ${globalLines.length})`);
+  assert(
+    globalLines.length >= 5,
+    `>= 5 líneas globales (got ${globalLines.length})`
+  );
 
   // Verificar que cada línea tiene marca asociada
   const allLinesHaveBrand = globalLines.every(l => l.brand !== null);
@@ -103,7 +109,10 @@ async function test_4_1_masterTables() {
   const globalTypes = await prisma.vehicleType.findMany({
     where: { isGlobal: true, tenantId: null, status: 'ACTIVE' },
   });
-  assert(globalTypes.length >= 3, `>= 3 tipos globales (got ${globalTypes.length})`);
+  assert(
+    globalTypes.length >= 3,
+    `>= 3 tipos globales (got ${globalTypes.length})`
+  );
 
   const typeNames = globalTypes.map(t => t.name);
   assert(typeNames.includes('Camioneta 4x4'), 'Existe tipo Camioneta 4x4');
@@ -119,7 +128,10 @@ async function test_4_2_vehicles() {
     where: { tenantId: TENANT_ID, status: 'ACTIVE' },
     include: { brand: true, line: true, type: true },
   });
-  assert(existing.length >= 8, `Tenant tiene >= 8 vehículos activos (got ${existing.length})`);
+  assert(
+    existing.length >= 8,
+    `Tenant tiene >= 8 vehículos activos (got ${existing.length})`
+  );
 
   // Verificar relaciones
   const v1 = existing[0];
@@ -127,13 +139,22 @@ async function test_4_2_vehicles() {
     assert(v1.brand !== null, 'Vehículo tiene relación brand');
     assert(v1.line !== null, 'Vehículo tiene relación line');
     assert(v1.type !== null, 'Vehículo tiene relación type');
-    assert(v1.licensePlate.length > 0, `Vehículo tiene placa: ${v1.licensePlate}`);
+    assert(
+      v1.licensePlate.length > 0,
+      `Vehículo tiene placa: ${v1.licensePlate}`
+    );
   }
 
   // Crear vehículo de prueba
-  const toyota = await prisma.vehicleBrand.findFirst({ where: { isGlobal: true, name: 'Toyota' } });
-  const hilux = await prisma.vehicleLine.findFirst({ where: { isGlobal: true, name: 'Hilux' } });
-  const suv = await prisma.vehicleType.findFirst({ where: { isGlobal: true, name: 'SUV' } });
+  const toyota = await prisma.vehicleBrand.findFirst({
+    where: { isGlobal: true, name: 'Toyota' },
+  });
+  const hilux = await prisma.vehicleLine.findFirst({
+    where: { isGlobal: true, name: 'Hilux' },
+  });
+  const suv = await prisma.vehicleType.findFirst({
+    where: { isGlobal: true, name: 'SUV' },
+  });
 
   if (toyota && hilux && suv) {
     const testVehicle = await prisma.vehicle.create({
@@ -153,8 +174,14 @@ async function test_4_2_vehicles() {
       },
     });
     cleanup.vehicleId = testVehicle.id;
-    assert(testVehicle !== null, `Vehículo C4-TEST-001 creado (id: ${testVehicle.id})`);
-    assert(testVehicle.mileage === 10000, 'Kilometraje inicial correcto: 10000');
+    assert(
+      testVehicle !== null,
+      `Vehículo C4-TEST-001 creado (id: ${testVehicle.id})`
+    );
+    assert(
+      testVehicle.mileage === 10000,
+      'Kilometraje inicial correcto: 10000'
+    );
 
     // Actualizar color
     const updated = await prisma.vehicle.update({
@@ -206,10 +233,18 @@ async function test_4_3_documentTypeConfig() {
 
   // Tipos globales de Colombia
   const globalTypes = await prisma.documentTypeConfig.findMany({
-    where: { isGlobal: true, tenantId: null, countryCode: 'CO', status: 'ACTIVE' },
+    where: {
+      isGlobal: true,
+      tenantId: null,
+      countryCode: 'CO',
+      status: 'ACTIVE',
+    },
     orderBy: { sortOrder: 'asc' },
   });
-  assert(globalTypes.length >= 5, `>= 5 tipos globales CO (got ${globalTypes.length})`);
+  assert(
+    globalTypes.length >= 5,
+    `>= 5 tipos globales CO (got ${globalTypes.length})`
+  );
 
   const codes = globalTypes.map(t => t.code);
   assert(codes.includes('SOAT'), 'Existe SOAT');
@@ -258,7 +293,10 @@ async function test_4_3_documentTypeConfig() {
     },
   });
   cleanup.documentTypeId = customType.id;
-  assert(customType !== null, `Tipo custom TEST_EXTINTOR creado (id: ${customType.id})`);
+  assert(
+    customType !== null,
+    `Tipo custom TEST_EXTINTOR creado (id: ${customType.id})`
+  );
   assert(customType.isGlobal === false, 'Tipo custom no es global');
   assert(customType.tenantId === TENANT_ID, 'Tipo custom pertenece al tenant');
 
@@ -275,9 +313,14 @@ async function test_4_3_documentTypeConfig() {
     },
     orderBy: { sortOrder: 'asc' },
   });
-  assert(allTypesForTenant.length >= 6, `Tenant ve >= 6 tipos (5 globales + 1 custom) (got ${allTypesForTenant.length})`);
+  assert(
+    allTypesForTenant.length >= 6,
+    `Tenant ve >= 6 tipos (5 globales + 1 custom) (got ${allTypesForTenant.length})`
+  );
 
-  const hasBoth = allTypesForTenant.some(t => t.isGlobal) && allTypesForTenant.some(t => !t.isGlobal);
+  const hasBoth =
+    allTypesForTenant.some(t => t.isGlobal) &&
+    allTypesForTenant.some(t => !t.isGlobal);
   assert(hasBoth, 'Lista combina tipos globales + custom del tenant');
 
   // Unique constraint: no duplicar código en mismo tenant
@@ -334,8 +377,14 @@ async function test_4_4_documents() {
   });
   cleanup.documentId = doc1.id;
   assert(doc1 !== null, `Documento SOAT creado (id: ${doc1.id})`);
-  assert(doc1.documentType.code === 'SOAT', 'Relación documentType cargada: SOAT');
-  assert(doc1.documentNumber === 'SOAT-C4-2026-001', 'Número de documento correcto');
+  assert(
+    doc1.documentType.code === 'SOAT',
+    'Relación documentType cargada: SOAT'
+  );
+  assert(
+    doc1.documentNumber === 'SOAT-C4-2026-001',
+    'Número de documento correcto'
+  );
   assert(doc1.entity === 'SURA Test', 'Entidad emisora correcta');
 
   // Crear documento con tipo custom
@@ -358,7 +407,10 @@ async function test_4_4_documents() {
       include: { documentType: true },
     });
     cleanup.document2Id = doc2.id;
-    assert(doc2.documentType.code === 'TEST_EXTINTOR', 'Documento con tipo custom vinculado correctamente');
+    assert(
+      doc2.documentType.code === 'TEST_EXTINTOR',
+      'Documento con tipo custom vinculado correctamente'
+    );
   }
 
   // Crear documento REGISTRATION (sin vencimiento)
@@ -380,8 +432,14 @@ async function test_4_4_documents() {
       },
       include: { documentType: true },
     });
-    assert(doc3.expiryDate === null, 'REGISTRATION creado sin fecha de vencimiento');
-    assert(doc3.documentType.requiresExpiry === false, 'Tipo REGISTRATION no requiere vencimiento');
+    assert(
+      doc3.expiryDate === null,
+      'REGISTRATION creado sin fecha de vencimiento'
+    );
+    assert(
+      doc3.documentType.requiresExpiry === false,
+      'Tipo REGISTRATION no requiere vencimiento'
+    );
     // Eliminar inmediatamente
     await prisma.document.delete({ where: { id: doc3.id } });
     assert(true, 'REGISTRATION eliminado (hard delete)');
@@ -393,7 +451,10 @@ async function test_4_4_documents() {
     include: { documentType: true },
     orderBy: { createdAt: 'desc' },
   });
-  assert(vehicleDocs.length >= 2, `Vehículo tiene >= 2 documentos (got ${vehicleDocs.length})`);
+  assert(
+    vehicleDocs.length >= 2,
+    `Vehículo tiene >= 2 documentos (got ${vehicleDocs.length})`
+  );
 
   // Todos los documentos tienen documentType cargado
   const allHaveType = vehicleDocs.every(d => d.documentType !== null);
@@ -402,10 +463,19 @@ async function test_4_4_documents() {
   // Update de documento
   const updated = await prisma.document.update({
     where: { id: doc1.id },
-    data: { entity: 'Seguros Bolívar Test', documentNumber: 'SOAT-C4-2026-002' },
+    data: {
+      entity: 'Seguros Bolívar Test',
+      documentNumber: 'SOAT-C4-2026-002',
+    },
   });
-  assert(updated.entity === 'Seguros Bolívar Test', 'Update de entidad exitoso');
-  assert(updated.documentNumber === 'SOAT-C4-2026-002', 'Update de número exitoso');
+  assert(
+    updated.entity === 'Seguros Bolívar Test',
+    'Update de entidad exitoso'
+  );
+  assert(
+    updated.documentNumber === 'SOAT-C4-2026-002',
+    'Update de número exitoso'
+  );
 }
 
 // ─── 4.5 Documentos por vencer (lógica expiring) ────────
@@ -428,7 +498,10 @@ async function test_4_5_expiring() {
     orderBy: { expiryDate: 'asc' },
   });
 
-  assert(expiringDocs.length >= 1, `>= 1 documento por vencer (got ${expiringDocs.length})`);
+  assert(
+    expiringDocs.length >= 1,
+    `>= 1 documento por vencer (got ${expiringDocs.length})`
+  );
 
   // Verificar la lógica de semaforización
   let dangerCount = 0;
@@ -459,10 +532,14 @@ async function test_4_5_expiring() {
       successCount++;
     }
 
-    console.log(`    ${doc.vehicle.licensePlate} | ${doc.documentType.name} | ${daysLeft} días | ${status}`);
+    console.log(
+      `    ${doc.vehicle.licensePlate} | ${doc.documentType.name} | ${daysLeft} días | ${status}`
+    );
   }
 
-  console.log(`    → danger: ${dangerCount}, warning: ${warningCount}, success: ${successCount}`);
+  console.log(
+    `    → danger: ${dangerCount}, warning: ${warningCount}, success: ${successCount}`
+  );
 
   // El documento extintor (3 días) debería ser critical (expiryCriticalDays=5)
   if (cleanup.document2Id) {
@@ -485,9 +562,13 @@ async function test_4_5_expiring() {
       const daysLeft = Math.floor(
         (soatDoc.expiryDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)
       );
-      const isWarning = daysLeft > soatDoc.documentType.expiryCriticalDays &&
-                         daysLeft <= soatDoc.documentType.expiryWarningDays;
-      assert(isWarning, `SOAT (${daysLeft} días) está en rango warning (> ${soatDoc.documentType.expiryCriticalDays}, <= ${soatDoc.documentType.expiryWarningDays})`);
+      const isWarning =
+        daysLeft > soatDoc.documentType.expiryCriticalDays &&
+        daysLeft <= soatDoc.documentType.expiryWarningDays;
+      assert(
+        isWarning,
+        `SOAT (${daysLeft} días) está en rango warning (> ${soatDoc.documentType.expiryCriticalDays}, <= ${soatDoc.documentType.expiryWarningDays})`
+      );
     }
   }
 
@@ -499,14 +580,20 @@ async function test_4_5_expiring() {
     where: { tenantId: TENANT_ID, expiryDate: { lte: sevenDays } },
   });
   const warningCountDB = await prisma.document.count({
-    where: { tenantId: TENANT_ID, expiryDate: { gt: sevenDays, lte: thirtyDays } },
+    where: {
+      tenantId: TENANT_ID,
+      expiryDate: { gt: sevenDays, lte: thirtyDays },
+    },
   });
   const totalCount = await prisma.document.count({
     where: { tenantId: TENANT_ID },
   });
 
   assert(typeof criticalCount === 'number', `Stats critical: ${criticalCount}`);
-  assert(typeof warningCountDB === 'number', `Stats warning: ${warningCountDB}`);
+  assert(
+    typeof warningCountDB === 'number',
+    `Stats warning: ${warningCountDB}`
+  );
   assert(totalCount >= 2, `Total docs del tenant: ${totalCount}`);
 }
 
@@ -544,8 +631,14 @@ async function test_4_6_odometer() {
   const updatedVehicle = await prisma.vehicle.findUnique({
     where: { id: cleanup.vehicleId },
   });
-  assert(updatedVehicle?.mileage === 10500, 'Vehículo actualizó mileage a 10500');
-  assert(updatedVehicle?.lastKilometers === 10500, 'Vehículo actualizó lastKilometers');
+  assert(
+    updatedVehicle?.mileage === 10500,
+    'Vehículo actualizó mileage a 10500'
+  );
+  assert(
+    updatedVehicle?.lastKilometers === 10500,
+    'Vehículo actualizó lastKilometers'
+  );
 
   // Segunda lectura mayor
   const log2 = await prisma.odometerLog.create({
@@ -563,7 +656,10 @@ async function test_4_6_odometer() {
     where: { vehicleId: cleanup.vehicleId },
     orderBy: { recordedAt: 'desc' },
   });
-  assert(history.length >= 2, `Historial tiene >= 2 lecturas (got ${history.length})`);
+  assert(
+    history.length >= 2,
+    `Historial tiene >= 2 lecturas (got ${history.length})`
+  );
   assert(
     (history[0]?.kilometers ?? 0) >= (history[1]?.kilometers ?? 0),
     'Historial ordenado por fecha desc (más reciente primero)'
@@ -586,7 +682,10 @@ async function test_4_6_odometer() {
         recordedAt: new Date(),
       },
     });
-    assert(logWithDriver.driverId === driver.id, `Lectura con conductor (${driver.name})`);
+    assert(
+      logWithDriver.driverId === driver.id,
+      `Lectura con conductor (${driver.name})`
+    );
     await prisma.odometerLog.delete({ where: { id: logWithDriver.id } });
   }
 }
@@ -607,7 +706,9 @@ async function doCleanup() {
     }
 
     if (cleanup.documentTypeId) {
-      await prisma.documentTypeConfig.delete({ where: { id: cleanup.documentTypeId } });
+      await prisma.documentTypeConfig.delete({
+        where: { id: cleanup.documentTypeId },
+      });
       assert(true, 'Tipo custom TEST_EXTINTOR eliminado');
     }
 
@@ -670,14 +771,16 @@ async function main() {
     failures.forEach(f => console.log(`    - ${f}`));
   }
 
-  console.log(`\n  Resultado: ${failed === 0 ? 'TODOS LOS TESTS PASARON' : 'HAY FALLOS'}`);
+  console.log(
+    `\n  Resultado: ${failed === 0 ? 'TODOS LOS TESTS PASARON' : 'HAY FALLOS'}`
+  );
   console.log('');
 
   process.exit(failed === 0 ? 0 : 1);
 }
 
 main()
-  .catch((e) => {
+  .catch(e => {
     console.error('Error crítico:', e);
     process.exit(1);
   })

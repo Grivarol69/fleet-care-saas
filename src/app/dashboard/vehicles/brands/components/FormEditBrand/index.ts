@@ -1,1 +1,1 @@
-export * from "./FormEditBrand";
+export * from './FormEditBrand';

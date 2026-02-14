@@ -29,12 +29,14 @@ pnpm build:analyze       # Build with bundle analyzer (ANALYZE=true)
 ## Architecture
 
 ### Multi-Tenancy
+
 - All data is tenant-scoped via `tenantId` field on most models
 - Tenant ID comes from Clerk's `orgId` (Organization ID)
 - Clerk webhooks sync organizations and memberships to Prisma (Tenant/User)
 - Subdomain-based tenant routing is planned (see SETUP-ENTORNOS.md)
 
 ### Authentication
+
 - Clerk handles all authentication (`@clerk/nextjs`)
 - `middleware.ts` - `clerkMiddleware` protects routes and injects tenant context
 - `src/lib/auth.ts` - `getCurrentUser()` resolves Clerk session to Prisma User (read-only)
@@ -43,6 +45,7 @@ pnpm build:analyze       # Build with bundle analyzer (ANALYZE=true)
 - Onboarding wizard at `/onboarding` for new tenants
 
 ### Database (Prisma)
+
 - Schema: `prisma/schema.prisma`
 - Key models: Tenant, User, Vehicle, VehicleBrand, VehicleLine, VehicleType
 - Maintenance: MantCategory, MantItem, MantPlan, PlanTask, VehicleMantPlan
@@ -50,24 +53,29 @@ pnpm build:analyze       # Build with bundle analyzer (ANALYZE=true)
 - All tenant-scoped models have `@@unique([tenantId, ...])` constraints
 
 ### API Routes Pattern
+
 Located in `src/app/api/`:
+
 - `vehicles/` - Vehicle management (brands, lines, types, vehicles, documents)
 - `maintenance/` - Maintenance system (categories, items, templates, plans)
 - `uploadthing/` - File upload handling
 
 API routes follow the pattern:
+
 1. Call `getCurrentUser()` from `@/lib/auth` to get authenticated user + tenantId
 2. Use `user.tenantId` for tenant scoping (comes from Clerk orgId)
 3. Use Prisma for database operations
 4. Return NextResponse.json() for success, NextResponse with status for errors
 
 ### Component Structure
+
 - `src/components/ui/` - Shadcn/UI components (button, dialog, form, table, etc.)
 - `src/components/layout/` - Layout components (Navbar, Sidebar, Logo)
 - `src/components/landing/` - Landing page components
 - Dashboard pages: `src/app/dashboard/[module]/components/` contains module-specific components
 
 Component file organization within modules:
+
 ```
 ComponentName/
   ComponentName.tsx       # Main component
@@ -77,16 +85,21 @@ ComponentName/
 ```
 
 ### Path Aliases
+
 - `@/*` maps to `./src/*`
 
 ### TypeScript Configuration
+
 Strict mode enabled with additional checks:
+
 - `noImplicitAny`, `noImplicitReturns`
 - `noUnusedLocals`, `noUnusedParameters`
 - `exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`
 
 ### Environment Variables
+
 Required:
+
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` - Clerk publishable key
 - `CLERK_SECRET_KEY` - Clerk secret key
 - `WEBHOOK_SECRET` - Clerk webhook signing secret (Svix)
@@ -94,6 +107,7 @@ Required:
 - `UPLOADTHING_TOKEN` - UploadThing API token
 
 ### Key Dependencies
+
 - Form handling: react-hook-form + zod + @hookform/resolvers
 - Tables: @tanstack/react-table
 - State: zustand

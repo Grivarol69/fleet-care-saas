@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
 
     // Normalizar: quitar acentos, lowercase
     const normalized = normalize(q);
-    const words = normalized.split(/\s+/).filter((w) => w.length >= 2);
+    const words = normalized.split(/\s+/).filter(w => w.length >= 2);
 
     if (words.length === 0) {
       return NextResponse.json([]);
@@ -30,10 +30,7 @@ export async function GET(request: NextRequest) {
     // Buscar items globales + del tenant activos
     const allItems = await prisma.mantItem.findMany({
       where: {
-        OR: [
-          { tenantId: user.tenantId },
-          { tenantId: null, isGlobal: true },
-        ],
+        OR: [{ tenantId: user.tenantId }, { tenantId: null, isGlobal: true }],
         status: 'ACTIVE',
       },
       include: {
@@ -44,16 +41,16 @@ export async function GET(request: NextRequest) {
 
     // Calcular similitud para cada item
     const scored = allItems
-      .map((item) => {
+      .map(item => {
         const itemNormalized = normalize(item.name);
         const score = calculateSimilarity(normalized, words, itemNormalized);
         return { ...item, score };
       })
-      .filter((item) => item.score > 0.25) // Umbral mínimo 25%
+      .filter(item => item.score > 0.25) // Umbral mínimo 25%
       .sort((a, b) => b.score - a.score)
       .slice(0, 10);
 
-    const results = scored.map((item) => ({
+    const results = scored.map(item => ({
       id: item.id,
       name: item.name,
       description: item.description,
@@ -100,10 +97,10 @@ function calculateSimilarity(
   if (queryNorm.includes(itemNorm)) return 0.85;
 
   // 2. Coincidencia de palabras
-  const itemWords = itemNorm.split(/\s+/).filter((w) => w.length >= 2);
+  const itemWords = itemNorm.split(/\s+/).filter(w => w.length >= 2);
   let matchedWords = 0;
   for (const qw of queryWords) {
-    if (itemWords.some((iw) => iw.includes(qw) || qw.includes(iw))) {
+    if (itemWords.some(iw => iw.includes(qw) || qw.includes(iw))) {
       matchedWords++;
     }
   }
@@ -111,7 +108,10 @@ function calculateSimilarity(
     queryWords.length > 0 ? matchedWords / queryWords.length : 0;
 
   // 3. Distancia de Levenshtein normalizada (para detectar typos)
-  const levScore = 1 - levenshteinDistance(queryNorm, itemNorm) / Math.max(queryNorm.length, itemNorm.length);
+  const levScore =
+    1 -
+    levenshteinDistance(queryNorm, itemNorm) /
+      Math.max(queryNorm.length, itemNorm.length);
 
   // Combinar: 70% palabras, 30% levenshtein
   return wordScore * 0.7 + levScore * 0.3;

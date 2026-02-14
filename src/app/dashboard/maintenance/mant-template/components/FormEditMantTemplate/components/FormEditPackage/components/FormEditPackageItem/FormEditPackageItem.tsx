@@ -112,7 +112,10 @@ export function FormEditPackageItem({
         notes: values.notes || null,
       };
 
-      const response = await axios.put(`/api/maintenance/package-items/${item.id}`, payload);
+      const response = await axios.put(
+        `/api/maintenance/package-items/${item.id}`,
+        payload
+      );
       const updatedItem = response.data;
 
       onEditItem(updatedItem);
@@ -164,16 +167,29 @@ export function FormEditPackageItem({
 
         {/* Info del Item de Mantenimiento (solo lectura) */}
         <div className="bg-gray-50 p-4 rounded-lg">
-          <h4 className="font-medium text-sm text-gray-700 mb-2">Item de Mantenimiento:</h4>
+          <h4 className="font-medium text-sm text-gray-700 mb-2">
+            Item de Mantenimiento:
+          </h4>
           <div className="space-y-1">
             <p className="font-semibold">{item.mantItem.name}</p>
             {item.mantItem.description && (
-              <p className="text-sm text-gray-600">{item.mantItem.description}</p>
+              <p className="text-sm text-gray-600">
+                {item.mantItem.description}
+              </p>
             )}
             <div className="flex gap-4 text-sm">
-              <span>Tipo: <strong>{formatMantType(item.mantItem.mantType)}</strong></span>
-              <span>Categoría: <strong>{item.mantItem.category.name}</strong></span>
-              <span>Tiempo base: <strong>{Number(item.mantItem.estimatedTime).toFixed(1)}h</strong></span>
+              <span>
+                Tipo: <strong>{formatMantType(item.mantItem.mantType)}</strong>
+              </span>
+              <span>
+                Categoría: <strong>{item.mantItem.category.name}</strong>
+              </span>
+              <span>
+                Tiempo base:{' '}
+                <strong>
+                  {Number(item.mantItem.estimatedTime).toFixed(1)}h
+                </strong>
+              </span>
             </div>
           </div>
         </div>
@@ -181,7 +197,6 @@ export function FormEditPackageItem({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
               {/* Kilometraje de activación */}
               <FormField
                 control={form.control}
@@ -198,7 +213,9 @@ export function FormEditPackageItem({
                         placeholder="5000"
                         {...field}
                         value={field.value || ''}
-                        onChange={e => field.onChange(parseInt(e.target.value) || 0)}
+                        onChange={e =>
+                          field.onChange(parseInt(e.target.value) || 0)
+                        }
                         disabled={isLoading}
                       />
                     </FormControl>
@@ -251,7 +268,11 @@ export function FormEditPackageItem({
                         type="number"
                         placeholder="25000"
                         {...field}
-                        onChange={e => field.onChange(parseFloat(e.target.value) || undefined)}
+                        onChange={e =>
+                          field.onChange(
+                            parseFloat(e.target.value) || undefined
+                          )
+                        }
                         disabled={isLoading}
                       />
                     </FormControl>
@@ -276,7 +297,11 @@ export function FormEditPackageItem({
                         step="0.25"
                         placeholder="1.5"
                         {...field}
-                        onChange={e => field.onChange(parseFloat(e.target.value) || undefined)}
+                        onChange={e =>
+                          field.onChange(
+                            parseFloat(e.target.value) || undefined
+                          )
+                        }
                         disabled={isLoading}
                       />
                     </FormControl>

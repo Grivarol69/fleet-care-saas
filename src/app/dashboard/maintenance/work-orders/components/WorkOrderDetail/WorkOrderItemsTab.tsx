@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +11,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Warehouse, ShoppingCart, ChevronsUpDown, Check } from 'lucide-react';
+import {
+  PlusCircle,
+  Warehouse,
+  ShoppingCart,
+  ChevronsUpDown,
+  Check,
+} from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -133,12 +138,17 @@ export function WorkOrderItemsTab({
   const [comboOpen, setComboOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [mantItems, setMantItems] = useState<MantItemResult[]>([]);
-  const [selectedMantItem, setSelectedMantItem] = useState<MantItemResult | null>(null);
-  const [selectedMasterPartId, setSelectedMasterPartId] = useState<string | null>(null);
+  const [selectedMantItem, setSelectedMantItem] =
+    useState<MantItemResult | null>(null);
+  const [selectedMasterPartId, setSelectedMasterPartId] = useState<
+    string | null
+  >(null);
   const [isSearching, setIsSearching] = useState(false);
 
   // Enriched items from API
-  const [enrichedItems, setEnrichedItems] = useState<WorkOrderItemFormatted[]>([]);
+  const [enrichedItems, setEnrichedItems] = useState<WorkOrderItemFormatted[]>(
+    []
+  );
 
   // Debounce timer
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -150,7 +160,9 @@ export function WorkOrderItemsTab({
 
   const fetchEnrichedItems = async () => {
     try {
-      const res = await axios.get(`/api/maintenance/work-orders/${workOrder.id}/items`);
+      const res = await axios.get(
+        `/api/maintenance/work-orders/${workOrder.id}/items`
+      );
       setEnrichedItems(res.data.items || []);
     } catch {
       // Fall back to basic workOrderItems if enriched fetch fails
@@ -162,7 +174,9 @@ export function WorkOrderItemsTab({
   const searchMantItems = useCallback(async (q: string) => {
     setIsSearching(true);
     try {
-      const res = await axios.get(`/api/maintenance/mant-items/search?q=${encodeURIComponent(q)}`);
+      const res = await axios.get(
+        `/api/maintenance/mant-items/search?q=${encodeURIComponent(q)}`
+      );
       setMantItems(res.data);
     } catch {
       setMantItems([]);
@@ -205,7 +219,9 @@ export function WorkOrderItemsTab({
 
   const checkStock = async (masterPartId: string) => {
     try {
-      const res = await axios.get(`/api/inventory/items?masterPartId=${masterPartId}`);
+      const res = await axios.get(
+        `/api/inventory/items?masterPartId=${masterPartId}`
+      );
       const items = res.data;
       if (items.length > 0) {
         setAvailableStock(Number(items[0].quantity));
@@ -229,7 +245,11 @@ export function WorkOrderItemsTab({
 
   const handleAddItem = async () => {
     if (!selectedMantItem) {
-      toast({ title: 'Error', description: 'Selecciona un item de mantenimiento.', variant: 'destructive' });
+      toast({
+        title: 'Error',
+        description: 'Selecciona un item de mantenimiento.',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -243,14 +263,23 @@ export function WorkOrderItemsTab({
         source,
         stockItemId: stockItem || undefined,
       });
-      toast({ title: 'Item Agregado', description: `"${description}" agregado desde: ${source === 'STOCK' ? 'Inventario' : 'Compra Externa'}` });
+      toast({
+        title: 'Item Agregado',
+        description: `"${description}" agregado desde: ${source === 'STOCK' ? 'Inventario' : 'Compra Externa'}`,
+      });
       resetForm();
       setIsAddOpen(false);
       fetchEnrichedItems();
       onRefresh();
     } catch (error) {
-      const message = axios.isAxiosError(error) ? error.response?.data?.error : 'No se pudo agregar el item.';
-      toast({ title: 'Error', description: message || 'No se pudo agregar el item.', variant: 'destructive' });
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.error
+        : 'No se pudo agregar el item.';
+      toast({
+        title: 'Error',
+        description: message || 'No se pudo agregar el item.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -279,8 +308,20 @@ export function WorkOrderItemsTab({
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>Items de Trabajo ({displayItems ? displayItems.length : workOrder.workOrderItems.length})</CardTitle>
-            <Dialog open={isAddOpen} onOpenChange={(open) => { setIsAddOpen(open); if (!open) resetForm(); }}>
+            <CardTitle>
+              Items de Trabajo (
+              {displayItems
+                ? displayItems.length
+                : workOrder.workOrderItems.length}
+              )
+            </CardTitle>
+            <Dialog
+              open={isAddOpen}
+              onOpenChange={open => {
+                setIsAddOpen(open);
+                if (!open) resetForm();
+              }}
+            >
               <DialogTrigger asChild>
                 <Button size="sm">
                   <PlusCircle className="mr-2 h-4 w-4" />
@@ -304,14 +345,21 @@ export function WorkOrderItemsTab({
                           className="w-full justify-between font-normal"
                         >
                           {selectedMantItem ? (
-                            <span className="truncate">{selectedMantItem.name}</span>
+                            <span className="truncate">
+                              {selectedMantItem.name}
+                            </span>
                           ) : (
-                            <span className="text-muted-foreground">Buscar item...</span>
+                            <span className="text-muted-foreground">
+                              Buscar item...
+                            </span>
                           )}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <PopoverContent
+                        className="w-[--radix-popover-trigger-width] p-0"
+                        align="start"
+                      >
                         <Command shouldFilter={false}>
                           <CommandInput
                             placeholder="Buscar por nombre..."
@@ -320,10 +368,12 @@ export function WorkOrderItemsTab({
                           />
                           <CommandList>
                             <CommandEmpty>
-                              {isSearching ? 'Buscando...' : 'No se encontraron items.'}
+                              {isSearching
+                                ? 'Buscando...'
+                                : 'No se encontraron items.'}
                             </CommandEmpty>
                             <CommandGroup>
-                              {mantItems.map((item) => (
+                              {mantItems.map(item => (
                                 <CommandItem
                                   key={item.id}
                                   value={item.id.toString()}
@@ -332,20 +382,30 @@ export function WorkOrderItemsTab({
                                   <Check
                                     className={cn(
                                       'mr-2 h-4 w-4',
-                                      selectedMantItem?.id === item.id ? 'opacity-100' : 'opacity-0'
+                                      selectedMantItem?.id === item.id
+                                        ? 'opacity-100'
+                                        : 'opacity-0'
                                     )}
                                   />
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
-                                      <span className="truncate font-medium">{item.name}</span>
-                                      <span className={cn(
-                                        'text-xs px-1.5 py-0.5 rounded-full shrink-0',
-                                        typeConfig[item.type]?.className || 'bg-gray-100 text-gray-700'
-                                      )}>
-                                        {typeConfig[item.type]?.label || item.type}
+                                      <span className="truncate font-medium">
+                                        {item.name}
+                                      </span>
+                                      <span
+                                        className={cn(
+                                          'text-xs px-1.5 py-0.5 rounded-full shrink-0',
+                                          typeConfig[item.type]?.className ||
+                                            'bg-gray-100 text-gray-700'
+                                        )}
+                                      >
+                                        {typeConfig[item.type]?.label ||
+                                          item.type}
                                       </span>
                                     </div>
-                                    <span className="text-xs text-muted-foreground">{item.categoryName}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {item.categoryName}
+                                    </span>
                                   </div>
                                 </CommandItem>
                               ))}
@@ -361,7 +421,7 @@ export function WorkOrderItemsTab({
                     <Label>Descripcion</Label>
                     <Input
                       value={description}
-                      onChange={(e) => setDescription(e.target.value)}
+                      onChange={e => setDescription(e.target.value)}
                       placeholder="Ej: Aceite 15W40"
                     />
                   </div>
@@ -373,7 +433,7 @@ export function WorkOrderItemsTab({
                       <Input
                         type="number"
                         value={quantity}
-                        onChange={(e) => setQuantity(e.target.value)}
+                        onChange={e => setQuantity(e.target.value)}
                         min="1"
                       />
                     </div>
@@ -384,7 +444,7 @@ export function WorkOrderItemsTab({
                       <Input
                         type="number"
                         value={unitPrice}
-                        onChange={(e) => setUnitPrice(e.target.value)}
+                        onChange={e => setUnitPrice(e.target.value)}
                         placeholder="0.00"
                         min="0"
                         step="0.01"
@@ -419,12 +479,14 @@ export function WorkOrderItemsTab({
 
                   {source === 'STOCK' && (
                     <div className="p-3 bg-blue-50 rounded border border-blue-100 text-sm">
-                      <span className="font-semibold text-blue-700">Stock Disponible:</span>{' '}
+                      <span className="font-semibold text-blue-700">
+                        Stock Disponible:
+                      </span>{' '}
                       {availableStock !== null
                         ? `${availableStock} unidades`
                         : selectedMasterPartId
-                        ? 'Consultando...'
-                        : 'Selecciona un item con repuesto para ver stock'}
+                          ? 'Consultando...'
+                          : 'Selecciona un item con repuesto para ver stock'}
                     </div>
                   )}
                 </div>
@@ -452,67 +514,115 @@ export function WorkOrderItemsTab({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {displayItems ? (
-                displayItems.map((item) => (
-                  <TableRow key={item.workOrderItemId}>
-                    <TableCell className="font-medium">{item.mantItemName}</TableCell>
-                    <TableCell>
-                      <span className={cn(
-                        'text-xs px-1.5 py-0.5 rounded-full',
-                        typeConfig[item.mantItemType as keyof typeof typeConfig]?.className || 'bg-gray-100 text-gray-700'
-                      )}>
-                        {typeConfig[item.mantItemType as keyof typeof typeConfig]?.label || item.mantItemType}
-                      </span>
-                    </TableCell>
-                    <TableCell>{item.description}</TableCell>
-                    <TableCell>
-                      {item.supplier === 'INTERNAL_INVENTORY' ? (
-                        <Badge variant="secondary"><Warehouse className="h-3 w-3 mr-1" /> Stock Interno</Badge>
-                      ) : (
-                        <span>{item.supplier || 'N/A'}</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">{item.quantity}</TableCell>
-                    <TableCell className="text-right">${item.unitPrice.toLocaleString()}</TableCell>
-                    <TableCell className="text-right">${item.totalCost.toLocaleString()}</TableCell>
-                    <TableCell>
-                      <Badge variant={itemStatusConfig[item.status as keyof typeof itemStatusConfig]?.variant || 'default'}>
-                        {itemStatusConfig[item.status as keyof typeof itemStatusConfig]?.label || item.status}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                workOrder.workOrderItems.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-medium">{item.mantItem.name}</TableCell>
-                    <TableCell>
-                      <span className={cn(
-                        'text-xs px-1.5 py-0.5 rounded-full',
-                        typeConfig[(item.mantItem.type || 'ACTION') as keyof typeof typeConfig]?.className || 'bg-gray-100 text-gray-700'
-                      )}>
-                        {typeConfig[(item.mantItem.type || 'ACTION') as keyof typeof typeConfig]?.label || 'Item'}
-                      </span>
-                    </TableCell>
-                    <TableCell>{item.description}</TableCell>
-                    <TableCell>
-                      {item.supplier === 'INTERNAL_INVENTORY' ? (
-                        <Badge variant="secondary"><Warehouse className="h-3 w-3 mr-1" /> Stock Interno</Badge>
-                      ) : (
-                        <span>{item.supplier || 'N/A'}</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">{item.quantity}</TableCell>
-                    <TableCell className="text-right">${item.unitPrice.toLocaleString()}</TableCell>
-                    <TableCell className="text-right">${item.totalCost.toLocaleString()}</TableCell>
-                    <TableCell>
-                      <Badge variant={itemStatusConfig[item.status as keyof typeof itemStatusConfig]?.variant || 'default'}>
-                        {itemStatusConfig[item.status as keyof typeof itemStatusConfig]?.label || item.status}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
+              {displayItems
+                ? displayItems.map(item => (
+                    <TableRow key={item.workOrderItemId}>
+                      <TableCell className="font-medium">
+                        {item.mantItemName}
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={cn(
+                            'text-xs px-1.5 py-0.5 rounded-full',
+                            typeConfig[
+                              item.mantItemType as keyof typeof typeConfig
+                            ]?.className || 'bg-gray-100 text-gray-700'
+                          )}
+                        >
+                          {typeConfig[
+                            item.mantItemType as keyof typeof typeConfig
+                          ]?.label || item.mantItemType}
+                        </span>
+                      </TableCell>
+                      <TableCell>{item.description}</TableCell>
+                      <TableCell>
+                        {item.supplier === 'INTERNAL_INVENTORY' ? (
+                          <Badge variant="secondary">
+                            <Warehouse className="h-3 w-3 mr-1" /> Stock Interno
+                          </Badge>
+                        ) : (
+                          <span>{item.supplier || 'N/A'}</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {item.quantity}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        ${item.unitPrice.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        ${item.totalCost.toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            itemStatusConfig[
+                              item.status as keyof typeof itemStatusConfig
+                            ]?.variant || 'default'
+                          }
+                        >
+                          {itemStatusConfig[
+                            item.status as keyof typeof itemStatusConfig
+                          ]?.label || item.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                : workOrder.workOrderItems.map(item => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">
+                        {item.mantItem.name}
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={cn(
+                            'text-xs px-1.5 py-0.5 rounded-full',
+                            typeConfig[
+                              (item.mantItem.type ||
+                                'ACTION') as keyof typeof typeConfig
+                            ]?.className || 'bg-gray-100 text-gray-700'
+                          )}
+                        >
+                          {typeConfig[
+                            (item.mantItem.type ||
+                              'ACTION') as keyof typeof typeConfig
+                          ]?.label || 'Item'}
+                        </span>
+                      </TableCell>
+                      <TableCell>{item.description}</TableCell>
+                      <TableCell>
+                        {item.supplier === 'INTERNAL_INVENTORY' ? (
+                          <Badge variant="secondary">
+                            <Warehouse className="h-3 w-3 mr-1" /> Stock Interno
+                          </Badge>
+                        ) : (
+                          <span>{item.supplier || 'N/A'}</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {item.quantity}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        ${item.unitPrice.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        ${item.totalCost.toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            itemStatusConfig[
+                              item.status as keyof typeof itemStatusConfig
+                            ]?.variant || 'default'
+                          }
+                        >
+                          {itemStatusConfig[
+                            item.status as keyof typeof itemStatusConfig
+                          ]?.label || item.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
             </TableBody>
           </Table>
 
@@ -520,8 +630,12 @@ export function WorkOrderItemsTab({
           {totalCost > 0 && (
             <div className="flex justify-end mt-4 pt-4 border-t">
               <div className="text-right">
-                <span className="text-sm text-muted-foreground">Total Estimado: </span>
-                <span className="text-lg font-bold">${totalCost.toLocaleString()}</span>
+                <span className="text-sm text-muted-foreground">
+                  Total Estimado:{' '}
+                </span>
+                <span className="text-lg font-bold">
+                  ${totalCost.toLocaleString()}
+                </span>
               </div>
             </div>
           )}

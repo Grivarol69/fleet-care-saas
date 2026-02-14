@@ -33,7 +33,11 @@ import axios from 'axios';
 import { useToast } from '@/components/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { FormEditMantTemplateProps, VehicleBrand, VehicleLine } from './FormEditMantTemplate.types';
+import {
+  FormEditMantTemplateProps,
+  VehicleBrand,
+  VehicleLine,
+} from './FormEditMantTemplate.types';
 // import { TemplateItemsList } from './components/TemplateItemsList'; // Componente eliminado en migración
 import { PackageList } from './components/PackageList';
 
@@ -118,12 +122,16 @@ export function FormEditMantTemplate({
   // Filter lines by selected brand
   useEffect(() => {
     if (selectedBrandId && selectedBrandId > 0) {
-      const filtered = vehicleLines.filter(line => line.brandId === selectedBrandId);
+      const filtered = vehicleLines.filter(
+        line => line.brandId === selectedBrandId
+      );
       setFilteredLines(filtered);
-      
+
       // Reset line selection if current selected line doesn't belong to new brand
       const currentLineId = form.getValues('vehicleLineId');
-      const isCurrentLineValid = filtered.some(line => line.id === currentLineId);
+      const isCurrentLineValid = filtered.some(
+        line => line.id === currentLineId
+      );
       if (currentLineId > 0 && !isCurrentLineValid) {
         form.setValue('vehicleLineId', 0);
       }
@@ -137,7 +145,10 @@ export function FormEditMantTemplate({
     try {
       setIsLoading(true);
 
-      const response = await axios.patch(`/api/maintenance/mant-template/${template.id}`, values);
+      const response = await axios.patch(
+        `/api/maintenance/mant-template/${template.id}`,
+        values
+      );
       const updatedTemplate = response.data;
 
       onEditTemplate(updatedTemplate);
@@ -155,7 +166,8 @@ export function FormEditMantTemplate({
       let errorMessage = 'Algo salió mal al actualizar el template';
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 409) {
-          errorMessage = 'Ya existe un template con este nombre para esta marca/línea';
+          errorMessage =
+            'Ya existe un template con este nombre para esta marca/línea';
         } else if (error.response?.status === 400) {
           errorMessage = 'Datos inválidos, por favor revise los campos';
         } else if (error.response?.status === 401) {
@@ -181,9 +193,7 @@ export function FormEditMantTemplate({
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            Editar Template - {template.name}
-          </DialogTitle>
+          <DialogTitle>Editar Template - {template.name}</DialogTitle>
         </DialogHeader>
 
         <Tabs defaultValue="details" className="w-full">
@@ -195,7 +205,10 @@ export function FormEditMantTemplate({
 
           <TabsContent value="details" className="mt-6">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-6"
+              >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Nombre */}
                   <FormField
@@ -280,7 +293,11 @@ export function FormEditMantTemplate({
                         <Select
                           onValueChange={value => field.onChange(Number(value))}
                           value={field.value > 0 ? field.value.toString() : ''}
-                          disabled={isLoading || !selectedBrandId || selectedBrandId === 0}
+                          disabled={
+                            isLoading ||
+                            !selectedBrandId ||
+                            selectedBrandId === 0
+                          }
                         >
                           <FormControl>
                             <SelectTrigger>
@@ -294,7 +311,8 @@ export function FormEditMantTemplate({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {filteredLines.length === 0 && selectedBrandId > 0 ? (
+                            {filteredLines.length === 0 &&
+                            selectedBrandId > 0 ? (
                               <SelectItem value="no-lines" disabled>
                                 No hay líneas disponibles para esta marca
                               </SelectItem>
@@ -327,7 +345,9 @@ export function FormEditMantTemplate({
                     Cancelar
                   </Button>
                   <Button type="submit" disabled={isLoading}>
-                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {isLoading && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
                     {isLoading ? 'Actualizando...' : 'Actualizar Template'}
                   </Button>
                 </div>
@@ -344,8 +364,13 @@ export function FormEditMantTemplate({
           <TabsContent value="tasks" className="mt-6">
             <div className="min-h-[600px] flex items-center justify-center">
               <div className="text-center text-gray-500">
-                <p className="text-lg">Funcionalidad migrada al nuevo sistema</p>
-                <p className="text-sm">Use la pantalla principal de Templates para gestionar items por paquetes</p>
+                <p className="text-lg">
+                  Funcionalidad migrada al nuevo sistema
+                </p>
+                <p className="text-sm">
+                  Use la pantalla principal de Templates para gestionar items
+                  por paquetes
+                </p>
               </div>
             </div>
           </TabsContent>

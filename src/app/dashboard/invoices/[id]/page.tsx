@@ -129,9 +129,11 @@ export default function InvoiceDetailPage() {
       router.push('/dashboard/invoices');
     } catch (error) {
       console.error('Error deleting invoice:', error);
-      const errorMessage = error instanceof Error && 'response' in error
-        ? (error as { response?: { data?: { error?: string } } }).response?.data?.error
-        : 'No se pudo eliminar la factura';
+      const errorMessage =
+        error instanceof Error && 'response' in error
+          ? (error as { response?: { data?: { error?: string } } }).response
+              ?.data?.error
+          : 'No se pudo eliminar la factura';
       toast({
         title: 'Error',
         description: errorMessage,
@@ -159,9 +161,7 @@ export default function InvoiceDetailPage() {
     return (
       <div className="p-6">
         <div className="text-center py-12">
-          <p className="text-muted-foreground text-lg">
-            Factura no encontrada
-          </p>
+          <p className="text-muted-foreground text-lg">Factura no encontrada</p>
           <Button
             variant="outline"
             onClick={() => router.push('/dashboard/invoices')}
@@ -192,7 +192,9 @@ export default function InvoiceDetailPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Factura {invoice.invoiceNumber}</h1>
+            <h1 className="text-3xl font-bold">
+              Factura {invoice.invoiceNumber}
+            </h1>
             <p className="text-muted-foreground mt-1">
               {invoice.supplier?.name || 'Sin proveedor'}
               {invoice.workOrder && (
@@ -202,11 +204,7 @@ export default function InvoiceDetailPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handlePrint}
-          >
+          <Button variant="outline" size="sm" onClick={handlePrint}>
             <Printer className="mr-2 h-4 w-4" />
             Imprimir
           </Button>
@@ -235,7 +233,9 @@ export default function InvoiceDetailPage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Saldo</p>
-              <p className={`text-lg font-semibold ${balance > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+              <p
+                className={`text-lg font-semibold ${balance > 0 ? 'text-orange-600' : 'text-green-600'}`}
+              >
                 ${balance.toLocaleString('es-CO')}
               </p>
             </div>
@@ -273,7 +273,8 @@ export default function InvoiceDetailPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar factura?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción eliminará la factura permanentemente y revertirá la orden de trabajo asociada a estado &quot;Pendiente Factura&quot;.
+              Esta acción eliminará la factura permanentemente y revertirá la
+              orden de trabajo asociada a estado &quot;Pendiente Factura&quot;.
               {!canDelete && (
                 <span className="block mt-2 text-destructive font-semibold">
                   No se puede eliminar una factura con pagos registrados.

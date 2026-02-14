@@ -40,7 +40,7 @@ export function InvoicesFilters({
               id="search"
               placeholder="Número de factura, proveedor o orden de trabajo..."
               value={filters.search}
-              onChange={(e) => onFilterChange('search', e.target.value)}
+              onChange={e => onFilterChange('search', e.target.value)}
               className="pl-9"
             />
           </div>
@@ -51,7 +51,7 @@ export function InvoicesFilters({
           <Label htmlFor="status">Estado</Label>
           <Select
             value={filters.status}
-            onValueChange={(value) => onFilterChange('status', value)}
+            onValueChange={value => onFilterChange('status', value)}
           >
             <SelectTrigger id="status">
               <SelectValue placeholder="Todos los estados" />
@@ -71,11 +71,7 @@ export function InvoicesFilters({
       {/* Botón limpiar filtros */}
       {hasActiveFilters && (
         <div className="mt-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onClearFilters}
-          >
+          <Button variant="outline" size="sm" onClick={onClearFilters}>
             <X className="mr-2 h-4 w-4" />
             Limpiar filtros
           </Button>

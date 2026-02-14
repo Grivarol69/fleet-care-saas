@@ -51,7 +51,9 @@ async function migrateDocumentData() {
       migrated++;
 
       if (migrated % 10 === 0) {
-        console.log(`   ✓ Migrados ${migrated}/${documentsToMigrate.length} documentos...`);
+        console.log(
+          `   ✓ Migrados ${migrated}/${documentsToMigrate.length} documentos...`
+        );
       }
     }
 
@@ -67,8 +69,9 @@ async function migrateDocumentData() {
 
     console.log(`🔍 Verificación:`);
     console.log(`   - Documentos sin documentNumber: ${afterMigration}`);
-    console.log(`   - Documentos con documentNumber: ${totalDocuments - afterMigration}\n`);
-
+    console.log(
+      `   - Documentos con documentNumber: ${totalDocuments - afterMigration}\n`
+    );
   } catch (error) {
     console.error('❌ Error durante la migración:', error);
     throw error;
@@ -83,7 +86,7 @@ migrateDocumentData()
     console.log('✨ Script completado.');
     process.exit(0);
   })
-  .catch((error) => {
+  .catch(error => {
     console.error('💥 Error fatal:', error);
     process.exit(1);
   });

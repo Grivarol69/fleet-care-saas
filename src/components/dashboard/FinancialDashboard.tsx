@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import useSWR from "swr";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import useSWR from 'swr';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -9,19 +9,34 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { TrendingUp, TrendingDown, Minus, DollarSign, RefreshCw, Loader2, AlertCircle } from "lucide-react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
-import axios from "axios";
-import type { FinancialMetricsResponse } from "@/app/api/dashboard/financial-metrics/route";
-import { KPICards } from "./FinancialDashboard/KPICards";
-import { EvolutionChart } from "./FinancialDashboard/EvolutionChart";
-import { RecentInvoicesTable } from "./FinancialDashboard/RecentInvoicesTable";
-import { FinancialAlertsWidget } from "./FinancialDashboard/FinancialAlertsWidget";
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  DollarSign,
+  RefreshCw,
+  Loader2,
+  AlertCircle,
+} from 'lucide-react';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Legend,
+  Tooltip,
+} from 'recharts';
+import axios from 'axios';
+import type { FinancialMetricsResponse } from '@/app/api/dashboard/financial-metrics/route';
+import { KPICards } from './FinancialDashboard/KPICards';
+import { EvolutionChart } from './FinancialDashboard/EvolutionChart';
+import { RecentInvoicesTable } from './FinancialDashboard/RecentInvoicesTable';
+import { FinancialAlertsWidget } from './FinancialDashboard/FinancialAlertsWidget';
 
-const fetcher = (url: string) => axios.get(url).then((res) => res.data);
+const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
 // Tipos para Recharts
 interface PieLabelProps {
@@ -45,7 +60,9 @@ function LoadingState() {
     <div className="flex items-center justify-center py-12">
       <div className="flex flex-col items-center gap-3">
         <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-        <p className="text-sm text-muted-foreground">Cargando métricas financieras...</p>
+        <p className="text-sm text-muted-foreground">
+          Cargando métricas financieras...
+        </p>
       </div>
     </div>
   );
@@ -77,14 +94,11 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
 }
 
 // Componente de Tabla de Gastos por Vehículo
-function VehicleExpensesTable({
-  data
-}: {
-  data: FinancialMetricsResponse
-}) {
-  const getTrendIcon = (trend: "up" | "down" | "neutral") => {
-    if (trend === "up") return <TrendingUp className="h-4 w-4 text-red-500" />;
-    if (trend === "down") return <TrendingDown className="h-4 w-4 text-green-500" />;
+function VehicleExpensesTable({ data }: { data: FinancialMetricsResponse }) {
+  const getTrendIcon = (trend: 'up' | 'down' | 'neutral') => {
+    if (trend === 'up') return <TrendingUp className="h-4 w-4 text-red-500" />;
+    if (trend === 'down')
+      return <TrendingDown className="h-4 w-4 text-green-500" />;
     return <Minus className="h-4 w-4 text-gray-400" />;
   };
 
@@ -114,13 +128,16 @@ function VehicleExpensesTable({
           <TableBody>
             {data.vehicleExpenses.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell
+                  colSpan={6}
+                  className="text-center py-8 text-muted-foreground"
+                >
                   No hay datos de gastos para este mes
                 </TableCell>
               </TableRow>
             ) : (
               <>
-                {data.vehicleExpenses.map((vehicle) => (
+                {data.vehicleExpenses.map(vehicle => (
                   <TableRow
                     key={vehicle.rank}
                     className="hover:bg-blue-50/50 transition-colors"
@@ -145,8 +162,10 @@ function VehicleExpensesTable({
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-1">
                         {getTrendIcon(vehicle.trend)}
-                        {vehicle.rank === 1 && vehicle.trend === "up" && (
-                          <span className="text-xs text-red-500 font-medium">⚠️</span>
+                        {vehicle.rank === 1 && vehicle.trend === 'up' && (
+                          <span className="text-xs text-red-500 font-medium">
+                            ⚠️
+                          </span>
                         )}
                       </div>
                     </TableCell>
@@ -178,7 +197,9 @@ function VehicleExpensesTable({
                   <TableCell className="text-right text-blue-900 text-lg">
                     ${data.kpis.totalSpent.toLocaleString()}
                   </TableCell>
-                  <TableCell className="text-center text-blue-900">100%</TableCell>
+                  <TableCell className="text-center text-blue-900">
+                    100%
+                  </TableCell>
                   <TableCell></TableCell>
                 </TableRow>
               </>
@@ -191,11 +212,7 @@ function VehicleExpensesTable({
 }
 
 // Componente de Donut Chart Preventivo vs Correctivo
-function MaintenanceTypeChart({
-  data
-}: {
-  data: FinancialMetricsResponse
-}) {
+function MaintenanceTypeChart({ data }: { data: FinancialMetricsResponse }) {
   const RADIAN = Math.PI / 180;
   const renderCustomizedLabel = ({
     cx,
@@ -214,7 +231,7 @@ function MaintenanceTypeChart({
         x={x}
         y={y}
         fill="white"
-        textAnchor={x > cx ? "start" : "end"}
+        textAnchor={x > cx ? 'start' : 'end'}
         dominantBaseline="central"
         className="font-bold text-sm"
       >
@@ -223,31 +240,35 @@ function MaintenanceTypeChart({
     );
   };
 
-  const preventivePercentage = data.maintenanceType.find(
-    (item) => item.name === "Preventivo"
-  )?.percentage || 0;
+  const preventivePercentage =
+    data.maintenanceType.find(item => item.name === 'Preventivo')?.percentage ||
+    0;
 
   const getMessage = () => {
     if (preventivePercentage >= 70) {
-      return "✅ Excelente balance: La mayoría de tu gasto es en mantenimiento preventivo";
+      return '✅ Excelente balance: La mayoría de tu gasto es en mantenimiento preventivo';
     } else if (preventivePercentage >= 50) {
-      return "⚠️ Balance aceptable: Podrías mejorar el mantenimiento preventivo";
+      return '⚠️ Balance aceptable: Podrías mejorar el mantenimiento preventivo';
     } else {
-      return "❌ Alerta: Demasiado gasto en mantenimiento correctivo";
+      return '❌ Alerta: Demasiado gasto en mantenimiento correctivo';
     }
   };
 
   const getMessageColor = () => {
-    if (preventivePercentage >= 70) return "bg-green-50 border-green-200 text-green-800";
-    if (preventivePercentage >= 50) return "bg-yellow-50 border-yellow-200 text-yellow-800";
-    return "bg-red-50 border-red-200 text-red-800";
+    if (preventivePercentage >= 70)
+      return 'bg-green-50 border-green-200 text-green-800';
+    if (preventivePercentage >= 50)
+      return 'bg-yellow-50 border-yellow-200 text-yellow-800';
+    return 'bg-red-50 border-red-200 text-red-800';
   };
 
   return (
     <Card>
       <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-600 text-white">
         <CardTitle className="text-lg">Preventivo vs Correctivo</CardTitle>
-        <p className="text-green-100 text-sm">¿Estoy previniendo o apagando incendios?</p>
+        <p className="text-green-100 text-sm">
+          ¿Estoy previniendo o apagando incendios?
+        </p>
       </CardHeader>
       <CardContent className="pt-6">
         {data.maintenanceType.length === 0 ? (
@@ -280,11 +301,13 @@ function MaintenanceTypeChart({
                   <Legend
                     verticalAlign="bottom"
                     height={36}
-                    formatter={(value: string, entry: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+                    formatter={(value: string, entry: any) => {
+                       
                       const payload = entry.payload as ChartDataEntry;
                       return (
                         <span className="text-sm">
-                          {value}: ${payload.value.toLocaleString()} ({payload.percentage}%)
+                          {value}: ${payload.value.toLocaleString()} (
+                          {payload.percentage}%)
                         </span>
                       );
                     }}
@@ -293,9 +316,7 @@ function MaintenanceTypeChart({
               </ResponsiveContainer>
             </div>
             <div className={`mt-4 p-4 rounded-lg border ${getMessageColor()}`}>
-              <p className="text-sm font-medium">
-                {getMessage()}
-              </p>
+              <p className="text-sm font-medium">{getMessage()}</p>
             </div>
           </>
         )}
@@ -305,11 +326,7 @@ function MaintenanceTypeChart({
 }
 
 // Componente de Pie Chart por Categoría
-function CategoryExpensesChart({
-  data
-}: {
-  data: FinancialMetricsResponse
-}) {
+function CategoryExpensesChart({ data }: { data: FinancialMetricsResponse }) {
   return (
     <Card>
       <CardHeader className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
@@ -345,7 +362,8 @@ function CategoryExpensesChart({
                 <Legend
                   verticalAlign="bottom"
                   height={60}
-                  formatter={(value: string, entry: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+                  formatter={(value: string, entry: any) => {
+                     
                     const payload = entry.payload as ChartDataEntry;
                     return (
                       <span className="text-xs">
@@ -366,7 +384,7 @@ function CategoryExpensesChart({
 // Componente principal
 export function FinancialDashboard() {
   const { data, error, isLoading, mutate } = useSWR<FinancialMetricsResponse>(
-    "/api/dashboard/financial-metrics",
+    '/api/dashboard/financial-metrics',
     fetcher,
     {
       revalidateOnFocus: false,
@@ -383,14 +401,12 @@ export function FinancialDashboard() {
       {/* Header con periodo y botón refresh */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Métricas Financieras</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Métricas Financieras
+          </h2>
           <p className="text-sm text-muted-foreground">{data.period.label}</p>
         </div>
-        <Button
-          onClick={() => mutate()}
-          variant="outline"
-          size="sm"
-        >
+        <Button onClick={() => mutate()} variant="outline" size="sm">
           <RefreshCw className="h-4 w-4 mr-2" />
           Actualizar
         </Button>

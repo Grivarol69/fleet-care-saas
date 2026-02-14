@@ -50,7 +50,10 @@ export async function GET(
     });
 
     if (!ticket) {
-      return NextResponse.json({ error: 'Ticket no encontrado' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Ticket no encontrado' },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json(ticket);
@@ -78,7 +81,10 @@ export async function PATCH(
     }
 
     if (!canManageMasterData(user)) {
-      return NextResponse.json({ error: 'No tienes permisos para esta acción' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'No tienes permisos para esta acción' },
+        { status: 403 }
+      );
     }
 
     const { id } = await params;
@@ -86,7 +92,10 @@ export async function PATCH(
     const { status, notes } = body;
 
     if (!status) {
-      return NextResponse.json({ error: 'Status es requerido' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Status es requerido' },
+        { status: 400 }
+      );
     }
 
     // Fetch the ticket with all related data
@@ -106,12 +115,15 @@ export async function PATCH(
     });
 
     if (!ticket) {
-      return NextResponse.json({ error: 'Ticket no encontrado' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Ticket no encontrado' },
+        { status: 404 }
+      );
     }
 
     // If approving the ticket, close internal items and potentially the entire work order
     if (status === 'APPROVED') {
-      const result = await prisma.$transaction(async (tx) => {
+      const result = await prisma.$transaction(async tx => {
         // 1. Approve the ticket
         const updatedTicket = await tx.internalWorkTicket.update({
           where: { id },
@@ -130,7 +142,9 @@ export async function PATCH(
         await tx.workOrderItem.updateMany({
           where: {
             workOrderId,
-            itemSource: { in: [ItemSource.INTERNAL_STOCK, ItemSource.INTERNAL_PURCHASE] },
+            itemSource: {
+              in: [ItemSource.INTERNAL_STOCK, ItemSource.INTERNAL_PURCHASE],
+            },
           },
           data: {
             status: 'COMPLETED',
@@ -157,7 +171,9 @@ export async function PATCH(
             select: { actualCost: true },
           });
 
-          const currentCost = currentWO?.actualCost ? Number(currentWO.actualCost) : 0;
+          const currentCost = currentWO?.actualCost
+            ? Number(currentWO.actualCost)
+            : 0;
           const newTotalCost = currentCost + Number(ticket.totalCost);
 
           // Cerrar la WorkOrder
@@ -186,7 +202,7 @@ export async function PATCH(
           });
 
           if (alerts.length > 0) {
-            const programItemIds = alerts.map((a) => a.programItemId);
+            const programItemIds = alerts.map(a => a.programItemId);
             await tx.vehicleProgramItem.updateMany({
               where: { id: { in: programItemIds } },
               data: {
@@ -202,7 +218,9 @@ export async function PATCH(
             select: { actualCost: true },
           });
 
-          const currentCost = currentWO?.actualCost ? Number(currentWO.actualCost) : 0;
+          const currentCost = currentWO?.actualCost
+            ? Number(currentWO.actualCost)
+            : 0;
           await tx.workOrder.update({
             where: { id: workOrderId },
             data: {

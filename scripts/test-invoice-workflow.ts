@@ -15,14 +15,16 @@ async function runTest() {
 
   const vehicle = await prisma.vehicle.findFirst({
     where: { licensePlate: 'BCD-890' },
-    include: { brand: true, line: true }
+    include: { brand: true, line: true },
   });
 
   if (!vehicle) {
     throw new Error('Vehículo BCD-890 no encontrado');
   }
 
-  console.log(`   ✓ Vehículo: ${vehicle.brand.name} ${vehicle.line.name} ${vehicle.year}`);
+  console.log(
+    `   ✓ Vehículo: ${vehicle.brand.name} ${vehicle.line.name} ${vehicle.year}`
+  );
   console.log(`   ✓ Kilometraje actual: ${vehicle.mileage} km`);
 
   const template = await prisma.maintenanceTemplate.findFirst({
@@ -32,20 +34,22 @@ async function runTest() {
         include: {
           packageItems: {
             include: {
-              mantItem: true
-            }
-          }
+              mantItem: true,
+            },
+          },
         },
-        orderBy: { triggerKm: 'asc' }
-      }
-    }
+        orderBy: { triggerKm: 'asc' },
+      },
+    },
   });
 
   if (!template) {
     throw new Error('Template Toyota Hilux no encontrado');
   }
 
-  console.log(`   ✓ Template: ${template.name} (${template.packages.length} paquetes)`);
+  console.log(
+    `   ✓ Template: ${template.name} (${template.packages.length} paquetes)`
+  );
 
   // Crear VehicleMantProgram
   const program = await prisma.vehicleMantProgram.create({
@@ -100,10 +104,10 @@ async function runTest() {
   }
 
   const packageCount = await prisma.vehicleProgramPackage.count({
-    where: { programId: program.id }
+    where: { programId: program.id },
   });
   const itemCount = await prisma.vehicleProgramItem.count({
-    where: { package: { programId: program.id } }
+    where: { package: { programId: program.id } },
   });
 
   console.log(`   ✓ ${packageCount} paquetes creados`);
@@ -120,8 +124,8 @@ async function runTest() {
     where: { id: vehicle.id },
     data: {
       mileage: newMileage,
-      lastKilometers: newMileage
-    }
+      lastKilometers: newMileage,
+    },
   });
 
   // Crear OdometerLog
@@ -131,7 +135,7 @@ async function runTest() {
       kilometers: newMileage,
       measureType: 'KILOMETERS',
       recordedAt: new Date(),
-    }
+    },
   });
 
   console.log(`   ✓ Odómetro actualizado: ${newMileage} km`);
@@ -140,15 +144,15 @@ async function runTest() {
   const reachedPackages = await prisma.vehicleProgramPackage.findMany({
     where: {
       programId: program.id,
-      triggerKm: { lte: newMileage }
+      triggerKm: { lte: newMileage },
     },
     include: {
       items: {
         include: {
-          mantItem: true
-        }
-      }
-    }
+          mantItem: true,
+        },
+      },
+    },
   });
 
   console.log(`   ✓ Paquetes alcanzados: ${reachedPackages.length}`);
@@ -162,7 +166,7 @@ async function runTest() {
         where: {
           vehicleId: vehicle.id,
           programItemId: item.id,
-        }
+        },
       });
 
       if (!existingAlert) {
@@ -183,7 +187,7 @@ async function runTest() {
             currentKm: newMileage,
             kmToMaintenance: (pkg.triggerKm ?? 0) - newMileage,
             alertThresholdKm: 1000,
-          }
+          },
         });
         totalAlertsCreated++;
       }
@@ -200,15 +204,15 @@ async function runTest() {
   const alerts = await prisma.maintenanceAlert.findMany({
     where: {
       vehicleId: vehicle.id,
-      status: 'PENDING'
+      status: 'PENDING',
     },
     include: {
       programItem: {
         include: {
-          mantItem: true
-        }
-      }
-    }
+          mantItem: true,
+        },
+      },
+    },
   });
 
   console.log(`   ✓ Total alertas PENDING: ${alerts.length}`);
@@ -226,7 +230,7 @@ async function runTest() {
   await prisma.$disconnect();
 }
 
-runTest().catch((error) => {
+runTest().catch(error => {
   console.error('\n❌ ERROR:', error.message);
   console.error(error);
   process.exit(1);

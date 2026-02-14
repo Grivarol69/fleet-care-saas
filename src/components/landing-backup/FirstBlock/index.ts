@@ -1,1 +1,1 @@
-export * from "./FirstBlock";
+export * from './FirstBlock';

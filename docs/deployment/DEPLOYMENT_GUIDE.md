@@ -3,6 +3,7 @@
 ## 📋 Pre-Deployment Checklist
 
 ### 1. Environment Verification
+
 - [ ] **Local environment variables** are working (test with `npm run dev`)
 - [ ] **Vercel environment variables** are configured:
   - `DATABASE_URL` with `?pgbouncer=true`
@@ -12,12 +13,14 @@
   - `UPLOADTHING_SECRET`
 
 ### 2. Code Quality Checks
+
 - [ ] All TypeScript errors resolved
 - [ ] ESLint passes (`npm run lint`)
 - [ ] Local build succeeds (`npm run build`)
 - [ ] No console errors in browser
 
 ### 3. Package Manager Consistency
+
 - [ ] Using `pnpm` consistently (check `vercel.json`)
 - [ ] Lock file is up to date (`pnpm-lock.yaml`)
 - [ ] No conflicting lock files (`package-lock.json` removed)
@@ -86,6 +89,7 @@ echo "3. git push origin main"
 ## 🏃‍♂️ Quick Deployment Commands
 
 ### Standard Deployment
+
 ```bash
 # Run the automated check
 bash deployment-check.sh
@@ -97,6 +101,7 @@ git push origin main
 ```
 
 ### Emergency Fix Deployment
+
 ```bash
 # Skip pre-commit hooks if needed (use sparingly!)
 git commit --no-verify -m "hotfix: description"
@@ -104,6 +109,7 @@ git push origin main
 ```
 
 ### Force Cache Invalidation
+
 ```bash
 # If Vercel is using old cached files
 touch src/cache-buster-$(date +%s).txt
@@ -117,7 +123,9 @@ git push origin main
 ## ⚠️ Common Issues & Solutions
 
 ### Issue 1: "npm ci can only install with existing package-lock.json"
+
 **Solution:**
+
 ```bash
 rm package-lock.json
 # Ensure vercel.json has: "installCommand": "pnpm install"
@@ -127,7 +135,9 @@ git push origin main
 ```
 
 ### Issue 2: TypeScript compilation errors
+
 **Solution:**
+
 ```bash
 # Fix types first
 npx tsc --noEmit
@@ -136,7 +146,9 @@ npm run build
 ```
 
 ### Issue 3: ESLint blocking deployment
+
 **Solution:**
+
 ```bash
 # Quick fix: relax rules in package.json
 "lint-staged": {
@@ -150,7 +162,9 @@ git commit --no-verify -m "bypass lint for deployment"
 ```
 
 ### Issue 4: Vercel registry errors (ERR_INVALID_THIS)
+
 **Solution:**
+
 ```bash
 # Generate fresh lock file
 rm pnpm-lock.yaml
@@ -165,6 +179,7 @@ git push origin main
 ## 📱 Vercel Dashboard Settings
 
 ### Build & Development Settings
+
 ```
 Install Command: pnpm install
 Build Command: pnpm run build
@@ -172,6 +187,7 @@ Output Directory: .next (default)
 ```
 
 ### Environment Variables
+
 ```
 DATABASE_URL=postgresql://[user]:[pass]@[host]:6543/postgres?pgbouncer=true
 NEXT_PUBLIC_SUPABASE_URL=https://[project].supabase.co
@@ -210,6 +226,7 @@ If deployment fails catastrophically:
 ## 🤝 Team Collaboration
 
 ### Before pushing to main:
+
 ```bash
 # Always sync first
 git pull origin main
@@ -222,6 +239,7 @@ git push origin main
 ```
 
 ### For feature branches:
+
 ```bash
 # Test deployment readiness before merging
 git checkout feature/new-feature
@@ -231,13 +249,14 @@ bash deployment-check.sh
 
 ---
 
-*Last updated: $(date '+%Y-%m-%d')*
-*Team: Fleet Care Development*
+_Last updated: $(date '+%Y-%m-%d')_
+_Team: Fleet Care Development_
 
 ---
 
-**Remember:** 
+**Remember:**
+
 - 🟢 Green builds = Happy deployments
-- 🔴 Red builds = Fix before proceeding  
+- 🔴 Red builds = Fix before proceeding
 - 🧪 Always test locally first
 - 📱 Verify in production after deploy

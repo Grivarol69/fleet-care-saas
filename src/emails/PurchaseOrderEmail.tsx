@@ -7,12 +7,12 @@ import {
   Preview,
   Section,
   Text,
-} from "@react-email/components";
-import * as React from "react";
+} from '@react-email/components';
+import * as React from 'react';
 
 interface PurchaseOrderEmailProps {
   orderNumber: string;
-  orderType: "SERVICES" | "PARTS";
+  orderType: 'SERVICES' | 'PARTS';
   providerName: string;
   tenantName?: string;
   vehicleInfo?: string;
@@ -21,13 +21,13 @@ interface PurchaseOrderEmailProps {
 }
 
 export const PurchaseOrderEmail = ({
-  orderNumber = "OC-2026-000001",
-  orderType = "PARTS",
-  providerName = "Proveedor",
-  tenantName = "FleetCare",
+  orderNumber = 'OC-2026-000001',
+  orderType = 'PARTS',
+  providerName = 'Proveedor',
+  tenantName = 'FleetCare',
   vehicleInfo,
   itemCount = 1,
-  totalAmount = "$0.00",
+  totalAmount = '$0.00',
 }: PurchaseOrderEmailProps) => (
   <Html>
     <Head />
@@ -43,8 +43,8 @@ export const PurchaseOrderEmail = ({
         </Text>
 
         <Text style={text}>
-          Le enviamos la Orden de Compra <strong>{orderNumber}</strong> de{" "}
-          {orderType === "PARTS" ? "repuestos" : "servicios"} emitida por{" "}
+          Le enviamos la Orden de Compra <strong>{orderNumber}</strong> de{' '}
+          {orderType === 'PARTS' ? 'repuestos' : 'servicios'} emitida por{' '}
           <strong>{tenantName}</strong>.
         </Text>
 
@@ -59,8 +59,8 @@ export const PurchaseOrderEmail = ({
             <strong>N° Orden:</strong> {orderNumber}
           </Text>
           <Text style={summaryText}>
-            <strong>Tipo:</strong>{" "}
-            {orderType === "PARTS" ? "Repuestos" : "Servicios"}
+            <strong>Tipo:</strong>{' '}
+            {orderType === 'PARTS' ? 'Repuestos' : 'Servicios'}
           </Text>
           <Text style={summaryText}>
             <strong>Cantidad de items:</strong> {itemCount}
@@ -71,8 +71,8 @@ export const PurchaseOrderEmail = ({
         </Section>
 
         <Text style={text}>
-          Adjunto encontrara el detalle completo de la orden en formato PDF.
-          Por favor confirme la recepcion de este pedido.
+          Adjunto encontrara el detalle completo de la orden en formato PDF. Por
+          favor confirme la recepcion de este pedido.
         </Text>
 
         <Text style={text}>
@@ -91,54 +91,54 @@ export const PurchaseOrderEmail = ({
 export default PurchaseOrderEmail;
 
 const main = {
-  backgroundColor: "#f6f9fc",
+  backgroundColor: '#f6f9fc',
   fontFamily:
     '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
 };
 
 const container = {
-  backgroundColor: "#ffffff",
-  margin: "0 auto",
-  padding: "20px 0 48px",
-  marginBottom: "64px",
+  backgroundColor: '#ffffff',
+  margin: '0 auto',
+  padding: '20px 0 48px',
+  marginBottom: '64px',
 };
 
 const h1 = {
-  color: "#333",
-  fontSize: "24px",
-  fontWeight: "bold",
-  margin: "40px 0 20px",
-  padding: "0",
-  textAlign: "center" as const,
+  color: '#333',
+  fontSize: '24px',
+  fontWeight: 'bold',
+  margin: '40px 0 20px',
+  padding: '0',
+  textAlign: 'center' as const,
 };
 
 const text = {
-  color: "#333",
-  fontSize: "16px",
-  lineHeight: "26px",
-  padding: "0 40px",
+  color: '#333',
+  fontSize: '16px',
+  lineHeight: '26px',
+  padding: '0 40px',
 };
 
 const summaryBox = {
-  backgroundColor: "#f0f4f8",
-  borderRadius: "8px",
-  margin: "20px 40px",
-  padding: "16px 24px",
+  backgroundColor: '#f0f4f8',
+  borderRadius: '8px',
+  margin: '20px 40px',
+  padding: '16px 24px',
 };
 
 const summaryText = {
-  color: "#333",
-  fontSize: "14px",
-  lineHeight: "24px",
-  margin: "4px 0",
+  color: '#333',
+  fontSize: '14px',
+  lineHeight: '24px',
+  margin: '4px 0',
 };
 
 const footer = {
-  color: "#898989",
-  fontSize: "12px",
-  lineHeight: "22px",
-  marginTop: "12px",
-  marginBottom: "24px",
-  padding: "0 40px",
-  textAlign: "center" as const,
+  color: '#898989',
+  fontSize: '12px',
+  lineHeight: '22px',
+  marginTop: '12px',
+  marginBottom: '24px',
+  padding: '0 40px',
+  textAlign: 'center' as const,
 };

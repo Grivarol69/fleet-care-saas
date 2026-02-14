@@ -1,4 +1,4 @@
-import { ProviderList } from "./components/ProviderList";
+import { ProviderList } from './components/ProviderList';
 
 export default function ProvidersPage() {
   return (

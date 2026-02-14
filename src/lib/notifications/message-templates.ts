@@ -6,7 +6,7 @@ export interface MaintenanceAlert {
   currentKm: number;
   executionKm: number;
   kmToMaintenance: number;
-  state: "YELLOW" | "RED";
+  state: 'YELLOW' | 'RED';
   brandName: string;
   lineName: string;
   driverName?: string;
@@ -25,30 +25,36 @@ export class WhatsAppTemplates {
    */
   static getSupervisorSummaryMessage(summary: AlertSummary): string {
     const header = `🚨 *Resumen de Alertas de Mantenimiento para ${summary.tenantName}:*\n\n`;
-    
-    let alertsList = "";
-    summary.alerts.forEach((alert) => {
-      const emoji = alert.state === "RED" ? "🔴" : "🟡";
-      const urgency = alert.state === "RED" ? `(URGENTE - ${alert.kmToMaintenance} km)` : `(${alert.kmToMaintenance} km)`;
-      
+
+    let alertsList = '';
+    summary.alerts.forEach(alert => {
+      const emoji = alert.state === 'RED' ? '🔴' : '🟡';
+      const urgency =
+        alert.state === 'RED'
+          ? `(URGENTE - ${alert.kmToMaintenance} km)`
+          : `(${alert.kmToMaintenance} km)`;
+
       alertsList += `${emoji} *Vehículo ${alert.vehiclePlate}:* ${alert.mantItemDescription} ${urgency}.\n`;
     });
 
     const footer = `\n📊 *Total:* ${summary.totalAlerts} alertas | *Críticas:* ${summary.criticalAlerts}`;
-    
+
     return header + alertsList + footer;
   }
 
   /**
    * Mensaje individual para conductor específico
    */
-  static getDriverMessage(alert: MaintenanceAlert, tenantName: string, driverName?: string): string {
-    const greeting = driverName ? `Hola ${driverName},\n\n` : "Hola,\n\n";
-    const emoji = alert.state === "RED" ? "🔴" : "🟡";
-    const urgency = alert.state === "RED" ? "*URGENTE*" : "Próximo";
-    
-    const message = 
-`${greeting}${emoji} *Alerta de Mantenimiento ${urgency}*
+  static getDriverMessage(
+    alert: MaintenanceAlert,
+    tenantName: string,
+    driverName?: string
+  ): string {
+    const greeting = driverName ? `Hola ${driverName},\n\n` : 'Hola,\n\n';
+    const emoji = alert.state === 'RED' ? '🔴' : '🟡';
+    const urgency = alert.state === 'RED' ? '*URGENTE*' : 'Próximo';
+
+    const message = `${greeting}${emoji} *Alerta de Mantenimiento ${urgency}*
 
 🚗 *Vehículo:* ${alert.vehiclePlate} (${alert.brandName} ${alert.lineName})
 🔧 *Servicio:* ${alert.mantItemDescription}
@@ -56,9 +62,10 @@ export class WhatsAppTemplates {
 ⚠️ *Mantenimiento en:* ${alert.executionKm.toLocaleString()} km
 📍 *Faltan:* ${alert.kmToMaintenance.toLocaleString()} km
 
-${alert.state === "RED" 
-  ? "⚠️ *ATENCIÓN:* Este mantenimiento es crítico. Programa la cita lo antes posible."
-  : "📋 Programa el mantenimiento pronto para evitar problemas."
+${
+  alert.state === 'RED'
+    ? '⚠️ *ATENCIÓN:* Este mantenimiento es crítico. Programa la cita lo antes posible.'
+    : '📋 Programa el mantenimiento pronto para evitar problemas.'
 }
 
 _Mensaje automático de ${tenantName}_`;
@@ -77,7 +84,7 @@ _Mensaje automático de ${tenantName}_`;
    * Mensaje de error para debugging
    */
   static getErrorMessage(error: string, context?: string): string {
-    return `❌ *Error en Sistema de Alertas*\n\nError: ${error}\n${context ? `Contexto: ${context}` : ""}\n\n_Mensaje automático de debugging_`;
+    return `❌ *Error en Sistema de Alertas*\n\nError: ${error}\n${context ? `Contexto: ${context}` : ''}\n\n_Mensaje automático de debugging_`;
   }
 
   /**
@@ -104,13 +111,13 @@ export class MessageUtils {
    */
   static formatWhatsAppNumber(phone: string): string {
     // Remover espacios y caracteres especiales
-    let cleanPhone = phone.replace(/[\s\-\(\)]/g, "");
-    
+    let cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+
     // Si no tiene +, agregar +57 (Colombia) por defecto
-    if (!cleanPhone.startsWith("+")) {
-      cleanPhone = "+57" + cleanPhone;
+    if (!cleanPhone.startsWith('+')) {
+      cleanPhone = '+57' + cleanPhone;
     }
-    
+
     return cleanPhone;
   }
 
@@ -119,7 +126,7 @@ export class MessageUtils {
    */
   static truncateMessage(message: string, maxLength: number = 1600): string {
     if (message.length <= maxLength) return message;
-    
-    return message.substring(0, maxLength - 50) + "\n\n..._Mensaje truncado_";
+
+    return message.substring(0, maxLength - 50) + '\n\n..._Mensaje truncado_';
   }
 }

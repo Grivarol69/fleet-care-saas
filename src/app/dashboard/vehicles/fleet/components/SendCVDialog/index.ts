@@ -1,1 +1,1 @@
-export { SendCVDialog } from "./SendCVDialog";
+export { SendCVDialog } from './SendCVDialog';

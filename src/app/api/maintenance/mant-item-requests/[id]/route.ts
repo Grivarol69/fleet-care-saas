@@ -31,7 +31,10 @@ export async function GET(
     });
 
     if (!itemRequest) {
-      return NextResponse.json({ error: 'Solicitud no encontrada' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Solicitud no encontrada' },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json(itemRequest);
@@ -84,12 +87,17 @@ export async function PATCH(
     });
 
     if (!itemRequest) {
-      return NextResponse.json({ error: 'Solicitud no encontrada' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Solicitud no encontrada' },
+        { status: 404 }
+      );
     }
 
     if (itemRequest.status !== 'PENDING') {
       return NextResponse.json(
-        { error: `La solicitud ya fue ${itemRequest.status === 'APPROVED' ? 'aprobada' : 'rechazada'}` },
+        {
+          error: `La solicitud ya fue ${itemRequest.status === 'APPROVED' ? 'aprobada' : 'rechazada'}`,
+        },
         { status: 409 }
       );
     }
@@ -119,7 +127,7 @@ export async function PATCH(
     }
 
     // APPROVED: crear MantItem + actualizar solicitud en transacción
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async tx => {
       // Verificar duplicado exacto antes de crear
       const existing = await tx.mantItem.findFirst({
         where: {

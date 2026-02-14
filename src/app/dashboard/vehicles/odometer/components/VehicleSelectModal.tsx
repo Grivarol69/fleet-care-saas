@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -8,14 +8,14 @@ import {
   getSortedRowModel,
   flexRender,
   ColumnDef,
-} from "@tanstack/react-table";
+} from '@tanstack/react-table';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -23,8 +23,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Vehicle } from "./types";
+} from '@/components/ui/table';
+import { Vehicle } from './types';
 
 interface VehicleSelectModalProps {
   isOpen: boolean;
@@ -39,39 +39,39 @@ export function VehicleSelectModal({
   vehicles,
   onSelectVehicle,
 }: VehicleSelectModalProps) {
-  const [globalFilter, setGlobalFilter] = useState("");
+  const [globalFilter, setGlobalFilter] = useState('');
 
   const columns = useMemo<ColumnDef<Vehicle>[]>(
     () => [
       {
-        header: "Placa",
-        accessorKey: "licensePlate",
+        header: 'Placa',
+        accessorKey: 'licensePlate',
       },
       {
-        header: "Marca",
-        accessorFn: (row) => row.brand?.name || "N/A",
-        id: "brandName",
+        header: 'Marca',
+        accessorFn: row => row.brand?.name || 'N/A',
+        id: 'brandName',
       },
       {
-        header: "Línea",
-        accessorFn: (row) => row.line?.name || "N/A",
-        id: "lineName",
+        header: 'Línea',
+        accessorFn: row => row.line?.name || 'N/A',
+        id: 'lineName',
       },
       {
-        header: "Tipo",
-        accessorFn: (row) => row.type?.name || "N/A",
-        id: "typeName",
+        header: 'Tipo',
+        accessorFn: row => row.type?.name || 'N/A',
+        id: 'typeName',
       },
       {
-        header: "Año",
-        accessorKey: "year",
+        header: 'Año',
+        accessorKey: 'year',
       },
       {
-        header: "Kilometraje",
-        accessorKey: "mileage",
+        header: 'Kilometraje',
+        accessorKey: 'mileage',
         cell: ({ getValue }) => {
           const value = getValue() as number;
-          return `${value?.toLocaleString() || "0"} km`;
+          return `${value?.toLocaleString() || '0'} km`;
         },
       },
     ],
@@ -109,9 +109,9 @@ export function VehicleSelectModal({
         <div className="overflow-auto max-h-[60vh]">
           <Table>
             <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
+              {table.getHeaderGroups().map(headerGroup => (
                 <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
+                  {headerGroup.headers.map(header => (
                     <TableHead key={header.id} className="whitespace-nowrap">
                       {flexRender(
                         header.column.columnDef.header,
@@ -124,13 +124,13 @@ export function VehicleSelectModal({
             </TableHeader>
             <TableBody>
               {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
+                table.getRowModel().rows.map(row => (
                   <TableRow
                     key={row.id}
                     onClick={() => onSelectVehicle(row.original)}
                     className="cursor-pointer hover:bg-muted/50 transition-colors"
                   >
-                    {row.getVisibleCells().map((cell) => (
+                    {row.getVisibleCells().map(cell => (
                       <TableCell key={cell.id} className="whitespace-nowrap">
                         {flexRender(
                           cell.column.columnDef.cell,
@@ -142,7 +142,10 @@ export function VehicleSelectModal({
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={columns.length} className="h-24 text-center">
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
                     No se encontraron vehículos.
                   </TableCell>
                 </TableRow>

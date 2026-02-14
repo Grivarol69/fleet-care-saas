@@ -1,4 +1,10 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 
 export default function SettingsPage() {
   return (
@@ -12,7 +18,9 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Configuración General</CardTitle>
-            <CardDescription>Ajustes de la plataforma Fleet Care</CardDescription>
+            <CardDescription>
+              Ajustes de la plataforma Fleet Care
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-slate-500">
@@ -36,7 +44,9 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Items de Mantenimiento</CardTitle>
-            <CardDescription>Gestionar items globales (preventivos y correctivos)</CardDescription>
+            <CardDescription>
+              Gestionar items globales (preventivos y correctivos)
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-slate-500">
@@ -46,5 +56,5 @@ export default function SettingsPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

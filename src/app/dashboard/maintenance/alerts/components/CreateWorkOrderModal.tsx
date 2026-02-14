@@ -9,7 +9,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,7 +20,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import { useMaintenanceAlerts } from '@/lib/hooks/useMaintenanceAlerts';
 import { CheckCircle2, Clock, DollarSign, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/hooks/use-toast';
@@ -33,7 +33,12 @@ interface Props {
   onSuccess: () => void;
 }
 
-export function CreateWorkOrderModal({ isOpen, onClose, selectedAlertIds, onSuccess }: Props) {
+export function CreateWorkOrderModal({
+  isOpen,
+  onClose,
+  selectedAlertIds,
+  onSuccess,
+}: Props) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: allAlerts } = useMaintenanceAlerts();
@@ -45,16 +50,25 @@ export function CreateWorkOrderModal({ isOpen, onClose, selectedAlertIds, onSucc
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [technicianId, setTechnicianId] = useState<string | undefined>(undefined);
+  const [technicianId, setTechnicianId] = useState<string | undefined>(
+    undefined
+  );
   const [providerId, setProviderId] = useState<string | undefined>(undefined);
   const [scheduledDate, setScheduledDate] = useState('');
   const [priority, setPriority] = useState('MEDIUM');
 
-  const selectedAlerts = allAlerts?.filter(a => selectedAlertIds.includes(a.id)) || [];
+  const selectedAlerts =
+    allAlerts?.filter(a => selectedAlertIds.includes(a.id)) || [];
 
   // Calcular totales
-  const totalCost = selectedAlerts.reduce((sum, a) => sum + (a.estimatedCost || 0), 0);
-  const totalDuration = selectedAlerts.reduce((sum, a) => sum + (a.estimatedDuration || 0), 0);
+  const totalCost = selectedAlerts.reduce(
+    (sum, a) => sum + (a.estimatedCost || 0),
+    0
+  );
+  const totalDuration = selectedAlerts.reduce(
+    (sum, a) => sum + (a.estimatedDuration || 0),
+    0
+  );
 
   // Auto-generar título sugerido
   useEffect(() => {
@@ -66,7 +80,9 @@ export function CreateWorkOrderModal({ isOpen, onClose, selectedAlertIds, onSucc
         if (packages.length === 1) {
           setTitle(`${packages[0]} - ${vehicle.vehiclePlate}`);
         } else {
-          setTitle(`Mantenimiento múltiple - ${vehicle.vehiclePlate} (${selectedAlerts.length} items)`);
+          setTitle(
+            `Mantenimiento múltiple - ${vehicle.vehiclePlate} (${selectedAlerts.length} items)`
+          );
         }
       }
     }
@@ -83,18 +99,18 @@ export function CreateWorkOrderModal({ isOpen, onClose, selectedAlertIds, onSucc
   const handleSubmit = async () => {
     if (!title.trim()) {
       toast({
-        title: "Error",
-        description: "El título es requerido",
-        variant: "destructive",
+        title: 'Error',
+        description: 'El título es requerido',
+        variant: 'destructive',
       });
       return;
     }
 
     if (selectedAlerts.length === 0) {
       toast({
-        title: "Error",
-        description: "Debe seleccionar al menos un item",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Debe seleccionar al menos un item',
+        variant: 'destructive',
       });
       return;
     }
@@ -108,14 +124,18 @@ export function CreateWorkOrderModal({ isOpen, onClose, selectedAlertIds, onSucc
         alertIds: selectedAlertIds,
         title,
         description,
-        technicianId: technicianId && technicianId !== "NONE" ? parseInt(technicianId) : null,
-        providerId: providerId && providerId !== "NONE" ? parseInt(providerId) : null,
+        technicianId:
+          technicianId && technicianId !== 'NONE'
+            ? parseInt(technicianId)
+            : null,
+        providerId:
+          providerId && providerId !== 'NONE' ? parseInt(providerId) : null,
         scheduledDate: scheduledDate || null,
         priority,
       });
 
       toast({
-        title: "¡Orden creada!",
+        title: '¡Orden creada!',
         description: `WorkOrder #${response.data.id} creada exitosamente`,
       });
 
@@ -126,11 +146,14 @@ export function CreateWorkOrderModal({ isOpen, onClose, selectedAlertIds, onSucc
       onSuccess();
     } catch (error: unknown) {
       console.error('Error creating work order:', error);
-      const errorMessage = error instanceof Error ? error.message : "No se pudo crear la orden de trabajo";
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'No se pudo crear la orden de trabajo';
       toast({
-        title: "Error",
+        title: 'Error',
         description: errorMessage,
-        variant: "destructive",
+        variant: 'destructive',
       });
     } finally {
       setIsSubmitting(false);
@@ -143,19 +166,24 @@ export function CreateWorkOrderModal({ isOpen, onClose, selectedAlertIds, onSucc
         <DialogHeader>
           <DialogTitle className="text-2xl">Crear Orden de Trabajo</DialogTitle>
           <DialogDescription>
-            {selectedAlerts.length} item{selectedAlerts.length > 1 ? 's' : ''} seleccionado
+            {selectedAlerts.length} item{selectedAlerts.length > 1 ? 's' : ''}{' '}
+            seleccionado
             {selectedAlerts.length > 1 ? 's' : ''}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
-
           {/* Preview de items seleccionados */}
           <div className="bg-gray-50 border rounded-lg p-4">
-            <h3 className="font-semibold text-gray-900 mb-3">Items incluidos:</h3>
+            <h3 className="font-semibold text-gray-900 mb-3">
+              Items incluidos:
+            </h3>
             <div className="space-y-2">
-              {selectedAlerts.map((alert) => (
-                <div key={alert.id} className="flex items-center justify-between text-sm">
+              {selectedAlerts.map(alert => (
+                <div
+                  key={alert.id}
+                  className="flex items-center justify-between text-sm"
+                >
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-600" />
                     <span className="font-medium">{alert.itemName}</span>
@@ -195,14 +223,13 @@ export function CreateWorkOrderModal({ isOpen, onClose, selectedAlertIds, onSucc
 
           {/* Formulario */}
           <div className="space-y-4">
-
             {/* Título */}
             <div className="space-y-2">
               <Label htmlFor="title">Título de la orden *</Label>
               <Input
                 id="title"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={e => setTitle(e.target.value)}
                 placeholder="Ej: Mantenimiento 15k - ABC-123"
               />
             </div>
@@ -213,7 +240,7 @@ export function CreateWorkOrderModal({ isOpen, onClose, selectedAlertIds, onSucc
               <Textarea
                 id="description"
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={e => setDescription(e.target.value)}
                 placeholder="Detalle adicional sobre el mantenimiento..."
                 rows={4}
               />
@@ -221,17 +248,21 @@ export function CreateWorkOrderModal({ isOpen, onClose, selectedAlertIds, onSucc
 
             {/* Grid de 2 columnas */}
             <div className="grid grid-cols-2 gap-4">
-
               {/* Técnico */}
               <div className="space-y-2">
                 <Label htmlFor="technician">Técnico asignado</Label>
-                <Select value={technicianId || "NONE"} onValueChange={(val) => setTechnicianId(val === "NONE" ? undefined : val)}>
+                <Select
+                  value={technicianId || 'NONE'}
+                  onValueChange={val =>
+                    setTechnicianId(val === 'NONE' ? undefined : val)
+                  }
+                >
                   <SelectTrigger id="technician">
                     <SelectValue placeholder="Seleccionar técnico..." />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="NONE">Sin asignar</SelectItem>
-                    {technicians.map((tech) => (
+                    {technicians.map(tech => (
                       <SelectItem key={tech.id} value={tech.id.toString()}>
                         {tech.name}
                       </SelectItem>
@@ -243,14 +274,22 @@ export function CreateWorkOrderModal({ isOpen, onClose, selectedAlertIds, onSucc
               {/* Proveedor */}
               <div className="space-y-2">
                 <Label htmlFor="provider">Proveedor</Label>
-                <Select value={providerId || "NONE"} onValueChange={(val) => setProviderId(val === "NONE" ? undefined : val)}>
+                <Select
+                  value={providerId || 'NONE'}
+                  onValueChange={val =>
+                    setProviderId(val === 'NONE' ? undefined : val)
+                  }
+                >
                   <SelectTrigger id="provider">
                     <SelectValue placeholder="Seleccionar proveedor..." />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="NONE">Sin asignar</SelectItem>
-                    {providers.map((provider) => (
-                      <SelectItem key={provider.id} value={provider.id.toString()}>
+                    {providers.map(provider => (
+                      <SelectItem
+                        key={provider.id}
+                        value={provider.id.toString()}
+                      >
                         {provider.name}
                       </SelectItem>
                     ))}
@@ -265,7 +304,7 @@ export function CreateWorkOrderModal({ isOpen, onClose, selectedAlertIds, onSucc
                   id="scheduledDate"
                   type="date"
                   value={scheduledDate}
-                  onChange={(e) => setScheduledDate(e.target.value)}
+                  onChange={e => setScheduledDate(e.target.value)}
                 />
               </div>
 
@@ -284,9 +323,7 @@ export function CreateWorkOrderModal({ isOpen, onClose, selectedAlertIds, onSucc
                   </SelectContent>
                 </Select>
               </div>
-
             </div>
-
           </div>
 
           {/* Footer con acciones */}
@@ -305,7 +342,6 @@ export function CreateWorkOrderModal({ isOpen, onClose, selectedAlertIds, onSucc
               )}
             </Button>
           </div>
-
         </div>
       </DialogContent>
     </Dialog>

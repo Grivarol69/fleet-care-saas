@@ -1,25 +1,25 @@
-"use client";
+'use client';
 
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   Form,
   FormControl,
@@ -27,14 +27,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
+} from '@/components/ui/form';
 
-import axios from "axios";
-import { useToast } from "@/components/hooks/use-toast";
-import { useRouter } from "next/navigation";
-import { formSchema } from "./FormAddProvider.form";
-import { FormAddProviderProps } from "./FormAddProvider.types";
-import { PROVIDER_SPECIALTIES } from "@/lib/constants/specialties";
+import axios from 'axios';
+import { useToast } from '@/components/hooks/use-toast';
+import { useRouter } from 'next/navigation';
+import { formSchema } from './FormAddProvider.form';
+import { FormAddProviderProps } from './FormAddProvider.types';
+import { PROVIDER_SPECIALTIES } from '@/lib/constants/specialties';
 
 export function FormAddProvider({
   isOpen,
@@ -44,11 +44,11 @@ export function FormAddProvider({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      email: "",
-      phone: "",
-      address: "",
-      specialty: "",
+      name: '',
+      email: '',
+      phone: '',
+      address: '',
+      specialty: '',
     },
   });
 
@@ -62,16 +62,17 @@ export function FormAddProvider({
         email: values.email || null,
         phone: values.phone || null,
         address: values.address || null,
-        specialty: values.specialty === "none" ? null : values.specialty || null,
+        specialty:
+          values.specialty === 'none' ? null : values.specialty || null,
       });
 
       onAddProvider(response.data);
       setIsOpen(false);
       form.reset();
-      
+
       toast({
-        title: "Proveedor creado!",
-        description: "El proveedor fue creado exitosamente.",
+        title: 'Proveedor creado!',
+        description: 'El proveedor fue creado exitosamente.',
       });
 
       router.refresh();
@@ -79,17 +80,17 @@ export function FormAddProvider({
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 409) {
           toast({
-            title: "Error",
-            description: "Ya existe un proveedor con ese nombre",
-            variant: "destructive",
+            title: 'Error',
+            description: 'Ya existe un proveedor con ese nombre',
+            variant: 'destructive',
           });
           return;
         }
       }
       toast({
-        title: "Algo salió mal",
-        description: "No se pudo crear el proveedor",
-        variant: "destructive",
+        title: 'Algo salió mal',
+        description: 'No se pudo crear el proveedor',
+        variant: 'destructive',
       });
     }
   };
@@ -115,7 +116,7 @@ export function FormAddProvider({
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="email"
@@ -123,17 +124,17 @@ export function FormAddProvider({
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="email" 
-                      placeholder="Ingrese el email (opcional)" 
-                      {...field} 
+                    <Input
+                      type="email"
+                      placeholder="Ingrese el email (opcional)"
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="phone"
@@ -141,13 +142,16 @@ export function FormAddProvider({
                 <FormItem>
                   <FormLabel>Teléfono</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ingrese el teléfono (opcional)" {...field} />
+                    <Input
+                      placeholder="Ingrese el teléfono (opcional)"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="address"
@@ -155,20 +159,26 @@ export function FormAddProvider({
                 <FormItem>
                   <FormLabel>Dirección</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Ingrese la dirección (opcional)" {...field} />
+                    <Textarea
+                      placeholder="Ingrese la dirección (opcional)"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="specialty"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Especialidad</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ""}>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value || ''}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccione una especialidad (opcional)" />
@@ -176,8 +186,11 @@ export function FormAddProvider({
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="none">Sin especialidad</SelectItem>
-                      {PROVIDER_SPECIALTIES.map((specialty) => (
-                        <SelectItem key={specialty.value} value={specialty.value}>
+                      {PROVIDER_SPECIALTIES.map(specialty => (
+                        <SelectItem
+                          key={specialty.value}
+                          value={specialty.value}
+                        >
                           {specialty.label}
                         </SelectItem>
                       ))}

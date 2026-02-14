@@ -97,7 +97,11 @@ export function Navbar() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant={isActive('/dashboard/vehicles/odometer') ? 'default' : 'ghost'}
+                  variant={
+                    isActive('/dashboard/vehicles/odometer')
+                      ? 'default'
+                      : 'ghost'
+                  }
                   size="sm"
                   onClick={() => router.push('/dashboard/vehicles/odometer')}
                   className="gap-2"
@@ -115,7 +119,9 @@ export function Navbar() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant={isActive('/dashboard/vehicles/fleet') ? 'default' : 'ghost'}
+                  variant={
+                    isActive('/dashboard/vehicles/fleet') ? 'default' : 'ghost'
+                  }
                   size="sm"
                   onClick={() => router.push('/dashboard/vehicles/fleet')}
                   className="gap-2"
@@ -138,7 +144,11 @@ export function Navbar() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant={isActive('/dashboard/maintenance/alerts') ? 'default' : 'ghost'}
+                  variant={
+                    isActive('/dashboard/maintenance/alerts')
+                      ? 'default'
+                      : 'ghost'
+                  }
                   size="sm"
                   onClick={() => router.push('/dashboard/maintenance/alerts')}
                   className="gap-2"
@@ -153,7 +163,10 @@ export function Navbar() {
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Alertas de mantenimiento {stats.criticalAlerts > 0 && '(¡Críticas!)'}</p>
+                <p>
+                  Alertas de mantenimiento{' '}
+                  {stats.criticalAlerts > 0 && '(¡Críticas!)'}
+                </p>
               </TooltipContent>
             </Tooltip>
 
@@ -161,9 +174,15 @@ export function Navbar() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant={isActive('/dashboard/maintenance/work-orders') ? 'default' : 'ghost'}
+                  variant={
+                    isActive('/dashboard/maintenance/work-orders')
+                      ? 'default'
+                      : 'ghost'
+                  }
                   size="sm"
-                  onClick={() => router.push('/dashboard/maintenance/work-orders')}
+                  onClick={() =>
+                    router.push('/dashboard/maintenance/work-orders')
+                  }
                   className="gap-2"
                 >
                   <Wrench className="h-4 w-4" />
@@ -210,7 +229,7 @@ export function Navbar() {
               placeholder="Buscar vehículo..."
               className="pl-8 w-[200px] h-9"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
             />
           </form>
         </div>
@@ -224,7 +243,8 @@ export function Navbar() {
             appearance={{
               elements: {
                 rootBox: 'flex items-center',
-                organizationSwitcherTrigger: 'px-3 py-1.5 rounded-md border border-input bg-background text-sm hover:bg-accent',
+                organizationSwitcherTrigger:
+                  'px-3 py-1.5 rounded-md border border-input bg-background text-sm hover:bg-accent',
               },
             }}
           />
@@ -273,7 +293,8 @@ export function Navbar() {
             appearance={{
               elements: {
                 rootBox: 'flex items-center',
-                organizationSwitcherTrigger: 'px-2 py-1 rounded-md border border-input bg-background text-xs',
+                organizationSwitcherTrigger:
+                  'px-2 py-1 rounded-md border border-input bg-background text-xs',
               },
             }}
           />

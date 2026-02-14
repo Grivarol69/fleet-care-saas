@@ -21,8 +21,8 @@ async function verify() {
     include: {
       brand: true,
       line: true,
-      type: true
-    }
+      type: true,
+    },
   });
 
   if (bcd890) {

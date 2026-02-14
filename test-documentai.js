@@ -7,7 +7,7 @@ const LOCATION = 'us';
 const PROCESSOR_ID = '48db182377d204cb';
 
 const client = new DocumentProcessorServiceClient({
-  keyFilename: path.join(__dirname, 'credentials', 'google-vision-key.json')
+  keyFilename: path.join(__dirname, 'credentials', 'google-vision-key.json'),
 });
 
 // Parser de montos colombianos
@@ -104,7 +104,9 @@ async function testDocumentAI(filePath) {
 
       if (entity.normalizedValue?.moneyValue) {
         const money = entity.normalizedValue.moneyValue;
-        console.log(`   Valor: ${money.units || 0} ${money.currencyCode || 'COP'}`);
+        console.log(
+          `   Valor: ${money.units || 0} ${money.currencyCode || 'COP'}`
+        );
       }
 
       if (entity.normalizedValue?.dateValue) {
@@ -131,7 +133,9 @@ async function testDocumentAI(filePath) {
           break;
         case 'net_amount':
           if (entity.normalizedValue?.moneyValue) {
-            subtotal = parseFloat(entity.normalizedValue.moneyValue.units || '0');
+            subtotal = parseFloat(
+              entity.normalizedValue.moneyValue.units || '0'
+            );
           }
           break;
         case 'total_tax_amount':
@@ -159,20 +163,25 @@ async function testDocumentAI(filePath) {
             console.log(`      - ${propType}: "${propText}"`);
 
             if (propType.includes('description')) itemDesc = propText;
-            if (propType.includes('product_code') && !itemDesc) itemDesc = propText;
+            if (propType.includes('product_code') && !itemDesc)
+              itemDesc = propText;
             if (propType.includes('quantity')) {
               itemQty = parseFloat(propText.replace(/[^\d.-]/g, '')) || 0;
             }
             if (propType.includes('unit_price')) {
               if (prop.normalizedValue?.moneyValue) {
-                itemPrice = parseFloat(prop.normalizedValue.moneyValue.units || '0');
+                itemPrice = parseFloat(
+                  prop.normalizedValue.moneyValue.units || '0'
+                );
               } else {
                 itemPrice = parseAmount(propText);
               }
             }
             if (propType.includes('amount')) {
               if (prop.normalizedValue?.moneyValue) {
-                itemTotal = parseFloat(prop.normalizedValue.moneyValue.units || '0');
+                itemTotal = parseFloat(
+                  prop.normalizedValue.moneyValue.units || '0'
+                );
               } else {
                 itemTotal = parseAmount(propText);
               }
@@ -181,7 +190,9 @@ async function testDocumentAI(filePath) {
 
           // Validar cantidad razonable (filtrar "00", "000")
           if (itemQty < 0.001 || itemQty > 100000) {
-            console.log(`      ⚠️ Item descartado (cantidad inválida: ${itemQty})`);
+            console.log(
+              `      ⚠️ Item descartado (cantidad inválida: ${itemQty})`
+            );
             break;
           }
 
@@ -199,7 +210,7 @@ async function testDocumentAI(filePath) {
               description: itemDesc,
               quantity: itemQty,
               unitPrice: itemPrice,
-              total: itemTotal
+              total: itemTotal,
             });
           } else {
             console.log(`      ⚠️ Item descartado (sin descripción o precio)`);
@@ -214,7 +225,9 @@ async function testDocumentAI(filePath) {
     console.log(`Número Factura: ${invoiceNumber || 'No detectado'}`);
     console.log(`Fecha: ${invoiceDate || 'No detectada'}`);
     console.log(`Proveedor: ${supplier || 'No detectado'}`);
-    console.log(`Subtotal: $${subtotal?.toLocaleString('es-CO') || 'No detectado'}`);
+    console.log(
+      `Subtotal: $${subtotal?.toLocaleString('es-CO') || 'No detectado'}`
+    );
     console.log(`IVA: $${tax?.toLocaleString('es-CO') || 'No detectado'}`);
     console.log(`TOTAL: $${total?.toLocaleString('es-CO') || 'No detectado'}`);
     console.log(`\nItems detectados: ${items.length}`);
@@ -225,15 +238,18 @@ async function testDocumentAI(filePath) {
       items.forEach((item, i) => {
         console.log(`${i + 1}. ${item.description}`);
         console.log(`   Cantidad: ${item.quantity}`);
-        console.log(`   Precio Unit: $${item.unitPrice.toLocaleString('es-CO')}`);
+        console.log(
+          `   Precio Unit: $${item.unitPrice.toLocaleString('es-CO')}`
+        );
         console.log(`   Total: $${item.total.toLocaleString('es-CO')}`);
         console.log('');
       });
     }
 
     console.log('='.repeat(70));
-    console.log(`✅ Confianza promedio: ${(entities.reduce((sum, e) => sum + (e.confidence || 0), 0) / entities.length).toFixed(2)}`);
-
+    console.log(
+      `✅ Confianza promedio: ${(entities.reduce((sum, e) => sum + (e.confidence || 0), 0) / entities.length).toFixed(2)}`
+    );
   } catch (error) {
     console.log('❌ ERROR:', error.message);
     if (error.code) console.log('   Código:', error.code);
@@ -241,6 +257,10 @@ async function testDocumentAI(filePath) {
 }
 
 (async () => {
-  await testDocumentAI('/home/grivarol69/Imágenes/Capturas de pantalla/Captura desde 2025-11-20 17-52-00.png');
-  await testDocumentAI('/home/grivarol69/Imágenes/Capturas de pantalla/Captura desde 2025-11-20 17-52-29.png');
+  await testDocumentAI(
+    '/home/grivarol69/Imágenes/Capturas de pantalla/Captura desde 2025-11-20 17-52-00.png'
+  );
+  await testDocumentAI(
+    '/home/grivarol69/Imágenes/Capturas de pantalla/Captura desde 2025-11-20 17-52-29.png'
+  );
 })();

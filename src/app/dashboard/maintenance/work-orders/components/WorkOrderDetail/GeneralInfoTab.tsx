@@ -154,7 +154,7 @@ export function GeneralInfoTab({ workOrder, onUpdate }: GeneralInfoTabProps) {
               {isEditing ? (
                 <Select
                   value={formData.status}
-                  onValueChange={(value) =>
+                  onValueChange={value =>
                     setFormData({ ...formData, status: value })
                   }
                 >
@@ -181,7 +181,7 @@ export function GeneralInfoTab({ workOrder, onUpdate }: GeneralInfoTabProps) {
               {isEditing ? (
                 <Select
                   value={formData.priority}
-                  onValueChange={(value) =>
+                  onValueChange={value =>
                     setFormData({ ...formData, priority: value })
                   }
                 >
@@ -208,7 +208,7 @@ export function GeneralInfoTab({ workOrder, onUpdate }: GeneralInfoTabProps) {
             {isEditing ? (
               <Textarea
                 value={formData.description}
-                onChange={(e) =>
+                onChange={e =>
                   setFormData({ ...formData, description: e.target.value })
                 }
                 rows={4}
@@ -235,28 +235,32 @@ export function GeneralInfoTab({ workOrder, onUpdate }: GeneralInfoTabProps) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-muted-foreground">Vehículo</Label>
-              <p className="font-semibold">
-                {workOrder.vehicle.licensePlate}
-              </p>
+              <p className="font-semibold">{workOrder.vehicle.licensePlate}</p>
               <p className="text-sm text-muted-foreground">
                 {workOrder.vehicle.brand.name} {workOrder.vehicle.line.name}
               </p>
             </div>
 
             <div>
-              <Label className="text-muted-foreground">Tipo Mantenimiento</Label>
+              <Label className="text-muted-foreground">
+                Tipo Mantenimiento
+              </Label>
               <p className="font-semibold">{mantTypeInfo.label}</p>
             </div>
 
             <div>
-              <Label className="text-muted-foreground">Kilometraje Creación</Label>
+              <Label className="text-muted-foreground">
+                Kilometraje Creación
+              </Label>
               <p className="font-semibold">
                 {workOrder.creationMileage.toLocaleString()} km
               </p>
             </div>
 
             <div>
-              <Label className="text-muted-foreground">Kilometraje Actual</Label>
+              <Label className="text-muted-foreground">
+                Kilometraje Actual
+              </Label>
               <p className="font-semibold">
                 {workOrder.vehicle.mileage.toLocaleString()} km
               </p>
@@ -268,7 +272,7 @@ export function GeneralInfoTab({ workOrder, onUpdate }: GeneralInfoTabProps) {
                 <Input
                   type="number"
                   value={formData.completionMileage}
-                  onChange={(e) =>
+                  onChange={e =>
                     setFormData({
                       ...formData,
                       completionMileage: e.target.value,
@@ -380,7 +384,7 @@ export function GeneralInfoTab({ workOrder, onUpdate }: GeneralInfoTabProps) {
                 <Input
                   type="number"
                   value={formData.actualCost}
-                  onChange={(e) =>
+                  onChange={e =>
                     setFormData({ ...formData, actualCost: e.target.value })
                   }
                   placeholder="0"
@@ -469,7 +473,7 @@ export function GeneralInfoTab({ workOrder, onUpdate }: GeneralInfoTabProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {workOrder.maintenanceAlerts.map((alert) => (
+              {workOrder.maintenanceAlerts.map(alert => (
                 <div
                   key={alert.id}
                   className="flex justify-between items-center p-3 border rounded-lg"

@@ -1,5 +1,5 @@
-import Link from "next/link";
-import { Truck } from "lucide-react";
+import Link from 'next/link';
+import { Truck } from 'lucide-react';
 
 export function Logo() {
   return (

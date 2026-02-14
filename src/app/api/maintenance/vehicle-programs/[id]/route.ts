@@ -1,7 +1,7 @@
-import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { prisma } from '@/lib/prisma';
+import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import { canManageMaintenancePrograms } from "@/lib/permissions";
+import { canManageMaintenancePrograms } from '@/lib/permissions';
 
 // GET - Obtener programa específico por ID
 export async function GET(
@@ -11,7 +11,7 @@ export async function GET(
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
     const programId = parseInt(params.id);
@@ -19,14 +19,14 @@ export async function GET(
     const program = await prisma.vehicleMantProgram.findUnique({
       where: {
         id: programId,
-        tenantId: user.tenantId
+        tenantId: user.tenantId,
       },
       include: {
         vehicle: {
           include: {
             brand: true,
-            line: true
-          }
+            line: true,
+          },
         },
         packages: {
           include: {
@@ -34,30 +34,24 @@ export async function GET(
               include: {
                 mantItem: true,
                 technician: true,
-                provider: true
+                provider: true,
               },
-              orderBy: [
-                { status: 'asc' },
-                { order: 'asc' }
-              ]
-            }
+              orderBy: [{ status: 'asc' }, { order: 'asc' }],
+            },
           },
-          orderBy: [
-            { packageType: 'asc' },
-            { triggerKm: 'asc' }
-          ]
-        }
-      }
+          orderBy: [{ packageType: 'asc' }, { triggerKm: 'asc' }],
+        },
+      },
     });
 
     if (!program) {
-      return new NextResponse("Program not found", { status: 404 });
+      return new NextResponse('Program not found', { status: 404 });
     }
 
     return NextResponse.json(program);
   } catch (error) {
-    console.error("[VEHICLE_MANT_PROGRAM_GET]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error('[VEHICLE_MANT_PROGRAM_GET]', error);
+    return new NextResponse('Internal Error', { status: 500 });
   }
 }
 
@@ -69,11 +63,14 @@ export async function PUT(
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
     if (!canManageMaintenancePrograms(user)) {
-      return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
+      return NextResponse.json(
+        { error: 'No tienes permisos para esta acción' },
+        { status: 403 }
+      );
     }
 
     const programId = parseInt(params.id);
@@ -85,19 +82,19 @@ export async function PUT(
       nextMaintenanceKm,
       nextMaintenanceDesc,
       isActive,
-      notes
+      notes,
     } = body;
 
     // Verificar que el programa existe
     const existingProgram = await prisma.vehicleMantProgram.findUnique({
       where: {
         id: programId,
-        tenantId: user.tenantId
-      }
+        tenantId: user.tenantId,
+      },
     });
 
     if (!existingProgram) {
-      return new NextResponse("Program not found", { status: 404 });
+      return new NextResponse('Program not found', { status: 404 });
     }
 
     // Actualizar el programa
@@ -110,8 +107,8 @@ export async function PUT(
         nextMaintenanceDesc,
         isActive,
         notes,
-        status: isActive ? 'ACTIVE' : 'INACTIVE'
-      }
+        status: isActive ? 'ACTIVE' : 'INACTIVE',
+      },
     });
 
     // Retornar programa actualizado con relaciones
@@ -121,25 +118,25 @@ export async function PUT(
         vehicle: {
           include: {
             brand: true,
-            line: true
-          }
+            line: true,
+          },
         },
         packages: {
           include: {
             items: {
               include: {
-                mantItem: true
-              }
-            }
-          }
-        }
-      }
+                mantItem: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error("[VEHICLE_MANT_PROGRAM_PUT]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error('[VEHICLE_MANT_PROGRAM_PUT]', error);
+    return new NextResponse('Internal Error', { status: 500 });
   }
 }
 
@@ -151,11 +148,14 @@ export async function DELETE(
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
     if (!canManageMaintenancePrograms(user)) {
-      return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
+      return NextResponse.json(
+        { error: 'No tienes permisos para esta acción' },
+        { status: 403 }
+      );
     }
 
     const programId = parseInt(params.id);
@@ -164,19 +164,19 @@ export async function DELETE(
     const existingProgram = await prisma.vehicleMantProgram.findUnique({
       where: {
         id: programId,
-        tenantId: user.tenantId
+        tenantId: user.tenantId,
       },
       include: {
         packages: {
           include: {
-            items: true
-          }
-        }
-      }
+            items: true,
+          },
+        },
+      },
     });
 
     if (!existingProgram) {
-      return new NextResponse("Program not found", { status: 404 });
+      return new NextResponse('Program not found', { status: 404 });
     }
 
     // Verificar que no hay items en progreso
@@ -185,17 +185,19 @@ export async function DELETE(
     );
 
     if (itemsInProgress) {
-      return new NextResponse("Cannot delete program with items in progress", { status: 400 });
+      return new NextResponse('Cannot delete program with items in progress', {
+        status: 400,
+      });
     }
 
     // Eliminar en cascada (Prisma debería manejar esto automáticamente)
     await prisma.vehicleMantProgram.delete({
-      where: { id: programId }
+      where: { id: programId },
     });
 
-    return NextResponse.json({ message: "Program deleted successfully" });
+    return NextResponse.json({ message: 'Program deleted successfully' });
   } catch (error) {
-    console.error("[VEHICLE_MANT_PROGRAM_DELETE]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error('[VEHICLE_MANT_PROGRAM_DELETE]', error);
+    return new NextResponse('Internal Error', { status: 500 });
   }
 }

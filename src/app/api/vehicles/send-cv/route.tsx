@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
-import { Resend } from "resend";
-import { VehicleCVEmail } from "@/emails/VehicleCVEmail";
-import { renderToBuffer } from "@react-pdf/renderer";
-import { VehicleCV } from "@/app/dashboard/vehicles/fleet/components/VehicleCV/VehicleCV";
-import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from 'next/server';
+import { Resend } from 'resend';
+import { VehicleCVEmail } from '@/emails/VehicleCVEmail';
+import { renderToBuffer } from '@react-pdf/renderer';
+import { VehicleCV } from '@/app/dashboard/vehicles/fleet/components/VehicleCV/VehicleCV';
+import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
-import React from "react";
+import React from 'react';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -14,10 +14,7 @@ export async function POST(req: NextRequest) {
     const user = await getCurrentUser();
 
     if (!user) {
-      return NextResponse.json(
-        { error: "No autorizado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
     const body = await req.json();
@@ -25,7 +22,7 @@ export async function POST(req: NextRequest) {
 
     if (!vehicleId || !recipientEmail) {
       return NextResponse.json(
-        { error: "vehicleId y recipientEmail son requeridos" },
+        { error: 'vehicleId y recipientEmail son requeridos' },
         { status: 400 }
       );
     }
@@ -42,7 +39,7 @@ export async function POST(req: NextRequest) {
         type: true,
         documents: {
           where: {
-            status: "ACTIVE",
+            status: 'ACTIVE',
           },
           select: {
             id: true,
@@ -59,7 +56,7 @@ export async function POST(req: NextRequest) {
 
     if (!vehicle) {
       return NextResponse.json(
-        { error: "Vehículo no encontrado" },
+        { error: 'Vehículo no encontrado' },
         { status: 404 }
       );
     }
@@ -90,21 +87,27 @@ export async function POST(req: NextRequest) {
       ...(vehicle.serviceType && { serviceType: vehicle.serviceType }),
       ...(vehicle.photo && { photo: vehicle.photo }),
       mileage: vehicle.mileage,
-      ...(vehicle.emergencyContactName && { emergencyContactName: vehicle.emergencyContactName }),
-      ...(vehicle.emergencyContactPhone && { emergencyContactPhone: vehicle.emergencyContactPhone }),
+      ...(vehicle.emergencyContactName && {
+        emergencyContactName: vehicle.emergencyContactName,
+      }),
+      ...(vehicle.emergencyContactPhone && {
+        emergencyContactPhone: vehicle.emergencyContactPhone,
+      }),
     };
 
-    const tenantData: { name: string; logo?: string } | undefined = tenant ? {
-      name: tenant.name,
-      ...(tenant.logo && { logo: tenant.logo }),
-    } : undefined;
+    const tenantData: { name: string; logo?: string } | undefined = tenant
+      ? {
+          name: tenant.name,
+          ...(tenant.logo && { logo: tenant.logo }),
+        }
+      : undefined;
 
     const documentsData: Array<{
       type: string;
       documentNumber?: string;
       expiryDate?: string;
       entity?: string;
-    }> = vehicle.documents.map((doc) => ({
+    }> = vehicle.documents.map(doc => ({
       type: doc.documentType.code,
       ...(doc.documentNumber && { documentNumber: doc.documentNumber }),
       ...(doc.expiryDate && { expiryDate: doc.expiryDate.toISOString() }),
@@ -122,7 +125,7 @@ export async function POST(req: NextRequest) {
     // Preparar attachments: CV + documentos del vehículo
     const attachments: Array<{ filename: string; content: Buffer }> = [
       {
-        filename: `CV_${vehicle.licensePlate}_${new Date().toISOString().split("T")[0]}.pdf`,
+        filename: `CV_${vehicle.licensePlate}_${new Date().toISOString().split('T')[0]}.pdf`,
         content: pdfBuffer,
       },
     ];
@@ -138,8 +141,9 @@ export async function POST(req: NextRequest) {
         const buffer = Buffer.from(await response.arrayBuffer());
 
         // Generar nombre descriptivo para el archivo
-        const docTypeName = doc.documentType.name.replace(/\s+/g, '_') || "Documento";
-        const extension = doc.fileUrl.split(".").pop()?.toLowerCase() || "pdf";
+        const docTypeName =
+          doc.documentType.name.replace(/\s+/g, '_') || 'Documento';
+        const extension = doc.fileUrl.split('.').pop()?.toLowerCase() || 'pdf';
 
         attachments.push({
           filename: `${docTypeName}_${vehicle.licensePlate}.${extension}`,
@@ -153,34 +157,34 @@ export async function POST(req: NextRequest) {
 
     // Enviar email con Resend
     const { data, error } = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || "noreply@fleetcare.com",
+      from: process.env.RESEND_FROM_EMAIL || 'noreply@fleetcare.com',
       to: [recipientEmail],
       subject: `Hoja de Vida del Vehículo ${vehicle.licensePlate}`,
       react: VehicleCVEmail({
         vehiclePlate: vehicle.licensePlate,
-        recipientName: recipientName || "Estimado usuario",
-        tenantName: tenant?.name || "FleetCare",
+        recipientName: recipientName || 'Estimado usuario',
+        tenantName: tenant?.name || 'FleetCare',
       }),
       attachments,
     });
 
     if (error) {
-      console.error("Error sending email:", error);
+      console.error('Error sending email:', error);
       return NextResponse.json(
-        { error: "Error al enviar el email" },
+        { error: 'Error al enviar el email' },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      message: "Email enviado exitosamente",
+      message: 'Email enviado exitosamente',
       emailId: data?.id,
     });
   } catch (error) {
-    console.error("Error in send-cv endpoint:", error);
+    console.error('Error in send-cv endpoint:', error);
     return NextResponse.json(
-      { error: "Error interno del servidor" },
+      { error: 'Error interno del servidor' },
       { status: 500 }
     );
   }

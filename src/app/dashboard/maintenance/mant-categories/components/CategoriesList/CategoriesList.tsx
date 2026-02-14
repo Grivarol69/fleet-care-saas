@@ -35,8 +35,8 @@ export function CategoriesList() {
 
   useEffect(() => {
     fetch('/api/auth/me')
-      .then((res) => res.json())
-      .then((data) => {
+      .then(res => res.json())
+      .then(data => {
         if (data.isSuperAdmin) setIsSuperAdmin(true);
       })
       .catch(() => {});
@@ -106,7 +106,8 @@ export function CategoriesList() {
     }
   };
 
-  const canMutate = (item: CategoriesListProps) => !item.isGlobal || isSuperAdmin;
+  const canMutate = (item: CategoriesListProps) =>
+    !item.isGlobal || isSuperAdmin;
 
   const columns: ColumnDef<CategoriesListProps>[] = [
     {
@@ -121,34 +122,37 @@ export function CategoriesList() {
       id: 'origen',
       header: 'Origen',
       cell: ({ row }) => (
-        <span className={`px-2 py-1 rounded-full text-xs ${
-          row.original.isGlobal
-            ? 'bg-purple-100 text-purple-800'
-            : 'bg-slate-100 text-slate-700'
-        }`}>
+        <span
+          className={`px-2 py-1 rounded-full text-xs ${
+            row.original.isGlobal
+              ? 'bg-purple-100 text-purple-800'
+              : 'bg-slate-100 text-slate-700'
+          }`}
+        >
           {row.original.isGlobal ? 'Global' : 'Empresa'}
         </span>
       ),
     },
     {
       id: 'actions',
-      cell: ({ row }) => canMutate(row.original) ? (
-        <div>
-          <Button
-            variant="outline"
-            className="mr-2"
-            onClick={() => handleEdit(row.original)}
-          >
-            Editar
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={() => handleDelete(row.original.id)}
-          >
-            Eliminar
-          </Button>
-        </div>
-      ) : null,
+      cell: ({ row }) =>
+        canMutate(row.original) ? (
+          <div>
+            <Button
+              variant="outline"
+              className="mr-2"
+              onClick={() => handleEdit(row.original)}
+            >
+              Editar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => handleDelete(row.original.id)}
+            >
+              Eliminar
+            </Button>
+          </div>
+        ) : null,
     },
   ];
 

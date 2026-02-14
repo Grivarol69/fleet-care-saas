@@ -1,13 +1,13 @@
-import { Button } from "@/components/ui/button";
-import { MoveRight } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import { MoveRight } from 'lucide-react';
 import {
   categoryOurFleet,
   dataFirstBlockOurFleet,
   dataSecondtBlockOurFleet,
-} from "./OurFleet.data";
-import Image from "next/image";
-import { cn } from "@/lib/utils";
-import Link from "next/link";
+} from './OurFleet.data';
+import Image from 'next/image';
+import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 export function OurFleet() {
   return (
@@ -22,8 +22,8 @@ export function OurFleet() {
           <div
             key={name}
             className={cn(
-              "rounded-xl py-2 px-3",
-              active ? "bg-black text-white" : " bg-slate-100"
+              'rounded-xl py-2 px-3',
+              active ? 'bg-black text-white' : ' bg-slate-100'
             )}
           >
             {name}

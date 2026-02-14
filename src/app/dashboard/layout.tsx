@@ -1,9 +1,9 @@
 // src/app/dashboard/layout.tsx - Fleet Care SaaS
-import { Navbar } from "@/components/layout/Navbar";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { getCurrentUser } from "@/lib/auth";
-import { redirect } from "next/navigation";
-import React from "react";
+import { Navbar } from '@/components/layout/Navbar';
+import { Sidebar } from '@/components/layout/Sidebar';
+import { getCurrentUser } from '@/lib/auth';
+import { redirect } from 'next/navigation';
+import React from 'react';
 
 export default async function DashboardLayout({
   children,
@@ -17,7 +17,7 @@ export default async function DashboardLayout({
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect("/onboarding");
+    redirect('/onboarding');
   }
 
   return (

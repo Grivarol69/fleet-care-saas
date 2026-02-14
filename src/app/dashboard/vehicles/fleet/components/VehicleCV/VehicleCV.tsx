@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
   Document,
   Page,
@@ -7,14 +7,14 @@ import {
   StyleSheet,
   Image as PDFImage,
   Font,
-} from "@react-pdf/renderer";
+} from '@react-pdf/renderer';
 
 // Registrar fuentes (opcional, usando Helvetica por defecto)
 Font.register({
-  family: "Helvetica",
+  family: 'Helvetica',
   fonts: [
-    { src: "/fonts/Helvetica.ttf" },
-    { src: "/fonts/Helvetica-Bold.ttf", fontWeight: "bold" },
+    { src: '/fonts/Helvetica.ttf' },
+    { src: '/fonts/Helvetica-Bold.ttf', fontWeight: 'bold' },
   ],
 });
 
@@ -22,20 +22,20 @@ const styles = StyleSheet.create({
   page: {
     padding: 30,
     fontSize: 9,
-    fontFamily: "Helvetica",
+    fontFamily: 'Helvetica',
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 20,
     borderBottom: 2,
-    borderBottomColor: "#CC0000",
+    borderBottomColor: '#CC0000',
     paddingBottom: 10,
   },
   headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   logo: {
     width: 80,
@@ -44,12 +44,12 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 14,
-    fontWeight: "bold",
-    textAlign: "center",
+    fontWeight: 'bold',
+    textAlign: 'center',
     flex: 1,
   },
   headerRight: {
-    alignItems: "flex-end",
+    alignItems: 'flex-end',
   },
   headerCode: {
     fontSize: 8,
@@ -65,142 +65,142 @@ const styles = StyleSheet.create({
 
   // Sección de identificación principal
   mainInfoRow: {
-    flexDirection: "row",
+    flexDirection: 'row',
     marginBottom: 10,
   },
   redCell: {
-    backgroundColor: "#CC0000",
-    color: "#FFFFFF",
+    backgroundColor: '#CC0000',
+    color: '#FFFFFF',
     padding: 5,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     fontSize: 9,
-    textAlign: "center",
+    textAlign: 'center',
   },
   whiteCell: {
-    backgroundColor: "#FFFFFF",
-    border: "1px solid #000000",
+    backgroundColor: '#FFFFFF',
+    border: '1px solid #000000',
     padding: 5,
     fontSize: 9,
-    textAlign: "center",
+    textAlign: 'center',
   },
   plateCell: {
-    width: "15%",
+    width: '15%',
   },
   ownerCell: {
-    width: "20%",
+    width: '20%',
   },
   ownerValueCell: {
-    width: "35%",
+    width: '35%',
   },
   cellularCell: {
-    width: "15%",
+    width: '15%',
   },
   cellularValueCell: {
-    width: "15%",
+    width: '15%',
   },
 
   // Foto del vehículo
   vehiclePhoto: {
-    width: "100%",
+    width: '100%',
     height: 200,
-    objectFit: "cover",
+    objectFit: 'cover',
     marginBottom: 10,
-    border: "1px solid #000000",
+    border: '1px solid #000000',
   },
   noPhoto: {
-    width: "100%",
+    width: '100%',
     height: 200,
-    backgroundColor: "#F0F0F0",
+    backgroundColor: '#F0F0F0',
     marginBottom: 10,
-    border: "1px solid #000000",
-    justifyContent: "center",
-    alignItems: "center",
+    border: '1px solid #000000',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   noPhotoText: {
     fontSize: 12,
-    color: "#999999",
+    color: '#999999',
   },
 
   // Sección de datos del vehículo
   sectionTitle: {
-    backgroundColor: "#CC0000",
-    color: "#FFFFFF",
+    backgroundColor: '#CC0000',
+    color: '#FFFFFF',
     padding: 5,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     fontSize: 10,
-    textAlign: "center",
+    textAlign: 'center',
     marginTop: 10,
     marginBottom: 5,
   },
   dataRow: {
-    flexDirection: "row",
+    flexDirection: 'row',
     borderBottom: 1,
-    borderBottomColor: "#CCCCCC",
+    borderBottomColor: '#CCCCCC',
   },
   dataLabel: {
-    width: "20%",
-    backgroundColor: "#F5F5F5",
+    width: '20%',
+    backgroundColor: '#F5F5F5',
     padding: 5,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     borderRight: 1,
-    borderRightColor: "#CCCCCC",
+    borderRightColor: '#CCCCCC',
   },
   dataValue: {
-    width: "30%",
+    width: '30%',
     padding: 5,
     borderRight: 1,
-    borderRightColor: "#CCCCCC",
+    borderRightColor: '#CCCCCC',
   },
 
   // Documentos legales
   docsRow: {
-    flexDirection: "row",
+    flexDirection: 'row',
     borderBottom: 1,
-    borderBottomColor: "#CCCCCC",
+    borderBottomColor: '#CCCCCC',
   },
   docLabel: {
-    width: "15%",
-    backgroundColor: "#F5F5F5",
+    width: '15%',
+    backgroundColor: '#F5F5F5',
     padding: 5,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     fontSize: 8,
-    textAlign: "center",
+    textAlign: 'center',
     borderRight: 1,
-    borderRightColor: "#CCCCCC",
+    borderRightColor: '#CCCCCC',
   },
   docValue: {
-    width: "20%",
+    width: '20%',
     padding: 5,
     fontSize: 8,
-    textAlign: "center",
+    textAlign: 'center',
     borderRight: 1,
-    borderRightColor: "#CCCCCC",
+    borderRightColor: '#CCCCCC',
   },
   docSmallLabel: {
-    width: "10%",
-    backgroundColor: "#F5F5F5",
+    width: '10%',
+    backgroundColor: '#F5F5F5',
     padding: 5,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     fontSize: 8,
-    textAlign: "center",
+    textAlign: 'center',
     borderRight: 1,
-    borderRightColor: "#CCCCCC",
+    borderRightColor: '#CCCCCC',
   },
   docSmallValue: {
-    width: "15%",
+    width: '15%',
     padding: 5,
     fontSize: 8,
-    textAlign: "center",
+    textAlign: 'center',
     borderRight: 1,
-    borderRightColor: "#CCCCCC",
+    borderRightColor: '#CCCCCC',
   },
 
   // Contacto de emergencia
   emergencyText: {
     marginTop: 10,
     padding: 8,
-    backgroundColor: "#FFF9E6",
-    border: "1px solid #FFD700",
+    backgroundColor: '#FFF9E6',
+    border: '1px solid #FFD700',
     fontSize: 9,
   },
 });
@@ -237,24 +237,28 @@ interface VehicleCVProps {
   }>;
 }
 
-export const VehicleCV: React.FC<VehicleCVProps> = ({ vehicle, tenant, documents = [] }) => {
-  const today = new Date().toLocaleDateString("es-CO", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
+export const VehicleCV: React.FC<VehicleCVProps> = ({
+  vehicle,
+  tenant,
+  documents = [],
+}) => {
+  const today = new Date().toLocaleDateString('es-CO', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
   });
 
   // Buscar documentos específicos
-  const soat = documents.find((d) => d.type === "SOAT");
-  const technicalReview = documents.find((d) => d.type === "TECNOMECANICA");
-  const insurance = documents.find((d) => d.type === "INSURANCE");
+  const soat = documents.find(d => d.type === 'SOAT');
+  const technicalReview = documents.find(d => d.type === 'TECNOMECANICA');
+  const insurance = documents.find(d => d.type === 'INSURANCE');
 
   const formatDate = (date?: string) => {
-    if (!date) return "N/A";
-    return new Date(date).toLocaleDateString("es-CO", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleDateString('es-CO', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
     });
   };
 
@@ -270,7 +274,9 @@ export const VehicleCV: React.FC<VehicleCVProps> = ({ vehicle, tenant, documents
           ) : (
             <View style={styles.headerLeft} />
           )}
-          <Text style={styles.headerTitle}>HOJA DE VIDA DE VEHICULO Y MAQUINARIA</Text>
+          <Text style={styles.headerTitle}>
+            HOJA DE VIDA DE VEHICULO Y MAQUINARIA
+          </Text>
           <View style={styles.headerRight}>
             <Text style={styles.headerCode}>OP-FO-01</Text>
             <Text style={styles.headerDate}>{today}</Text>
@@ -291,14 +297,14 @@ export const VehicleCV: React.FC<VehicleCVProps> = ({ vehicle, tenant, documents
             <Text>PROPIETARIO</Text>
           </View>
           <View style={[styles.whiteCell, styles.ownerValueCell]}>
-            <Text>{tenant?.name || "N/A"}</Text>
+            <Text>{tenant?.name || 'N/A'}</Text>
           </View>
 
           <View style={[styles.redCell, styles.cellularCell]}>
             <Text>CELULAR</Text>
           </View>
           <View style={[styles.whiteCell, styles.cellularValueCell]}>
-            <Text>{vehicle.emergencyContactPhone || "N/A"}</Text>
+            <Text>{vehicle.emergencyContactPhone || 'N/A'}</Text>
           </View>
         </View>
 
@@ -316,51 +322,53 @@ export const VehicleCV: React.FC<VehicleCVProps> = ({ vehicle, tenant, documents
 
         <View style={styles.dataRow}>
           <Text style={styles.dataLabel}>Marca</Text>
-          <Text style={styles.dataValue}>{vehicle.brand?.name || "N/A"}</Text>
+          <Text style={styles.dataValue}>{vehicle.brand?.name || 'N/A'}</Text>
           <Text style={styles.dataLabel}>Cilindraje</Text>
-          <Text style={styles.dataValue}>{vehicle.cylinder || "N/A"}</Text>
+          <Text style={styles.dataValue}>{vehicle.cylinder || 'N/A'}</Text>
         </View>
 
         <View style={styles.dataRow}>
           <Text style={styles.dataLabel}>Línea</Text>
-          <Text style={styles.dataValue}>{vehicle.line?.name || "N/A"}</Text>
+          <Text style={styles.dataValue}>{vehicle.line?.name || 'N/A'}</Text>
           <Text style={styles.dataLabel}>Combustible</Text>
-          <Text style={styles.dataValue}>{vehicle.fuelType || "N/A"}</Text>
+          <Text style={styles.dataValue}>{vehicle.fuelType || 'N/A'}</Text>
         </View>
 
         <View style={styles.dataRow}>
           <Text style={styles.dataLabel}>Clase de vehículo</Text>
-          <Text style={styles.dataValue}>{vehicle.type?.name || "N/A"}</Text>
+          <Text style={styles.dataValue}>{vehicle.type?.name || 'N/A'}</Text>
           <Text style={styles.dataLabel}>Servicio</Text>
-          <Text style={styles.dataValue}>{vehicle.serviceType || "N/A"}</Text>
+          <Text style={styles.dataValue}>{vehicle.serviceType || 'N/A'}</Text>
         </View>
 
         <View style={styles.dataRow}>
           <Text style={styles.dataLabel}>Color</Text>
           <Text style={styles.dataValue}>{vehicle.color}</Text>
           <Text style={styles.dataLabel}>Nº Chasis</Text>
-          <Text style={styles.dataValue}>{vehicle.chasisNumber || "N/A"}</Text>
+          <Text style={styles.dataValue}>{vehicle.chasisNumber || 'N/A'}</Text>
         </View>
 
         <View style={styles.dataRow}>
           <Text style={styles.dataLabel}>Modelo</Text>
           <Text style={styles.dataValue}>{vehicle.year}</Text>
           <Text style={styles.dataLabel}>Carrocería</Text>
-          <Text style={styles.dataValue}>{vehicle.bodyWork || "N/A"}</Text>
+          <Text style={styles.dataValue}>{vehicle.bodyWork || 'N/A'}</Text>
         </View>
 
         <View style={styles.dataRow}>
           <Text style={styles.dataLabel}>Kilometraje</Text>
-          <Text style={styles.dataValue}>{vehicle.mileage.toLocaleString()} km</Text>
+          <Text style={styles.dataValue}>
+            {vehicle.mileage.toLocaleString()} km
+          </Text>
           <Text style={styles.dataLabel}>Nº Motor</Text>
-          <Text style={styles.dataValue}>{vehicle.engineNumber || "N/A"}</Text>
+          <Text style={styles.dataValue}>{vehicle.engineNumber || 'N/A'}</Text>
         </View>
 
         <View style={styles.dataRow}>
           <Text style={styles.dataLabel}></Text>
           <Text style={styles.dataValue}></Text>
           <Text style={styles.dataLabel}>Nº Tarjeta de propiedad</Text>
-          <Text style={styles.dataValue}>{vehicle.ownerCard || "N/A"}</Text>
+          <Text style={styles.dataValue}>{vehicle.ownerCard || 'N/A'}</Text>
         </View>
 
         {/* DOCUMENTOS LEGALES */}
@@ -368,38 +376,51 @@ export const VehicleCV: React.FC<VehicleCVProps> = ({ vehicle, tenant, documents
 
         <View style={styles.docsRow}>
           <Text style={styles.docLabel}>Nº SOAT</Text>
-          <Text style={styles.docValue}>{soat?.documentNumber || "N/A"}</Text>
+          <Text style={styles.docValue}>{soat?.documentNumber || 'N/A'}</Text>
           <Text style={styles.docSmallLabel}>Vence:</Text>
-          <Text style={styles.docSmallValue}>{formatDate(soat?.expiryDate)}</Text>
+          <Text style={styles.docSmallValue}>
+            {formatDate(soat?.expiryDate)}
+          </Text>
           <Text style={styles.docSmallLabel}>Estado:</Text>
-          <Text style={styles.docSmallValue}>{soat?.entity || "N/A"}</Text>
+          <Text style={styles.docSmallValue}>{soat?.entity || 'N/A'}</Text>
         </View>
 
         <View style={styles.docsRow}>
           <Text style={styles.docLabel}>Nº TECNOMECÁNICA</Text>
-          <Text style={styles.docValue}>{technicalReview?.documentNumber || "N/A"}</Text>
+          <Text style={styles.docValue}>
+            {technicalReview?.documentNumber || 'N/A'}
+          </Text>
           <Text style={styles.docSmallLabel}>Vence:</Text>
-          <Text style={styles.docSmallValue}>{formatDate(technicalReview?.expiryDate)}</Text>
+          <Text style={styles.docSmallValue}>
+            {formatDate(technicalReview?.expiryDate)}
+          </Text>
           <Text style={styles.docSmallLabel}>Estado:</Text>
-          <Text style={styles.docSmallValue}>{technicalReview?.entity || "N/A"}</Text>
+          <Text style={styles.docSmallValue}>
+            {technicalReview?.entity || 'N/A'}
+          </Text>
         </View>
 
         <View style={styles.docsRow}>
           <Text style={styles.docLabel}>Nº POLIZA</Text>
-          <Text style={styles.docValue}>{insurance?.documentNumber || "N/A"}</Text>
+          <Text style={styles.docValue}>
+            {insurance?.documentNumber || 'N/A'}
+          </Text>
           <Text style={styles.docSmallLabel}>Vence:</Text>
-          <Text style={styles.docSmallValue}>{formatDate(insurance?.expiryDate)}</Text>
+          <Text style={styles.docSmallValue}>
+            {formatDate(insurance?.expiryDate)}
+          </Text>
           <Text style={styles.docSmallLabel}>Entidad:</Text>
-          <Text style={styles.docSmallValue}>{insurance?.entity || "N/A"}</Text>
+          <Text style={styles.docSmallValue}>{insurance?.entity || 'N/A'}</Text>
         </View>
 
         {/* Contacto de emergencia */}
         {(vehicle.emergencyContactName || vehicle.emergencyContactPhone) && (
           <View style={styles.emergencyText}>
             <Text>
-              Número de contacto en caso de emergencia:{" "}
-              {vehicle.emergencyContactPhone || "N/A"}
-              {vehicle.emergencyContactName && ` - ${vehicle.emergencyContactName}`}
+              Número de contacto en caso de emergencia:{' '}
+              {vehicle.emergencyContactPhone || 'N/A'}
+              {vehicle.emergencyContactName &&
+                ` - ${vehicle.emergencyContactName}`}
             </Text>
           </View>
         )}

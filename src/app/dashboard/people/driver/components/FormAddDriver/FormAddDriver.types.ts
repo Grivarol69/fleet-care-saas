@@ -1,4 +1,4 @@
-import { DriverListProps } from "../DriverList/DriverList.types";
+import { DriverListProps } from '../DriverList/DriverList.types';
 
 export type FormAddDriverProps = {
   isOpen: boolean;

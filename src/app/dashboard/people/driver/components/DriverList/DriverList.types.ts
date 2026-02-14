@@ -5,7 +5,7 @@ export type DriverListProps = {
   phone: string | null;
   licenseNumber: string | null;
   licenseExpiry: string | null;
-  status: "ACTIVE" | "INACTIVE";
+  status: 'ACTIVE' | 'INACTIVE';
   createdAt: string;
   updatedAt: string;
 };

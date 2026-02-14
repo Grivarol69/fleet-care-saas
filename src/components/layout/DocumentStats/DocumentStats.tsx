@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { useState, useEffect, useCallback } from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -9,9 +9,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import axios from "axios";
-import { useToast } from "@/components/hooks/use-toast";
+} from '@/components/ui/table';
+import axios from 'axios';
+import { useToast } from '@/components/hooks/use-toast';
 
 type DocumentAlert = {
   id: string;
@@ -19,7 +19,7 @@ type DocumentAlert = {
   document: string;
   expiryDate: string;
   daysLeft: number;
-  status: "danger" | "warning" | "success";
+  status: 'danger' | 'warning' | 'success';
   isExpired: boolean;
 };
 
@@ -32,7 +32,12 @@ type DocumentStats = {
 
 export const DocumentStats = () => {
   const [documentAlerts, setDocumentAlerts] = useState<DocumentAlert[]>([]);
-  const [stats, setStats] = useState<DocumentStats>({ critical: 0, warning: 0, ok: 0, total: 0 });
+  const [stats, setStats] = useState<DocumentStats>({
+    critical: 0,
+    warning: 0,
+    ok: 0,
+    total: 0,
+  });
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -41,22 +46,23 @@ export const DocumentStats = () => {
       // Obtener documentos que están próximos a vencer
       const [alertsResponse, statsResponse] = await Promise.all([
         axios.get(`/api/vehicles/documents/expiring`),
-        axios.post(`/api/vehicles/documents/expiring`) // POST para obtener estadísticas
+        axios.post(`/api/vehicles/documents/expiring`), // POST para obtener estadísticas
       ]);
-      
+
       // Filtrar solo documentos que necesitan atención (no mostrar los que están "Al día")
-      const filteredAlerts = alertsResponse.data.filter((alert: DocumentAlert) => 
-        alert.status === 'danger' || alert.status === 'warning'
+      const filteredAlerts = alertsResponse.data.filter(
+        (alert: DocumentAlert) =>
+          alert.status === 'danger' || alert.status === 'warning'
       );
-      
+
       setDocumentAlerts(filteredAlerts);
       setStats(statsResponse.data);
     } catch (error) {
-      console.error("Error fetching Document Alerts: ", error);
+      console.error('Error fetching Document Alerts: ', error);
       toast({
-        title: "Error fetching Document Alerts",
-        description: "Please try again later",
-        variant: "destructive",
+        title: 'Error fetching Document Alerts',
+        description: 'Please try again later',
+        variant: 'destructive',
       });
       // Fallback a datos vacíos
       setDocumentAlerts([]);
@@ -72,14 +78,14 @@ export const DocumentStats = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "danger":
-        return "bg-red-100 text-red-800";
-      case "warning":
-        return "bg-yellow-100 text-yellow-800";
-      case "success":
-        return "bg-green-100 text-green-800";
+      case 'danger':
+        return 'bg-red-100 text-red-800';
+      case 'warning':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'success':
+        return 'bg-green-100 text-green-800';
       default:
-        return "bg-gray-100 text-gray-800";
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -99,9 +105,25 @@ export const DocumentStats = () => {
   const getDocumentIcon = (docName: string) => {
     const lower = docName.toLowerCase();
     if (lower.includes('soat')) return '🛡️';
-    if (lower.includes('tecno') || lower.includes('mecánica') || lower.includes('mecanica')) return '🔧';
-    if (lower.includes('seguro') || lower.includes('póliza') || lower.includes('poliza') || lower.includes('insurance')) return '📋';
-    if (lower.includes('propiedad') || lower.includes('registro') || lower.includes('registration')) return '📄';
+    if (
+      lower.includes('tecno') ||
+      lower.includes('mecánica') ||
+      lower.includes('mecanica')
+    )
+      return '🔧';
+    if (
+      lower.includes('seguro') ||
+      lower.includes('póliza') ||
+      lower.includes('poliza') ||
+      lower.includes('insurance')
+    )
+      return '📋';
+    if (
+      lower.includes('propiedad') ||
+      lower.includes('registro') ||
+      lower.includes('registration')
+    )
+      return '📄';
     return '📄';
   };
 
@@ -113,7 +135,7 @@ export const DocumentStats = () => {
           <span className="text-2xl">📄</span>
           <h3 className="text-lg font-semibold">Documentos por Vencer</h3>
         </div>
-        
+
         {/* Resumen de números */}
         <div className="flex gap-6 text-sm">
           <div className="flex items-center gap-2">
@@ -133,8 +155,12 @@ export const DocumentStats = () => {
       <CardContent>
         {documentAlerts.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            <p className="text-lg font-medium">¡No hay alertas de documentos!</p>
-            <p className="text-sm">Todos los documentos están al día o en estado normal</p>
+            <p className="text-lg font-medium">
+              ¡No hay alertas de documentos!
+            </p>
+            <p className="text-sm">
+              Todos los documentos están al día o en estado normal
+            </p>
           </div>
         ) : (
           <Table>
@@ -147,35 +173,48 @@ export const DocumentStats = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {documentAlerts.map((alert) => (
-                <TableRow key={alert.id} className={`border-l-4 ${
-                  alert.status === 'danger' 
-                    ? 'bg-red-50/50 border-l-red-400 hover:bg-red-50' 
-                    : 'bg-yellow-50/50 border-l-yellow-400 hover:bg-yellow-50'
-                } transition-colors`}>
+              {documentAlerts.map(alert => (
+                <TableRow
+                  key={alert.id}
+                  className={`border-l-4 ${
+                    alert.status === 'danger'
+                      ? 'bg-red-50/50 border-l-red-400 hover:bg-red-50'
+                      : 'bg-yellow-50/50 border-l-yellow-400 hover:bg-yellow-50'
+                  } transition-colors`}
+                >
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full ${alert.status === 'danger' ? 'bg-red-500' : 'bg-yellow-500'}`}></span>
+                      <span
+                        className={`w-2 h-2 rounded-full ${alert.status === 'danger' ? 'bg-red-500' : 'bg-yellow-500'}`}
+                      ></span>
                       {alert.plate}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <span className="text-lg">{getDocumentIcon(alert.document)}</span>
+                      <span className="text-lg">
+                        {getDocumentIcon(alert.document)}
+                      </span>
                       {alert.document}
                     </div>
                   </TableCell>
                   <TableCell className="text-sm">
                     <div className="flex flex-col gap-1">
-                      <span>{new Date(alert.expiryDate).toLocaleDateString()}</span>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                        alert.isExpired 
-                          ? 'bg-red-100 text-red-700' 
-                          : alert.status === 'danger'
+                      <span>
+                        {new Date(alert.expiryDate).toLocaleDateString()}
+                      </span>
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                          alert.isExpired
                             ? 'bg-red-100 text-red-700'
-                            : 'bg-yellow-100 text-yellow-700'
-                      }`}>
-                        {alert.isExpired ? '⚠️ Vencido' : `En ${alert.daysLeft} días`}
+                            : alert.status === 'danger'
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-yellow-100 text-yellow-700'
+                        }`}
+                      >
+                        {alert.isExpired
+                          ? '⚠️ Vencido'
+                          : `En ${alert.daysLeft} días`}
                       </span>
                     </div>
                   </TableCell>
@@ -185,7 +224,7 @@ export const DocumentStats = () => {
                         alert.status
                       )}`}
                     >
-                      {alert.status === "danger" ? (
+                      {alert.status === 'danger' ? (
                         <span className="flex items-center gap-1">
                           🔺 Crítico
                         </span>

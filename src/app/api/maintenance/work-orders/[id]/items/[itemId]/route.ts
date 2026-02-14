@@ -4,12 +4,18 @@ import { prisma } from '@/lib/prisma';
 import { safeParseInt } from '@/lib/validation';
 import { ItemSource, ItemClosureType, WorkOrderStatus } from '@prisma/client';
 import { z } from 'zod';
-import { canExecuteWorkOrders } from "@/lib/permissions";
+import { canExecuteWorkOrders } from '@/lib/permissions';
 
 const updateItemSchema = z.object({
-  itemSource: z.enum(['EXTERNAL', 'INTERNAL_STOCK', 'INTERNAL_PURCHASE']).optional(),
-  closureType: z.enum(['PENDING', 'EXTERNAL_INVOICE', 'INTERNAL_TICKET', 'NOT_APPLICABLE']).optional(),
-  status: z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
+  itemSource: z
+    .enum(['EXTERNAL', 'INTERNAL_STOCK', 'INTERNAL_PURCHASE'])
+    .optional(),
+  closureType: z
+    .enum(['PENDING', 'EXTERNAL_INVOICE', 'INTERNAL_TICKET', 'NOT_APPLICABLE'])
+    .optional(),
+  status: z
+    .enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'])
+    .optional(),
   supplier: z.string().optional(),
   unitPrice: z.number().min(0).optional(),
   quantity: z.number().positive().optional(),
@@ -30,7 +36,10 @@ export async function PATCH(
     }
 
     if (!canExecuteWorkOrders(user)) {
-      return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
+      return NextResponse.json(
+        { error: 'No tienes permisos para esta acción' },
+        { status: 403 }
+      );
     }
 
     const { id, itemId } = await params;
@@ -193,7 +202,10 @@ export async function GET(
     });
 
     if (!item || item.workOrder.tenantId !== user.tenantId) {
-      return NextResponse.json({ error: 'Item no encontrado' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Item no encontrado' },
+        { status: 404 }
+      );
     }
 
     if (item.workOrderId !== workOrderId) {

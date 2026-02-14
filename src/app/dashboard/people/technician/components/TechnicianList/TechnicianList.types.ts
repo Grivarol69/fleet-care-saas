@@ -4,7 +4,7 @@ export type TechnicianListProps = {
   email: string | null;
   phone: string | null;
   specialty: string | null;
-  status: "ACTIVE" | "INACTIVE";
+  status: 'ACTIVE' | 'INACTIVE';
   createdAt: string;
   updatedAt: string;
 };

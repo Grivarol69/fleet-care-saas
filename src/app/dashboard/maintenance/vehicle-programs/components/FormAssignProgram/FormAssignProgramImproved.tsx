@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Dialog,
   DialogContent,
@@ -10,9 +10,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Form,
   FormControl,
@@ -21,36 +21,42 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
+} from '@/components/ui/form';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import axios from "axios";
-import { useToast } from "@/components/hooks/use-toast";
-import { useEffect, useState, useMemo } from "react";
-import { Loader2, CheckCircle2, Package, AlertCircle, Info } from "lucide-react";
+} from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import axios from 'axios';
+import { useToast } from '@/components/hooks/use-toast';
+import { useEffect, useState, useMemo } from 'react';
+import {
+  Loader2,
+  CheckCircle2,
+  Package,
+  AlertCircle,
+  Info,
+} from 'lucide-react';
 
 // ========================================
 // SCHEMAS & TYPES
 // ========================================
 
 const formSchema = z.object({
-  vehicleId: z.number().min(1, "Seleccione un vehículo"),
-  templateId: z.number().min(1, "Seleccione un template"),
-  generatedBy: z.string().min(1, "Usuario requerido"),
+  vehicleId: z.number().min(1, 'Seleccione un vehículo'),
+  templateId: z.number().min(1, 'Seleccione un template'),
+  generatedBy: z.string().min(1, 'Usuario requerido'),
 
   // Nuevo: Tipo de vehículo
-  vehicleType: z.enum(["new", "used"]),
+  vehicleType: z.enum(['new', 'used']),
 
   // Solo para vehículos usados
   lastMaintenancePackageKm: z.number().optional(),
@@ -164,15 +170,15 @@ export function FormAssignProgramImproved({
     defaultValues: {
       vehicleId: 0,
       templateId: 0,
-      generatedBy: "current-user-id", // TODO: Get from auth context
-      vehicleType: "new",
+      generatedBy: 'current-user-id', // TODO: Get from auth context
+      vehicleType: 'new',
       lastMaintenancePackageKm: 0,
       lastMaintenanceExecutedKm: 0,
-      lastMaintenanceDate: "",
-      lastMaintenanceProvider: "",
-      lastMaintenanceInvoice: "",
+      lastMaintenanceDate: '',
+      lastMaintenanceProvider: '',
+      lastMaintenanceInvoice: '',
       lastMaintenanceCost: 0,
-      lastMaintenanceNotes: "",
+      lastMaintenanceNotes: '',
     },
   });
 
@@ -187,18 +193,18 @@ export function FormAssignProgramImproved({
     setLoadingData(true);
     try {
       const [vehiclesRes, templatesRes] = await Promise.all([
-        axios.get("/api/vehicles/vehicles"),
-        axios.get("/api/maintenance/mant-template"),
+        axios.get('/api/vehicles/vehicles'),
+        axios.get('/api/maintenance/mant-template'),
       ]);
 
       setVehicles(vehiclesRes.data);
       setTemplates(templatesRes.data);
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error('Error fetching data:', error);
       toast({
-        title: "Error",
-        description: "No se pudo cargar los datos",
-        variant: "destructive",
+        title: 'Error',
+        description: 'No se pudo cargar los datos',
+        variant: 'destructive',
       });
     } finally {
       setLoadingData(false);
@@ -206,44 +212,46 @@ export function FormAssignProgramImproved({
   };
 
   // Watch for vehicle selection
-  const watchVehicleId = form.watch("vehicleId");
+  const watchVehicleId = form.watch('vehicleId');
   useEffect(() => {
-    const vehicle = vehicles.find((v) => v.id === watchVehicleId);
+    const vehicle = vehicles.find(v => v.id === watchVehicleId);
     setSelectedVehicle(vehicle || null);
 
     // Auto-detectar si es vehículo nuevo o usado
     if (vehicle) {
-      form.setValue("vehicleType", vehicle.mileage === 0 ? "new" : "used");
+      form.setValue('vehicleType', vehicle.mileage === 0 ? 'new' : 'used');
     }
   }, [watchVehicleId, vehicles]);
 
   // Watch for template selection
-  const watchTemplateId = form.watch("templateId");
+  const watchTemplateId = form.watch('templateId');
   useEffect(() => {
-    const template = templates.find((t) => t.id === watchTemplateId);
+    const template = templates.find(t => t.id === watchTemplateId);
     setSelectedTemplate(template || null);
   }, [watchTemplateId, templates]);
 
   // Filter templates compatible with selected vehicle
   const compatibleTemplates = selectedVehicle
     ? templates.filter(
-        (t) =>
+        t =>
           t.brand.id === selectedVehicle.brand.id &&
           t.line.id === selectedVehicle.line.id
       )
     : [];
 
   // Watch form values for preview
-  const vehicleType = form.watch("vehicleType");
-  const lastMaintenanceExecutedKm = form.watch("lastMaintenanceExecutedKm");
+  const vehicleType = form.watch('vehicleType');
+  const lastMaintenanceExecutedKm = form.watch('lastMaintenanceExecutedKm');
 
   // Calcular paquetes a asignar (preview)
   const packagesToAssign = useMemo(() => {
     if (!selectedTemplate) return [];
 
-    if (vehicleType === "new") {
+    if (vehicleType === 'new') {
       // Vehículo nuevo: asignar TODOS los paquetes
-      return selectedTemplate.packages.sort((a, b) => a.triggerKm - b.triggerKm);
+      return selectedTemplate.packages.sort(
+        (a, b) => a.triggerKm - b.triggerKm
+      );
     } else {
       // Vehículo usado: asignar solo paquetes futuros
       if (!lastMaintenanceExecutedKm || lastMaintenanceExecutedKm === 0) {
@@ -287,7 +295,7 @@ export function FormAssignProgramImproved({
         vehicleType: values.vehicleType,
 
         // Solo si es vehículo usado
-        ...(values.vehicleType === "used" && {
+        ...(values.vehicleType === 'used' && {
           lastMaintenance: {
             executedKm: values.lastMaintenanceExecutedKm,
             executedDate: values.lastMaintenanceDate,
@@ -299,29 +307,29 @@ export function FormAssignProgramImproved({
         }),
       };
 
-      await axios.post("/api/maintenance/vehicle-programs", payload);
+      await axios.post('/api/maintenance/vehicle-programs', payload);
 
       toast({
-        title: "¡Éxito!",
-        description: "Programa de mantenimiento asignado correctamente",
+        title: '¡Éxito!',
+        description: 'Programa de mantenimiento asignado correctamente',
       });
 
       form.reset();
       onSuccess();
       onOpenChange(false);
     } catch (error: unknown) {
-      console.error("Error creating program:", error);
+      console.error('Error creating program:', error);
 
-      let errorMessage = "No se pudo asignar el programa";
+      let errorMessage = 'No se pudo asignar el programa';
 
       if (axios.isAxiosError(error) && error.response) {
         errorMessage = error.response.data || errorMessage;
       }
 
       toast({
-        title: "Error",
+        title: 'Error',
         description: errorMessage,
-        variant: "destructive",
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -354,8 +362,8 @@ export function FormAssignProgramImproved({
                   <FormItem>
                     <FormLabel>Vehículo *</FormLabel>
                     <Select
-                      onValueChange={(value) => field.onChange(parseInt(value))}
-                      value={field.value ? field.value.toString() : ""}
+                      onValueChange={value => field.onChange(parseInt(value))}
+                      value={field.value ? field.value.toString() : ''}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -363,12 +371,12 @@ export function FormAssignProgramImproved({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {vehicles.map((vehicle) => (
+                        {vehicles.map(vehicle => (
                           <SelectItem
                             key={vehicle.id}
                             value={vehicle.id.toString()}
                           >
-                            {vehicle.licensePlate} - {vehicle.brand.name}{" "}
+                            {vehicle.licensePlate} - {vehicle.brand.name}{' '}
                             {vehicle.line.name}
                             <span className="text-xs text-gray-500 ml-2">
                               ({vehicle.mileage.toLocaleString()} km)
@@ -391,10 +399,8 @@ export function FormAssignProgramImproved({
                     <FormItem>
                       <FormLabel>Template de Mantenimiento *</FormLabel>
                       <Select
-                        onValueChange={(value) =>
-                          field.onChange(parseInt(value))
-                        }
-                        value={field.value ? field.value.toString() : ""}
+                        onValueChange={value => field.onChange(parseInt(value))}
+                        value={field.value ? field.value.toString() : ''}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -407,7 +413,7 @@ export function FormAssignProgramImproved({
                               No hay templates compatibles para este vehículo
                             </div>
                           ) : (
-                            compatibleTemplates.map((template) => (
+                            compatibleTemplates.map(template => (
                               <SelectItem
                                 key={template.id}
                                 value={template.id.toString()}
@@ -425,7 +431,7 @@ export function FormAssignProgramImproved({
                         </SelectContent>
                       </Select>
                       <FormDescription>
-                        Solo se muestran templates compatibles con{" "}
+                        Solo se muestran templates compatibles con{' '}
                         {selectedVehicle.brand.name} {selectedVehicle.line.name}
                       </FormDescription>
                       <FormMessage />
@@ -453,21 +459,29 @@ export function FormAssignProgramImproved({
                           >
                             <div className="flex items-center space-x-2">
                               <RadioGroupItem value="new" id="new" />
-                              <Label htmlFor="new" className="font-normal cursor-pointer">
-                                Vehículo nuevo (0 km) - Asignar todos los paquetes
+                              <Label
+                                htmlFor="new"
+                                className="font-normal cursor-pointer"
+                              >
+                                Vehículo nuevo (0 km) - Asignar todos los
+                                paquetes
                               </Label>
                             </div>
                             <div className="flex items-center space-x-2">
                               <RadioGroupItem value="used" id="used" />
-                              <Label htmlFor="used" className="font-normal cursor-pointer">
-                                Vehículo usado - Seleccionar desde qué paquete iniciar
+                              <Label
+                                htmlFor="used"
+                                className="font-normal cursor-pointer"
+                              >
+                                Vehículo usado - Seleccionar desde qué paquete
+                                iniciar
                               </Label>
                             </div>
                           </RadioGroup>
                         </FormControl>
                         <FormDescription>
                           {selectedVehicle.mileage === 0
-                            ? "Vehículo nuevo detectado (0 km)"
+                            ? 'Vehículo nuevo detectado (0 km)'
                             : `Vehículo con ${selectedVehicle.mileage.toLocaleString()} km`}
                         </FormDescription>
                         <FormMessage />
@@ -476,7 +490,7 @@ export function FormAssignProgramImproved({
                   />
 
                   {/* ===== Campos para Vehículos Usados ===== */}
-                  {vehicleType === "used" && (
+                  {vehicleType === 'used' && (
                     <Card className="bg-amber-50 border-amber-200">
                       <CardHeader>
                         <CardTitle className="text-sm flex items-center gap-2">
@@ -488,9 +502,10 @@ export function FormAssignProgramImproved({
                         <Alert>
                           <AlertCircle className="h-4 w-4" />
                           <AlertDescription>
-                            Para calcular correctamente los próximos vencimientos,
-                            necesitamos saber cuándo fue el último mantenimiento
-                            realizado antes de ingresar al sistema.
+                            Para calcular correctamente los próximos
+                            vencimientos, necesitamos saber cuándo fue el último
+                            mantenimiento realizado antes de ingresar al
+                            sistema.
                           </AlertDescription>
                         </Alert>
 
@@ -499,15 +514,19 @@ export function FormAssignProgramImproved({
                           name="lastMaintenanceExecutedKm"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Último mantenimiento ejecutado a los (km) *</FormLabel>
+                              <FormLabel>
+                                Último mantenimiento ejecutado a los (km) *
+                              </FormLabel>
                               <FormControl>
                                 <div className="relative">
                                   <Input
                                     type="number"
                                     placeholder="Ej: 25000"
                                     {...field}
-                                    onChange={(e) =>
-                                      field.onChange(parseInt(e.target.value) || 0)
+                                    onChange={e =>
+                                      field.onChange(
+                                        parseInt(e.target.value) || 0
+                                      )
                                     }
                                     className="pr-12"
                                   />
@@ -517,8 +536,8 @@ export function FormAssignProgramImproved({
                                 </div>
                               </FormControl>
                               <FormDescription>
-                                Kilometraje al que se realizó el último mantenimiento
-                                (ej: 4900, 5010, 24800, etc.)
+                                Kilometraje al que se realizó el último
+                                mantenimiento (ej: 4900, 5010, 24800, etc.)
                               </FormDescription>
                               <FormMessage />
                             </FormItem>
@@ -526,45 +545,56 @@ export function FormAssignProgramImproved({
                         />
 
                         {/* Preview del paquete inferido */}
-                        {lastMaintenanceExecutedKm && lastMaintenanceExecutedKm > 0 && (
-                          <Alert className="bg-white">
-                            <Info className="h-4 w-4" />
-                            <AlertDescription>
-                              {(() => {
-                                const inferred = inferPackageFromKm(
-                                  lastMaintenanceExecutedKm,
-                                  selectedTemplate.packages
-                                );
-                                if (inferred) {
-                                  return (
-                                    <div>
-                                      <p className="font-medium">
-                                        ✅ Paquete detectado: {inferred.name} ({inferred.triggerKm.toLocaleString()} km)
-                                      </p>
-                                      <p className="text-sm text-gray-600 mt-1">
-                                        Diferencia: ±{Math.abs(inferred.triggerKm - lastMaintenanceExecutedKm)} km
-                                      </p>
-                                    </div>
+                        {lastMaintenanceExecutedKm &&
+                          lastMaintenanceExecutedKm > 0 && (
+                            <Alert className="bg-white">
+                              <Info className="h-4 w-4" />
+                              <AlertDescription>
+                                {(() => {
+                                  const inferred = inferPackageFromKm(
+                                    lastMaintenanceExecutedKm,
+                                    selectedTemplate.packages
                                   );
-                                } else {
-                                  return (
-                                    <p className="text-amber-700">
-                                      ⚠️ No se pudo inferir el paquete (km muy alejado de los triggers).
-                                      Verifique el kilometraje ingresado.
-                                    </p>
-                                  );
-                                }
-                              })()}
-                            </AlertDescription>
-                          </Alert>
-                        )}
+                                  if (inferred) {
+                                    return (
+                                      <div>
+                                        <p className="font-medium">
+                                          ✅ Paquete detectado: {inferred.name}{' '}
+                                          ({inferred.triggerKm.toLocaleString()}{' '}
+                                          km)
+                                        </p>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                          Diferencia: ±
+                                          {Math.abs(
+                                            inferred.triggerKm -
+                                              lastMaintenanceExecutedKm
+                                          )}{' '}
+                                          km
+                                        </p>
+                                      </div>
+                                    );
+                                  } else {
+                                    return (
+                                      <p className="text-amber-700">
+                                        ⚠️ No se pudo inferir el paquete (km muy
+                                        alejado de los triggers). Verifique el
+                                        kilometraje ingresado.
+                                      </p>
+                                    );
+                                  }
+                                })()}
+                              </AlertDescription>
+                            </Alert>
+                          )}
 
                         <FormField
                           control={form.control}
                           name="lastMaintenanceDate"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Fecha de ejecución (opcional)</FormLabel>
+                              <FormLabel>
+                                Fecha de ejecución (opcional)
+                              </FormLabel>
                               <FormControl>
                                 <Input type="date" {...field} />
                               </FormControl>
@@ -607,7 +637,10 @@ export function FormAssignProgramImproved({
                               <FormItem>
                                 <FormLabel>Número de factura</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="Ej: FAC-001-2024" {...field} />
+                                  <Input
+                                    placeholder="Ej: FAC-001-2024"
+                                    {...field}
+                                  />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -629,8 +662,10 @@ export function FormAssignProgramImproved({
                                       type="number"
                                       placeholder="250000"
                                       {...field}
-                                      onChange={(e) =>
-                                        field.onChange(parseFloat(e.target.value) || 0)
+                                      onChange={e =>
+                                        field.onChange(
+                                          parseFloat(e.target.value) || 0
+                                        )
                                       }
                                       className="pl-8"
                                     />
@@ -674,7 +709,7 @@ export function FormAssignProgramImproved({
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    {packagesToAssign.map((pkg) => (
+                    {packagesToAssign.map(pkg => (
                       <div
                         key={pkg.id}
                         className="flex items-center justify-between p-2 bg-white rounded border"
@@ -694,7 +729,11 @@ export function FormAssignProgramImproved({
                           </p>
                           {selectedVehicle && (
                             <p className="text-xs text-gray-500">
-                              Faltan {(pkg.triggerKm - selectedVehicle.mileage).toLocaleString()} km
+                              Faltan{' '}
+                              {(
+                                pkg.triggerKm - selectedVehicle.mileage
+                              ).toLocaleString()}{' '}
+                              km
                             </p>
                           )}
                         </div>
@@ -731,15 +770,19 @@ export function FormAssignProgramImproved({
               )}
 
               {/* Warning si no hay paquetes a asignar */}
-              {selectedTemplate && vehicleType === "used" && packagesToAssign.length === 0 && lastMaintenanceExecutedKm && lastMaintenanceExecutedKm > 0 && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    No hay paquetes futuros para asignar. Verifica el kilometraje
-                    del último mantenimiento.
-                  </AlertDescription>
-                </Alert>
-              )}
+              {selectedTemplate &&
+                vehicleType === 'used' &&
+                packagesToAssign.length === 0 &&
+                lastMaintenanceExecutedKm &&
+                lastMaintenanceExecutedKm > 0 && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      No hay paquetes futuros para asignar. Verifica el
+                      kilometraje del último mantenimiento.
+                    </AlertDescription>
+                  </Alert>
+                )}
 
               <DialogFooter>
                 <Button
@@ -754,7 +797,7 @@ export function FormAssignProgramImproved({
                   type="submit"
                   disabled={
                     loading ||
-                    (vehicleType === "used" && packagesToAssign.length === 0)
+                    (vehicleType === 'used' && packagesToAssign.length === 0)
                   }
                 >
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

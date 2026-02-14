@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -11,7 +11,7 @@ import {
   getFilteredRowModel,
   getSortedRowModel,
   SortingState,
-} from "@tanstack/react-table";
+} from '@tanstack/react-table';
 import {
   Table,
   TableBody,
@@ -19,19 +19,27 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { FleetVehicle } from "../SharedTypes/sharedTypes";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { FormAddFleetVehicle } from "../FormAddFleetVehicle";
-import { FormEditFleetVehicle } from "../FormEditFleetVehicle";
-import { VehicleCVViewer } from "../VehicleCV";
-import { SendCVDialog } from "../SendCVDialog";
-import axios from "axios";
-import { useToast } from "@/components/hooks/use-toast";
-import Image from "next/image";
-import { DownloadBtn } from "./DownloadBtn";
-import { ArrowUpDown, MoreHorizontal, Pencil, Trash2, FileText, Mail, MessageCircle } from "lucide-react";
+} from '@/components/ui/table';
+import { FleetVehicle } from '../SharedTypes/sharedTypes';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { FormAddFleetVehicle } from '../FormAddFleetVehicle';
+import { FormEditFleetVehicle } from '../FormEditFleetVehicle';
+import { VehicleCVViewer } from '../VehicleCV';
+import { SendCVDialog } from '../SendCVDialog';
+import axios from 'axios';
+import { useToast } from '@/components/hooks/use-toast';
+import Image from 'next/image';
+import { DownloadBtn } from './DownloadBtn';
+import {
+  ArrowUpDown,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  FileText,
+  Mail,
+  MessageCircle,
+} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,7 +47,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 
 export function FleetVehiclesList() {
   const [data, setData] = useState<FleetVehicle[]>([]);
@@ -50,10 +58,12 @@ export function FleetVehiclesList() {
   const [isSendEmailDialogOpen, setIsSendEmailDialogOpen] = useState(false);
   const [editingFleetVehicle, setEditingFleetVehicle] =
     useState<FleetVehicle | null>(null);
-  const [viewingVehicleCV, setViewingVehicleCV] =
-    useState<FleetVehicle | null>(null);
-  const [sendingVehicleCV, setSendingVehicleCV] =
-    useState<FleetVehicle | null>(null);
+  const [viewingVehicleCV, setViewingVehicleCV] = useState<FleetVehicle | null>(
+    null
+  );
+  const [sendingVehicleCV, setSendingVehicleCV] = useState<FleetVehicle | null>(
+    null
+  );
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -62,24 +72,24 @@ export function FleetVehiclesList() {
   const fetchFleetVehicles = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get("/api/vehicles/vehicles");
+      const response = await axios.get('/api/vehicles/vehicles');
       setData(response.data);
     } catch (error) {
-      console.error("Error fetching Vehicles: ", error);
+      console.error('Error fetching Vehicles: ', error);
 
       if (axios.isAxiosError(error) && error.response?.status === 401) {
         toast({
-          title: "No autorizado",
-          description: "Debes iniciar sesión para ver los vehículos",
-          variant: "destructive",
+          title: 'No autorizado',
+          description: 'Debes iniciar sesión para ver los vehículos',
+          variant: 'destructive',
         });
         return;
       }
 
       toast({
-        title: "Error cargando vehículos",
-        description: "Por favor intenta de nuevo más tarde",
-        variant: "destructive",
+        title: 'Error cargando vehículos',
+        description: 'Por favor intenta de nuevo más tarde',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -95,43 +105,46 @@ export function FleetVehiclesList() {
     setIsEditDialogOpen(true);
   }, []);
 
-  const handleDelete = useCallback(async (id: number) => {
-    if (!confirm("¿Estás seguro de que quieres eliminar este vehículo?")) {
-      return;
-    }
-
-    try {
-      await axios.delete(`/api/vehicles/vehicles/${id}`);
-      setData((prevData) => prevData.filter((vehicle) => vehicle.id !== id));
-      toast({
-        title: "Vehículo eliminado",
-        description: "El vehículo ha sido eliminado exitosamente",
-      });
-    } catch (error) {
-      console.error("Error deleting Vehicle:", error);
-
-      if (axios.isAxiosError(error) && error.response?.status === 409) {
-        toast({
-          title: "No se puede eliminar",
-          description: "El vehículo tiene registros asociados",
-          variant: "destructive",
-        });
+  const handleDelete = useCallback(
+    async (id: number) => {
+      if (!confirm('¿Estás seguro de que quieres eliminar este vehículo?')) {
         return;
       }
 
-      toast({
-        title: "Error eliminando vehículo",
-        description: "Por favor intenta de nuevo más tarde",
-        variant: "destructive",
-      });
-    }
-  }, [toast]);
+      try {
+        await axios.delete(`/api/vehicles/vehicles/${id}`);
+        setData(prevData => prevData.filter(vehicle => vehicle.id !== id));
+        toast({
+          title: 'Vehículo eliminado',
+          description: 'El vehículo ha sido eliminado exitosamente',
+        });
+      } catch (error) {
+        console.error('Error deleting Vehicle:', error);
+
+        if (axios.isAxiosError(error) && error.response?.status === 409) {
+          toast({
+            title: 'No se puede eliminar',
+            description: 'El vehículo tiene registros asociados',
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        toast({
+          title: 'Error eliminando vehículo',
+          description: 'Por favor intenta de nuevo más tarde',
+          variant: 'destructive',
+        });
+      }
+    },
+    [toast]
+  );
 
   const columns = useMemo<ColumnDef<FleetVehicle>[]>(
     () => [
       {
-        accessorKey: "photo",
-        header: "Imagen",
+        accessorKey: 'photo',
+        header: 'Imagen',
         cell: ({ row }) => (
           <div className="w-16 h-16 relative">
             {row.original.photo ? (
@@ -150,11 +163,11 @@ export function FleetVehiclesList() {
         ),
       },
       {
-        accessorKey: "licensePlate",
+        accessorKey: 'licensePlate',
         header: ({ column }) => (
           <Button
             variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
           >
             Placa
             <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -165,82 +178,84 @@ export function FleetVehiclesList() {
         ),
       },
       {
-        accessorKey: "typePlate",
-        header: "Tipo Placa",
+        accessorKey: 'typePlate',
+        header: 'Tipo Placa',
         cell: ({ row }) => {
           const typePlateLabels = {
-            PARTICULAR: "Particular",
-            PUBLICO: "Público",
+            PARTICULAR: 'Particular',
+            PUBLICO: 'Público',
           };
-          return typePlateLabels[row.original.typePlate] || row.original.typePlate;
+          return (
+            typePlateLabels[row.original.typePlate] || row.original.typePlate
+          );
         },
       },
       {
-        accessorKey: "brand.name",
+        accessorKey: 'brand.name',
         header: ({ column }) => (
           <Button
             variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
           >
             Marca
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         ),
-        cell: ({ row }) => row.original.brand?.name || "N/A",
+        cell: ({ row }) => row.original.brand?.name || 'N/A',
       },
       {
-        accessorKey: "line.name",
-        header: "Línea",
-        cell: ({ row }) => row.original.line?.name || "N/A",
+        accessorKey: 'line.name',
+        header: 'Línea',
+        cell: ({ row }) => row.original.line?.name || 'N/A',
       },
       {
-        accessorKey: "type.name",
-        header: "Tipo",
-        cell: ({ row }) => row.original.type?.name || "N/A",
+        accessorKey: 'type.name',
+        header: 'Tipo',
+        cell: ({ row }) => row.original.type?.name || 'N/A',
       },
       {
-        accessorKey: "year",
-        header: "Año",
+        accessorKey: 'year',
+        header: 'Año',
       },
       {
-        accessorKey: "color",
-        header: "Color",
+        accessorKey: 'color',
+        header: 'Color',
       },
       {
-        accessorKey: "mileage",
-        header: "Kilometraje",
+        accessorKey: 'mileage',
+        header: 'Kilometraje',
         cell: ({ row }) => (
           <span>{row.original.mileage.toLocaleString()} km</span>
         ),
       },
       {
-        accessorKey: "owner",
-        header: "Propietario",
+        accessorKey: 'owner',
+        header: 'Propietario',
         cell: ({ row }) => {
           const ownerLabels = {
-            OWN: "Propio",
-            LEASED: "Arrendado",
-            RENTED: "Rentado",
+            OWN: 'Propio',
+            LEASED: 'Arrendado',
+            RENTED: 'Rentado',
           };
           return ownerLabels[row.original.owner] || row.original.owner;
         },
       },
       {
-        accessorKey: "situation",
-        header: "Estado",
+        accessorKey: 'situation',
+        header: 'Estado',
         cell: ({ row }) => {
           const situationLabels = {
-            AVAILABLE: "Disponible",
-            IN_USE: "En uso",
-            MAINTENANCE: "Mantenimiento",
+            AVAILABLE: 'Disponible',
+            IN_USE: 'En uso',
+            MAINTENANCE: 'Mantenimiento',
           };
           const situation = row.original.situation;
           const label = situationLabels[situation] || situation;
 
           const statusColors = {
-            AVAILABLE: "bg-green-100 text-green-800",
-            IN_USE: "bg-blue-100 text-blue-800",
-            MAINTENANCE: "bg-yellow-100 text-yellow-800",
+            AVAILABLE: 'bg-green-100 text-green-800',
+            IN_USE: 'bg-blue-100 text-blue-800',
+            MAINTENANCE: 'bg-yellow-100 text-yellow-800',
           };
 
           return (
@@ -253,7 +268,7 @@ export function FleetVehiclesList() {
         },
       },
       {
-        id: "actions",
+        id: 'actions',
         header: () => <div className="text-right">Acciones</div>,
         cell: ({ row }) => {
           const vehicle = row.original;
@@ -283,18 +298,22 @@ export function FleetVehiclesList() {
 
                   <DropdownMenuSeparator />
 
-                  <DropdownMenuItem onClick={() => {
-                    setViewingVehicleCV(vehicle);
-                    setIsCVDialogOpen(true);
-                  }}>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setViewingVehicleCV(vehicle);
+                      setIsCVDialogOpen(true);
+                    }}
+                  >
                     <FileText className="mr-2 h-4 w-4" />
                     Ver CV
                   </DropdownMenuItem>
 
-                  <DropdownMenuItem onClick={() => {
-                    setSendingVehicleCV(vehicle);
-                    setIsSendEmailDialogOpen(true);
-                  }}>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setSendingVehicleCV(vehicle);
+                      setIsSendEmailDialogOpen(true);
+                    }}
+                  >
                     <Mail className="mr-2 h-4 w-4" />
                     Enviar por Email
                   </DropdownMenuItem>
@@ -351,10 +370,10 @@ export function FleetVehiclesList() {
         <Input
           placeholder="Buscar por placa..."
           value={
-            (table.getColumn("licensePlate")?.getFilterValue() as string) ?? ""
+            (table.getColumn('licensePlate')?.getFilterValue() as string) ?? ''
           }
-          onChange={(event) =>
-            table.getColumn("licensePlate")?.setFilterValue(event.target.value)
+          onChange={event =>
+            table.getColumn('licensePlate')?.setFilterValue(event.target.value)
           }
           className="max-w-sm"
         />
@@ -364,9 +383,9 @@ export function FleetVehiclesList() {
       <div className="rounded-md border">
         <Table>
           <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
+            {table.getHeaderGroups().map(headerGroup => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
+                {headerGroup.headers.map(header => (
                   <TableHead key={header.id}>
                     {flexRender(
                       header.column.columnDef.header,
@@ -379,9 +398,9 @@ export function FleetVehiclesList() {
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
+              table.getRowModel().rows.map(row => (
                 <TableRow key={row.id} className="hover:bg-muted/50">
-                  {row.getVisibleCells().map((cell) => (
+                  {row.getVisibleCells().map(cell => (
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
@@ -411,10 +430,10 @@ export function FleetVehiclesList() {
           <p className="text-sm font-medium">Filas por página</p>
           <select
             value={table.getState().pagination.pageSize}
-            onChange={(e) => table.setPageSize(Number(e.target.value))}
+            onChange={e => table.setPageSize(Number(e.target.value))}
             className="h-8 w-[70px] rounded border border-input bg-background px-3 py-2 text-sm"
           >
-            {[5, 10, 20, 30, 50].map((pageSize) => (
+            {[5, 10, 20, 30, 50].map(pageSize => (
               <option key={pageSize} value={pageSize}>
                 {pageSize}
               </option>
@@ -424,7 +443,7 @@ export function FleetVehiclesList() {
 
         <div className="flex items-center space-x-6 lg:space-x-8">
           <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-            Página {table.getState().pagination.pageIndex + 1} de{" "}
+            Página {table.getState().pagination.pageIndex + 1} de{' '}
             {table.getPageCount()}
           </div>
           <div className="flex items-center space-x-2">
@@ -452,7 +471,7 @@ export function FleetVehiclesList() {
       <FormAddFleetVehicle
         isOpen={isAddDialogOpen}
         setIsOpen={setIsAddDialogOpen}
-        onAddFleetVehicle={(vehicle) => {
+        onAddFleetVehicle={vehicle => {
           setData([...data, vehicle]);
           fetchFleetVehicles(); // Refrescar para obtener datos completos con relaciones
         }}
@@ -480,18 +499,36 @@ export function FleetVehiclesList() {
             line: viewingVehicleCV.line,
             type: viewingVehicleCV.type,
             year: viewingVehicleCV.year ?? 0,
-            color: viewingVehicleCV.color ?? "",
+            color: viewingVehicleCV.color ?? '',
             mileage: viewingVehicleCV.mileage,
-            ...(viewingVehicleCV.cylinder && { cylinder: viewingVehicleCV.cylinder }),
-            ...(viewingVehicleCV.bodyWork && { bodyWork: viewingVehicleCV.bodyWork }),
-            ...(viewingVehicleCV.engineNumber && { engineNumber: viewingVehicleCV.engineNumber }),
-            ...(viewingVehicleCV.chasisNumber && { chasisNumber: viewingVehicleCV.chasisNumber }),
-            ...(viewingVehicleCV.ownerCard && { ownerCard: viewingVehicleCV.ownerCard }),
-            ...(viewingVehicleCV.fuelType && { fuelType: viewingVehicleCV.fuelType }),
-            ...(viewingVehicleCV.serviceType && { serviceType: viewingVehicleCV.serviceType }),
+            ...(viewingVehicleCV.cylinder && {
+              cylinder: viewingVehicleCV.cylinder,
+            }),
+            ...(viewingVehicleCV.bodyWork && {
+              bodyWork: viewingVehicleCV.bodyWork,
+            }),
+            ...(viewingVehicleCV.engineNumber && {
+              engineNumber: viewingVehicleCV.engineNumber,
+            }),
+            ...(viewingVehicleCV.chasisNumber && {
+              chasisNumber: viewingVehicleCV.chasisNumber,
+            }),
+            ...(viewingVehicleCV.ownerCard && {
+              ownerCard: viewingVehicleCV.ownerCard,
+            }),
+            ...(viewingVehicleCV.fuelType && {
+              fuelType: viewingVehicleCV.fuelType,
+            }),
+            ...(viewingVehicleCV.serviceType && {
+              serviceType: viewingVehicleCV.serviceType,
+            }),
             ...(viewingVehicleCV.photo && { photo: viewingVehicleCV.photo }),
-            ...(viewingVehicleCV.emergencyContactName && { emergencyContactName: viewingVehicleCV.emergencyContactName }),
-            ...(viewingVehicleCV.emergencyContactPhone && { emergencyContactPhone: viewingVehicleCV.emergencyContactPhone }),
+            ...(viewingVehicleCV.emergencyContactName && {
+              emergencyContactName: viewingVehicleCV.emergencyContactName,
+            }),
+            ...(viewingVehicleCV.emergencyContactPhone && {
+              emergencyContactPhone: viewingVehicleCV.emergencyContactPhone,
+            }),
           }}
           documents={viewingVehicleCV.documents || []}
         />

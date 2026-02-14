@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Form,
   FormControl,
@@ -20,29 +20,29 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
+} from '@/components/ui/form';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
-import { CalendarIcon, Search } from "lucide-react";
-import axios from "axios";
-import { useToast } from "@/components/hooks/use-toast";
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import { CalendarIcon, Search } from 'lucide-react';
+import axios from 'axios';
+import { useToast } from '@/components/hooks/use-toast';
 
-import { odometerFormSchema, OdometerFormValues } from "./schema";
-import { Vehicle, Driver, OdometerLog } from "./types";
-import { VehicleSelectModal } from "./VehicleSelectModal";
-import { DriverSelectModal } from "./DriverSelectModal";
+import { odometerFormSchema, OdometerFormValues } from './schema';
+import { Vehicle, Driver, OdometerLog } from './types';
+import { VehicleSelectModal } from './VehicleSelectModal';
+import { DriverSelectModal } from './DriverSelectModal';
 
 interface FormEditOdometerProps {
   isOpen: boolean;
@@ -52,17 +52,17 @@ interface FormEditOdometerProps {
   onEditOdometer: (odometer: any) => void;
 }
 
-export function FormEditOdometer({ 
-  isOpen, 
-  setIsOpen, 
-  odometerLog, 
-  onEditOdometer 
+export function FormEditOdometer({
+  isOpen,
+  setIsOpen,
+  odometerLog,
+  onEditOdometer,
 }: FormEditOdometerProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [isVehicleSelectOpen, setIsVehicleSelectOpen] = useState(false);
-  
+
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
   const [isDriverSelectOpen, setIsDriverSelectOpen] = useState(false);
@@ -72,7 +72,7 @@ export function FormEditOdometer({
     defaultValues: {
       vehicleId: 0,
       driverId: undefined,
-      measureType: "KILOMETERS",
+      measureType: 'KILOMETERS',
       measureValue: 0,
       recordedAt: new Date(),
     },
@@ -85,14 +85,15 @@ export function FormEditOdometer({
     if (odometerLog && isOpen) {
       setSelectedVehicle(odometerLog.vehicle);
       setSelectedDriver(odometerLog.driver || null);
-      
+
       form.reset({
         vehicleId: odometerLog.vehicleId,
         driverId: odometerLog.driverId,
         measureType: odometerLog.measureType,
-        measureValue: odometerLog.measureType === "KILOMETERS" 
-          ? odometerLog.kilometers || 0 
-          : odometerLog.hours || 0,
+        measureValue:
+          odometerLog.measureType === 'KILOMETERS'
+            ? odometerLog.kilometers || 0
+            : odometerLog.hours || 0,
         recordedAt: new Date(odometerLog.recordedAt),
       });
     }
@@ -102,14 +103,14 @@ export function FormEditOdometer({
   useEffect(() => {
     const fetchVehicles = async () => {
       try {
-        const response = await axios.get("/api/vehicles/vehicles");
+        const response = await axios.get('/api/vehicles/vehicles');
         setVehicles(response.data);
       } catch (error) {
-        console.error("Error fetching vehicles:", error);
+        console.error('Error fetching vehicles:', error);
         toast({
-          title: "Error al cargar vehículos",
-          description: "No se pudieron cargar los vehículos disponibles",
-          variant: "destructive",
+          title: 'Error al cargar vehículos',
+          description: 'No se pudieron cargar los vehículos disponibles',
+          variant: 'destructive',
         });
       }
     };
@@ -123,14 +124,14 @@ export function FormEditOdometer({
   useEffect(() => {
     const fetchDrivers = async () => {
       try {
-        const response = await axios.get("/api/people/drivers");
+        const response = await axios.get('/api/people/drivers');
         setDrivers(response.data);
       } catch (error) {
-        console.error("Error fetching drivers:", error);
+        console.error('Error fetching drivers:', error);
         toast({
-          title: "Error al cargar conductores",
-          description: "No se pudieron cargar los conductores disponibles",
-          variant: "destructive",
+          title: 'Error al cargar conductores',
+          description: 'No se pudieron cargar los conductores disponibles',
+          variant: 'destructive',
         });
       }
     };
@@ -142,13 +143,13 @@ export function FormEditOdometer({
 
   const handleVehicleSelect = (vehicle: Vehicle) => {
     setSelectedVehicle(vehicle);
-    form.setValue("vehicleId", vehicle.id);
+    form.setValue('vehicleId', vehicle.id);
     setIsVehicleSelectOpen(false);
   };
 
   const handleDriverSelect = (driver: Driver | null) => {
     setSelectedDriver(driver);
-    form.setValue("driverId", driver?.id);
+    form.setValue('driverId', driver?.id);
     setIsDriverSelectOpen(false);
   };
 
@@ -157,34 +158,39 @@ export function FormEditOdometer({
 
     try {
       setIsSubmitting(true);
-      
+
       // Prepare data for API
       const odometerData = {
         vehicleId: values.vehicleId,
         driverId: values.driverId || null,
-        [values.measureType === "KILOMETERS" ? "kilometers" : "hours"]: values.measureValue,
+        [values.measureType === 'KILOMETERS' ? 'kilometers' : 'hours']:
+          values.measureValue,
         measureType: values.measureType,
         recordedAt: values.recordedAt,
       };
 
-      const response = await axios.put(`/api/vehicles/odometer/${odometerLog.id}`, odometerData);
+      const response = await axios.put(
+        `/api/vehicles/odometer/${odometerLog.id}`,
+        odometerData
+      );
 
       onEditOdometer(response.data);
       setIsOpen(false);
       form.reset();
       setSelectedVehicle(null);
       setSelectedDriver(null);
-      
+
       toast({
-        title: "Registro actualizado",
-        description: "El registro de odómetro ha sido actualizado correctamente",
+        title: 'Registro actualizado',
+        description:
+          'El registro de odómetro ha sido actualizado correctamente',
       });
     } catch (error) {
-      console.error("Error updating odometer log:", error);
+      console.error('Error updating odometer log:', error);
       toast({
-        title: "Error al actualizar registro",
-        description: "No se pudo actualizar el registro de odómetro",
-        variant: "destructive",
+        title: 'Error al actualizar registro',
+        description: 'No se pudo actualizar el registro de odómetro',
+        variant: 'destructive',
       });
     } finally {
       setIsSubmitting(false);
@@ -198,7 +204,7 @@ export function FormEditOdometer({
     setSelectedDriver(null);
   };
 
-  const measureType = form.watch("measureType");
+  const measureType = form.watch('measureType');
 
   if (!odometerLog) return null;
 
@@ -208,7 +214,7 @@ export function FormEditOdometer({
         <DialogHeader>
           <DialogTitle>Editar Registro de Odómetro</DialogTitle>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* Selector de Vehículo */}
@@ -223,15 +229,17 @@ export function FormEditOdometer({
                       <div className="flex-1 space-y-2">
                         <Input
                           placeholder="ID del vehículo"
-                          value={selectedVehicle ? selectedVehicle.id.toString() : ""}
+                          value={
+                            selectedVehicle ? selectedVehicle.id.toString() : ''
+                          }
                           readOnly
                         />
                         <Input
                           placeholder="Vehículo seleccionado"
                           value={
                             selectedVehicle
-                              ? `${selectedVehicle.licensePlate} - ${selectedVehicle.brand?.name || "N/A"} ${selectedVehicle.line?.name || "N/A"}`
-                              : ""
+                              ? `${selectedVehicle.licensePlate} - ${selectedVehicle.brand?.name || 'N/A'} ${selectedVehicle.line?.name || 'N/A'}`
+                              : ''
                           }
                           readOnly
                         />
@@ -262,12 +270,18 @@ export function FormEditOdometer({
                       <div className="flex-1 space-y-2">
                         <Input
                           placeholder="ID del conductor"
-                          value={selectedDriver ? selectedDriver.id.toString() : ""}
+                          value={
+                            selectedDriver ? selectedDriver.id.toString() : ''
+                          }
                           readOnly
                         />
                         <Input
                           placeholder="Conductor seleccionado"
-                          value={selectedDriver ? selectedDriver.name : "Sin conductor"}
+                          value={
+                            selectedDriver
+                              ? selectedDriver.name
+                              : 'Sin conductor'
+                          }
                           readOnly
                         />
                       </div>
@@ -315,19 +329,17 @@ export function FormEditOdometer({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    {measureType === "KILOMETERS" ? "Kilómetros" : "Horas"} *
+                    {measureType === 'KILOMETERS' ? 'Kilómetros' : 'Horas'} *
                   </FormLabel>
                   <FormControl>
                     <Input
                       placeholder={
-                        measureType === "KILOMETERS" 
-                          ? "Ej: 15000" 
-                          : "Ej: 250.5"
+                        measureType === 'KILOMETERS' ? 'Ej: 15000' : 'Ej: 250.5'
                       }
                       type="number"
-                      step={measureType === "HOURS" ? "0.1" : "1"}
+                      step={measureType === 'HOURS' ? '0.1' : '1'}
                       {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
+                      onChange={e => field.onChange(Number(e.target.value))}
                     />
                   </FormControl>
                   <FormMessage />
@@ -348,12 +360,12 @@ export function FormEditOdometer({
                         <Button
                           variant="outline"
                           className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
+                            'w-full pl-3 text-left font-normal',
+                            !field.value && 'text-muted-foreground'
                           )}
                         >
                           {field.value ? (
-                            format(field.value, "PPP", { locale: es })
+                            format(field.value, 'PPP', { locale: es })
                           ) : (
                             <span>Seleccione una fecha</span>
                           )}
@@ -366,7 +378,9 @@ export function FormEditOdometer({
                         mode="single"
                         selected={field.value}
                         onSelect={field.onChange}
-                        disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                        disabled={date =>
+                          date > new Date() || date < new Date('1900-01-01')
+                        }
                         initialFocus
                       />
                     </PopoverContent>
@@ -381,7 +395,7 @@ export function FormEditOdometer({
                 Cancelar
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Actualizando..." : "Actualizar"}
+                {isSubmitting ? 'Actualizando...' : 'Actualizar'}
               </Button>
             </div>
           </form>

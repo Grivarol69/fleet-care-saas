@@ -87,7 +87,9 @@ const workOrderStatusConfig = {
 
 export function DetailsTab({ invoice }: DetailsTabProps) {
   const router = useRouter();
-  const statusInfo = statusConfig[invoice.status as keyof typeof statusConfig] || {
+  const statusInfo = statusConfig[
+    invoice.status as keyof typeof statusConfig
+  ] || {
     label: invoice.status,
     variant: 'outline' as const,
   };
@@ -108,7 +110,9 @@ export function DetailsTab({ invoice }: DetailsTabProps) {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <p className="text-sm text-muted-foreground mb-1">Número de Factura</p>
+              <p className="text-sm text-muted-foreground mb-1">
+                Número de Factura
+              </p>
               <p className="text-lg font-semibold">{invoice.invoiceNumber}</p>
             </div>
             <div>
@@ -116,17 +120,25 @@ export function DetailsTab({ invoice }: DetailsTabProps) {
               <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground mb-1">Fecha de Factura</p>
+              <p className="text-sm text-muted-foreground mb-1">
+                Fecha de Factura
+              </p>
               <p className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                {format(new Date(invoice.invoiceDate), "dd 'de' MMMM 'de' yyyy", {
-                  locale: es,
-                })}
+                {format(
+                  new Date(invoice.invoiceDate),
+                  "dd 'de' MMMM 'de' yyyy",
+                  {
+                    locale: es,
+                  }
+                )}
               </p>
             </div>
             {invoice.dueDate && (
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Fecha de Vencimiento</p>
+                <p className="text-sm text-muted-foreground mb-1">
+                  Fecha de Vencimiento
+                </p>
                 <p className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   {format(new Date(invoice.dueDate), "dd 'de' MMMM 'de' yyyy", {
@@ -146,9 +158,15 @@ export function DetailsTab({ invoice }: DetailsTabProps) {
 
           {invoice.attachmentUrl && (
             <div className="pt-4 border-t">
-              <p className="text-sm text-muted-foreground mb-2">Archivo Adjunto</p>
+              <p className="text-sm text-muted-foreground mb-2">
+                Archivo Adjunto
+              </p>
               <Button variant="outline" size="sm" asChild>
-                <a href={invoice.attachmentUrl} target="_blank" rel="noopener noreferrer">
+                <a
+                  href={invoice.attachmentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <Download className="mr-2 h-4 w-4" />
                   Descargar Factura
                 </a>
@@ -216,7 +234,8 @@ export function DetailsTab({ invoice }: DetailsTabProps) {
               <div>
                 <p className="text-sm text-muted-foreground">Vehículo</p>
                 <p className="font-semibold">
-                  {invoice.workOrder.vehicle.licensePlate} - {invoice.workOrder.vehicle.brand.name}{' '}
+                  {invoice.workOrder.vehicle.licensePlate} -{' '}
+                  {invoice.workOrder.vehicle.brand.name}{' '}
                   {invoice.workOrder.vehicle.line.name}
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
@@ -229,14 +248,28 @@ export function DetailsTab({ invoice }: DetailsTabProps) {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Estado</p>
-                <Badge variant={workOrderStatusConfig[invoice.workOrder.status as keyof typeof workOrderStatusConfig]?.variant || 'outline'}>
-                  {workOrderStatusConfig[invoice.workOrder.status as keyof typeof workOrderStatusConfig]?.label || invoice.workOrder.status}
+                <Badge
+                  variant={
+                    workOrderStatusConfig[
+                      invoice.workOrder
+                        .status as keyof typeof workOrderStatusConfig
+                    ]?.variant || 'outline'
+                  }
+                >
+                  {workOrderStatusConfig[
+                    invoice.workOrder
+                      .status as keyof typeof workOrderStatusConfig
+                  ]?.label || invoice.workOrder.status}
                 </Badge>
               </div>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => router.push(`/dashboard/maintenance/work-orders/${invoice.workOrder?.id}`)}
+                onClick={() =>
+                  router.push(
+                    `/dashboard/maintenance/work-orders/${invoice.workOrder?.id}`
+                  )
+                }
               >
                 <ExternalLink className="mr-2 h-4 w-4" />
                 Ver Orden de Trabajo
@@ -271,7 +304,8 @@ export function DetailsTab({ invoice }: DetailsTabProps) {
             <div className="flex justify-between pt-3 border-t">
               <span className="font-semibold">Total</span>
               <span className="font-bold text-lg">
-                ${invoice.totalAmount.toLocaleString('es-CO')} {invoice.currency}
+                ${invoice.totalAmount.toLocaleString('es-CO')}{' '}
+                {invoice.currency}
               </span>
             </div>
 
@@ -285,10 +319,14 @@ export function DetailsTab({ invoice }: DetailsTabProps) {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className={`font-medium ${balance > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                  <span
+                    className={`font-medium ${balance > 0 ? 'text-orange-600' : 'text-green-600'}`}
+                  >
                     Saldo Pendiente
                   </span>
-                  <span className={`font-semibold ${balance > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                  <span
+                    className={`font-semibold ${balance > 0 ? 'text-orange-600' : 'text-green-600'}`}
+                  >
                     ${balance.toLocaleString('es-CO')} {invoice.currency}
                   </span>
                 </div>
@@ -306,23 +344,30 @@ export function DetailsTab({ invoice }: DetailsTabProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {invoice.payments.map((payment) => (
-                <div key={payment.id} className="flex justify-between items-start p-3 border rounded-lg">
+              {invoice.payments.map(payment => (
+                <div
+                  key={payment.id}
+                  className="flex justify-between items-start p-3 border rounded-lg"
+                >
                   <div>
                     <p className="font-medium">
-                      ${payment.amount.toLocaleString('es-CO')} {invoice.currency}
+                      ${payment.amount.toLocaleString('es-CO')}{' '}
+                      {invoice.currency}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {payment.paymentMethod}
-                      {payment.referenceNumber && ` - Ref: ${payment.referenceNumber}`}
+                      {payment.referenceNumber &&
+                        ` - Ref: ${payment.referenceNumber}`}
                     </p>
                     {payment.notes && (
-                      <p className="text-xs text-muted-foreground mt-1">{payment.notes}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {payment.notes}
+                      </p>
                     )}
                   </div>
                   <div className="text-right">
                     <p className="text-sm">
-                      {format(new Date(payment.paymentDate), "dd MMM yyyy", {
+                      {format(new Date(payment.paymentDate), 'dd MMM yyyy', {
                         locale: es,
                       })}
                     </p>

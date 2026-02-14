@@ -32,7 +32,14 @@ import {
 import axios from 'axios';
 import { useToast } from '@/components/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Loader2, Search, AlertTriangle, CheckCircle2, Plus, Send } from 'lucide-react';
+import {
+  Loader2,
+  Search,
+  AlertTriangle,
+  CheckCircle2,
+  Plus,
+  Send,
+} from 'lucide-react';
 
 // Schema para creación directa (OWNER/MANAGER)
 const formSchema = z.object({
@@ -138,8 +145,8 @@ export function FormAddMantItem({
   useEffect(() => {
     if (isOpen) {
       fetch('/api/auth/me')
-        .then((res) => res.json())
-        .then((data) => {
+        .then(res => res.json())
+        .then(data => {
           if (data.role) setUserRole(data.role);
         })
         .catch(console.error);
@@ -249,7 +256,10 @@ export function FormAddMantItem({
 
       if (canCreate) {
         // Creación directa (OWNER/MANAGER)
-        const response = await axios.post('/api/maintenance/mant-items', values);
+        const response = await axios.post(
+          '/api/maintenance/mant-items',
+          values
+        );
         const newMantItem = response.data;
 
         onAddMantItem(newMantItem);
@@ -271,7 +281,7 @@ export function FormAddMantItem({
           categoryId: values.categoryId,
           type: values.type,
           justification: values.justification,
-          similarItems: similarItems.map((s) => ({
+          similarItems: similarItems.map(s => ({
             id: s.id,
             name: s.name,
             score: s.score,
@@ -297,8 +307,7 @@ export function FormAddMantItem({
           errorMessage = 'Ya existe un item con este nombre';
         } else if (error.response?.status === 403) {
           errorMessage =
-            error.response.data?.error ||
-            'No tiene permisos para esta accion';
+            error.response.data?.error || 'No tiene permisos para esta accion';
         } else if (error.response?.data?.error) {
           errorMessage = error.response.data.error;
         }
@@ -340,7 +349,7 @@ export function FormAddMantItem({
               <Input
                 placeholder="Escriba el nombre del item... (ej: cambio aceite)"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={e => setSearchQuery(e.target.value)}
                 className="pl-10"
                 autoFocus
               />
@@ -361,7 +370,7 @@ export function FormAddMantItem({
                   Se encontraron {similarItems.length} item(s) similares:
                 </div>
                 <div className="max-h-60 overflow-y-auto space-y-2">
-                  {similarItems.map((item) => (
+                  {similarItems.map(item => (
                     <div
                       key={item.id}
                       className={`p-3 rounded-lg border ${getScoreColor(item.score)}`}
@@ -395,10 +404,11 @@ export function FormAddMantItem({
                   ))}
                 </div>
 
-                {similarItems.some((s) => s.score >= 80) && (
+                {similarItems.some(s => s.score >= 80) && (
                   <p className="text-xs text-red-600 flex items-center gap-1">
                     <AlertTriangle className="h-3 w-3" />
-                    Hay items con alta similitud. Verifique que no sea un duplicado.
+                    Hay items con alta similitud. Verifique que no sea un
+                    duplicado.
                   </p>
                 )}
               </div>
@@ -446,7 +456,8 @@ export function FormAddMantItem({
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               {!canCreate && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">
-                  Su solicitud sera revisada por un administrador antes de crear el item.
+                  Su solicitud sera revisada por un administrador antes de crear
+                  el item.
                 </div>
               )}
 
@@ -557,7 +568,7 @@ export function FormAddMantItem({
                   <FormItem>
                     <FormLabel>Categoria</FormLabel>
                     <Select
-                      onValueChange={(value) => field.onChange(Number(value))}
+                      onValueChange={value => field.onChange(Number(value))}
                       value={field.value > 0 ? field.value.toString() : ''}
                       disabled={isLoading || isLoadingCategories}
                     >

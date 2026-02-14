@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -21,14 +21,14 @@ import {
   FormLabel,
   FormMessage,
   FormDescription,
-} from "@/components/ui/form";
-import axios from "axios";
-import { useToast } from "@/components/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+} from '@/components/ui/form';
+import axios from 'axios';
+import { useToast } from '@/components/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
-  code: z.string().min(1, "El codigo es requerido").max(50),
-  name: z.string().min(1, "El nombre es requerido").max(100),
+  code: z.string().min(1, 'El codigo es requerido').max(50),
+  name: z.string().min(1, 'El nombre es requerido').max(100),
   description: z.string().max(500).optional(),
   requiresExpiry: z.boolean(),
   isMandatory: z.boolean(),
@@ -70,9 +70,9 @@ export function FormAddDocumentType({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      code: "",
-      name: "",
-      description: "",
+      code: '',
+      name: '',
+      description: '',
       requiresExpiry: true,
       isMandatory: false,
       expiryWarningDays: 30,
@@ -84,21 +84,21 @@ export function FormAddDocumentType({
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setIsLoading(true);
-      const response = await axios.post("/api/vehicles/document-types", values);
+      const response = await axios.post('/api/vehicles/document-types', values);
       onAdd(response.data);
       setIsOpen(false);
       form.reset();
       toast({
-        title: "Tipo creado",
-        description: "El tipo de documento ha sido creado exitosamente",
+        title: 'Tipo creado',
+        description: 'El tipo de documento ha sido creado exitosamente',
       });
     } catch (error) {
-      console.error("Error creating document type:", error);
-      let description = "No se pudo crear el tipo de documento";
+      console.error('Error creating document type:', error);
+      let description = 'No se pudo crear el tipo de documento';
       if (axios.isAxiosError(error) && error.response?.data?.error) {
         description = error.response.data.error;
       }
-      toast({ title: "Error", description, variant: "destructive" });
+      toast({ title: 'Error', description, variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -121,9 +121,15 @@ export function FormAddDocumentType({
                   <FormItem>
                     <FormLabel>Codigo *</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ej: SOAT, ITV" {...field} disabled={isLoading} />
+                      <Input
+                        placeholder="Ej: SOAT, ITV"
+                        {...field}
+                        disabled={isLoading}
+                      />
                     </FormControl>
-                    <FormDescription>Identificador unico (se guarda en mayusculas)</FormDescription>
+                    <FormDescription>
+                      Identificador unico (se guarda en mayusculas)
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -135,7 +141,11 @@ export function FormAddDocumentType({
                   <FormItem>
                     <FormLabel>Nombre *</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ej: SOAT, Inspeccion Tecnica" {...field} disabled={isLoading} />
+                      <Input
+                        placeholder="Ej: SOAT, Inspeccion Tecnica"
+                        {...field}
+                        disabled={isLoading}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -150,7 +160,11 @@ export function FormAddDocumentType({
                 <FormItem>
                   <FormLabel>Descripcion</FormLabel>
                   <FormControl>
-                    <Input placeholder="Descripcion opcional" {...field} disabled={isLoading} />
+                    <Input
+                      placeholder="Descripcion opcional"
+                      {...field}
+                      disabled={isLoading}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -164,7 +178,11 @@ export function FormAddDocumentType({
                 render={({ field }) => (
                   <FormItem className="flex items-center gap-2 space-y-0">
                     <FormControl>
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} disabled={isLoading} />
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={isLoading}
+                      />
                     </FormControl>
                     <FormLabel>Requiere fecha de vencimiento</FormLabel>
                   </FormItem>
@@ -176,7 +194,11 @@ export function FormAddDocumentType({
                 render={({ field }) => (
                   <FormItem className="flex items-center gap-2 space-y-0">
                     <FormControl>
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} disabled={isLoading} />
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={isLoading}
+                      />
                     </FormControl>
                     <FormLabel>Obligatorio para circular</FormLabel>
                   </FormItem>
@@ -195,7 +217,9 @@ export function FormAddDocumentType({
                       <Input
                         type="number"
                         {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
+                        onChange={e =>
+                          field.onChange(parseInt(e.target.value, 10) || 0)
+                        }
                         disabled={isLoading}
                       />
                     </FormControl>
@@ -213,7 +237,9 @@ export function FormAddDocumentType({
                       <Input
                         type="number"
                         {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
+                        onChange={e =>
+                          field.onChange(parseInt(e.target.value, 10) || 0)
+                        }
                         disabled={isLoading}
                       />
                     </FormControl>
@@ -231,7 +257,9 @@ export function FormAddDocumentType({
                       <Input
                         type="number"
                         {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
+                        onChange={e =>
+                          field.onChange(parseInt(e.target.value, 10) || 0)
+                        }
                         disabled={isLoading}
                       />
                     </FormControl>
@@ -242,12 +270,17 @@ export function FormAddDocumentType({
             </div>
 
             <div className="flex justify-end gap-4 pt-4 border-t">
-              <Button type="button" variant="outline" onClick={() => setIsOpen(false)} disabled={isLoading}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsOpen(false)}
+                disabled={isLoading}
+              >
                 Cancelar
               </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isLoading ? "Creando..." : "Crear"}
+                {isLoading ? 'Creando...' : 'Crear'}
               </Button>
             </div>
           </form>

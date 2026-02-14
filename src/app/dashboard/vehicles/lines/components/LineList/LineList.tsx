@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
   flexRender,
   ColumnDef,
-} from "@tanstack/react-table";
+} from '@tanstack/react-table';
 import {
   Table,
   TableBody,
@@ -14,13 +14,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { FormAddLine } from "../FormAddLine";
-import { FormEditLine } from "../FormEditLine";
-import axios from "axios";
-import { useToast } from "@/components/hooks/use-toast";
-import { LineListProps } from "./LineList.types";
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { FormAddLine } from '../FormAddLine';
+import { FormEditLine } from '../FormEditLine';
+import axios from 'axios';
+import { useToast } from '@/components/hooks/use-toast';
+import { LineListProps } from './LineList.types';
 
 export function LineList() {
   const [data, setData] = useState<LineListProps[]>([]);
@@ -33,9 +33,9 @@ export function LineList() {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetch("/api/auth/me")
-      .then((res) => res.json())
-      .then((data) => {
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
         if (data.isSuperAdmin) setIsSuperAdmin(true);
       })
       .catch(() => {});
@@ -47,19 +47,19 @@ export function LineList() {
       const response = await axios.get(`/api/vehicles/lines`);
       setData(response.data);
     } catch (error) {
-      console.error("Error fetching Lines: ", error);
+      console.error('Error fetching Lines: ', error);
       if (axios.isAxiosError(error) && error.response?.status === 401) {
         toast({
-          title: "No autorizado",
-          description: "Debes iniciar sesión para ver las marcas",
-          variant: "destructive",
+          title: 'No autorizado',
+          description: 'Debes iniciar sesión para ver las marcas',
+          variant: 'destructive',
         });
         return;
       }
       toast({
-        title: "Error fetching Lines",
-        description: "Please try again later",
-        variant: "destructive",
+        title: 'Error fetching Lines',
+        description: 'Please try again later',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -78,25 +78,25 @@ export function LineList() {
   const handleDelete = async (id: number) => {
     try {
       await axios.delete(`/api/vehicles/lines/${id}`);
-      setData((prevData) => prevData.filter((line) => line.id !== id));
+      setData(prevData => prevData.filter(line => line.id !== id));
       toast({
-        title: "Line deleted!",
-        description: "The line has been successfully deleted.",
+        title: 'Line deleted!',
+        description: 'The line has been successfully deleted.',
       });
     } catch (error) {
-      console.error("Error deleting line:", error);
+      console.error('Error deleting line:', error);
       if (axios.isAxiosError(error) && error.response?.status === 409) {
         toast({
-          title: "No se puede eliminar",
-          description: "La marca tiene vehículos o líneas asociadas",
-          variant: "destructive",
+          title: 'No se puede eliminar',
+          description: 'La marca tiene vehículos o líneas asociadas',
+          variant: 'destructive',
         });
         return;
       }
       toast({
-        title: "Error deleting line",
-        description: "Please try again later.",
-        variant: "destructive",
+        title: 'Error deleting line',
+        description: 'Please try again later.',
+        variant: 'destructive',
       });
     }
   };
@@ -105,49 +105,52 @@ export function LineList() {
 
   const columns: ColumnDef<LineListProps>[] = [
     {
-      accessorKey: "id",
-      header: "ID",
+      accessorKey: 'id',
+      header: 'ID',
     },
     {
-      accessorKey: "name",
-      header: "Nombre",
+      accessorKey: 'name',
+      header: 'Nombre',
     },
     {
-      accessorKey: "brandName",
-      header: "Marca",
+      accessorKey: 'brandName',
+      header: 'Marca',
     },
     {
-      id: "origen",
-      header: "Origen",
+      id: 'origen',
+      header: 'Origen',
       cell: ({ row }) => (
-        <span className={`px-2 py-1 rounded-full text-xs ${
-          row.original.isGlobal
-            ? "bg-purple-100 text-purple-800"
-            : "bg-slate-100 text-slate-700"
-        }`}>
-          {row.original.isGlobal ? "Global" : "Empresa"}
+        <span
+          className={`px-2 py-1 rounded-full text-xs ${
+            row.original.isGlobal
+              ? 'bg-purple-100 text-purple-800'
+              : 'bg-slate-100 text-slate-700'
+          }`}
+        >
+          {row.original.isGlobal ? 'Global' : 'Empresa'}
         </span>
       ),
     },
     {
-      id: "actions",
-      cell: ({ row }) => canMutate(row.original) ? (
-        <div>
-          <Button
-            variant="outline"
-            className="mr-2"
-            onClick={() => handleEdit(row.original)}
-          >
-            Editar
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={() => handleDelete(row.original.id)}
-          >
-            Eliminar
-          </Button>
-        </div>
-      ) : null,
+      id: 'actions',
+      cell: ({ row }) =>
+        canMutate(row.original) ? (
+          <div>
+            <Button
+              variant="outline"
+              className="mr-2"
+              onClick={() => handleEdit(row.original)}
+            >
+              Editar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => handleDelete(row.original.id)}
+            >
+              Eliminar
+            </Button>
+          </div>
+        ) : null,
     },
   ];
 
@@ -173,9 +176,9 @@ export function LineList() {
       </Button>
       <Table>
         <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
+          {table.getHeaderGroups().map(headerGroup => (
             <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
+              {headerGroup.headers.map(header => (
                 <TableHead key={header.id}>
                   {flexRender(
                     header.column.columnDef.header,
@@ -187,9 +190,9 @@ export function LineList() {
           ))}
         </TableHeader>
         <TableBody>
-          {table.getRowModel().rows.map((row) => (
+          {table.getRowModel().rows.map(row => (
             <TableRow key={row.id}>
-              {row.getVisibleCells().map((cell) => (
+              {row.getVisibleCells().map(cell => (
                 <TableCell key={cell.id}>
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </TableCell>
@@ -201,16 +204,16 @@ export function LineList() {
       <FormAddLine
         isOpen={isAddDialogOpen}
         setIsOpen={setIsAddDialogOpen}
-        onAddLine={(newLine) => setData([...data, newLine])}
+        onAddLine={newLine => setData([...data, newLine])}
       />
       {editingLine && (
         <FormEditLine
           isOpen={isEditDialogOpen}
           setIsOpen={setIsEditDialogOpen}
           line={editingLine}
-          onEditLine={(editedLine) => {
+          onEditLine={editedLine => {
             setData(
-              data.map((cat) => (cat.id === editedLine.id ? editedLine : cat))
+              data.map(cat => (cat.id === editedLine.id ? editedLine : cat))
             );
           }}
         />

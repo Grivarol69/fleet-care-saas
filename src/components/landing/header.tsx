@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button"
-import { Truck } from "lucide-react"
+import { Button } from '@/components/ui/button';
+import { Truck } from 'lucide-react';
 
 export function Header() {
   return (
@@ -8,20 +8,34 @@ export function Header() {
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center space-x-2">
             <Truck className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold text-foreground">Fleet Care</span>
+            <span className="text-xl font-bold text-foreground">
+              Fleet Care
+            </span>
           </div>
 
           <nav className="hidden md:flex items-center space-x-8">
-            <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">
+            <a
+              href="#features"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
               Características
             </a>
-            <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">
+            <a
+              href="#pricing"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
               Precios
             </a>
-            <a href="#about" className="text-muted-foreground hover:text-foreground transition-colors">
+            <a
+              href="#about"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
               Nosotros
             </a>
-            <a href="#contact" className="text-muted-foreground hover:text-foreground transition-colors">
+            <a
+              href="#contact"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
               Contacto
             </a>
           </nav>
@@ -35,5 +49,5 @@ export function Header() {
         </div>
       </div>
     </header>
-  )
+  );
 }

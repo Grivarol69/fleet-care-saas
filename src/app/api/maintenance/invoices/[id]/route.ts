@@ -1,21 +1,17 @@
-import { prisma } from "@/lib/prisma";
-import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
 
 /**
  * GET - Obtener detalle de una Invoice específica
  */
-export async function GET(
-
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET({ params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
-    const
-      { id } = await params;
+    const { id } = await params;
     const invoice = await prisma.invoice.findUnique({
       where: {
         id,
@@ -94,17 +90,17 @@ export async function GET(
 
     if (!invoice) {
       return NextResponse.json(
-        { error: "Factura no encontrada" },
+        { error: 'Factura no encontrada' },
         { status: 404 }
       );
     }
 
     return NextResponse.json(invoice);
   } catch (error: unknown) {
-    console.error("[INVOICE_GET]", error);
+    console.error('[INVOICE_GET]', error);
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Error interno",
+        error: error instanceof Error ? error.message : 'Error interno',
       },
       { status: 500 }
     );
@@ -125,11 +121,11 @@ export async function PATCH(
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
     // Validar permisos (solo OWNER/MANAGER pueden aprobar)
-    const { requireManagementRole } = await import("@/lib/permissions");
+    const { requireManagementRole } = await import('@/lib/permissions');
     try {
       requireManagementRole(user);
     } catch (error) {
@@ -149,24 +145,24 @@ export async function PATCH(
 
     if (!existingInvoice) {
       return NextResponse.json(
-        { error: "Factura no encontrada" },
+        { error: 'Factura no encontrada' },
         { status: 404 }
       );
     }
 
     // Si se está APROBANDO la factura → CIERRE GRANULAR POR ITEM
-    if (status === "APPROVED") {
-      console.log("[INVOICE_APPROVE] Iniciando cierre granular por item...");
+    if (status === 'APPROVED') {
+      console.log('[INVOICE_APPROVE] Iniciando cierre granular por item...');
 
       // TRANSACCIÓN ATÓMICA CRÍTICA
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async tx => {
         const now = new Date();
 
         // 1. Aprobar Invoice
         const invoice = await tx.invoice.update({
           where: { id },
           data: {
-            status: "APPROVED",
+            status: 'APPROVED',
             approvedBy: user.id,
             approvedAt: now,
             notes: notes || null,
@@ -193,7 +189,7 @@ export async function PATCH(
 
         // 2. CIERRE GRANULAR: Por cada InvoiceItem que tiene workOrderItemId
         const invoiceItemsWithWO = invoice.items.filter(
-          (item) => item.workOrderItemId
+          item => item.workOrderItemId
         );
 
         console.log(
@@ -208,7 +204,7 @@ export async function PATCH(
           await tx.workOrderItem.update({
             where: { id: workOrderItem.id },
             data: {
-              status: "COMPLETED",
+              status: 'COMPLETED',
               invoiceNumber: invoice.invoiceNumber,
             },
           });
@@ -220,7 +216,7 @@ export async function PATCH(
           // 2.2. Buscar y Completar MaintenanceAlert asociada
           // La relación es: MaintenanceAlert.workOrderId + mantItemId coincide con WorkOrderItem
           const maintenanceAlert = invoice.workOrder?.maintenanceAlerts.find(
-            (alert) => alert.workOrderId === invoice.workOrderId
+            alert => alert.workOrderId === invoice.workOrderId
           );
 
           if (maintenanceAlert) {
@@ -241,7 +237,7 @@ export async function PATCH(
             await tx.maintenanceAlert.update({
               where: { id: maintenanceAlert.id },
               data: {
-                status: "COMPLETED",
+                status: 'COMPLETED',
                 actualCost: invoiceItem.total,
                 wasOnTime,
                 closedAt: now,
@@ -258,7 +254,7 @@ export async function PATCH(
             await tx.vehicleProgramItem.update({
               where: { id: maintenanceAlert.programItemId },
               data: {
-                status: "COMPLETED",
+                status: 'COMPLETED',
                 executedKm: invoice.workOrder!.creationMileage,
                 executedDate: now,
               },
@@ -296,7 +292,7 @@ export async function PATCH(
           // Calcular costo real acumulado de TODOS los items completados
           const allWorkOrderItems = invoice.workOrder!.workOrderItems;
           const completedItems = allWorkOrderItems.filter(
-            (item) => item.status === "COMPLETED"
+            item => item.status === 'COMPLETED'
           );
           const totalActualCost = completedItems.reduce(
             (sum, item) => sum + item.totalCost.toNumber(),
@@ -305,25 +301,23 @@ export async function PATCH(
 
           // WorkOrder está completa si TODOS los items están COMPLETED
           const allItemsCompleted = allWorkOrderItems.every(
-            (item) => item.status === "COMPLETED"
+            item => item.status === 'COMPLETED'
           );
 
           await tx.workOrder.update({
             where: { id: invoice.workOrderId },
             data: {
               actualCost: totalActualCost,
-              status: allItemsCompleted ? "COMPLETED" : "IN_PROGRESS",
+              status: allItemsCompleted ? 'COMPLETED' : 'IN_PROGRESS',
             },
           });
 
           console.log(
             `[INVOICE_APPROVE] ✅ WorkOrder #${invoice.workOrderId} actualizada:`
           );
+          console.log(`[INVOICE_APPROVE]    - actualCost: $${totalActualCost}`);
           console.log(
-            `[INVOICE_APPROVE]    - actualCost: $${totalActualCost}`
-          );
-          console.log(
-            `[INVOICE_APPROVE]    - status: ${allItemsCompleted ? "COMPLETED" : "IN_PROGRESS"}`
+            `[INVOICE_APPROVE]    - status: ${allItemsCompleted ? 'COMPLETED' : 'IN_PROGRESS'}`
           );
           console.log(
             `[INVOICE_APPROVE]    - Items completados: ${completedItems.length}/${allWorkOrderItems.length}`
@@ -331,7 +325,7 @@ export async function PATCH(
         }
 
         console.log(
-          "[INVOICE_APPROVE] ✅✅✅ Cierre granular completado exitosamente"
+          '[INVOICE_APPROVE] ✅✅✅ Cierre granular completado exitosamente'
         );
 
         return invoice;
@@ -395,10 +389,10 @@ export async function PATCH(
 
     return NextResponse.json(invoice);
   } catch (error: unknown) {
-    console.error("[INVOICE_PATCH]", error);
+    console.error('[INVOICE_PATCH]', error);
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Error interno",
+        error: error instanceof Error ? error.message : 'Error interno',
       },
       { status: 500 }
     );

@@ -38,10 +38,14 @@ export function ImprovedAlertsTable({
 
   const handleTogglePackage = (packageAlerts: MaintenanceAlert[]) => {
     const packageAlertIds = packageAlerts.map(a => a.id);
-    const allSelected = packageAlertIds.every(id => selectedAlertIds.includes(id));
+    const allSelected = packageAlertIds.every(id =>
+      selectedAlertIds.includes(id)
+    );
 
     if (allSelected) {
-      onSelectionChange(selectedAlertIds.filter(id => !packageAlertIds.includes(id)));
+      onSelectionChange(
+        selectedAlertIds.filter(id => !packageAlertIds.includes(id))
+      );
     } else {
       const newIds = [...new Set([...selectedAlertIds, ...packageAlertIds])];
       onSelectionChange(newIds);
@@ -49,19 +53,33 @@ export function ImprovedAlertsTable({
   };
 
   // Calcular totales de selección
-  const selectedAlerts = vehicles.flatMap(v => v.alerts).filter(a => selectedAlertIds.includes(a.id));
-  const selectedCost = selectedAlerts.reduce((sum, a) => sum + (a.estimatedCost || 0), 0);
-  const selectedDuration = selectedAlerts.reduce((sum, a) => sum + (a.estimatedDuration || 0), 0);
+  const selectedAlerts = vehicles
+    .flatMap(v => v.alerts)
+    .filter(a => selectedAlertIds.includes(a.id));
+  const selectedCost = selectedAlerts.reduce(
+    (sum, a) => sum + (a.estimatedCost || 0),
+    0
+  );
+  const selectedDuration = selectedAlerts.reduce(
+    (sum, a) => sum + (a.estimatedDuration || 0),
+    0
+  );
 
   // Validar si hay alertas en progreso
-  const inProgressCount = selectedAlerts.filter(a => a.status === 'IN_PROGRESS').length;
+  const inProgressCount = selectedAlerts.filter(
+    a => a.status === 'IN_PROGRESS'
+  ).length;
   const hasInProgressAlerts = inProgressCount > 0;
   const allInProgress = inProgressCount === selectedAlerts.length;
 
   // Ordenar vehículos: críticos primero, luego advertencia, luego normales
   const sortedVehicles = [...vehicles].sort((a, b) => {
-    const aCritical = a.alerts.filter(alert => alert.alertLevel === 'CRITICAL').length;
-    const bCritical = b.alerts.filter(alert => alert.alertLevel === 'CRITICAL').length;
+    const aCritical = a.alerts.filter(
+      alert => alert.alertLevel === 'CRITICAL'
+    ).length;
+    const bCritical = b.alerts.filter(
+      alert => alert.alertLevel === 'CRITICAL'
+    ).length;
     const aHigh = a.alerts.filter(alert => alert.alertLevel === 'HIGH').length;
     const bHigh = b.alerts.filter(alert => alert.alertLevel === 'HIGH').length;
 
@@ -107,14 +125,20 @@ export function ImprovedAlertsTable({
                 {/* Métricas de Selección */}
                 <div className="flex gap-8">
                   <div className="text-center">
-                    <p className="text-xs text-blue-100 uppercase tracking-wider mb-1">Items</p>
-                    <p className="text-3xl font-black">{selectedAlertIds.length}</p>
+                    <p className="text-xs text-blue-100 uppercase tracking-wider mb-1">
+                      Items
+                    </p>
+                    <p className="text-3xl font-black">
+                      {selectedAlertIds.length}
+                    </p>
                   </div>
 
                   <div className="w-px bg-blue-400"></div>
 
                   <div className="text-center">
-                    <p className="text-xs text-blue-100 uppercase tracking-wider mb-1">Inversión</p>
+                    <p className="text-xs text-blue-100 uppercase tracking-wider mb-1">
+                      Inversión
+                    </p>
                     <p className="text-3xl font-black">
                       ${(selectedCost / 1000).toFixed(0)}k
                     </p>
@@ -126,7 +150,9 @@ export function ImprovedAlertsTable({
                   <div className="w-px bg-blue-400"></div>
 
                   <div className="text-center">
-                    <p className="text-xs text-blue-100 uppercase tracking-wider mb-1">Tiempo</p>
+                    <p className="text-xs text-blue-100 uppercase tracking-wider mb-1">
+                      Tiempo
+                    </p>
                     <p className="text-3xl font-black">
                       {selectedDuration.toFixed(1)}h
                     </p>
@@ -136,12 +162,20 @@ export function ImprovedAlertsTable({
                   <div className="w-px bg-blue-400"></div>
 
                   <div className="text-center">
-                    <p className="text-xs text-blue-100 uppercase tracking-wider mb-1">Vehículos</p>
+                    <p className="text-xs text-blue-100 uppercase tracking-wider mb-1">
+                      Vehículos
+                    </p>
                     <p className="text-3xl font-black">
-                      {new Set(selectedAlerts.map(a => {
-                        const vehicle = vehicles.find(v => v.alerts.some(alert => alert.id === a.id));
-                        return vehicle?.vehicleId;
-                      })).size}
+                      {
+                        new Set(
+                          selectedAlerts.map(a => {
+                            const vehicle = vehicles.find(v =>
+                              v.alerts.some(alert => alert.id === a.id)
+                            );
+                            return vehicle?.vehicleId;
+                          })
+                        ).size
+                      }
                     </p>
                   </div>
                 </div>
@@ -150,7 +184,8 @@ export function ImprovedAlertsTable({
                 <div className="flex flex-col gap-2 items-end">
                   {hasInProgressAlerts && (
                     <p className="text-xs text-yellow-200 font-semibold">
-                      ⚠️ {inProgressCount} item{inProgressCount > 1 ? 's' : ''} ya {inProgressCount > 1 ? 'están' : 'está'} en progreso
+                      ⚠️ {inProgressCount} item{inProgressCount > 1 ? 's' : ''}{' '}
+                      ya {inProgressCount > 1 ? 'están' : 'está'} en progreso
                     </p>
                   )}
                   <div className="flex gap-3">

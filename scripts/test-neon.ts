@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 
 async function testNeon() {
   const prisma = new PrismaClient({
-    log: ['error', 'warn']
+    log: ['error', 'warn'],
   });
 
   try {
@@ -13,7 +13,8 @@ async function testNeon() {
     console.log('✅ CONEXIÓN EXITOSA!\n');
 
     console.log('2. Query simple...');
-    const result = await prisma.$queryRaw`SELECT NOW() as current_time, version() as pg_version`;
+    const result =
+      await prisma.$queryRaw`SELECT NOW() as current_time, version() as pg_version`;
     console.log('✅ Query exitosa:', result);
 
     console.log('\n3. Contar tenants...');
@@ -28,7 +29,12 @@ async function testNeon() {
       ORDER BY tablename
     `;
     console.log(`✅ ${tables.length} tablas creadas en Neon:`);
-    console.log(tables.slice(0, 15).map((t: any) => `  - ${t.tablename}`).join('\n'));
+    console.log(
+      tables
+        .slice(0, 15)
+        .map((t: any) => `  - ${t.tablename}`)
+        .join('\n')
+    );
 
     console.log('\n═══════════════════════════════════════');
     console.log('✅ NEON FUNCIONANDO PERFECTAMENTE');
@@ -37,7 +43,10 @@ async function testNeon() {
     await prisma.$disconnect();
     return true;
   } catch (error) {
-    console.error('❌ Error:', error instanceof Error ? error.message : 'Unknown');
+    console.error(
+      '❌ Error:',
+      error instanceof Error ? error.message : 'Unknown'
+    );
     await prisma.$disconnect();
     return false;
   }

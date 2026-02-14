@@ -35,8 +35,8 @@ export function MantItemsList() {
 
   useEffect(() => {
     fetch('/api/auth/me')
-      .then((res) => res.json())
-      .then((data) => {
+      .then(res => res.json())
+      .then(data => {
         if (data.isSuperAdmin) setIsSuperAdmin(true);
       })
       .catch(() => {});
@@ -119,7 +119,8 @@ export function MantItemsList() {
     }
   };
 
-  const canMutate = (item: MantItemsListProps) => !item.isGlobal || isSuperAdmin;
+  const canMutate = (item: MantItemsListProps) =>
+    !item.isGlobal || isSuperAdmin;
 
   const columns: ColumnDef<MantItemsListProps>[] = [
     {
@@ -202,11 +203,13 @@ export function MantItemsList() {
       id: 'origen',
       header: 'Origen',
       cell: ({ row }) => (
-        <span className={`px-2 py-1 rounded-full text-xs ${
-          row.original.isGlobal
-            ? 'bg-purple-100 text-purple-800'
-            : 'bg-slate-100 text-slate-700'
-        }`}>
+        <span
+          className={`px-2 py-1 rounded-full text-xs ${
+            row.original.isGlobal
+              ? 'bg-purple-100 text-purple-800'
+              : 'bg-slate-100 text-slate-700'
+          }`}
+        >
           {row.original.isGlobal ? 'Global' : 'Empresa'}
         </span>
       ),
@@ -214,24 +217,25 @@ export function MantItemsList() {
     {
       id: 'actions',
       header: 'Acciones',
-      cell: ({ row }) => canMutate(row.original) ? (
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleEdit(row.original)}
-          >
-            Editar
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => handleDelete(row.original.id)}
-          >
-            Eliminar
-          </Button>
-        </div>
-      ) : null,
+      cell: ({ row }) =>
+        canMutate(row.original) ? (
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleEdit(row.original)}
+            >
+              Editar
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => handleDelete(row.original.id)}
+            >
+              Eliminar
+            </Button>
+          </div>
+        ) : null,
     },
   ];
 

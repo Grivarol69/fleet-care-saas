@@ -153,7 +153,9 @@ export default function WorkOrdersPage() {
             Gestión de mantenimientos programados y correctivos
           </p>
         </div>
-        <Button>
+        <Button
+          onClick={() => router.push('/dashboard/maintenance/work-orders/new')}
+        >
           <Plus className="mr-2 h-4 w-4" />
           Nueva Orden
         </Button>

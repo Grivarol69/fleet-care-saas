@@ -62,14 +62,15 @@ export function HistoryTab({ workOrder }: HistoryTabProps) {
     id: 'creation',
     type: 'creation',
     title: 'Orden Creada',
-    description: 'La orden de trabajo fue creada desde alertas de mantenimiento',
+    description:
+      'La orden de trabajo fue creada desde alertas de mantenimiento',
     timestamp: workOrder.createdAt,
     icon: <Clock className="h-4 w-4" />,
     color: 'bg-blue-500',
   });
 
   // Alertas relacionadas
-  workOrder.maintenanceAlerts.forEach((alert) => {
+  workOrder.maintenanceAlerts.forEach(alert => {
     timeline.push({
       id: `alert-${alert.id}`,
       type: 'alert',
@@ -95,15 +96,13 @@ export function HistoryTab({ workOrder }: HistoryTabProps) {
   }
 
   // Aprobaciones
-  workOrder.approvals.forEach((approval) => {
+  workOrder.approvals.forEach(approval => {
     if (approval.approvedAt) {
       timeline.push({
         id: `approval-${approval.id}`,
         type: 'approval',
         title:
-          approval.status === 'APPROVED'
-            ? 'Orden Aprobada'
-            : 'Orden Rechazada',
+          approval.status === 'APPROVED' ? 'Orden Aprobada' : 'Orden Rechazada',
         description: approval.comments || 'Sin comentarios',
         timestamp: approval.approvedAt,
         icon:
@@ -112,15 +111,14 @@ export function HistoryTab({ workOrder }: HistoryTabProps) {
           ) : (
             <XCircle className="h-4 w-4" />
           ),
-        color:
-          approval.status === 'APPROVED' ? 'bg-green-500' : 'bg-red-500',
+        color: approval.status === 'APPROVED' ? 'bg-green-500' : 'bg-red-500',
       });
     }
   });
 
   // Facturas cargadas
   if (workOrder.invoices && workOrder.invoices.length > 0) {
-    workOrder.invoices.forEach((invoice) => {
+    workOrder.invoices.forEach(invoice => {
       timeline.push({
         id: `invoice-${invoice.id}`,
         type: 'invoice',
@@ -148,8 +146,7 @@ export function HistoryTab({ workOrder }: HistoryTabProps) {
 
   // Ordenar por fecha
   timeline.sort(
-    (a, b) =>
-      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   );
 
   return (
@@ -171,7 +168,7 @@ export function HistoryTab({ workOrder }: HistoryTabProps) {
 
             {/* Eventos */}
             <div className="space-y-6">
-              {timeline.map((event) => (
+              {timeline.map(event => (
                 <div key={event.id} className="relative flex gap-4">
                   {/* Icono */}
                   <div

@@ -1,4 +1,4 @@
-import { ProviderListProps } from "../ProviderList/ProviderList.types";
+import { ProviderListProps } from '../ProviderList/ProviderList.types';
 
 export type FormAddProviderProps = {
   isOpen: boolean;

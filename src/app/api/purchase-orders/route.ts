@@ -1,8 +1,8 @@
-import { prisma } from "@/lib/prisma";
-import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
-import { Prisma, PurchaseOrderStatus, PurchaseOrderType } from "@prisma/client";
-import { canManagePurchases } from "@/lib/permissions";
+import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
+import { Prisma, PurchaseOrderStatus, PurchaseOrderType } from '@prisma/client';
+import { canManagePurchases } from '@/lib/permissions';
 
 /**
  * GET - Listar Ordenes de Compra con filtros
@@ -12,24 +12,35 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
-    const workOrderId = searchParams.get("workOrderId");
-    const status = searchParams.get("status");
-    const type = searchParams.get("type");
-    const providerId = searchParams.get("providerId");
-    const limit = searchParams.get("limit");
+    const workOrderId = searchParams.get('workOrderId');
+    const status = searchParams.get('status');
+    const type = searchParams.get('type');
+    const providerId = searchParams.get('providerId');
+    const limit = searchParams.get('limit');
+
+    // Build status filter supporting comma-separated values: "APPROVED,SENT"
+    let statusFilter:
+      | PurchaseOrderStatus
+      | { in: PurchaseOrderStatus[] }
+      | undefined;
+    if (status) {
+      const statuses = status
+        .split(',')
+        .map(s => s.trim()) as PurchaseOrderStatus[];
+      statusFilter = statuses.length === 1 ? statuses[0] : { in: statuses };
+    }
 
     const where: Prisma.PurchaseOrderWhereInput = {
       tenantId: user.tenantId,
+      ...(workOrderId ? { workOrderId: parseInt(workOrderId) } : {}),
+      ...(statusFilter ? { status: statusFilter } : {}),
+      ...(type ? { type: type as PurchaseOrderType } : {}),
+      ...(providerId ? { providerId: parseInt(providerId) } : {}),
     };
-
-    if (workOrderId) where.workOrderId = parseInt(workOrderId);
-    if (status) where.status = status as PurchaseOrderStatus;
-    if (type) where.type = type as PurchaseOrderType;
-    if (providerId) where.providerId = parseInt(providerId);
 
     const purchaseOrders = await prisma.purchaseOrder.findMany({
       where,
@@ -64,15 +75,15 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       ...(limit ? { take: parseInt(limit) } : {}),
     });
 
     return NextResponse.json(purchaseOrders);
   } catch (error: unknown) {
-    console.error("[PURCHASE_ORDERS_GET]", error);
+    console.error('[PURCHASE_ORDERS_GET]', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Error interno" },
+      { error: error instanceof Error ? error.message : 'Error interno' },
       { status: 500 }
     );
   }
@@ -86,13 +97,13 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
     // Validar permisos (OWNER, MANAGER, PURCHASER)
     if (!canManagePurchases(user)) {
       return NextResponse.json(
-        { error: "No tienes permisos para esta acción" },
+        { error: 'No tienes permisos para esta acción' },
         { status: 403 }
       );
     }
@@ -103,7 +114,7 @@ export async function POST(request: NextRequest) {
     // Validaciones basicas
     if (!workOrderId || !type || !providerId || !items?.length) {
       return NextResponse.json(
-        { error: "workOrderId, type, providerId y items son requeridos" },
+        { error: 'workOrderId, type, providerId y items son requeridos' },
         { status: 400 }
       );
     }
@@ -115,7 +126,7 @@ export async function POST(request: NextRequest) {
 
     if (!workOrder) {
       return NextResponse.json(
-        { error: "Orden de trabajo no encontrada" },
+        { error: 'Orden de trabajo no encontrada' },
         { status: 404 }
       );
     }
@@ -127,7 +138,7 @@ export async function POST(request: NextRequest) {
 
     if (!provider) {
       return NextResponse.json(
-        { error: "Proveedor no encontrado" },
+        { error: 'Proveedor no encontrado' },
         { status: 404 }
       );
     }
@@ -139,20 +150,22 @@ export async function POST(request: NextRequest) {
         tenantId: user.tenantId,
         orderNumber: { startsWith: `OC-${year}-` },
       },
-      orderBy: { orderNumber: "desc" },
+      orderBy: { orderNumber: 'desc' },
     });
 
     let nextNumber = 1;
     if (lastOC) {
-      const lastNum = parseInt(lastOC.orderNumber.split("-")[2] || "0");
+      const lastNum = parseInt(lastOC.orderNumber.split('-')[2] || '0');
       nextNumber = lastNum + 1;
     }
-    const orderNumber = `OC-${year}-${nextNumber.toString().padStart(6, "0")}`;
+    const orderNumber = `OC-${year}-${nextNumber.toString().padStart(6, '0')}`;
 
     // Calcular totales
     const subtotal = items.reduce(
-      (sum: number, item: { quantity: number | string; unitPrice: number | string }) =>
-        sum + Number(item.quantity) * Number(item.unitPrice),
+      (
+        sum: number,
+        item: { quantity: number | string; unitPrice: number | string }
+      ) => sum + Number(item.quantity) * Number(item.unitPrice),
       0
     );
     const taxRate = 0; // Configurable por tenant
@@ -160,7 +173,7 @@ export async function POST(request: NextRequest) {
     const total = subtotal + taxAmount;
 
     // Crear OC con items en transaccion
-    const purchaseOrder = await prisma.$transaction(async (tx) => {
+    const purchaseOrder = await prisma.$transaction(async tx => {
       const po = await tx.purchaseOrder.create({
         data: {
           tenantId: user.tenantId,
@@ -168,7 +181,7 @@ export async function POST(request: NextRequest) {
           orderNumber,
           type: type as PurchaseOrderType,
           providerId,
-          status: "DRAFT",
+          status: 'DRAFT',
           requestedBy: user.id,
           subtotal,
           taxRate,
@@ -192,7 +205,7 @@ export async function POST(request: NextRequest) {
                 quantity: item.quantity,
                 unitPrice: item.unitPrice,
                 total: Number(item.quantity) * Number(item.unitPrice),
-                status: "PENDING",
+                status: 'PENDING',
               })
             ),
           },
@@ -208,9 +221,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(purchaseOrder, { status: 201 });
   } catch (error: unknown) {
-    console.error("[PURCHASE_ORDERS_POST]", error);
+    console.error('[PURCHASE_ORDERS_POST]', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Error interno" },
+      { error: error instanceof Error ? error.message : 'Error interno' },
       { status: 500 }
     );
   }

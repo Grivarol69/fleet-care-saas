@@ -1,5 +1,5 @@
-import React from "react";
-import { TypeList } from "./components/TypeList";
+import React from 'react';
+import { TypeList } from './components/TypeList';
 
 export default function CategoriesPage() {
   return (

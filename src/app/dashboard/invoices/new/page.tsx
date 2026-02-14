@@ -31,7 +31,19 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, TrendingUp, TrendingDown, Minus, CheckCircle2, Plus, X, Search, FileText, Loader2, ShoppingCart } from 'lucide-react';
+import {
+  ArrowLeft,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  CheckCircle2,
+  Plus,
+  X,
+  Search,
+  FileText,
+  Loader2,
+  ShoppingCart,
+} from 'lucide-react';
 import { useToast } from '@/components/hooks/use-toast';
 import axios from 'axios';
 import { cn } from '@/lib/utils';
@@ -119,7 +131,9 @@ function NewInvoiceContent() {
 
   // Purchase Order state
   const [pendingPOs, setPendingPOs] = useState<PendingPO[]>([]);
-  const [selectedPOId, setSelectedPOId] = useState<string>(purchaseOrderIdParam || '');
+  const [selectedPOId, setSelectedPOId] = useState<string>(
+    purchaseOrderIdParam || ''
+  );
   const [selectedPO, setSelectedPO] = useState<PendingPO | null>(null);
 
   // Form state
@@ -145,13 +159,15 @@ function NewInvoiceContent() {
     setSelectedPO(po);
     setSupplierId(po.provider.id.toString());
 
-    const poItems: InvoiceItem[] = po.items.map((item) => {
+    const poItems: InvoiceItem[] = po.items.map(item => {
       const unitPrice = Number(item.unitPrice);
       const qty = Number(item.quantity);
       const totals = calculateItemTotals(qty, unitPrice, 19);
       return {
         id: crypto.randomUUID(),
-        ...(item.workOrderItemId ? { workOrderItemId: item.workOrderItemId } : {}),
+        ...(item.workOrderItemId
+          ? { workOrderItemId: item.workOrderItemId }
+          : {}),
         ...(item.mantItemId ? { mantItemId: item.mantItemId } : {}),
         description: item.masterPart
           ? `${item.description} (${item.masterPart.code})`
@@ -182,20 +198,24 @@ function NewInvoiceContent() {
         // Cargar providers y OC pendientes en paralelo
         const [providersRes, posRes] = await Promise.all([
           axios.get('/api/people/providers'),
-          axios.get('/api/purchase-orders?status=SENT'),
+          axios.get('/api/purchase-orders?status=APPROVED,SENT'),
         ]);
         setProviders(providersRes.data);
         setPendingPOs(posRes.data);
 
         // Si viene purchaseOrderId, cargar esa OC directamente
         if (purchaseOrderIdParam) {
-          const poFromList = posRes.data.find((po: PendingPO) => po.id === purchaseOrderIdParam);
+          const poFromList = posRes.data.find(
+            (po: PendingPO) => po.id === purchaseOrderIdParam
+          );
           if (poFromList) {
             loadPOItems(poFromList);
           } else {
             // La OC no esta en la lista (puede que no sea SENT), intentar cargar igual
             try {
-              const poRes = await axios.get(`/api/purchase-orders/${purchaseOrderIdParam}`);
+              const poRes = await axios.get(
+                `/api/purchase-orders/${purchaseOrderIdParam}`
+              );
               loadPOItems(poRes.data);
             } catch {
               toast({
@@ -307,7 +327,7 @@ function NewInvoiceContent() {
       try {
         setSearchingItems(true);
         const response = await axios.get('/api/maintenance/mant-items', {
-          params: { search: searchTerm }
+          params: { search: searchTerm },
         });
         setMantItems(response.data);
       } catch (error) {
@@ -349,7 +369,7 @@ function NewInvoiceContent() {
       isFree: false,
     };
 
-    setItems((prev) => [...prev, newItem]);
+    setItems(prev => [...prev, newItem]);
     setAddItemDialogOpen(false);
     setSearchTerm('');
     setMantItems([]);
@@ -377,14 +397,14 @@ function NewInvoiceContent() {
       isFree: false,
     };
 
-    setItems((prev) => [...prev, newItem]);
+    setItems(prev => [...prev, newItem]);
     setAddItemDialogOpen(false);
   };
 
   // Toggle incluir item
   const toggleIncluded = (id: string) => {
-    setItems((prev) =>
-      prev.map((item) =>
+    setItems(prev =>
+      prev.map(item =>
         item.id === id ? { ...item, included: !item.included } : item
       )
     );
@@ -392,19 +412,23 @@ function NewInvoiceContent() {
 
   // Toggle sin costo
   const toggleFree = (id: string) => {
-    setItems((prev) =>
-      prev.map((item) => {
+    setItems(prev =>
+      prev.map(item => {
         if (item.id !== id) return item;
 
         const isFree = !item.isFree;
         const realUnitPrice = isFree ? 0 : item.estimatedUnitPrice;
-        const totals = calculateItemTotals(item.quantity, realUnitPrice, item.taxRate);
+        const totals = calculateItemTotals(
+          item.quantity,
+          realUnitPrice,
+          item.taxRate
+        );
 
         return {
           ...item,
           isFree,
           realUnitPrice,
-          ...totals
+          ...totals,
         };
       })
     );
@@ -412,7 +436,7 @@ function NewInvoiceContent() {
 
   // Remover item
   const removeItem = (id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
+    setItems(prev => prev.filter(item => item.id !== id));
   };
 
   // Calcular totales de un item
@@ -427,7 +451,7 @@ function NewInvoiceContent() {
     return {
       realTotal: subtotal,
       taxAmount,
-      total
+      total,
     };
   };
 
@@ -439,8 +463,8 @@ function NewInvoiceContent() {
 
   // Actualizar precio real de item
   const updateRealPrice = (id: string, realUnitPrice: number) => {
-    setItems((prev) =>
-      prev.map((item) => {
+    setItems(prev =>
+      prev.map(item => {
         if (item.id !== id) return item;
 
         const totals = calculateItemTotals(
@@ -452,7 +476,7 @@ function NewInvoiceContent() {
         return {
           ...item,
           realUnitPrice,
-          ...totals
+          ...totals,
         };
       })
     );
@@ -460,7 +484,7 @@ function NewInvoiceContent() {
 
   // Calcular totales generales (solo items incluidos)
   const totals = items
-    .filter((item) => item.included)
+    .filter(item => item.included)
     .reduce(
       (acc, item) => ({
         estimatedSubtotal: acc.estimatedSubtotal + item.estimatedTotal,
@@ -507,7 +531,9 @@ function NewInvoiceContent() {
         invoiceDate,
         dueDate: dueDate || null,
         supplierId: parseInt(supplierId),
-        workOrderId: workOrderId ? parseInt(workOrderId) : (selectedPO?.workOrder.id || null),
+        workOrderId: workOrderId
+          ? parseInt(workOrderId)
+          : selectedPO?.workOrder.id || null,
         purchaseOrderId: selectedPO?.id || null,
         subtotal: totals.realSubtotal,
         taxAmount: totals.taxAmount,
@@ -516,8 +542,8 @@ function NewInvoiceContent() {
         notes,
         attachmentUrl: attachmentUrl || null,
         items: items
-          .filter((item) => item.included) // Solo items incluidos
-          .map((item) => ({
+          .filter(item => item.included) // Solo items incluidos
+          .map(item => ({
             description: item.description,
             quantity: item.quantity,
             unitPrice: item.realUnitPrice,
@@ -544,9 +570,11 @@ function NewInvoiceContent() {
       }
     } catch (error) {
       console.error('Error creating invoice:', error);
-      const errorMessage = error instanceof Error && 'response' in error
-        ? (error as { response?: { data?: { error?: string } } }).response?.data?.error
-        : 'No se pudo crear la factura';
+      const errorMessage =
+        error instanceof Error && 'response' in error
+          ? (error as { response?: { data?: { error?: string } } }).response
+              ?.data?.error
+          : 'No se pudo crear la factura';
       toast({
         title: 'Error',
         description: errorMessage,
@@ -571,8 +599,7 @@ function NewInvoiceContent() {
     if (variance > 0) {
       return (
         <Badge variant="destructive" className="gap-1">
-          <TrendingUp className="h-3 w-3" />
-          +{variance.toFixed(1)}%
+          <TrendingUp className="h-3 w-3" />+{variance.toFixed(1)}%
         </Badge>
       );
     }
@@ -589,11 +616,7 @@ function NewInvoiceContent() {
     <div className="container mx-auto py-6 max-w-7xl">
       {/* Header */}
       <div className="mb-6">
-        <Button
-          variant="ghost"
-          onClick={() => router.back()}
-          className="mb-4"
-        >
+        <Button variant="ghost" onClick={() => router.back()} className="mb-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Volver
         </Button>
@@ -603,13 +626,16 @@ function NewInvoiceContent() {
             {workOrder && !selectedPO && (
               <p className="text-muted-foreground mt-2 flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
-                Vinculada a: {workOrder.title} ({workOrder.vehicle?.licensePlate})
+                Vinculada a: {workOrder.title} (
+                {workOrder.vehicle?.licensePlate})
               </p>
             )}
             {selectedPO && (
               <p className="text-muted-foreground mt-2 flex items-center gap-2">
                 <ShoppingCart className="h-4 w-4 text-blue-600" />
-                Desde OC: {selectedPO.orderNumber} — {selectedPO.workOrder.title} ({selectedPO.workOrder.vehicle.licensePlate})
+                Desde OC: {selectedPO.orderNumber} —{' '}
+                {selectedPO.workOrder.title} (
+                {selectedPO.workOrder.vehicle.licensePlate})
               </p>
             )}
           </div>
@@ -633,66 +659,94 @@ function NewInvoiceContent() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Selector de Orden de Compra */}
-        {!workOrderId && pendingPOs.length > 0 && (
-          <Card className="border-blue-200 bg-blue-50/30">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <ShoppingCart className="h-5 w-5 text-blue-600" />
-                Vincular a Orden de Compra (opcional)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Label>Selecciona una OC enviada para pre-cargar los items</Label>
-                <Select
-                  value={selectedPOId}
-                  onValueChange={(value) => {
-                    setSelectedPOId(value);
-                    if (value === '_none') {
-                      setSelectedPO(null);
-                      setSupplierId('');
-                      setItems([{
-                        id: crypto.randomUUID(),
-                        description: '',
-                        quantity: 1,
-                        estimatedUnitPrice: 0,
-                        estimatedTotal: 0,
-                        realUnitPrice: 0,
-                        realTotal: 0,
-                        taxRate: 19,
-                        taxAmount: 0,
-                        total: 0,
-                        included: true,
-                        isFree: false,
-                      }]);
-                    } else {
-                      const po = pendingPOs.find((p) => p.id === value);
-                      if (po) loadPOItems(po);
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sin orden de compra — factura independiente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="_none">Sin orden de compra</SelectItem>
-                    {pendingPOs.map((po) => (
-                      <SelectItem key={po.id} value={po.id}>
-                        {po.orderNumber} — {po.provider.name} — {po.workOrder.vehicle.licensePlate} — ${Number(po.total).toLocaleString('es-CO')}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {selectedPO && (
-                  <p className="text-xs text-muted-foreground">
-                    OT: {selectedPO.workOrder.title} · Proveedor: {selectedPO.provider.name} · {selectedPO.items.length} items
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {/* Selector de Orden de Compra - filtrado por proveedor */}
+        {(() => {
+          const filteredPOs = supplierId
+            ? pendingPOs.filter(po => po.provider.id.toString() === supplierId)
+            : pendingPOs;
+          return (
+            filteredPOs.length > 0 && (
+              <Card className="border-blue-200 bg-blue-50/30">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <ShoppingCart className="h-5 w-5 text-blue-600" />
+                    Vincular a Orden de Compra
+                    {supplierId && (
+                      <Badge
+                        variant="secondary"
+                        className="text-xs font-normal"
+                      >
+                        {filteredPOs.length} OC
+                        {filteredPOs.length !== 1 ? 's' : ''} pendiente
+                        {filteredPOs.length !== 1 ? 's' : ''}
+                      </Badge>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <Label>
+                      {supplierId
+                        ? 'Selecciona una OC de este proveedor para pre-cargar los items'
+                        : 'Selecciona una OC para pre-cargar los items (o elige proveedor primero para filtrar)'}
+                    </Label>
+                    <Select
+                      value={selectedPOId}
+                      onValueChange={value => {
+                        setSelectedPOId(value);
+                        if (value === '_none') {
+                          setSelectedPO(null);
+                          setItems([
+                            {
+                              id: crypto.randomUUID(),
+                              description: '',
+                              quantity: 1,
+                              estimatedUnitPrice: 0,
+                              estimatedTotal: 0,
+                              realUnitPrice: 0,
+                              realTotal: 0,
+                              taxRate: 19,
+                              taxAmount: 0,
+                              total: 0,
+                              included: true,
+                              isFree: false,
+                            },
+                          ]);
+                        } else {
+                          const po = filteredPOs.find(p => p.id === value);
+                          if (po) loadPOItems(po);
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sin orden de compra — factura independiente" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="_none">
+                          Sin orden de compra — factura independiente
+                        </SelectItem>
+                        {filteredPOs.map(po => (
+                          <SelectItem key={po.id} value={po.id}>
+                            {po.orderNumber} — {po.workOrder.title} —{' '}
+                            {po.workOrder.vehicle.licensePlate} — $
+                            {Number(po.total).toLocaleString('es-CO')}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedPO && (
+                      <p className="text-xs text-muted-foreground">
+                        OT: {selectedPO.workOrder.title} · Proveedor:{' '}
+                        {selectedPO.provider.name} · {selectedPO.items.length}{' '}
+                        items · Estado: {selectedPO.status}
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          );
+        })()}
 
         {/* Información General */}
         <Card>
@@ -709,7 +763,7 @@ function NewInvoiceContent() {
                 <Input
                   id="invoiceNumber"
                   value={invoiceNumber}
-                  onChange={(e) => setInvoiceNumber(e.target.value)}
+                  onChange={e => setInvoiceNumber(e.target.value)}
                   placeholder="FC-2024-00123"
                   required
                 />
@@ -725,8 +779,11 @@ function NewInvoiceContent() {
                     <SelectValue placeholder="Selecciona un proveedor" />
                   </SelectTrigger>
                   <SelectContent>
-                    {providers.map((provider) => (
-                      <SelectItem key={provider.id} value={provider.id.toString()}>
+                    {providers.map(provider => (
+                      <SelectItem
+                        key={provider.id}
+                        value={provider.id.toString()}
+                      >
                         {provider.name}
                       </SelectItem>
                     ))}
@@ -743,7 +800,7 @@ function NewInvoiceContent() {
                   id="invoiceDate"
                   type="date"
                   value={invoiceDate}
-                  onChange={(e) => setInvoiceDate(e.target.value)}
+                  onChange={e => setInvoiceDate(e.target.value)}
                   required
                 />
               </div>
@@ -755,7 +812,7 @@ function NewInvoiceContent() {
                   id="dueDate"
                   type="date"
                   value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
+                  onChange={e => setDueDate(e.target.value)}
                 />
               </div>
 
@@ -765,7 +822,7 @@ function NewInvoiceContent() {
                 <Textarea
                   id="notes"
                   value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
+                  onChange={e => setNotes(e.target.value)}
                   placeholder="Observaciones adicionales..."
                   rows={2}
                 />
@@ -804,10 +861,10 @@ function NewInvoiceContent() {
                     <TableRow className="bg-muted/50">
                       <TableHead className="w-[60px] text-center">
                         <Checkbox
-                          checked={items.every((i) => i.included)}
-                          onCheckedChange={(checked) => {
-                            setItems((prev) =>
-                              prev.map((item) => ({
+                          checked={items.every(i => i.included)}
+                          onCheckedChange={checked => {
+                            setItems(prev =>
+                              prev.map(item => ({
                                 ...item,
                                 included: checked === true,
                               }))
@@ -816,18 +873,26 @@ function NewInvoiceContent() {
                         />
                       </TableHead>
                       <TableHead className="w-[35%]">Item</TableHead>
-                      <TableHead className="text-center w-[60px]">Cant.</TableHead>
-                      <TableHead className="text-right w-[140px]">Estimado</TableHead>
+                      <TableHead className="text-center w-[60px]">
+                        Cant.
+                      </TableHead>
+                      <TableHead className="text-right w-[140px]">
+                        Estimado
+                      </TableHead>
                       <TableHead className="text-right w-[180px]">
                         Precio Real *
                       </TableHead>
-                      <TableHead className="text-right w-[120px]">Total Real</TableHead>
-                      <TableHead className="text-center w-[100px]">Variación</TableHead>
+                      <TableHead className="text-right w-[120px]">
+                        Total Real
+                      </TableHead>
+                      <TableHead className="text-center w-[100px]">
+                        Variación
+                      </TableHead>
                       <TableHead className="w-[50px]"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {items.map((item) => {
+                    {items.map(item => {
                       const variance = calculateVariance(
                         item.estimatedUnitPrice,
                         item.realUnitPrice
@@ -860,12 +925,18 @@ function NewInvoiceContent() {
                               )}
                               <div className="flex gap-1 mt-1">
                                 {item.category && (
-                                  <Badge variant="secondary" className="text-xs">
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-xs"
+                                  >
                                     {item.category}
                                   </Badge>
                                 )}
                                 {item.isFree && (
-                                  <Badge variant="default" className="text-xs bg-blue-600">
+                                  <Badge
+                                    variant="default"
+                                    className="text-xs bg-blue-600"
+                                  >
                                     Sin costo
                                   </Badge>
                                 )}
@@ -885,7 +956,8 @@ function NewInvoiceContent() {
                             </div>
                             {item.estimatedTotal > 0 && (
                               <div className="text-xs text-muted-foreground">
-                                Total: ${item.estimatedTotal.toLocaleString('es-CO')}
+                                Total: $
+                                {item.estimatedTotal.toLocaleString('es-CO')}
                               </div>
                             )}
                           </TableCell>
@@ -898,7 +970,7 @@ function NewInvoiceContent() {
                                 min="0"
                                 step="0.01"
                                 value={item.realUnitPrice}
-                                onChange={(e) =>
+                                onChange={e =>
                                   updateRealPrice(
                                     item.id,
                                     parseFloat(e.target.value) || 0
@@ -908,7 +980,8 @@ function NewInvoiceContent() {
                                 className={cn(
                                   'text-right font-medium',
                                   variance > 5 && 'border-red-300 bg-red-50',
-                                  variance < -5 && 'border-green-300 bg-green-50',
+                                  variance < -5 &&
+                                    'border-green-300 bg-green-50',
                                   item.isFree && 'bg-blue-50'
                                 )}
                                 required={!item.isFree}
@@ -992,7 +1065,7 @@ function NewInvoiceContent() {
                 <Input
                   placeholder="Buscar por nombre o descripción..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={e => setSearchTerm(e.target.value)}
                   className="pl-9"
                   autoFocus
                 />
@@ -1006,7 +1079,7 @@ function NewInvoiceContent() {
                   </div>
                 ) : mantItems.length > 0 ? (
                   <div className="divide-y">
-                    {mantItems.map((mantItem) => (
+                    {mantItems.map(mantItem => (
                       <button
                         key={mantItem.id}
                         type="button"
@@ -1022,7 +1095,10 @@ function NewInvoiceContent() {
                               </p>
                             )}
                             {mantItem.category && (
-                              <Badge variant="secondary" className="mt-2 text-xs">
+                              <Badge
+                                variant="secondary"
+                                className="mt-2 text-xs"
+                              >
                                 {mantItem.category.name}
                               </Badge>
                             )}
@@ -1067,13 +1143,17 @@ function NewInvoiceContent() {
               {(workOrder || selectedPO) && (
                 <div className="grid grid-cols-2 gap-4 pb-3 border-b">
                   <div>
-                    <p className="text-sm text-muted-foreground">Subtotal Estimado</p>
+                    <p className="text-sm text-muted-foreground">
+                      Subtotal Estimado
+                    </p>
                     <p className="text-xl font-medium text-muted-foreground">
                       ${totals.estimatedSubtotal.toLocaleString('es-CO')}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-muted-foreground">Subtotal Real</p>
+                    <p className="text-sm text-muted-foreground">
+                      Subtotal Real
+                    </p>
                     <p className="text-xl font-bold">
                       ${totals.realSubtotal.toLocaleString('es-CO')}
                     </p>
@@ -1113,7 +1193,12 @@ function NewInvoiceContent() {
                     <div className="text-right">
                       {renderVarianceBadge(totalVariance)}
                       <p className="text-sm text-muted-foreground mt-1">
-                        {totalVariance > 0 ? 'Sobrecosto' : totalVariance < 0 ? 'Ahorro' : 'Sin variación'}: $
+                        {totalVariance > 0
+                          ? 'Sobrecosto'
+                          : totalVariance < 0
+                            ? 'Ahorro'
+                            : 'Sin variación'}
+                        : $
                         {Math.abs(
                           totals.realSubtotal - totals.estimatedSubtotal
                         ).toLocaleString('es-CO')}
@@ -1142,7 +1227,7 @@ function NewInvoiceContent() {
                 </p>
                 <UploadButton
                   endpoint="invoiceUploader"
-                  onClientUploadComplete={(res) => {
+                  onClientUploadComplete={res => {
                     if (res?.[0]?.url) {
                       setAttachmentUrl(res[0].url);
                       setFileUploaded(true);
@@ -1152,7 +1237,7 @@ function NewInvoiceContent() {
                       });
                     }
                   }}
-                  onUploadError={(error) => {
+                  onUploadError={error => {
                     toast({
                       title: 'Error al subir archivo',
                       description: error.message,

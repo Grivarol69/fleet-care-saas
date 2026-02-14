@@ -1,110 +1,107 @@
-
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { getCurrentUser } from '../auth';
 import { prisma } from '@/lib/prisma';
 import { auth, currentUser } from '@clerk/nextjs/server';
 
 // Mock Clerk
 vi.mock('@clerk/nextjs/server', () => ({
-    auth: vi.fn(),
-    currentUser: vi.fn(),
+  auth: vi.fn(),
+  currentUser: vi.fn(),
 }));
 
 // Mock Prisma
 vi.mock('@/lib/prisma', () => ({
-    prisma: {
-        tenant: {
-            findUnique: vi.fn(),
-            create: vi.fn(),
-        },
-        user: {
-            findFirst: vi.fn(),
-            create: vi.fn(),
-        },
+  prisma: {
+    user: {
+      findFirst: vi.fn(),
     },
+  },
 }));
 
 describe('Auth Service (Multi-tenancy)', () => {
-    const mockTenantId = 'org_123';
-    const mockUserId = 'user_456';
-    const mockEmail = 'test@example.com';
+  const mockTenantId = 'org_123';
+  const mockUserId = 'user_456';
+  const mockEmail = 'test@example.com';
 
-    beforeEach(() => {
-        vi.clearAllMocks();
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('should return null if no user logged in (no userId)', async () => {
+    (auth as any).mockResolvedValue({ userId: null });
+    const result = await getCurrentUser();
+    expect(result).toBeNull();
+  });
+
+  it('should return null if user has no active organization', async () => {
+    (auth as any).mockResolvedValue({ userId: mockUserId, orgId: null });
+    (currentUser as any).mockResolvedValue({
+      emailAddresses: [{ emailAddress: mockEmail }],
+    });
+    // Mock DB returning null for SuperAdmin check
+    (prisma.user.findFirst as any).mockResolvedValue(null);
+
+    const result = await getCurrentUser();
+    expect(result).toBeNull();
+  });
+
+  it('should return user if found in DB', async () => {
+    (auth as any).mockResolvedValue({
+      userId: mockUserId,
+      orgId: mockTenantId,
+    });
+    (currentUser as any).mockResolvedValue({
+      emailAddresses: [{ emailAddress: mockEmail }],
     });
 
-    it('should sync new tenant from Clerk if not exists in Prisma', async () => {
-        // 1. Arrange - Simulate Clerk auth returning an Org that doesn't exist in DB
-        (auth as any).mockResolvedValue({ userId: mockUserId, orgId: mockTenantId, orgRole: 'org:admin' });
+    const mockUser = {
+      id: 'db_user_1',
+      email: mockEmail,
+      tenantId: mockTenantId,
+      role: 'DRIVER',
+    };
+    // First call for SuperAdmin (returns null)
+    // Second call for regular user (returns user)
+    (prisma.user.findFirst as any)
+      .mockResolvedValueOnce(null) // Not super admin
+      .mockResolvedValueOnce(mockUser); // Found user
 
-        (currentUser as any).mockResolvedValue({
-            id: mockUserId,
-            emailAddresses: [{ emailAddress: mockEmail }],
-            firstName: 'Guille',
-            lastName: 'Riva',
-            organizationMemberships: [{
-                organization: { id: mockTenantId, name: 'Fleet Care' }
-            }]
-        });
+    const result = await getCurrentUser();
+    expect(result).toEqual(
+      expect.objectContaining({ id: 'db_user_1', isSuperAdmin: false })
+    );
+  });
 
-        (prisma.tenant.findUnique as any).mockResolvedValue(null); // Tenant not found in DB
-        (prisma.tenant.create as any).mockResolvedValue({ id: mockTenantId, name: 'Fleet Care' });
-        (prisma.user.findFirst as any).mockResolvedValue({ id: 'db_user_1', tenantId: mockTenantId });
-
-        // 2. Act
-        await getCurrentUser();
-
-        // 3. Assert
-        expect(prisma.tenant.create).toHaveBeenCalledWith({
-            data: expect.objectContaining({
-                id: mockTenantId,
-                name: 'Fleet Care',
-            }),
-        });
+  it('should retry once and return null if user NOT found in DB (Webhook latency)', async () => {
+    (auth as any).mockResolvedValue({
+      userId: mockUserId,
+      orgId: mockTenantId,
+    });
+    (currentUser as any).mockResolvedValue({
+      emailAddresses: [{ emailAddress: mockEmail }],
     });
 
-    it('should return null if user has no active organization in Clerk', async () => {
-        // 1. Arrange - Clerk auth returns no orgId
-        (auth as any).mockResolvedValue({ userId: mockUserId, orgId: null });
+    // Mock FindFirst to always return null
+    (prisma.user.findFirst as any).mockResolvedValue(null);
 
-        // 2. Act
-        const result = await getCurrentUser();
+    // Start the promise
+    const promise = getCurrentUser();
 
-        // 3. Assert
-        expect(result).toBeNull();
-        expect(prisma.tenant.findUnique).not.toHaveBeenCalled();
-    });
+    // Fast-forward time to skip the 1.5s delay
+    await vi.advanceTimersByTimeAsync(1600);
 
-    it('should auto-create user mapped to the correct tenant', async () => {
-        // 1. Arrange - Tenant exists, but User doesn't
-        (auth as any).mockResolvedValue({ userId: mockUserId, orgId: mockTenantId, orgRole: 'org:driver' });
+    const result = await promise;
 
-        (currentUser as any).mockResolvedValue({
-            id: mockUserId,
-            emailAddresses: [{ emailAddress: mockEmail }],
-        });
-
-        (prisma.tenant.findUnique as any).mockResolvedValue({ id: mockTenantId });
-        (prisma.user.findFirst as any).mockResolvedValue(null); // User not found
-
-        (prisma.user.create as any).mockResolvedValue({
-            id: 'new_user',
-            email: mockEmail,
-            tenantId: mockTenantId,
-            role: 'DRIVER'
-        });
-
-        // 2. Act
-        const user = await getCurrentUser();
-
-        // 3. Assert
-        expect(prisma.user.create).toHaveBeenCalledWith({
-            data: expect.objectContaining({
-                email: mockEmail,
-                tenantId: mockTenantId, // CRITICAL: Ensure user is created in the correct tenant
-                role: 'DRIVER', // Mapped from 'org:driver'
-            }),
-        });
-        expect(user?.tenantId).toBe(mockTenantId);
-    });
+    expect(result).toBeNull();
+    // Should be called 3 times:
+    // 1. SuperAdmin check
+    // 2. Initial check
+    // 3. Retry check
+    expect(prisma.user.findFirst).toHaveBeenCalledTimes(3);
+  });
 });

@@ -29,7 +29,7 @@ async function main() {
       name: 'Fleet Care MVP',
       slug: 'mvp',
     },
-    update: {}
+    update: {},
   });
   console.log('✅ Tenant creado:', tenant.name);
 
@@ -41,7 +41,7 @@ async function main() {
       tenantId: 'mvp-default-tenant',
       name: 'Toyota',
     },
-    update: {}
+    update: {},
   });
 
   await prisma.vehicleLine.upsert({
@@ -52,7 +52,7 @@ async function main() {
       brandId: 1,
       name: 'Hilux',
     },
-    update: {}
+    update: {},
   });
 
   // 3. Crear tipo de vehículo
@@ -63,7 +63,7 @@ async function main() {
       tenantId: 'mvp-default-tenant',
       name: 'Pickup',
     },
-    update: {}
+    update: {},
   });
 
   // 4. Crear vehículos de prueba
@@ -81,7 +81,7 @@ async function main() {
       typeId: 1,
       status: 'ACTIVE',
     },
-    update: {}
+    update: {},
   });
 
   await prisma.vehicle.upsert({
@@ -98,7 +98,7 @@ async function main() {
       typeId: 1,
       status: 'ACTIVE',
     },
-    update: {}
+    update: {},
   });
 
   // 5. Crear categoría de mantenimiento
@@ -109,7 +109,7 @@ async function main() {
       tenantId: 'mvp-default-tenant',
       name: 'Motor',
     },
-    update: {}
+    update: {},
   });
 
   // 6. Crear items de mantenimiento
@@ -123,7 +123,7 @@ async function main() {
       mantType: 'PREVENTIVE',
       categoryId: 1,
     },
-    update: {}
+    update: {},
   });
 
   await prisma.mantItem.upsert({
@@ -136,7 +136,7 @@ async function main() {
       mantType: 'PREVENTIVE',
       categoryId: 1,
     },
-    update: {}
+    update: {},
   });
 
   // 7. Crear template de prueba
@@ -152,7 +152,7 @@ async function main() {
       version: '1.0',
       isDefault: true,
     },
-    update: {}
+    update: {},
   });
 
   // 8. Crear package en template
@@ -164,12 +164,12 @@ async function main() {
       name: 'Mantenimiento 15,000 km',
       triggerKm: 15000,
       description: 'Mantenimiento cada 15,000 km',
-      estimatedCost: 105.00,
+      estimatedCost: 105.0,
       estimatedTime: 2.0,
       priority: 'MEDIUM',
       packageType: 'PREVENTIVE',
     },
-    update: {}
+    update: {},
   });
 
   // 9. Crear items en package
@@ -185,7 +185,7 @@ async function main() {
       estimatedTime: 1.5,
       status: 'ACTIVE',
     },
-    update: {}
+    update: {},
   });
 
   await prisma.packageItem.upsert({
@@ -200,7 +200,7 @@ async function main() {
       estimatedTime: 0.5,
       status: 'ACTIVE',
     },
-    update: {}
+    update: {},
   });
 
   console.log('🎉 Datos de prueba creados exitosamente!');
@@ -212,7 +212,7 @@ async function main() {
 }
 
 main()
-  .catch((e) => {
+  .catch(e => {
     console.error('❌ Error creando datos:', e);
     process.exit(1);
   })

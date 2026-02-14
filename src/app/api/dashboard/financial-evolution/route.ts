@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 
 export type MonthlyData = {
-  month: string;       // "Ene 2025"
-  monthShort: string;  // "Ene"
+  month: string; // "Ene 2025"
+  monthShort: string; // "Ene"
   year: number;
   spent: number;
   invoiceCount: number;
@@ -14,18 +14,38 @@ export async function GET() {
   try {
     const user = await getCurrentUser();
     if (!user || !user.tenantId) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return new NextResponse('Unauthorized', { status: 401 });
     }
     const tenantId = user.tenantId;
 
     const monthNames = [
-      "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-      "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+      'Enero',
+      'Febrero',
+      'Marzo',
+      'Abril',
+      'Mayo',
+      'Junio',
+      'Julio',
+      'Agosto',
+      'Septiembre',
+      'Octubre',
+      'Noviembre',
+      'Diciembre',
     ];
 
     const monthNamesShort = [
-      "Ene", "Feb", "Mar", "Abr", "May", "Jun",
-      "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"
+      'Ene',
+      'Feb',
+      'Mar',
+      'Abr',
+      'May',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dic',
     ];
 
     const last12Months: MonthlyData[] = [];
@@ -48,7 +68,7 @@ export async function GET() {
             gte: startOfMonth,
             lte: endOfMonth,
           },
-          status: { in: ["APPROVED", "PAID"] },
+          status: { in: ['APPROVED', 'PAID'] },
         },
         _sum: {
           totalAmount: true,
@@ -58,7 +78,7 @@ export async function GET() {
 
       last12Months.push({
         month: `${monthNames[monthIndex]} ${year}`,
-        monthShort: monthNamesShort[monthIndex] ?? "",
+        monthShort: monthNamesShort[monthIndex] ?? '',
         year,
         spent: Number(invoices._sum?.totalAmount ?? 0),
         invoiceCount: invoices._count,
@@ -67,9 +87,9 @@ export async function GET() {
 
     return NextResponse.json(last12Months);
   } catch (error) {
-    console.error("Error fetching financial evolution:", error);
+    console.error('Error fetching financial evolution:', error);
     return NextResponse.json(
-      { error: "Failed to fetch financial evolution" },
+      { error: 'Failed to fetch financial evolution' },
       { status: 500 }
     );
   }

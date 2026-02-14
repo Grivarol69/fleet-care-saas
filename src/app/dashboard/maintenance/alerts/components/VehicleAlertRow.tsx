@@ -4,7 +4,13 @@ import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { MaintenanceAlert } from '@/lib/hooks/useMaintenanceAlerts';
-import { ChevronDown, ChevronUp, AlertTriangle, Clock, CheckCircle2 } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronUp,
+  AlertTriangle,
+  Clock,
+  CheckCircle2,
+} from 'lucide-react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -32,23 +38,44 @@ export function VehicleAlertRow({
 }: Props) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const criticalCount = vehicle.alerts.filter(a => a.alertLevel === 'CRITICAL').length;
+  const criticalCount = vehicle.alerts.filter(
+    a => a.alertLevel === 'CRITICAL'
+  ).length;
   const highCount = vehicle.alerts.filter(a => a.alertLevel === 'HIGH').length;
-  const mediumCount = vehicle.alerts.filter(a => a.alertLevel === 'MEDIUM').length;
+  const mediumCount = vehicle.alerts.filter(
+    a => a.alertLevel === 'MEDIUM'
+  ).length;
 
   // Contar alertas por estado
-  const inProgressCount = vehicle.alerts.filter(a => a.status === 'IN_PROGRESS').length;
-  const pendingCount = vehicle.alerts.filter(a => a.status === 'PENDING').length;
-  const acknowledgedCount = vehicle.alerts.filter(a => a.status === 'ACKNOWLEDGED').length;
-  const snoozedCount = vehicle.alerts.filter(a => a.status === 'SNOOZED').length;
+  const inProgressCount = vehicle.alerts.filter(
+    a => a.status === 'IN_PROGRESS'
+  ).length;
+  const pendingCount = vehicle.alerts.filter(
+    a => a.status === 'PENDING'
+  ).length;
+  const acknowledgedCount = vehicle.alerts.filter(
+    a => a.status === 'ACKNOWLEDGED'
+  ).length;
+  const snoozedCount = vehicle.alerts.filter(
+    a => a.status === 'SNOOZED'
+  ).length;
 
-  const totalCost = vehicle.alerts.reduce((sum, a) => sum + (a.estimatedCost || 0), 0);
-  const totalDuration = vehicle.alerts.reduce((sum, a) => sum + (a.estimatedDuration || 0), 0);
+  const totalCost = vehicle.alerts.reduce(
+    (sum, a) => sum + (a.estimatedCost || 0),
+    0
+  );
+  const totalDuration = vehicle.alerts.reduce(
+    (sum, a) => sum + (a.estimatedDuration || 0),
+    0
+  );
 
-  const nextAlert = [...vehicle.alerts].sort((a, b) => a.kmToMaintenance - b.kmToMaintenance)[0];
+  const nextAlert = [...vehicle.alerts].sort(
+    (a, b) => a.kmToMaintenance - b.kmToMaintenance
+  )[0];
 
   // Determinar el estado del vehículo
-  const vehicleStatus = criticalCount > 0 ? 'critical' : highCount > 0 ? 'warning' : 'normal';
+  const vehicleStatus =
+    criticalCount > 0 ? 'critical' : highCount > 0 ? 'warning' : 'normal';
 
   const statusConfig = {
     critical: {
@@ -88,9 +115,7 @@ export function VehicleAlertRow({
         <div className="px-4 py-4">
           <div className="flex items-center gap-4">
             {/* Indicador Visual de Estado */}
-            <div className="flex-shrink-0">
-              {config.icon}
-            </div>
+            <div className="flex-shrink-0">{config.icon}</div>
 
             {/* Foto del Vehículo */}
             <div className="flex-shrink-0">
@@ -107,11 +132,16 @@ export function VehicleAlertRow({
             {/* Info del Vehículo */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="text-lg font-bold text-gray-900">{vehicle.vehiclePlate}</h3>
+                <h3 className="text-lg font-bold text-gray-900">
+                  {vehicle.vehiclePlate}
+                </h3>
                 {/* Badges de Alertas por Nivel */}
                 <div className="flex gap-1.5">
                   {criticalCount > 0 && (
-                    <Badge variant="destructive" className="text-xs px-2 py-0.5 font-semibold">
+                    <Badge
+                      variant="destructive"
+                      className="text-xs px-2 py-0.5 font-semibold"
+                    >
                       🔴 {criticalCount}
                     </Badge>
                   )}
@@ -170,14 +200,18 @@ export function VehicleAlertRow({
               <p className="text-xs text-gray-500 mb-1">Próximo Venc.</p>
               {nextAlert && (
                 <div>
-                  <p className={`text-lg font-bold ${
-                    nextAlert.kmToMaintenance <= 0 ? 'text-red-600' :
-                    nextAlert.kmToMaintenance <= 500 ? 'text-amber-600' : 'text-gray-900'
-                  }`}>
+                  <p
+                    className={`text-lg font-bold ${
+                      nextAlert.kmToMaintenance <= 0
+                        ? 'text-red-600'
+                        : nextAlert.kmToMaintenance <= 500
+                          ? 'text-amber-600'
+                          : 'text-gray-900'
+                    }`}
+                  >
                     {nextAlert.kmToMaintenance <= 0
                       ? `VENCIDO`
-                      : `${nextAlert.kmToMaintenance} km`
-                    }
+                      : `${nextAlert.kmToMaintenance} km`}
                   </p>
                   <p className="text-xs text-gray-500 truncate max-w-[120px]">
                     {nextAlert.itemName}
@@ -200,7 +234,7 @@ export function VehicleAlertRow({
             {/* Botón Expandir */}
             <div className="flex-shrink-0 pl-2">
               <button
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation();
                   setIsExpanded(!isExpanded);
                 }}
@@ -230,166 +264,209 @@ export function VehicleAlertRow({
             <div className="mt-2 ml-4 mr-4 mb-2 bg-gray-50 rounded-lg border border-gray-200 p-4">
               {/* Agrupar por paquete */}
               {Object.values(
-                vehicle.alerts.reduce((acc, alert) => {
-                  const key = alert.packageName;
-                  if (!acc[key]) {
-                    acc[key] = {
-                      packageName: alert.packageName,
-                      scheduledKm: alert.scheduledKm,
-                      alerts: [],
-                    };
-                  }
-                  acc[key].alerts.push(alert);
-                  return acc;
-                }, {} as Record<string, { packageName: string; scheduledKm: number; alerts: MaintenanceAlert[] }>)
-              )
-              .sort((a, b) => a.scheduledKm - b.scheduledKm)
-              .map((pkg, pkgIndex) => {
-                const packageAlertIds = pkg.alerts.map(a => a.id);
-                const allPackageSelected = packageAlertIds.every(id => selectedAlertIds.includes(id));
-                const packageCritical = pkg.alerts.filter(a => a.alertLevel === 'CRITICAL').length;
-
-                return (
-                  <motion.div
-                    key={pkg.packageName}
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: pkgIndex * 0.1 }}
-                    className="mb-4 last:mb-0"
+                vehicle.alerts.reduce(
+                  (acc, alert) => {
+                    const key = alert.packageName;
+                    if (!acc[key]) {
+                      acc[key] = {
+                        packageName: alert.packageName,
+                        scheduledKm: alert.scheduledKm,
+                        alerts: [],
+                      };
+                    }
+                    acc[key].alerts.push(alert);
+                    return acc;
+                  },
+                  {} as Record<
+                    string,
+                    {
+                      packageName: string;
+                      scheduledKm: number;
+                      alerts: MaintenanceAlert[];
+                    }
                   >
-                    {/* Header del Paquete */}
-                    <div className="flex items-center gap-3 mb-3 bg-white rounded-lg px-4 py-3 border-2 border-gray-200 shadow-sm">
-                      <Checkbox
-                        checked={allPackageSelected}
-                        onCheckedChange={() => onTogglePackage(pkg.alerts)}
-                        className="h-5 w-5"
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-gray-900 text-base">{pkg.packageName}</span>
-                          <Badge variant="outline" className="text-xs font-semibold">
-                            {pkg.scheduledKm.toLocaleString()} km
-                          </Badge>
-                          {packageCritical > 0 && (
-                            <Badge variant="destructive" className="text-xs font-semibold animate-pulse">
-                              {packageCritical} crítica{packageCritical > 1 ? 's' : ''}
+                )
+              )
+                .sort((a, b) => a.scheduledKm - b.scheduledKm)
+                .map((pkg, pkgIndex) => {
+                  const packageAlertIds = pkg.alerts.map(a => a.id);
+                  const allPackageSelected = packageAlertIds.every(id =>
+                    selectedAlertIds.includes(id)
+                  );
+                  const packageCritical = pkg.alerts.filter(
+                    a => a.alertLevel === 'CRITICAL'
+                  ).length;
+
+                  return (
+                    <motion.div
+                      key={pkg.packageName}
+                      initial={{ x: -20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: pkgIndex * 0.1 }}
+                      className="mb-4 last:mb-0"
+                    >
+                      {/* Header del Paquete */}
+                      <div className="flex items-center gap-3 mb-3 bg-white rounded-lg px-4 py-3 border-2 border-gray-200 shadow-sm">
+                        <Checkbox
+                          checked={allPackageSelected}
+                          onCheckedChange={() => onTogglePackage(pkg.alerts)}
+                          className="h-5 w-5"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-gray-900 text-base">
+                              {pkg.packageName}
+                            </span>
+                            <Badge
+                              variant="outline"
+                              className="text-xs font-semibold"
+                            >
+                              {pkg.scheduledKm.toLocaleString()} km
                             </Badge>
-                          )}
+                            {packageCritical > 0 && (
+                              <Badge
+                                variant="destructive"
+                                className="text-xs font-semibold animate-pulse"
+                              >
+                                {packageCritical} crítica
+                                {packageCritical > 1 ? 's' : ''}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
+                        <span className="text-sm text-gray-500 font-medium">
+                          {pkg.alerts.length} items
+                        </span>
                       </div>
-                      <span className="text-sm text-gray-500 font-medium">
-                        {pkg.alerts.length} items
-                      </span>
-                    </div>
 
-                    {/* Items del Paquete */}
-                    <div className="ml-8 space-y-2">
-                      {pkg.alerts.map((alert, alertIndex) => {
-                        const isSelected = selectedAlertIds.includes(alert.id);
-                        const isOverdue = alert.kmToMaintenance <= 0;
-                        const isUrgent = alert.kmToMaintenance > 0 && alert.kmToMaintenance <= 500;
-                        const isInProgress = alert.status === 'IN_PROGRESS';
+                      {/* Items del Paquete */}
+                      <div className="ml-8 space-y-2">
+                        {pkg.alerts.map((alert, alertIndex) => {
+                          const isSelected = selectedAlertIds.includes(
+                            alert.id
+                          );
+                          const isOverdue = alert.kmToMaintenance <= 0;
+                          const isUrgent =
+                            alert.kmToMaintenance > 0 &&
+                            alert.kmToMaintenance <= 500;
+                          const isInProgress = alert.status === 'IN_PROGRESS';
 
-                        return (
-                          <motion.div
-                            key={alert.id}
-                            initial={{ x: -10, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: (pkgIndex * 0.1) + (alertIndex * 0.05) }}
-                            className={`
+                          return (
+                            <motion.div
+                              key={alert.id}
+                              initial={{ x: -10, opacity: 0 }}
+                              animate={{ x: 0, opacity: 1 }}
+                              transition={{
+                                delay: pkgIndex * 0.1 + alertIndex * 0.05,
+                              }}
+                              className={`
                               flex items-center gap-3 px-4 py-3 rounded-lg text-sm
                               transition-all duration-200
-                              ${isInProgress
-                                ? 'bg-purple-50 border-2 border-purple-300 opacity-75'
-                                : isSelected
-                                ? 'bg-blue-50 border-2 border-blue-400 shadow-sm'
-                                : 'bg-white border-2 border-gray-200 hover:border-gray-300'
+                              ${
+                                isInProgress
+                                  ? 'bg-purple-50 border-2 border-purple-300 opacity-75'
+                                  : isSelected
+                                    ? 'bg-blue-50 border-2 border-blue-400 shadow-sm'
+                                    : 'bg-white border-2 border-gray-200 hover:border-gray-300'
                               }
                               ${isOverdue && !isInProgress ? 'border-l-4 !border-l-red-500' : ''}
                               ${isUrgent && !isInProgress ? 'border-l-4 !border-l-amber-500' : ''}
                               ${isInProgress ? 'border-l-4 !border-l-purple-500' : ''}
                             `}
-                          >
-                            <Checkbox
-                              checked={isSelected}
-                              onCheckedChange={() => onToggleAlert(alert.id)}
-                              className="h-5 w-5"
-                              disabled={isInProgress}
-                            />
+                            >
+                              <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={() => onToggleAlert(alert.id)}
+                                className="h-5 w-5"
+                                disabled={isInProgress}
+                              />
 
-                            <div className="flex-1 flex items-center gap-4">
-                              {/* Nombre del Item */}
-                              <span className="font-semibold text-gray-900 min-w-[220px]">
-                                {alert.itemName}
-                              </span>
-
-                              {/* Km Restantes */}
-                              <div className="min-w-[140px]">
-                                <span className={`font-bold text-base ${
-                                  isOverdue ? 'text-red-600' :
-                                  isUrgent ? 'text-amber-600' : 'text-gray-700'
-                                }`}>
-                                  {isOverdue
-                                    ? `${Math.abs(alert.kmToMaintenance)} km VENCIDO`
-                                    : `${alert.kmToMaintenance} km`
-                                  }
+                              <div className="flex-1 flex items-center gap-4">
+                                {/* Nombre del Item */}
+                                <span className="font-semibold text-gray-900 min-w-[220px]">
+                                  {alert.itemName}
                                 </span>
+
+                                {/* Km Restantes */}
+                                <div className="min-w-[140px]">
+                                  <span
+                                    className={`font-bold text-base ${
+                                      isOverdue
+                                        ? 'text-red-600'
+                                        : isUrgent
+                                          ? 'text-amber-600'
+                                          : 'text-gray-700'
+                                    }`}
+                                  >
+                                    {isOverdue
+                                      ? `${Math.abs(alert.kmToMaintenance)} km VENCIDO`
+                                      : `${alert.kmToMaintenance} km`}
+                                  </span>
+                                </div>
+
+                                {/* Costo */}
+                                {alert.estimatedCost && (
+                                  <span className="text-green-600 font-semibold min-w-[100px]">
+                                    $
+                                    {Math.round(
+                                      alert.estimatedCost
+                                    ).toLocaleString()}
+                                  </span>
+                                )}
+
+                                {/* Tiempo */}
+                                {alert.estimatedDuration && (
+                                  <span className="text-gray-600 font-medium">
+                                    {alert.estimatedDuration.toFixed(1)} hrs
+                                  </span>
+                                )}
                               </div>
 
-                              {/* Costo */}
-                              {alert.estimatedCost && (
-                                <span className="text-green-600 font-semibold min-w-[100px]">
-                                  ${Math.round(alert.estimatedCost).toLocaleString()}
-                                </span>
-                              )}
-
-                              {/* Tiempo */}
-                              {alert.estimatedDuration && (
-                                <span className="text-gray-600 font-medium">
-                                  {alert.estimatedDuration.toFixed(1)} hrs
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Badges de Estado y Prioridad */}
-                            <div className="flex gap-2">
-                              {/* Badge de Estado */}
-                              <Badge
-                                className={`text-xs font-bold ${
-                                  alert.status === 'IN_PROGRESS'
-                                    ? 'bg-purple-500 hover:bg-purple-600'
-                                    : alert.status === 'PENDING'
-                                    ? 'bg-gray-400 hover:bg-gray-500'
-                                    : alert.status === 'ACKNOWLEDGED'
-                                    ? 'bg-blue-500 hover:bg-blue-600'
-                                    : alert.status === 'SNOOZED'
-                                    ? 'bg-yellow-500 hover:bg-yellow-600'
-                                    : alert.status === 'COMPLETED'
-                                    ? 'bg-green-500 hover:bg-green-600'
-                                    : 'bg-gray-400'
-                                }`}
-                              >
-                                {alert.status === 'IN_PROGRESS' && '🔧 EN PROGRESO'}
-                                {alert.status === 'PENDING' && '⏳ PENDIENTE'}
-                                {alert.status === 'ACKNOWLEDGED' && '👁️ VISTA'}
-                                {alert.status === 'SNOOZED' && '💤 POSPUESTA'}
-                                {alert.status === 'COMPLETED' && '✅ COMPLETADA'}
-                              </Badge>
-
-                              {/* Badge de Prioridad Urgente */}
-                              {alert.priority === 'URGENT' && (
-                                <Badge variant="destructive" className="text-xs font-bold animate-pulse">
-                                  🚨 URGENTE
+                              {/* Badges de Estado y Prioridad */}
+                              <div className="flex gap-2">
+                                {/* Badge de Estado */}
+                                <Badge
+                                  className={`text-xs font-bold ${
+                                    alert.status === 'IN_PROGRESS'
+                                      ? 'bg-purple-500 hover:bg-purple-600'
+                                      : alert.status === 'PENDING'
+                                        ? 'bg-gray-400 hover:bg-gray-500'
+                                        : alert.status === 'ACKNOWLEDGED'
+                                          ? 'bg-blue-500 hover:bg-blue-600'
+                                          : alert.status === 'SNOOZED'
+                                            ? 'bg-yellow-500 hover:bg-yellow-600'
+                                            : alert.status === 'COMPLETED'
+                                              ? 'bg-green-500 hover:bg-green-600'
+                                              : 'bg-gray-400'
+                                  }`}
+                                >
+                                  {alert.status === 'IN_PROGRESS' &&
+                                    '🔧 EN PROGRESO'}
+                                  {alert.status === 'PENDING' && '⏳ PENDIENTE'}
+                                  {alert.status === 'ACKNOWLEDGED' &&
+                                    '👁️ VISTA'}
+                                  {alert.status === 'SNOOZED' && '💤 POSPUESTA'}
+                                  {alert.status === 'COMPLETED' &&
+                                    '✅ COMPLETADA'}
                                 </Badge>
-                              )}
-                            </div>
-                          </motion.div>
-                        );
-                      })}
-                    </div>
-                  </motion.div>
-                );
-              })}
+
+                                {/* Badge de Prioridad Urgente */}
+                                {alert.priority === 'URGENT' && (
+                                  <Badge
+                                    variant="destructive"
+                                    className="text-xs font-bold animate-pulse"
+                                  >
+                                    🚨 URGENTE
+                                  </Badge>
+                                )}
+                              </div>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  );
+                })}
             </div>
           </motion.div>
         )}

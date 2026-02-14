@@ -52,8 +52,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
-    const { suggestedName, description, mantType, categoryId, type, justification, similarItems } =
-      await req.json();
+    const {
+      suggestedName,
+      description,
+      mantType,
+      categoryId,
+      type,
+      justification,
+      similarItems,
+    } = await req.json();
 
     // Validaciones
     if (!suggestedName || suggestedName.trim().length < 2) {
@@ -63,16 +70,30 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!mantType || !['PREVENTIVE', 'PREDICTIVE', 'CORRECTIVE', 'EMERGENCY'].includes(mantType)) {
-      return NextResponse.json({ error: 'Tipo de mantenimiento inválido' }, { status: 400 });
+    if (
+      !mantType ||
+      !['PREVENTIVE', 'PREDICTIVE', 'CORRECTIVE', 'EMERGENCY'].includes(
+        mantType
+      )
+    ) {
+      return NextResponse.json(
+        { error: 'Tipo de mantenimiento inválido' },
+        { status: 400 }
+      );
     }
 
     if (!categoryId || categoryId <= 0) {
-      return NextResponse.json({ error: 'Categoría inválida' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Categoría inválida' },
+        { status: 400 }
+      );
     }
 
     if (type && !['ACTION', 'PART', 'SERVICE'].includes(type)) {
-      return NextResponse.json({ error: 'Tipo de item inválido' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Tipo de item inválido' },
+        { status: 400 }
+      );
     }
 
     // Verificar que la categoría existe
@@ -84,7 +105,10 @@ export async function POST(req: Request) {
     });
 
     if (!category) {
-      return NextResponse.json({ error: 'Categoría no encontrada' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Categoría no encontrada' },
+        { status: 404 }
+      );
     }
 
     const itemRequest = await prisma.mantItemRequest.create({

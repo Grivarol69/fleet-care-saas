@@ -122,17 +122,27 @@ export default function InvoicePrintPage() {
             <div className="text-right">
               <p className="text-sm text-muted-foreground">Fecha de emisión</p>
               <p className="font-semibold">
-                {format(new Date(invoice.invoiceDate), "dd 'de' MMMM 'de' yyyy", {
-                  locale: es,
-                })}
+                {format(
+                  new Date(invoice.invoiceDate),
+                  "dd 'de' MMMM 'de' yyyy",
+                  {
+                    locale: es,
+                  }
+                )}
               </p>
               {invoice.dueDate && (
                 <>
-                  <p className="text-sm text-muted-foreground mt-2">Vencimiento</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Vencimiento
+                  </p>
                   <p className="font-semibold">
-                    {format(new Date(invoice.dueDate), "dd 'de' MMMM 'de' yyyy", {
-                      locale: es,
-                    })}
+                    {format(
+                      new Date(invoice.dueDate),
+                      "dd 'de' MMMM 'de' yyyy",
+                      {
+                        locale: es,
+                      }
+                    )}
                   </p>
                 </>
               )}
@@ -145,13 +155,23 @@ export default function InvoicePrintPage() {
           {/* Proveedor */}
           {invoice.supplier && (
             <div>
-              <h3 className="font-semibold text-sm text-muted-foreground mb-2">PROVEEDOR</h3>
+              <h3 className="font-semibold text-sm text-muted-foreground mb-2">
+                PROVEEDOR
+              </h3>
               <div className="space-y-1">
                 <p className="font-bold">{invoice.supplier.name}</p>
-                {invoice.supplier.nit && <p className="text-sm">NIT: {invoice.supplier.nit}</p>}
-                {invoice.supplier.address && <p className="text-sm">{invoice.supplier.address}</p>}
-                {invoice.supplier.phone && <p className="text-sm">Tel: {invoice.supplier.phone}</p>}
-                {invoice.supplier.email && <p className="text-sm">{invoice.supplier.email}</p>}
+                {invoice.supplier.nit && (
+                  <p className="text-sm">NIT: {invoice.supplier.nit}</p>
+                )}
+                {invoice.supplier.address && (
+                  <p className="text-sm">{invoice.supplier.address}</p>
+                )}
+                {invoice.supplier.phone && (
+                  <p className="text-sm">Tel: {invoice.supplier.phone}</p>
+                )}
+                {invoice.supplier.email && (
+                  <p className="text-sm">{invoice.supplier.email}</p>
+                )}
               </div>
             </div>
           )}
@@ -159,13 +179,16 @@ export default function InvoicePrintPage() {
           {/* Orden de Trabajo */}
           {invoice.workOrder && (
             <div>
-              <h3 className="font-semibold text-sm text-muted-foreground mb-2">ORDEN DE TRABAJO</h3>
+              <h3 className="font-semibold text-sm text-muted-foreground mb-2">
+                ORDEN DE TRABAJO
+              </h3>
               <div className="space-y-1">
                 <p className="font-bold">
                   {invoice.workOrder.vehicle.licensePlate}
                 </p>
                 <p className="text-sm">
-                  {invoice.workOrder.vehicle.brand.name} {invoice.workOrder.vehicle.line.name}
+                  {invoice.workOrder.vehicle.brand.name}{' '}
+                  {invoice.workOrder.vehicle.line.name}
                 </p>
                 <p className="text-sm">{invoice.workOrder.title}</p>
               </div>
@@ -179,12 +202,24 @@ export default function InvoicePrintPage() {
             <thead>
               <tr className="border-b-2 border-gray-300">
                 <th className="text-left py-3 px-2 text-sm font-semibold">#</th>
-                <th className="text-left py-3 px-2 text-sm font-semibold">Descripción</th>
-                <th className="text-right py-3 px-2 text-sm font-semibold">Cant.</th>
-                <th className="text-right py-3 px-2 text-sm font-semibold">Precio Unit.</th>
-                <th className="text-right py-3 px-2 text-sm font-semibold">Subtotal</th>
-                <th className="text-right py-3 px-2 text-sm font-semibold">IVA</th>
-                <th className="text-right py-3 px-2 text-sm font-semibold">Total</th>
+                <th className="text-left py-3 px-2 text-sm font-semibold">
+                  Descripción
+                </th>
+                <th className="text-right py-3 px-2 text-sm font-semibold">
+                  Cant.
+                </th>
+                <th className="text-right py-3 px-2 text-sm font-semibold">
+                  Precio Unit.
+                </th>
+                <th className="text-right py-3 px-2 text-sm font-semibold">
+                  Subtotal
+                </th>
+                <th className="text-right py-3 px-2 text-sm font-semibold">
+                  IVA
+                </th>
+                <th className="text-right py-3 px-2 text-sm font-semibold">
+                  Total
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -194,7 +229,9 @@ export default function InvoicePrintPage() {
                   <td className="py-3 px-2">
                     <p className="font-medium text-sm">{item.description}</p>
                   </td>
-                  <td className="py-3 px-2 text-right text-sm">{item.quantity}</td>
+                  <td className="py-3 px-2 text-right text-sm">
+                    {item.quantity}
+                  </td>
                   <td className="py-3 px-2 text-right text-sm">
                     ${item.unitPrice.toLocaleString('es-CO')}
                   </td>
@@ -231,7 +268,8 @@ export default function InvoicePrintPage() {
             <div className="flex justify-between py-3 border-t-2 border-gray-300">
               <span className="font-bold text-lg">TOTAL:</span>
               <span className="font-bold text-xl">
-                ${invoice.totalAmount.toLocaleString('es-CO')} {invoice.currency}
+                ${invoice.totalAmount.toLocaleString('es-CO')}{' '}
+                {invoice.currency}
               </span>
             </div>
           </div>
@@ -240,7 +278,9 @@ export default function InvoicePrintPage() {
         {/* Notas */}
         {invoice.notes && (
           <div className="border-t pt-6">
-            <h3 className="font-semibold text-sm text-muted-foreground mb-2">NOTAS</h3>
+            <h3 className="font-semibold text-sm text-muted-foreground mb-2">
+              NOTAS
+            </h3>
             <p className="text-sm whitespace-pre-wrap">{invoice.notes}</p>
           </div>
         )}
@@ -249,7 +289,10 @@ export default function InvoicePrintPage() {
         <div className="mt-12 text-center text-xs text-muted-foreground border-t pt-4">
           <p>Fleet Care SaaS - Sistema de Gestión de Mantenimiento</p>
           <p className="mt-1">
-            Documento generado el {format(new Date(), "dd 'de' MMMM 'de' yyyy 'a las' HH:mm", { locale: es })}
+            Documento generado el{' '}
+            {format(new Date(), "dd 'de' MMMM 'de' yyyy 'a las' HH:mm", {
+              locale: es,
+            })}
           </p>
         </div>
       </div>

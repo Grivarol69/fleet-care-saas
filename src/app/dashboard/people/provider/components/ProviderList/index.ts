@@ -1,1 +1,1 @@
-export { ProviderList } from "./ProviderList";
+export { ProviderList } from './ProviderList';

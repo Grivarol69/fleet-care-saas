@@ -88,7 +88,10 @@ export function ItemsTab({ invoice }: ItemsTabProps) {
               <TableBody>
                 {invoice.items.map((item, index) => {
                   const mantItemType = item.workOrderItem?.mantItem?.type
-                    ? mantItemTypeConfig[item.workOrderItem.mantItem.type as keyof typeof mantItemTypeConfig]
+                    ? mantItemTypeConfig[
+                        item.workOrderItem.mantItem
+                          .type as keyof typeof mantItemTypeConfig
+                      ]
                     : null;
 
                   return (
@@ -99,7 +102,8 @@ export function ItemsTab({ invoice }: ItemsTabProps) {
                           <p className="font-medium">{item.description}</p>
                           {item.masterPart && (
                             <p className="text-xs text-muted-foreground mt-1">
-                              Repuesto: {item.masterPart.name} ({item.masterPart.partNumber})
+                              Repuesto: {item.masterPart.name} (
+                              {item.masterPart.partNumber})
                             </p>
                           )}
                         </div>
@@ -109,7 +113,9 @@ export function ItemsTab({ invoice }: ItemsTabProps) {
                           <div className="space-y-1">
                             <div className="flex items-center gap-1 text-sm">
                               <LinkIcon className="h-3 w-3 text-green-600" />
-                              <span className="text-green-600 font-medium">Vinculado a WO</span>
+                              <span className="text-green-600 font-medium">
+                                Vinculado a WO
+                              </span>
                             </div>
                             {item.workOrderItem.mantItem && (
                               <>
@@ -127,10 +133,14 @@ export function ItemsTab({ invoice }: ItemsTabProps) {
                             )}
                           </div>
                         ) : (
-                          <span className="text-muted-foreground text-sm">No vinculado</span>
+                          <span className="text-muted-foreground text-sm">
+                            No vinculado
+                          </span>
                         )}
                       </TableCell>
-                      <TableCell className="text-right">{item.quantity}</TableCell>
+                      <TableCell className="text-right">
+                        {item.quantity}
+                      </TableCell>
                       <TableCell className="text-right">
                         ${item.unitPrice.toLocaleString('es-CO')}
                       </TableCell>
@@ -160,7 +170,8 @@ export function ItemsTab({ invoice }: ItemsTabProps) {
                     Subtotal
                   </TableCell>
                   <TableCell colSpan={3} className="text-right font-medium">
-                    ${invoice.subtotal.toLocaleString('es-CO')} {invoice.currency}
+                    ${invoice.subtotal.toLocaleString('es-CO')}{' '}
+                    {invoice.currency}
                   </TableCell>
                 </TableRow>
                 <TableRow>
@@ -168,15 +179,23 @@ export function ItemsTab({ invoice }: ItemsTabProps) {
                     IVA Total
                   </TableCell>
                   <TableCell colSpan={3} className="text-right font-medium">
-                    ${invoice.taxAmount.toLocaleString('es-CO')} {invoice.currency}
+                    ${invoice.taxAmount.toLocaleString('es-CO')}{' '}
+                    {invoice.currency}
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell colSpan={5} className="text-right font-bold text-lg">
+                  <TableCell
+                    colSpan={5}
+                    className="text-right font-bold text-lg"
+                  >
                     TOTAL
                   </TableCell>
-                  <TableCell colSpan={3} className="text-right font-bold text-lg">
-                    ${invoice.totalAmount.toLocaleString('es-CO')} {invoice.currency}
+                  <TableCell
+                    colSpan={3}
+                    className="text-right font-bold text-lg"
+                  >
+                    ${invoice.totalAmount.toLocaleString('es-CO')}{' '}
+                    {invoice.currency}
                   </TableCell>
                 </TableRow>
               </TableFooter>
@@ -186,18 +205,24 @@ export function ItemsTab({ invoice }: ItemsTabProps) {
 
         {/* Resumen de vinculaciones */}
         <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-          <h4 className="font-semibold mb-2 text-sm">Resumen de Vinculaciones</h4>
+          <h4 className="font-semibold mb-2 text-sm">
+            Resumen de Vinculaciones
+          </h4>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-muted-foreground">Items vinculados a WO</p>
               <p className="font-semibold">
-                {invoice.items.filter(i => i.workOrderItem).length} de {invoice.items.length}
+                {invoice.items.filter(i => i.workOrderItem).length} de{' '}
+                {invoice.items.length}
               </p>
             </div>
             <div>
-              <p className="text-muted-foreground">Items con repuesto maestro</p>
+              <p className="text-muted-foreground">
+                Items con repuesto maestro
+              </p>
               <p className="font-semibold">
-                {invoice.items.filter(i => i.masterPart).length} de {invoice.items.length}
+                {invoice.items.filter(i => i.masterPart).length} de{' '}
+                {invoice.items.length}
               </p>
             </div>
           </div>

@@ -6,7 +6,13 @@
 export interface Expense {
   id: string;
   workOrderId: number;
-  expenseType: 'PARTS' | 'LABOR' | 'TRANSPORT' | 'TOOLS' | 'MATERIALS' | 'OTHER';
+  expenseType:
+    | 'PARTS'
+    | 'LABOR'
+    | 'TRANSPORT'
+    | 'TOOLS'
+    | 'MATERIALS'
+    | 'OTHER';
   description: string;
   amount: number;
   vendor: string;
@@ -29,7 +35,13 @@ export interface Expense {
 
 export interface CreateExpenseData {
   workOrderId: number;
-  expenseType: 'PARTS' | 'LABOR' | 'TRANSPORT' | 'TOOLS' | 'MATERIALS' | 'OTHER';
+  expenseType:
+    | 'PARTS'
+    | 'LABOR'
+    | 'TRANSPORT'
+    | 'TOOLS'
+    | 'MATERIALS'
+    | 'OTHER';
   description: string;
   amount: number;
   vendor: string;
@@ -39,7 +51,13 @@ export interface CreateExpenseData {
 }
 
 export interface UpdateExpenseData {
-  expenseType?: 'PARTS' | 'LABOR' | 'TRANSPORT' | 'TOOLS' | 'MATERIALS' | 'OTHER';
+  expenseType?:
+    | 'PARTS'
+    | 'LABOR'
+    | 'TRANSPORT'
+    | 'TOOLS'
+    | 'MATERIALS'
+    | 'OTHER';
   description?: string;
   amount?: number;
   vendor?: string;
@@ -104,12 +122,19 @@ class ExpensesService {
     const data = await response.json();
 
     // Convertir fechas de string a Date objects
-    data.expenses = data.expenses.map((expense: { expenseDate: string; createdAt: string; updatedAt: string; [key: string]: unknown }) => ({
-      ...expense,
-      expenseDate: new Date(expense.expenseDate),
-      createdAt: new Date(expense.createdAt),
-      updatedAt: new Date(expense.updatedAt),
-    }));
+    data.expenses = data.expenses.map(
+      (expense: {
+        expenseDate: string;
+        createdAt: string;
+        updatedAt: string;
+        [key: string]: unknown;
+      }) => ({
+        ...expense,
+        expenseDate: new Date(expense.expenseDate),
+        createdAt: new Date(expense.createdAt),
+        updatedAt: new Date(expense.updatedAt),
+      })
+    );
 
     return data;
   }
@@ -225,7 +250,10 @@ class ExpensesService {
   /**
    * Obtiene gastos por vehículo específico
    */
-  async getExpensesByVehicle(vehicleId: number, limit = 50): Promise<Expense[]> {
+  async getExpensesByVehicle(
+    vehicleId: number,
+    limit = 50
+  ): Promise<Expense[]> {
     const result = await this.getExpenses({ vehicleId, limit });
     return result.expenses;
   }
@@ -243,7 +271,10 @@ class ExpensesService {
    */
   async getTotalExpenses(filters: ExpenseFilters = {}): Promise<number> {
     const result = await this.getExpenses(filters);
-    return result.expenses.reduce((total, expense) => total + expense.amount, 0);
+    return result.expenses.reduce(
+      (total, expense) => total + expense.amount,
+      0
+    );
   }
 
   /**

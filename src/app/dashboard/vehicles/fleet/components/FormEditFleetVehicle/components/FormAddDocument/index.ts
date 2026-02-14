@@ -1,1 +1,1 @@
-export * from "./FormAddDocument";
+export * from './FormAddDocument';

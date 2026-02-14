@@ -21,20 +21,23 @@
 ## Resumen Ejecutivo
 
 ### Objetivo
+
 Implementar un circuito completo de trazabilidad financiera:
 
-| Escenario | Flujo |
-|-----------|-------|
-| **Externo** | Alertas -> OT -> OC Servicios + OC Repuestos -> Facturas |
-| **Interno** | Alertas -> OT -> Ticket Interno (inventario + HH + tecnico) |
-| **Mixto** | Una OT puede tener items externos e internos simultaneamente |
+| Escenario   | Flujo                                                        |
+| ----------- | ------------------------------------------------------------ |
+| **Externo** | Alertas -> OT -> OC Servicios + OC Repuestos -> Facturas     |
+| **Interno** | Alertas -> OT -> Ticket Interno (inventario + HH + tecnico)  |
+| **Mixto**   | Una OT puede tener items externos e internos simultaneamente |
 
 ### Flujo de Aprobacion de OC
+
 ```
 DRAFT -> PENDING_APPROVAL -> APPROVED -> SENT -> PARTIAL/COMPLETED
 ```
 
 ### Cierre Parcial
+
 Una OT puede cerrarse aunque falten items (flag `allowPartialClose`)
 
 ---
@@ -44,18 +47,22 @@ Una OT puede cerrarse aunque falten items (flag `allowPartialClose`)
 ### Modelos Existentes Relevantes
 
 #### WorkOrder (linea ~394 en schema.prisma)
+
 - Ya tiene relaciones con: `workOrderItems`, `invoices`, `internalWorkTickets`
 - **NO tiene:** campo `workType`, relacion con `PurchaseOrder`
 
 #### WorkOrderItem (linea ~450 en schema.prisma)
+
 - Ya tiene campos de cierre: `closureType`, `invoiceItemId`, `internalTicketEntryId`
 - **NO tiene:** campo `itemSource`, relacion con `PurchaseOrderItem`
 
 #### Invoice (linea ~646 en schema.prisma)
+
 - Ya tiene relacion con `WorkOrder`
 - **NO tiene:** relacion con `PurchaseOrder`
 
 #### InternalWorkTicket (linea ~1588 en schema.prisma)
+
 - Ya funciona con `TicketLaborEntry` y `TicketPartEntry`
 - Descuenta inventario correctamente
 - **NO tiene:** manejo de items pendientes de compra
@@ -297,10 +304,10 @@ pnpm prisma migrate dev --name add_purchase_order_system
 **Archivo:** `src/app/api/purchase-orders/route.ts`
 
 ```typescript
-import { prisma } from "@/lib/prisma";
-import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
-import { Prisma, PurchaseOrderStatus, PurchaseOrderType } from "@prisma/client";
+import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
+import { Prisma, PurchaseOrderStatus, PurchaseOrderType } from '@prisma/client';
 
 /**
  * GET - Listar Ordenes de Compra con filtros
@@ -310,15 +317,15 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
-    const workOrderId = searchParams.get("workOrderId");
-    const status = searchParams.get("status");
-    const type = searchParams.get("type");
-    const providerId = searchParams.get("providerId");
-    const limit = searchParams.get("limit");
+    const workOrderId = searchParams.get('workOrderId');
+    const status = searchParams.get('status');
+    const type = searchParams.get('type');
+    const providerId = searchParams.get('providerId');
+    const limit = searchParams.get('limit');
 
     const where: Prisma.PurchaseOrderWhereInput = {
       tenantId: user.tenantId,
@@ -362,15 +369,15 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       ...(limit ? { take: parseInt(limit) } : {}),
     });
 
     return NextResponse.json(purchaseOrders);
   } catch (error: unknown) {
-    console.error("[PURCHASE_ORDERS_GET]", error);
+    console.error('[PURCHASE_ORDERS_GET]', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Error interno" },
+      { error: error instanceof Error ? error.message : 'Error interno' },
       { status: 500 }
     );
   }
@@ -384,13 +391,13 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
     // Validar permisos (OWNER, MANAGER, PURCHASER)
-    if (!["OWNER", "MANAGER", "PURCHASER"].includes(user.role)) {
+    if (!['OWNER', 'MANAGER', 'PURCHASER'].includes(user.role)) {
       return NextResponse.json(
-        { error: "No tienes permisos para crear ordenes de compra" },
+        { error: 'No tienes permisos para crear ordenes de compra' },
         { status: 403 }
       );
     }
@@ -401,7 +408,7 @@ export async function POST(request: NextRequest) {
     // Validaciones basicas
     if (!workOrderId || !type || !providerId || !items?.length) {
       return NextResponse.json(
-        { error: "workOrderId, type, providerId y items son requeridos" },
+        { error: 'workOrderId, type, providerId y items son requeridos' },
         { status: 400 }
       );
     }
@@ -413,7 +420,7 @@ export async function POST(request: NextRequest) {
 
     if (!workOrder) {
       return NextResponse.json(
-        { error: "Orden de trabajo no encontrada" },
+        { error: 'Orden de trabajo no encontrada' },
         { status: 404 }
       );
     }
@@ -425,7 +432,7 @@ export async function POST(request: NextRequest) {
 
     if (!provider) {
       return NextResponse.json(
-        { error: "Proveedor no encontrado" },
+        { error: 'Proveedor no encontrado' },
         { status: 404 }
       );
     }
@@ -437,19 +444,20 @@ export async function POST(request: NextRequest) {
         tenantId: user.tenantId,
         orderNumber: { startsWith: `OC-${year}-` },
       },
-      orderBy: { orderNumber: "desc" },
+      orderBy: { orderNumber: 'desc' },
     });
 
     let nextNumber = 1;
     if (lastOC) {
-      const lastNum = parseInt(lastOC.orderNumber.split("-")[2] || "0");
+      const lastNum = parseInt(lastOC.orderNumber.split('-')[2] || '0');
       nextNumber = lastNum + 1;
     }
-    const orderNumber = `OC-${year}-${nextNumber.toString().padStart(6, "0")}`;
+    const orderNumber = `OC-${year}-${nextNumber.toString().padStart(6, '0')}`;
 
     // Calcular totales
     const subtotal = items.reduce(
-      (sum: number, item: any) => sum + Number(item.quantity) * Number(item.unitPrice),
+      (sum: number, item: any) =>
+        sum + Number(item.quantity) * Number(item.unitPrice),
       0
     );
     const taxRate = 0; // Configurable por tenant
@@ -457,7 +465,7 @@ export async function POST(request: NextRequest) {
     const total = subtotal + taxAmount;
 
     // Crear OC con items en transaccion
-    const purchaseOrder = await prisma.$transaction(async (tx) => {
+    const purchaseOrder = await prisma.$transaction(async tx => {
       const po = await tx.purchaseOrder.create({
         data: {
           tenantId: user.tenantId,
@@ -465,7 +473,7 @@ export async function POST(request: NextRequest) {
           orderNumber,
           type: type as PurchaseOrderType,
           providerId,
-          status: "DRAFT",
+          status: 'DRAFT',
           requestedBy: user.id,
           subtotal,
           taxRate,
@@ -481,7 +489,7 @@ export async function POST(request: NextRequest) {
               quantity: item.quantity,
               unitPrice: item.unitPrice,
               total: Number(item.quantity) * Number(item.unitPrice),
-              status: "PENDING",
+              status: 'PENDING',
             })),
           },
         },
@@ -496,9 +504,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(purchaseOrder, { status: 201 });
   } catch (error: unknown) {
-    console.error("[PURCHASE_ORDERS_POST]", error);
+    console.error('[PURCHASE_ORDERS_POST]', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Error interno" },
+      { error: error instanceof Error ? error.message : 'Error interno' },
       { status: 500 }
     );
   }
@@ -510,10 +518,10 @@ export async function POST(request: NextRequest) {
 **Archivo:** `src/app/api/purchase-orders/[id]/route.ts`
 
 ```typescript
-import { prisma } from "@/lib/prisma";
-import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
-import { PurchaseOrderStatus } from "@prisma/client";
+import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
+import { PurchaseOrderStatus } from '@prisma/client';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -526,7 +534,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -562,16 +570,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     if (!purchaseOrder) {
       return NextResponse.json(
-        { error: "Orden de compra no encontrada" },
+        { error: 'Orden de compra no encontrada' },
         { status: 404 }
       );
     }
 
     return NextResponse.json(purchaseOrder);
   } catch (error: unknown) {
-    console.error("[PURCHASE_ORDER_GET]", error);
+    console.error('[PURCHASE_ORDER_GET]', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Error interno" },
+      { error: error instanceof Error ? error.message : 'Error interno' },
       { status: 500 }
     );
   }
@@ -585,7 +593,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -599,37 +607,44 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     if (!currentPO) {
       return NextResponse.json(
-        { error: "Orden de compra no encontrada" },
+        { error: 'Orden de compra no encontrada' },
         { status: 404 }
       );
     }
 
     // Definir transiciones validas
-    const validTransitions: Record<string, { from: PurchaseOrderStatus[]; to: PurchaseOrderStatus; requiredRole?: string[] }> = {
+    const validTransitions: Record<
+      string,
+      {
+        from: PurchaseOrderStatus[];
+        to: PurchaseOrderStatus;
+        requiredRole?: string[];
+      }
+    > = {
       submit: {
-        from: ["DRAFT"],
-        to: "PENDING_APPROVAL",
-        requiredRole: ["OWNER", "MANAGER", "PURCHASER"],
+        from: ['DRAFT'],
+        to: 'PENDING_APPROVAL',
+        requiredRole: ['OWNER', 'MANAGER', 'PURCHASER'],
       },
       approve: {
-        from: ["PENDING_APPROVAL"],
-        to: "APPROVED",
-        requiredRole: ["OWNER", "MANAGER"],
+        from: ['PENDING_APPROVAL'],
+        to: 'APPROVED',
+        requiredRole: ['OWNER', 'MANAGER'],
       },
       reject: {
-        from: ["PENDING_APPROVAL"],
-        to: "DRAFT",
-        requiredRole: ["OWNER", "MANAGER"],
+        from: ['PENDING_APPROVAL'],
+        to: 'DRAFT',
+        requiredRole: ['OWNER', 'MANAGER'],
       },
       send: {
-        from: ["APPROVED"],
-        to: "SENT",
-        requiredRole: ["OWNER", "MANAGER", "PURCHASER"],
+        from: ['APPROVED'],
+        to: 'SENT',
+        requiredRole: ['OWNER', 'MANAGER', 'PURCHASER'],
       },
       cancel: {
-        from: ["DRAFT", "PENDING_APPROVAL", "APPROVED"],
-        to: "CANCELLED",
-        requiredRole: ["OWNER", "MANAGER"],
+        from: ['DRAFT', 'PENDING_APPROVAL', 'APPROVED'],
+        to: 'CANCELLED',
+        requiredRole: ['OWNER', 'MANAGER'],
       },
     };
 
@@ -648,9 +663,12 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    if (transition.requiredRole && !transition.requiredRole.includes(user.role)) {
+    if (
+      transition.requiredRole &&
+      !transition.requiredRole.includes(user.role)
+    ) {
       return NextResponse.json(
-        { error: "No tienes permisos para esta accion" },
+        { error: 'No tienes permisos para esta accion' },
         { status: 403 }
       );
     }
@@ -662,10 +680,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     };
 
     // Datos adicionales segun accion
-    if (action === "approve") {
+    if (action === 'approve') {
       updateData.approvedBy = user.id;
       updateData.approvedAt = new Date();
-    } else if (action === "send") {
+    } else if (action === 'send') {
       updateData.sentAt = new Date();
     }
 
@@ -680,9 +698,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(updatedPO);
   } catch (error: unknown) {
-    console.error("[PURCHASE_ORDER_PATCH]", error);
+    console.error('[PURCHASE_ORDER_PATCH]', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Error interno" },
+      { error: error instanceof Error ? error.message : 'Error interno' },
       { status: 500 }
     );
   }
@@ -695,7 +713,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -706,14 +724,14 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     if (!purchaseOrder) {
       return NextResponse.json(
-        { error: "Orden de compra no encontrada" },
+        { error: 'Orden de compra no encontrada' },
         { status: 404 }
       );
     }
 
-    if (purchaseOrder.status !== "DRAFT") {
+    if (purchaseOrder.status !== 'DRAFT') {
       return NextResponse.json(
-        { error: "Solo se pueden eliminar OC en estado DRAFT" },
+        { error: 'Solo se pueden eliminar OC en estado DRAFT' },
         { status: 400 }
       );
     }
@@ -724,9 +742,9 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    console.error("[PURCHASE_ORDER_DELETE]", error);
+    console.error('[PURCHASE_ORDER_DELETE]', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Error interno" },
+      { error: error instanceof Error ? error.message : 'Error interno' },
       { status: 500 }
     );
   }
@@ -738,9 +756,9 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 **Archivo:** `src/app/api/purchase-orders/[id]/items/route.ts`
 
 ```typescript
-import { prisma } from "@/lib/prisma";
-import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -753,7 +771,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -765,7 +783,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     if (!purchaseOrder) {
       return NextResponse.json(
-        { error: "Orden de compra no encontrada" },
+        { error: 'Orden de compra no encontrada' },
         { status: 404 }
       );
     }
@@ -781,9 +799,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(items);
   } catch (error: unknown) {
-    console.error("[PO_ITEMS_GET]", error);
+    console.error('[PO_ITEMS_GET]', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Error interno" },
+      { error: error instanceof Error ? error.message : 'Error interno' },
       { status: 500 }
     );
   }
@@ -796,7 +814,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -809,23 +827,30 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     if (!purchaseOrder) {
       return NextResponse.json(
-        { error: "Orden de compra no encontrada" },
+        { error: 'Orden de compra no encontrada' },
         { status: 404 }
       );
     }
 
-    if (purchaseOrder.status !== "DRAFT") {
+    if (purchaseOrder.status !== 'DRAFT') {
       return NextResponse.json(
-        { error: "Solo se pueden agregar items a OC en estado DRAFT" },
+        { error: 'Solo se pueden agregar items a OC en estado DRAFT' },
         { status: 400 }
       );
     }
 
-    const { workOrderItemId, mantItemId, masterPartId, description, quantity, unitPrice } = body;
+    const {
+      workOrderItemId,
+      mantItemId,
+      masterPartId,
+      description,
+      quantity,
+      unitPrice,
+    } = body;
 
     if (!description || !quantity || !unitPrice) {
       return NextResponse.json(
-        { error: "description, quantity y unitPrice son requeridos" },
+        { error: 'description, quantity y unitPrice son requeridos' },
         { status: 400 }
       );
     }
@@ -833,7 +858,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const itemTotal = Number(quantity) * Number(unitPrice);
 
     // Crear item y actualizar totales
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async tx => {
       const newItem = await tx.purchaseOrderItem.create({
         data: {
           purchaseOrderId: id,
@@ -844,7 +869,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           quantity,
           unitPrice,
           total: itemTotal,
-          status: "PENDING",
+          status: 'PENDING',
         },
       });
 
@@ -874,9 +899,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(result, { status: 201 });
   } catch (error: unknown) {
-    console.error("[PO_ITEMS_POST]", error);
+    console.error('[PO_ITEMS_POST]', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Error interno" },
+      { error: error instanceof Error ? error.message : 'Error interno' },
       { status: 500 }
     );
   }
@@ -1559,6 +1584,7 @@ export default function PurchasesPage() {
 ## Checklist de Progreso
 
 ### Fase 1: Schema Prisma ✅ COMPLETADA
+
 - [x] 1.1 Agregar enums (PurchaseOrderType, PurchaseOrderStatus, POItemStatus, WorkType, ItemSource)
 - [x] 1.2 Agregar modelo PurchaseOrder
 - [x] 1.3 Agregar modelo PurchaseOrderItem
@@ -1572,6 +1598,7 @@ export default function PurchasesPage() {
 - [x] 1.11 Ejecutar migracion (usamos `prisma db push`)
 
 ### Fase 2: APIs Backend ✅ COMPLETADA
+
 - [x] 2.1 Crear /api/purchase-orders/route.ts (GET, POST)
 - [x] 2.2 Crear /api/purchase-orders/[id]/route.ts (GET, PATCH, DELETE)
 - [x] 2.3 Crear /api/purchase-orders/[id]/items/route.ts (GET, POST)
@@ -1579,6 +1606,7 @@ export default function PurchasesPage() {
 - [x] 2.5 Modificar /api/invoices/route.ts (soportar purchaseOrderId)
 
 ### Fase 3: UI Components ✅ COMPLETADA
+
 - [x] 3.1 Crear PurchaseOrdersTab.tsx
 - [x] 3.2 Crear /dashboard/purchase-orders/page.tsx (listado)
 - [x] 3.3 Crear /dashboard/purchase-orders/[id]/page.tsx (detalle individual)
@@ -1587,6 +1615,7 @@ export default function PurchasesPage() {
 - [x] 3.6 Integrar PurchaseOrdersTab en detalle de OT
 
 ### Fase 4: Testing
+
 - [ ] 4.1 Test flujo externo completo
 - [ ] 4.2 Test flujo interno completo
 - [ ] 4.3 Test flujo mixto
@@ -1609,28 +1638,28 @@ export default function PurchasesPage() {
 ```typescript
 // Patron para generar numeros secuenciales
 const year = new Date().getFullYear();
-const prefix = "OC";
+const prefix = 'OC';
 const lastRecord = await prisma.purchaseOrder.findFirst({
   where: {
     tenantId: user.tenantId,
     orderNumber: { startsWith: `${prefix}-${year}-` },
   },
-  orderBy: { orderNumber: "desc" },
+  orderBy: { orderNumber: 'desc' },
 });
 
 let nextNumber = 1;
 if (lastRecord) {
-  const parts = lastRecord.orderNumber.split("-");
-  nextNumber = parseInt(parts[2] || "0") + 1;
+  const parts = lastRecord.orderNumber.split('-');
+  nextNumber = parseInt(parts[2] || '0') + 1;
 }
-const orderNumber = `${prefix}-${year}-${nextNumber.toString().padStart(6, "0")}`;
+const orderNumber = `${prefix}-${year}-${nextNumber.toString().padStart(6, '0')}`;
 ```
 
 ### Formateo de Moneda
 
 ```typescript
 // Usar la funcion existente
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency } from '@/lib/utils';
 // Ejemplo: formatCurrency(15000) -> "$15,000"
 ```
 
@@ -1673,6 +1702,7 @@ El desarrollo está completo. Solo falta realizar pruebas manuales:
    - Factura parcial -> OC pasa a PARTIAL
 
 ### Comandos útiles:
+
 ```bash
 # Iniciar servidor de desarrollo
 pnpm dev
@@ -1685,6 +1715,7 @@ npx prisma studio
 ```
 
 ### URLs para testing:
+
 - Dashboard: http://localhost:3000/dashboard
 - OTs: http://localhost:3000/dashboard/maintenance/work-orders
 - Órdenes Compra: http://localhost:3000/dashboard/purchase-orders
@@ -1694,6 +1725,5 @@ npx prisma studio
 
 **Ultima actualizacion:** 2026-02-04
 **Progreso:** 22/28 items completados (Fase 1-3 completas, Fase 4 testing pendiente)
-
 
 claude --resume 0edbadd4-d216-4565-87b9-da7ee334ccc6

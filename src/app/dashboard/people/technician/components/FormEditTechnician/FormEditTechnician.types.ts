@@ -1,4 +1,4 @@
-import { TechnicianListProps } from "../TechnicianList/TechnicianList.types";
+import { TechnicianListProps } from '../TechnicianList/TechnicianList.types';
 
 export type FormEditTechnicianProps = {
   isOpen: boolean;

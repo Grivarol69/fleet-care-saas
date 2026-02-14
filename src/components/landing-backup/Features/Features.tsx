@@ -1,5 +1,5 @@
-import { Reveal } from "@/components/shared/Reveal";
-import { dataFeatures } from "./Features.data";
+import { Reveal } from '@/components/shared/Reveal';
+import { dataFeatures } from './Features.data';
 
 export function Features() {
   return (

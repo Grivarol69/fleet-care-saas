@@ -1,14 +1,14 @@
-import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { prisma } from '@/lib/prisma';
+import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import { canManageMaintenancePrograms } from "@/lib/permissions";
+import { canManageMaintenancePrograms } from '@/lib/permissions';
 
 // GET - Obtener programas de mantenimiento para un vehículo o todos
 export async function GET(req: Request) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
     const { searchParams } = new URL(req.url);
@@ -16,7 +16,7 @@ export async function GET(req: Request) {
 
     const whereClause = {
       tenantId: user.tenantId,
-      ...(vehicleId && { vehicleId: parseInt(vehicleId) })
+      ...(vehicleId && { vehicleId: parseInt(vehicleId) }),
     };
 
     const programs = await prisma.vehicleMantProgram.findMany({
@@ -25,28 +25,28 @@ export async function GET(req: Request) {
         vehicle: {
           include: {
             brand: true,
-            line: true
-          }
+            line: true,
+          },
         },
         packages: {
           include: {
             items: {
               include: {
-                mantItem: true
-              }
-            }
-          }
-        }
+                mantItem: true,
+              },
+            },
+          },
+        },
       },
       orderBy: {
-        createdAt: 'desc'
-      }
+        createdAt: 'desc',
+      },
     });
 
     return NextResponse.json(programs);
   } catch (error) {
-    console.error("[VEHICLE_MANT_PROGRAMS_GET]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error('[VEHICLE_MANT_PROGRAMS_GET]', error);
+    return new NextResponse('Internal Error', { status: 500 });
   }
 }
 
@@ -105,24 +105,36 @@ export async function POST(req: Request) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
     if (!canManageMaintenancePrograms(user)) {
-      return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
+      return NextResponse.json(
+        { error: 'No tienes permisos para esta acción' },
+        { status: 403 }
+      );
     }
 
     const body = await req.json();
     console.log('[DEBUG] Payload recibido:', JSON.stringify(body, null, 2));
-    const { vehicleId, templateId, generatedBy, vehicleType = "new", lastMaintenance } = body;
+    const {
+      vehicleId,
+      templateId,
+      generatedBy,
+      vehicleType = 'new',
+      lastMaintenance,
+    } = body;
 
     // Validar que el vehículo no tenga ya un programa activo
     const existingProgram = await prisma.vehicleMantProgram.findUnique({
-      where: { vehicleId: vehicleId }
+      where: { vehicleId: vehicleId },
     });
 
     if (existingProgram) {
-      return new NextResponse("Vehicle already has an active maintenance program", { status: 400 });
+      return new NextResponse(
+        'Vehicle already has an active maintenance program',
+        { status: 400 }
+      );
     }
 
     // Obtener el template con sus packages e items
@@ -133,18 +145,18 @@ export async function POST(req: Request) {
           include: {
             packageItems: {
               include: {
-                mantItem: true
-              }
-            }
-          }
+                mantItem: true,
+              },
+            },
+          },
         },
         brand: true,
-        line: true
-      }
+        line: true,
+      },
     });
 
     if (!template) {
-      return new NextResponse("Template not found", { status: 404 });
+      return new NextResponse('Template not found', { status: 404 });
     }
 
     // Obtener datos del vehículo
@@ -152,12 +164,12 @@ export async function POST(req: Request) {
       where: { id: vehicleId, tenantId: user.tenantId },
       include: {
         brand: true,
-        line: true
-      }
+        line: true,
+      },
     });
 
     if (!vehicle) {
-      return new NextResponse("Vehicle not found", { status: 404 });
+      return new NextResponse('Vehicle not found', { status: 404 });
     }
 
     // ========================================
@@ -166,7 +178,7 @@ export async function POST(req: Request) {
     let packagesToAssign = template.packages;
     let lastMaintenancePackageKm = 0;
 
-    if (vehicleType === "used" && lastMaintenance?.executedKm) {
+    if (vehicleType === 'used' && lastMaintenance?.executedKm) {
       // Vehículo usado: inferir paquete y filtrar solo futuros
       const inferredPackage = inferPackageFromKm(
         lastMaintenance.executedKm,
@@ -196,23 +208,24 @@ export async function POST(req: Request) {
     // Si es vehículo nuevo (vehicleType === "new"), se asignan TODOS los paquetes
 
     // Crear el programa de mantenimiento en una transacción
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async tx => {
       // 1. Crear VehicleMantProgram
       const program = await tx.vehicleMantProgram.create({
         data: {
           tenantId: user.tenantId,
           vehicleId: vehicleId,
           name: `Programa ${vehicle.brand.name} ${vehicle.line.name} ${vehicle.licensePlate}`,
-          description: vehicleType === "used"
-            ? `Generado desde template: ${template.name} (último paquete: ${lastMaintenancePackageKm} km)`
-            : `Generado desde template: ${template.name}`,
+          description:
+            vehicleType === 'used'
+              ? `Generado desde template: ${template.name} (último paquete: ${lastMaintenancePackageKm} km)`
+              : `Generado desde template: ${template.name}`,
           generatedFrom: `Template: ${template.name} v${template.version}`,
           generatedBy: generatedBy,
           assignmentKm: vehicle.mileage, // Usar kilometraje actual del vehículo
           nextMaintenanceKm: null, // Se calculará después
           isActive: true,
-          status: 'ACTIVE'
-        }
+          status: 'ACTIVE',
+        },
       });
 
       // 2. Crear VehicleMantPackages y sus items (SOLO paquetes filtrados)
@@ -232,8 +245,8 @@ export async function POST(req: Request) {
             estimatedCost: templatePackage.estimatedCost,
             estimatedTime: templatePackage.estimatedTime,
             scheduledKm: scheduledKm,
-            status: 'PENDING'
-          }
+            status: 'PENDING',
+          },
         });
 
         // 3. Crear VehicleProgramItems para cada item del package
@@ -258,8 +271,8 @@ export async function POST(req: Request) {
               localNotes: null,
 
               isOptional: packageItem.isOptional,
-              status: 'PENDING'
-            }
+              status: 'PENDING',
+            },
           });
         }
       }
@@ -269,27 +282,31 @@ export async function POST(req: Request) {
         data: {
           tenantId: user.tenantId,
           programId: program.id,
-          name: "Items Mantenimiento Correctivo",
-          description: "Package automático para mantenimientos correctivos",
+          name: 'Items Mantenimiento Correctivo',
+          description: 'Package automático para mantenimientos correctivos',
           triggerKm: null, // No tiene trigger específico
           packageType: 'CORRECTIVE',
           priority: 'MEDIUM',
-          status: 'PENDING'
-        }
+          status: 'PENDING',
+        },
       });
 
       // 5. Si es vehículo usado y hay datos del último mantenimiento,
       //    crear WorkOrder histórica y marcar items como COMPLETED
-      if (vehicleType === "used" && lastMaintenance?.executedKm && lastMaintenancePackageKm > 0) {
+      if (
+        vehicleType === 'used' &&
+        lastMaintenance?.executedKm &&
+        lastMaintenancePackageKm > 0
+      ) {
         // Buscar el paquete que corresponde al último mantenimiento
         const historicalPackage = await tx.vehicleProgramPackage.findFirst({
           where: {
             programId: program.id,
-            triggerKm: lastMaintenancePackageKm
+            triggerKm: lastMaintenancePackageKm,
           },
           include: {
-            items: true
-          }
+            items: true,
+          },
         });
 
         // Si NO existe el paquete histórico (porque fue filtrado por ser pasado),
@@ -297,25 +314,26 @@ export async function POST(req: Request) {
         if (!historicalPackage) {
           // Buscar el template package original
           const templatePackage = template.packages.find(
-            (pkg) => pkg.triggerKm === lastMaintenancePackageKm
+            pkg => pkg.triggerKm === lastMaintenancePackageKm
           );
 
           if (templatePackage) {
-            const historicalVehiclePackage = await tx.vehicleProgramPackage.create({
-              data: {
-                tenantId: user.tenantId,
-                programId: program.id,
-                name: templatePackage.name,
-                description: templatePackage.description,
-                triggerKm: templatePackage.triggerKm,
-                packageType: templatePackage.packageType,
-                priority: templatePackage.priority,
-                estimatedCost: templatePackage.estimatedCost,
-                estimatedTime: templatePackage.estimatedTime,
-                scheduledKm: lastMaintenancePackageKm,
-                status: 'COMPLETED' // Histórico
-              }
-            });
+            const historicalVehiclePackage =
+              await tx.vehicleProgramPackage.create({
+                data: {
+                  tenantId: user.tenantId,
+                  programId: program.id,
+                  name: templatePackage.name,
+                  description: templatePackage.description,
+                  triggerKm: templatePackage.triggerKm,
+                  packageType: templatePackage.packageType,
+                  priority: templatePackage.priority,
+                  estimatedCost: templatePackage.estimatedCost,
+                  estimatedTime: templatePackage.estimatedTime,
+                  scheduledKm: lastMaintenancePackageKm,
+                  status: 'COMPLETED', // Histórico
+                },
+              });
 
             // Crear los items del paquete histórico
             for (const packageItem of templatePackage.packageItems) {
@@ -330,14 +348,14 @@ export async function POST(req: Request) {
                   scheduledKm: lastMaintenancePackageKm,
                   estimatedTime: packageItem.estimatedTime,
                   estimatedCost: null,
-                  localNotes: "Item histórico (previo al sistema)",
+                  localNotes: 'Item histórico (previo al sistema)',
                   isOptional: packageItem.isOptional,
                   status: 'COMPLETED',
                   executedDate: lastMaintenance.executedDate
                     ? new Date(lastMaintenance.executedDate)
                     : new Date(),
-                  executedKm: lastMaintenance.executedKm
-                }
+                  executedKm: lastMaintenance.executedKm,
+                },
               });
             }
           }
@@ -351,13 +369,13 @@ export async function POST(req: Request) {
                 ? new Date(lastMaintenance.executedDate)
                 : new Date(),
               executedKm: lastMaintenance.executedKm,
-              localNotes: "Item histórico (previo al sistema)"
-            }
+              localNotes: 'Item histórico (previo al sistema)',
+            },
           });
 
           await tx.vehicleProgramPackage.update({
             where: { id: historicalPackage.id },
-            data: { status: 'COMPLETED' }
+            data: { status: 'COMPLETED' },
           });
         }
 
@@ -371,7 +389,9 @@ export async function POST(req: Request) {
               status: 'COMPLETED',
               priority: 'MEDIUM',
               title: `Mantenimiento ${lastMaintenancePackageKm} km (Histórico)`,
-              description: lastMaintenance.notes || `Mantenimiento previo al sistema, ejecutado a los ${lastMaintenance.executedKm} km`,
+              description:
+                lastMaintenance.notes ||
+                `Mantenimiento previo al sistema, ejecutado a los ${lastMaintenance.executedKm} km`,
               startDate: lastMaintenance.executedDate
                 ? new Date(lastMaintenance.executedDate)
                 : new Date(),
@@ -380,7 +400,7 @@ export async function POST(req: Request) {
               estimatedCost: lastMaintenance.cost || 0,
               actualCost: lastMaintenance.cost || 0,
               requestedBy: generatedBy, // User ID who generated the program
-            }
+            },
           });
         }
       }
@@ -395,24 +415,24 @@ export async function POST(req: Request) {
         vehicle: {
           include: {
             brand: true,
-            line: true
-          }
+            line: true,
+          },
         },
         packages: {
           include: {
             items: {
               include: {
-                mantItem: true
-              }
-            }
-          }
-        }
-      }
+                mantItem: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     return NextResponse.json(createdProgram);
   } catch (error) {
-    console.error("[VEHICLE_MANT_PROGRAMS_POST]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error('[VEHICLE_MANT_PROGRAMS_POST]', error);
+    return new NextResponse('Internal Error', { status: 500 });
   }
 }

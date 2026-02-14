@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Form,
   FormControl,
@@ -18,21 +18,21 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
+} from '@/components/ui/form';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 
-import axios from "axios";
-import { useToast } from "@/components/hooks/use-toast";
-import { formSchema } from "./FormEditLine.form";
-import { useRouter } from "next/navigation";
-import { FormEditLineProps } from "./FormEditLine.types";
-import { useEffect, useState } from "react";
+import axios from 'axios';
+import { useToast } from '@/components/hooks/use-toast';
+import { formSchema } from './FormEditLine.form';
+import { useRouter } from 'next/navigation';
+import { FormEditLineProps } from './FormEditLine.types';
+import { useEffect, useState } from 'react';
 
 type VehicleBrand = {
   id: number;
@@ -65,7 +65,7 @@ export function FormEditLine({
         const response = await axios.get(`/api/vehicles/brands`);
         setVehicleBrands(response.data);
       } catch (error) {
-        console.log("Error al cargar las marcas de vehículos", error);
+        console.log('Error al cargar las marcas de vehículos', error);
       }
     };
 
@@ -93,17 +93,17 @@ export function FormEditLine({
       setIsOpen(false);
       form.reset();
       toast({
-        title: "Linea actualizada",
-        description: "La linea fue actualizada exitosamente.",
+        title: 'Linea actualizada',
+        description: 'La linea fue actualizada exitosamente.',
       });
 
       router.refresh();
     } catch (error) {
-      console.error("Error updating linea:", error);
+      console.error('Error updating linea:', error);
       toast({
-        title: "Error updating linea",
-        description: "Please try again later.",
-        variant: "destructive",
+        title: 'Error updating linea',
+        description: 'Please try again later.',
+        variant: 'destructive',
       });
     }
   };
@@ -139,8 +139,8 @@ export function FormEditLine({
                 <FormItem>
                   <FormLabel>Marca de Vehículo</FormLabel>
                   <Select
-                    onValueChange={(value) => field.onChange(Number(value))}
-                    value={field.value?.toString() || ""}
+                    onValueChange={value => field.onChange(Number(value))}
+                    value={field.value?.toString() || ''}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -148,7 +148,7 @@ export function FormEditLine({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {vehicleBrands.map((brand) => (
+                      {vehicleBrands.map(brand => (
                         <SelectItem key={brand.id} value={brand.id.toString()}>
                           {brand.name}
                         </SelectItem>

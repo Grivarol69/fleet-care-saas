@@ -26,7 +26,10 @@ export function safeParseInt(value: string | undefined | null): number | null {
  * Parse and validate a positive integer ID from string
  * Throws an error with a message if invalid
  */
-export function parseIdParam(value: string | undefined | null, paramName: string = 'id'): number {
+export function parseIdParam(
+  value: string | undefined | null,
+  paramName: string = 'id'
+): number {
   const parsed = safeParseInt(value);
   if (parsed === null) {
     throw new Error(`${paramName} inválido`);
@@ -42,7 +45,11 @@ export const positiveIntSchema = z.coerce.number().int().positive();
 /**
  * Zod schema for optional positive integer
  */
-export const optionalPositiveIntSchema = z.coerce.number().int().positive().optional();
+export const optionalPositiveIntSchema = z.coerce
+  .number()
+  .int()
+  .positive()
+  .optional();
 
 /**
  * Zod schema for pagination

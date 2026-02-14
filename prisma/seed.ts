@@ -17,55 +17,98 @@ async function main() {
     'org_38zCXuXqy5Urw5CuaisTHu3jLTq', // User Real Tenant (Clerk orgId)
     'org_36M1mCUcHm4ShrsTQQK3etw9FEk', // Old Seed Tenant
     'cf68b103-12fd-4208-a352-42379ef3b6e1', // Old Seed Tenant
-    '00000000-0000-0000-0000-000000000000'  // Platform Tenant
+    '00000000-0000-0000-0000-000000000000', // Platform Tenant
   ];
 
   await prisma.partPriceHistory.deleteMany({
     where: {
-      tenantId: { in: TEST_TENANT_IDS }
-    }
+      tenantId: { in: TEST_TENANT_IDS },
+    },
   });
 
   // Clean data for ALL test tenants
   // We explicitly delete child records to avoid FK issues with Global Items or Restrict constraints
-  await prisma.vehicleDriver.deleteMany({ where: { tenantId: { in: TEST_TENANT_IDS } } });
+  await prisma.vehicleDriver.deleteMany({
+    where: { tenantId: { in: TEST_TENANT_IDS } },
+  });
 
-  await prisma.vehicleProgramItem.deleteMany({ where: { tenantId: { in: TEST_TENANT_IDS } } });
-  await prisma.vehicleProgramPackage.deleteMany({ where: { tenantId: { in: TEST_TENANT_IDS } } });
-  await prisma.vehicleMantProgram.deleteMany({ where: { tenantId: { in: TEST_TENANT_IDS } } });
+  await prisma.vehicleProgramItem.deleteMany({
+    where: { tenantId: { in: TEST_TENANT_IDS } },
+  });
+  await prisma.vehicleProgramPackage.deleteMany({
+    where: { tenantId: { in: TEST_TENANT_IDS } },
+  });
+  await prisma.vehicleMantProgram.deleteMany({
+    where: { tenantId: { in: TEST_TENANT_IDS } },
+  });
 
-  await prisma.invoiceItem.deleteMany({ where: { invoice: { tenantId: { in: TEST_TENANT_IDS } } } });
-  await prisma.invoice.deleteMany({ where: { tenantId: { in: TEST_TENANT_IDS } } });
+  await prisma.invoiceItem.deleteMany({
+    where: { invoice: { tenantId: { in: TEST_TENANT_IDS } } },
+  });
+  await prisma.invoice.deleteMany({
+    where: { tenantId: { in: TEST_TENANT_IDS } },
+  });
 
-  await prisma.workOrderItem.deleteMany({ where: { workOrder: { tenantId: { in: TEST_TENANT_IDS } } } });
-  await prisma.workOrder.deleteMany({ where: { tenantId: { in: TEST_TENANT_IDS } } });
+  await prisma.workOrderItem.deleteMany({
+    where: { workOrder: { tenantId: { in: TEST_TENANT_IDS } } },
+  });
+  await prisma.workOrder.deleteMany({
+    where: { tenantId: { in: TEST_TENANT_IDS } },
+  });
 
-  await prisma.maintenanceAlert.deleteMany({ where: { tenantId: { in: TEST_TENANT_IDS } } });
+  await prisma.maintenanceAlert.deleteMany({
+    where: { tenantId: { in: TEST_TENANT_IDS } },
+  });
 
-  await prisma.vehicle.deleteMany({ where: { tenantId: { in: TEST_TENANT_IDS } } });
-  await prisma.driver.deleteMany({ where: { tenantId: { in: TEST_TENANT_IDS } } });
-  await prisma.technician.deleteMany({ where: { tenantId: { in: TEST_TENANT_IDS } } });
-  await prisma.provider.deleteMany({ where: { tenantId: { in: TEST_TENANT_IDS } } });
-  await prisma.masterPart.deleteMany({ where: { tenantId: { in: TEST_TENANT_IDS } } });
+  await prisma.vehicle.deleteMany({
+    where: { tenantId: { in: TEST_TENANT_IDS } },
+  });
+  await prisma.driver.deleteMany({
+    where: { tenantId: { in: TEST_TENANT_IDS } },
+  });
+  await prisma.technician.deleteMany({
+    where: { tenantId: { in: TEST_TENANT_IDS } },
+  });
+  await prisma.provider.deleteMany({
+    where: { tenantId: { in: TEST_TENANT_IDS } },
+  });
+  await prisma.masterPart.deleteMany({
+    where: { tenantId: { in: TEST_TENANT_IDS } },
+  });
 
   // Clean tenants themselves (EXCEPT the User Tenant which we keep)
   await prisma.tenant.deleteMany({
     where: {
       id: {
-        in: ['cf68b103-12fd-4208-a352-42379ef3b6e1', '00000000-0000-0000-0000-000000000000']
-      }
-    }
+        in: [
+          'cf68b103-12fd-4208-a352-42379ef3b6e1',
+          '00000000-0000-0000-0000-000000000000',
+        ],
+      },
+    },
   });
 
   // Clean Global Knowledge Base
   // Order matters due to foreign key constraints (unless Cascade is set everywhere)
-  await prisma.maintenanceTemplate.deleteMany({ where: { tenantId: null, isGlobal: true } });
-  await prisma.mantItem.deleteMany({ where: { tenantId: null, isGlobal: true } });
-  await prisma.mantCategory.deleteMany({ where: { tenantId: null, isGlobal: true } });
-  await prisma.vehicleType.deleteMany({ where: { tenantId: null, isGlobal: true } });
-  await prisma.vehicleBrand.deleteMany({ where: { tenantId: null, isGlobal: true } });
+  await prisma.maintenanceTemplate.deleteMany({
+    where: { tenantId: null, isGlobal: true },
+  });
+  await prisma.mantItem.deleteMany({
+    where: { tenantId: null, isGlobal: true },
+  });
+  await prisma.mantCategory.deleteMany({
+    where: { tenantId: null, isGlobal: true },
+  });
+  await prisma.vehicleType.deleteMany({
+    where: { tenantId: null, isGlobal: true },
+  });
+  await prisma.vehicleBrand.deleteMany({
+    where: { tenantId: null, isGlobal: true },
+  });
   await prisma.masterPart.deleteMany({ where: { tenantId: null } });
-  await prisma.documentTypeConfig.deleteMany({ where: { tenantId: null, isGlobal: true } });
+  await prisma.documentTypeConfig.deleteMany({
+    where: { tenantId: null, isGlobal: true },
+  });
 
   console.log('✓ Cleanup complete\n');
 
@@ -78,19 +121,19 @@ async function main() {
   console.log('Creating global brands...');
   const globalBrands = await Promise.all([
     prisma.vehicleBrand.create({
-      data: { name: 'Toyota', isGlobal: true, tenantId: null }
+      data: { name: 'Toyota', isGlobal: true, tenantId: null },
     }),
     prisma.vehicleBrand.create({
-      data: { name: 'Ford', isGlobal: true, tenantId: null }
+      data: { name: 'Ford', isGlobal: true, tenantId: null },
     }),
     prisma.vehicleBrand.create({
-      data: { name: 'Chevrolet', isGlobal: true, tenantId: null }
+      data: { name: 'Chevrolet', isGlobal: true, tenantId: null },
     }),
     prisma.vehicleBrand.create({
-      data: { name: 'Nissan', isGlobal: true, tenantId: null }
+      data: { name: 'Nissan', isGlobal: true, tenantId: null },
     }),
     prisma.vehicleBrand.create({
-      data: { name: 'Mitsubishi', isGlobal: true, tenantId: null }
+      data: { name: 'Mitsubishi', isGlobal: true, tenantId: null },
     }),
   ]);
   console.log(`✓ Created ${globalBrands.length} global brands\n`);
@@ -100,47 +143,112 @@ async function main() {
   const globalLines = await Promise.all([
     // Toyota
     prisma.vehicleLine.create({
-      data: { name: 'Hilux', brandId: globalBrands[0].id, isGlobal: true, tenantId: null }
+      data: {
+        name: 'Hilux',
+        brandId: globalBrands[0].id,
+        isGlobal: true,
+        tenantId: null,
+      },
     }),
     prisma.vehicleLine.create({
-      data: { name: 'Land Cruiser', brandId: globalBrands[0].id, isGlobal: true, tenantId: null }
+      data: {
+        name: 'Land Cruiser',
+        brandId: globalBrands[0].id,
+        isGlobal: true,
+        tenantId: null,
+      },
     }),
     prisma.vehicleLine.create({
-      data: { name: 'Prado', brandId: globalBrands[0].id, isGlobal: true, tenantId: null }
+      data: {
+        name: 'Prado',
+        brandId: globalBrands[0].id,
+        isGlobal: true,
+        tenantId: null,
+      },
     }),
     // Ford
     prisma.vehicleLine.create({
-      data: { name: 'Ranger', brandId: globalBrands[1].id, isGlobal: true, tenantId: null }
+      data: {
+        name: 'Ranger',
+        brandId: globalBrands[1].id,
+        isGlobal: true,
+        tenantId: null,
+      },
     }),
     prisma.vehicleLine.create({
-      data: { name: 'F-150', brandId: globalBrands[1].id, isGlobal: true, tenantId: null }
+      data: {
+        name: 'F-150',
+        brandId: globalBrands[1].id,
+        isGlobal: true,
+        tenantId: null,
+      },
     }),
     prisma.vehicleLine.create({
-      data: { name: 'Transit', brandId: globalBrands[1].id, isGlobal: true, tenantId: null }
+      data: {
+        name: 'Transit',
+        brandId: globalBrands[1].id,
+        isGlobal: true,
+        tenantId: null,
+      },
     }),
     // Chevrolet
     prisma.vehicleLine.create({
-      data: { name: 'D-MAX', brandId: globalBrands[2].id, isGlobal: true, tenantId: null }
+      data: {
+        name: 'D-MAX',
+        brandId: globalBrands[2].id,
+        isGlobal: true,
+        tenantId: null,
+      },
     }),
     prisma.vehicleLine.create({
-      data: { name: 'Silverado', brandId: globalBrands[2].id, isGlobal: true, tenantId: null }
+      data: {
+        name: 'Silverado',
+        brandId: globalBrands[2].id,
+        isGlobal: true,
+        tenantId: null,
+      },
     }),
     prisma.vehicleLine.create({
-      data: { name: 'NPR', brandId: globalBrands[2].id, isGlobal: true, tenantId: null }
+      data: {
+        name: 'NPR',
+        brandId: globalBrands[2].id,
+        isGlobal: true,
+        tenantId: null,
+      },
     }),
     // Nissan
     prisma.vehicleLine.create({
-      data: { name: 'Frontier', brandId: globalBrands[3].id, isGlobal: true, tenantId: null }
+      data: {
+        name: 'Frontier',
+        brandId: globalBrands[3].id,
+        isGlobal: true,
+        tenantId: null,
+      },
     }),
     prisma.vehicleLine.create({
-      data: { name: 'Navara', brandId: globalBrands[3].id, isGlobal: true, tenantId: null }
+      data: {
+        name: 'Navara',
+        brandId: globalBrands[3].id,
+        isGlobal: true,
+        tenantId: null,
+      },
     }),
     // Mitsubishi
     prisma.vehicleLine.create({
-      data: { name: 'L200', brandId: globalBrands[4].id, isGlobal: true, tenantId: null }
+      data: {
+        name: 'L200',
+        brandId: globalBrands[4].id,
+        isGlobal: true,
+        tenantId: null,
+      },
     }),
     prisma.vehicleLine.create({
-      data: { name: 'Montero', brandId: globalBrands[4].id, isGlobal: true, tenantId: null }
+      data: {
+        name: 'Montero',
+        brandId: globalBrands[4].id,
+        isGlobal: true,
+        tenantId: null,
+      },
     }),
   ]);
   console.log(`✓ Created ${globalLines.length} global vehicle lines\n`);
@@ -149,19 +257,19 @@ async function main() {
   console.log('Creating global vehicle types...');
   const globalTypes = await Promise.all([
     prisma.vehicleType.create({
-      data: { name: 'Camioneta 4x4', isGlobal: true, tenantId: null }
+      data: { name: 'Camioneta 4x4', isGlobal: true, tenantId: null },
     }),
     prisma.vehicleType.create({
-      data: { name: 'Camión de Carga', isGlobal: true, tenantId: null }
+      data: { name: 'Camión de Carga', isGlobal: true, tenantId: null },
     }),
     prisma.vehicleType.create({
-      data: { name: 'Camioneta de Pasajeros', isGlobal: true, tenantId: null }
+      data: { name: 'Camioneta de Pasajeros', isGlobal: true, tenantId: null },
     }),
     prisma.vehicleType.create({
-      data: { name: 'Vehículo Urbano', isGlobal: true, tenantId: null }
+      data: { name: 'Vehículo Urbano', isGlobal: true, tenantId: null },
     }),
     prisma.vehicleType.create({
-      data: { name: 'SUV', isGlobal: true, tenantId: null }
+      data: { name: 'SUV', isGlobal: true, tenantId: null },
     }),
   ]);
   console.log(`✓ Created ${globalTypes.length} global vehicle types\n`);
@@ -174,75 +282,77 @@ async function main() {
         name: 'Motor',
         description: 'Sistema de motor y combustible',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     prisma.mantCategory.create({
       data: {
         name: 'Transmisión',
         description: 'Caja de cambios y embrague',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     prisma.mantCategory.create({
       data: {
         name: 'Frenos',
         description: 'Sistema de frenado',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     prisma.mantCategory.create({
       data: {
         name: 'Suspensión',
         description: 'Amortiguadores y resortes',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     prisma.mantCategory.create({
       data: {
         name: 'Eléctrico',
         description: 'Sistema eléctrico y batería',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     prisma.mantCategory.create({
       data: {
         name: 'Lubricación',
         description: 'Aceites y lubricantes',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     prisma.mantCategory.create({
       data: {
         name: 'Filtros',
         description: 'Filtros aire, aceite, combustible',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     prisma.mantCategory.create({
       data: {
         name: 'Neumáticos',
         description: 'Llantas y neumáticos',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     prisma.mantCategory.create({
       data: {
         name: 'Carrocería',
         description: 'Elementos de carrocería',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
   ]);
-  console.log(`✓ Created ${globalCategories.length} global maintenance categories\n`);
+  console.log(
+    `✓ Created ${globalCategories.length} global maintenance categories\n`
+  );
 
   // 5. GLOBAL MAINTENANCE ITEMS (PREVENTIVOS + CORRECTIVOS)
   console.log('Creating global maintenance items (preventive + corrective)...');
@@ -257,8 +367,8 @@ async function main() {
         categoryId: globalCategories[0].id,
         type: 'PART',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     prisma.mantItem.create({
       data: {
@@ -267,8 +377,8 @@ async function main() {
         categoryId: globalCategories[0].id,
         type: 'ACTION',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     prisma.mantItem.create({
       data: {
@@ -277,8 +387,8 @@ async function main() {
         categoryId: globalCategories[0].id,
         type: 'ACTION',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     // Filtros (index 3-5)
     prisma.mantItem.create({
@@ -288,8 +398,8 @@ async function main() {
         categoryId: globalCategories[6].id,
         type: 'PART',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     prisma.mantItem.create({
       data: {
@@ -298,8 +408,8 @@ async function main() {
         categoryId: globalCategories[6].id,
         type: 'PART',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     prisma.mantItem.create({
       data: {
@@ -308,8 +418,8 @@ async function main() {
         categoryId: globalCategories[6].id,
         type: 'PART',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     // Frenos preventivo (index 6-7)
     prisma.mantItem.create({
@@ -319,8 +429,8 @@ async function main() {
         categoryId: globalCategories[2].id,
         type: 'ACTION',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     prisma.mantItem.create({
       data: {
@@ -329,8 +439,8 @@ async function main() {
         categoryId: globalCategories[2].id,
         type: 'PART',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     // Suspensión preventivo (index 8-9)
     prisma.mantItem.create({
@@ -340,8 +450,8 @@ async function main() {
         categoryId: globalCategories[3].id,
         type: 'ACTION',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     prisma.mantItem.create({
       data: {
@@ -350,8 +460,8 @@ async function main() {
         categoryId: globalCategories[3].id,
         type: 'ACTION',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     // Eléctrico preventivo (index 10-11)
     prisma.mantItem.create({
@@ -361,8 +471,8 @@ async function main() {
         categoryId: globalCategories[4].id,
         type: 'ACTION',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     prisma.mantItem.create({
       data: {
@@ -371,8 +481,8 @@ async function main() {
         categoryId: globalCategories[4].id,
         type: 'ACTION',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     // Transmisión preventivo (index 12-13)
     prisma.mantItem.create({
@@ -382,8 +492,8 @@ async function main() {
         categoryId: globalCategories[1].id,
         type: 'PART',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     prisma.mantItem.create({
       data: {
@@ -392,8 +502,8 @@ async function main() {
         categoryId: globalCategories[1].id,
         type: 'ACTION',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     // Neumáticos preventivo (index 14-15)
     prisma.mantItem.create({
@@ -403,8 +513,8 @@ async function main() {
         categoryId: globalCategories[7].id,
         type: 'ACTION',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     prisma.mantItem.create({
       data: {
@@ -413,8 +523,8 @@ async function main() {
         categoryId: globalCategories[7].id,
         type: 'SERVICE',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     // Lubricación preventivo (index 16)
     prisma.mantItem.create({
@@ -425,8 +535,8 @@ async function main() {
         categoryId: globalCategories[5].id,
         type: 'PART',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
 
     // ===== ITEMS CORRECTIVOS =====
@@ -439,8 +549,8 @@ async function main() {
         categoryId: globalCategories[2].id,
         type: 'PART',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     prisma.mantItem.create({
       data: {
@@ -450,8 +560,8 @@ async function main() {
         categoryId: globalCategories[2].id,
         type: 'PART',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     prisma.mantItem.create({
       data: {
@@ -461,8 +571,8 @@ async function main() {
         categoryId: globalCategories[2].id,
         type: 'PART',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     prisma.mantItem.create({
       data: {
@@ -472,8 +582,8 @@ async function main() {
         categoryId: globalCategories[2].id,
         type: 'SERVICE',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     // Motor correctivos (index 21-23)
     prisma.mantItem.create({
@@ -484,8 +594,8 @@ async function main() {
         categoryId: globalCategories[0].id,
         type: 'PART',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     prisma.mantItem.create({
       data: {
@@ -495,8 +605,8 @@ async function main() {
         categoryId: globalCategories[0].id,
         type: 'SERVICE',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     prisma.mantItem.create({
       data: {
@@ -506,8 +616,8 @@ async function main() {
         categoryId: globalCategories[0].id,
         type: 'PART',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     // Suspensión correctivos (index 24-26)
     prisma.mantItem.create({
@@ -518,8 +628,8 @@ async function main() {
         categoryId: globalCategories[3].id,
         type: 'PART',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     prisma.mantItem.create({
       data: {
@@ -529,8 +639,8 @@ async function main() {
         categoryId: globalCategories[3].id,
         type: 'PART',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     prisma.mantItem.create({
       data: {
@@ -540,8 +650,8 @@ async function main() {
         categoryId: globalCategories[3].id,
         type: 'PART',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     // Eléctrico correctivos (index 27-29)
     prisma.mantItem.create({
@@ -552,8 +662,8 @@ async function main() {
         categoryId: globalCategories[4].id,
         type: 'PART',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     prisma.mantItem.create({
       data: {
@@ -563,8 +673,8 @@ async function main() {
         categoryId: globalCategories[4].id,
         type: 'PART',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     prisma.mantItem.create({
       data: {
@@ -574,8 +684,8 @@ async function main() {
         categoryId: globalCategories[4].id,
         type: 'PART',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     // Transmisión correctivos (index 30-31)
     prisma.mantItem.create({
@@ -586,8 +696,8 @@ async function main() {
         categoryId: globalCategories[1].id,
         type: 'PART',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     prisma.mantItem.create({
       data: {
@@ -597,8 +707,8 @@ async function main() {
         categoryId: globalCategories[1].id,
         type: 'SERVICE',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
     // Neumáticos correctivo (index 32)
     prisma.mantItem.create({
@@ -609,14 +719,18 @@ async function main() {
         categoryId: globalCategories[7].id,
         type: 'PART',
         isGlobal: true,
-        tenantId: null
-      }
+        tenantId: null,
+      },
     }),
   ]);
-  console.log(`✓ Created ${globalMantItems.length} global maintenance items (17 preventive + 16 corrective)\n`);
+  console.log(
+    `✓ Created ${globalMantItems.length} global maintenance items (17 preventive + 16 corrective)\n`
+  );
 
   // 6. GLOBAL MAINTENANCE TEMPLATES
-  console.log('Creating global maintenance templates with 4 packages each (5K, 10K, 20K, 30K)...');
+  console.log(
+    'Creating global maintenance templates with 4 packages each (5K, 10K, 20K, 30K)...'
+  );
 
   // ========================================
   // Template: Toyota Hilux
@@ -624,7 +738,8 @@ async function main() {
   const template_ToyotaHilux = await prisma.maintenanceTemplate.create({
     data: {
       name: 'Toyota Hilux Standard',
-      description: 'Programa de mantenimiento preventivo estándar para Toyota Hilux',
+      description:
+        'Programa de mantenimiento preventivo estándar para Toyota Hilux',
       vehicleBrandId: globalBrands[0].id,
       vehicleLineId: globalLines[0].id,
       version: '1.0',
@@ -632,7 +747,7 @@ async function main() {
       status: 'ACTIVE',
       isGlobal: true,
       tenantId: null,
-    }
+    },
   });
 
   // Package 5K Hilux
@@ -646,7 +761,7 @@ async function main() {
       priority: 'MEDIUM',
       packageType: 'PREVENTIVE',
       status: 'ACTIVE',
-    }
+    },
   });
 
   await Promise.all([
@@ -657,8 +772,8 @@ async function main() {
         triggerKm: 5000,
         estimatedTime: 0.5,
         order: 1,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -667,8 +782,8 @@ async function main() {
         triggerKm: 5000,
         estimatedTime: 0.3,
         order: 2,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -677,8 +792,8 @@ async function main() {
         triggerKm: 5000,
         estimatedTime: 0.2,
         order: 3,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -687,8 +802,8 @@ async function main() {
         triggerKm: 5000,
         estimatedTime: 0.5,
         order: 4,
-        priority: 'HIGH'
-      }
+        priority: 'HIGH',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -697,8 +812,8 @@ async function main() {
         triggerKm: 5000,
         estimatedTime: 0.3,
         order: 5,
-        priority: 'LOW'
-      }
+        priority: 'LOW',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -707,8 +822,8 @@ async function main() {
         triggerKm: 5000,
         estimatedTime: 0.7,
         order: 6,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
   ]);
 
@@ -723,7 +838,7 @@ async function main() {
       priority: 'MEDIUM',
       packageType: 'PREVENTIVE',
       status: 'ACTIVE',
-    }
+    },
   });
 
   await Promise.all([
@@ -734,8 +849,8 @@ async function main() {
         triggerKm: 10000,
         estimatedTime: 0.5,
         order: 1,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -744,8 +859,8 @@ async function main() {
         triggerKm: 10000,
         estimatedTime: 0.3,
         order: 2,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -754,8 +869,8 @@ async function main() {
         triggerKm: 10000,
         estimatedTime: 0.2,
         order: 3,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -764,8 +879,8 @@ async function main() {
         triggerKm: 10000,
         estimatedTime: 0.3,
         order: 4,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -774,8 +889,8 @@ async function main() {
         triggerKm: 10000,
         estimatedTime: 0.5,
         order: 5,
-        priority: 'HIGH'
-      }
+        priority: 'HIGH',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -784,8 +899,8 @@ async function main() {
         triggerKm: 10000,
         estimatedTime: 0.5,
         order: 6,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -794,8 +909,8 @@ async function main() {
         triggerKm: 10000,
         estimatedTime: 0.4,
         order: 7,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -804,8 +919,8 @@ async function main() {
         triggerKm: 10000,
         estimatedTime: 0.8,
         order: 8,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
   ]);
 
@@ -820,7 +935,7 @@ async function main() {
       priority: 'HIGH',
       packageType: 'PREVENTIVE',
       status: 'ACTIVE',
-    }
+    },
   });
 
   await Promise.all([
@@ -831,8 +946,8 @@ async function main() {
         triggerKm: 20000,
         estimatedTime: 0.5,
         order: 1,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -841,8 +956,8 @@ async function main() {
         triggerKm: 20000,
         estimatedTime: 0.3,
         order: 2,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -851,8 +966,8 @@ async function main() {
         triggerKm: 20000,
         estimatedTime: 0.2,
         order: 3,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -861,8 +976,8 @@ async function main() {
         triggerKm: 20000,
         estimatedTime: 0.3,
         order: 4,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -871,8 +986,8 @@ async function main() {
         triggerKm: 20000,
         estimatedTime: 1.0,
         order: 5,
-        priority: 'HIGH'
-      }
+        priority: 'HIGH',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -881,8 +996,8 @@ async function main() {
         triggerKm: 20000,
         estimatedTime: 0.5,
         order: 6,
-        priority: 'HIGH'
-      }
+        priority: 'HIGH',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -891,8 +1006,8 @@ async function main() {
         triggerKm: 20000,
         estimatedTime: 0.5,
         order: 7,
-        priority: 'HIGH'
-      }
+        priority: 'HIGH',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -901,8 +1016,8 @@ async function main() {
         triggerKm: 20000,
         estimatedTime: 1.2,
         order: 8,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
   ]);
 
@@ -917,7 +1032,7 @@ async function main() {
       priority: 'HIGH',
       packageType: 'PREVENTIVE',
       status: 'ACTIVE',
-    }
+    },
   });
 
   await Promise.all([
@@ -928,8 +1043,8 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 0.5,
         order: 1,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -938,8 +1053,8 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 0.3,
         order: 2,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -948,8 +1063,8 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 0.2,
         order: 3,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -958,8 +1073,8 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 0.3,
         order: 4,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -968,8 +1083,8 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 1.0,
         order: 5,
-        priority: 'HIGH'
-      }
+        priority: 'HIGH',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -978,8 +1093,8 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 0.5,
         order: 6,
-        priority: 'HIGH'
-      }
+        priority: 'HIGH',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -988,8 +1103,8 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 0.5,
         order: 7,
-        priority: 'HIGH'
-      }
+        priority: 'HIGH',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -998,8 +1113,8 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 1.2,
         order: 8,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1008,8 +1123,8 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 1.5,
         order: 9,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1018,12 +1133,14 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 0.5,
         order: 10,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
   ]);
 
-  console.log(`✓ Created template "Toyota Hilux Standard" with 4 packages (5K, 10K, 20K, 30K)\n`);
+  console.log(
+    `✓ Created template "Toyota Hilux Standard" with 4 packages (5K, 10K, 20K, 30K)\n`
+  );
 
   // ========================================
   // Template: Ford Ranger
@@ -1031,15 +1148,16 @@ async function main() {
   const template_FordRanger = await prisma.maintenanceTemplate.create({
     data: {
       name: 'Ford Ranger Standard',
-      description: 'Programa de mantenimiento preventivo estándar para Ford Ranger',
+      description:
+        'Programa de mantenimiento preventivo estándar para Ford Ranger',
       vehicleBrandId: globalBrands[1].id, // Ford
-      vehicleLineId: globalLines[3].id,   // Ranger
+      vehicleLineId: globalLines[3].id, // Ranger
       version: '1.0',
       isDefault: true,
       status: 'ACTIVE',
       isGlobal: true,
       tenantId: null,
-    }
+    },
   });
 
   // Package 5K Ranger
@@ -1053,7 +1171,7 @@ async function main() {
       priority: 'MEDIUM',
       packageType: 'PREVENTIVE',
       status: 'ACTIVE',
-    }
+    },
   });
 
   await Promise.all([
@@ -1064,8 +1182,8 @@ async function main() {
         triggerKm: 5000,
         estimatedTime: 0.5,
         order: 1,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1074,8 +1192,8 @@ async function main() {
         triggerKm: 5000,
         estimatedTime: 0.3,
         order: 2,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1084,8 +1202,8 @@ async function main() {
         triggerKm: 5000,
         estimatedTime: 0.2,
         order: 3,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1094,8 +1212,8 @@ async function main() {
         triggerKm: 5000,
         estimatedTime: 0.3,
         order: 4,
-        priority: 'LOW'
-      }
+        priority: 'LOW',
+      },
     }),
   ]);
 
@@ -1110,7 +1228,7 @@ async function main() {
       priority: 'MEDIUM',
       packageType: 'PREVENTIVE',
       status: 'ACTIVE',
-    }
+    },
   });
 
   await Promise.all([
@@ -1121,8 +1239,8 @@ async function main() {
         triggerKm: 10000,
         estimatedTime: 0.5,
         order: 1,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1131,8 +1249,8 @@ async function main() {
         triggerKm: 10000,
         estimatedTime: 0.3,
         order: 2,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1141,8 +1259,8 @@ async function main() {
         triggerKm: 10000,
         estimatedTime: 0.3,
         order: 3,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1151,8 +1269,8 @@ async function main() {
         triggerKm: 10000,
         estimatedTime: 0.5,
         order: 4,
-        priority: 'HIGH'
-      }
+        priority: 'HIGH',
+      },
     }),
   ]);
 
@@ -1167,7 +1285,7 @@ async function main() {
       priority: 'HIGH',
       packageType: 'PREVENTIVE',
       status: 'ACTIVE',
-    }
+    },
   });
 
   await Promise.all([
@@ -1178,8 +1296,8 @@ async function main() {
         triggerKm: 20000,
         estimatedTime: 0.5,
         order: 1,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1188,8 +1306,8 @@ async function main() {
         triggerKm: 20000,
         estimatedTime: 0.3,
         order: 2,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1198,8 +1316,8 @@ async function main() {
         triggerKm: 20000,
         estimatedTime: 0.2,
         order: 3,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1208,8 +1326,8 @@ async function main() {
         triggerKm: 20000,
         estimatedTime: 0.3,
         order: 4,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1218,8 +1336,8 @@ async function main() {
         triggerKm: 20000,
         estimatedTime: 0.5,
         order: 5,
-        priority: 'HIGH'
-      }
+        priority: 'HIGH',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1228,8 +1346,8 @@ async function main() {
         triggerKm: 20000,
         estimatedTime: 0.5,
         order: 6,
-        priority: 'HIGH'
-      }
+        priority: 'HIGH',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1238,8 +1356,8 @@ async function main() {
         triggerKm: 20000,
         estimatedTime: 1.2,
         order: 7,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
   ]);
 
@@ -1254,7 +1372,7 @@ async function main() {
       priority: 'HIGH',
       packageType: 'PREVENTIVE',
       status: 'ACTIVE',
-    }
+    },
   });
 
   await Promise.all([
@@ -1265,8 +1383,8 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 0.5,
         order: 1,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1275,8 +1393,8 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 0.3,
         order: 2,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1285,8 +1403,8 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 0.2,
         order: 3,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1295,8 +1413,8 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 0.3,
         order: 4,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1305,8 +1423,8 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 1.0,
         order: 5,
-        priority: 'HIGH'
-      }
+        priority: 'HIGH',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1315,8 +1433,8 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 0.5,
         order: 6,
-        priority: 'HIGH'
-      }
+        priority: 'HIGH',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1325,8 +1443,8 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 0.5,
         order: 7,
-        priority: 'HIGH'
-      }
+        priority: 'HIGH',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1335,8 +1453,8 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 1.2,
         order: 8,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1345,12 +1463,14 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 1.5,
         order: 9,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
   ]);
 
-  console.log(`✓ Created template "Ford Ranger Standard" with 4 packages (5K, 10K, 20K, 30K)\n`);
+  console.log(
+    `✓ Created template "Ford Ranger Standard" with 4 packages (5K, 10K, 20K, 30K)\n`
+  );
 
   // ========================================
   // Template: Chevrolet D-MAX
@@ -1358,15 +1478,16 @@ async function main() {
   const template_ChevyDmax = await prisma.maintenanceTemplate.create({
     data: {
       name: 'Chevrolet D-MAX Standard',
-      description: 'Programa de mantenimiento preventivo estándar para Chevrolet D-MAX',
+      description:
+        'Programa de mantenimiento preventivo estándar para Chevrolet D-MAX',
       vehicleBrandId: globalBrands[2].id, // Chevrolet
-      vehicleLineId: globalLines[6].id,   // D-MAX
+      vehicleLineId: globalLines[6].id, // D-MAX
       version: '1.0',
       isDefault: true,
       status: 'ACTIVE',
       isGlobal: true,
       tenantId: null,
-    }
+    },
   });
 
   // Package 5K D-MAX
@@ -1380,7 +1501,7 @@ async function main() {
       priority: 'MEDIUM',
       packageType: 'PREVENTIVE',
       status: 'ACTIVE',
-    }
+    },
   });
 
   await Promise.all([
@@ -1391,8 +1512,8 @@ async function main() {
         triggerKm: 5000,
         estimatedTime: 0.5,
         order: 1,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1401,8 +1522,8 @@ async function main() {
         triggerKm: 5000,
         estimatedTime: 0.3,
         order: 2,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1411,8 +1532,8 @@ async function main() {
         triggerKm: 5000,
         estimatedTime: 0.2,
         order: 3,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1421,8 +1542,8 @@ async function main() {
         triggerKm: 5000,
         estimatedTime: 0.7,
         order: 4,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
   ]);
 
@@ -1437,7 +1558,7 @@ async function main() {
       priority: 'MEDIUM',
       packageType: 'PREVENTIVE',
       status: 'ACTIVE',
-    }
+    },
   });
 
   await Promise.all([
@@ -1448,8 +1569,8 @@ async function main() {
         triggerKm: 10000,
         estimatedTime: 0.5,
         order: 1,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1458,8 +1579,8 @@ async function main() {
         triggerKm: 10000,
         estimatedTime: 0.3,
         order: 2,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1468,8 +1589,8 @@ async function main() {
         triggerKm: 10000,
         estimatedTime: 0.3,
         order: 3,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1478,8 +1599,8 @@ async function main() {
         triggerKm: 10000,
         estimatedTime: 1.2,
         order: 4,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
   ]);
 
@@ -1494,7 +1615,7 @@ async function main() {
       priority: 'HIGH',
       packageType: 'PREVENTIVE',
       status: 'ACTIVE',
-    }
+    },
   });
 
   await Promise.all([
@@ -1505,8 +1626,8 @@ async function main() {
         triggerKm: 20000,
         estimatedTime: 0.5,
         order: 1,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1515,8 +1636,8 @@ async function main() {
         triggerKm: 20000,
         estimatedTime: 0.3,
         order: 2,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1525,8 +1646,8 @@ async function main() {
         triggerKm: 20000,
         estimatedTime: 0.2,
         order: 3,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1535,8 +1656,8 @@ async function main() {
         triggerKm: 20000,
         estimatedTime: 0.3,
         order: 4,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1545,8 +1666,8 @@ async function main() {
         triggerKm: 20000,
         estimatedTime: 0.5,
         order: 5,
-        priority: 'HIGH'
-      }
+        priority: 'HIGH',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1555,8 +1676,8 @@ async function main() {
         triggerKm: 20000,
         estimatedTime: 0.5,
         order: 6,
-        priority: 'HIGH'
-      }
+        priority: 'HIGH',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1565,8 +1686,8 @@ async function main() {
         triggerKm: 20000,
         estimatedTime: 1.2,
         order: 7,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
   ]);
 
@@ -1581,7 +1702,7 @@ async function main() {
       priority: 'HIGH',
       packageType: 'PREVENTIVE',
       status: 'ACTIVE',
-    }
+    },
   });
 
   await Promise.all([
@@ -1592,8 +1713,8 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 0.5,
         order: 1,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1602,8 +1723,8 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 0.3,
         order: 2,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1612,8 +1733,8 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 0.2,
         order: 3,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1622,8 +1743,8 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 0.3,
         order: 4,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1632,8 +1753,8 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 1.0,
         order: 5,
-        priority: 'HIGH'
-      }
+        priority: 'HIGH',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1642,8 +1763,8 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 0.5,
         order: 6,
-        priority: 'HIGH'
-      }
+        priority: 'HIGH',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1652,8 +1773,8 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 0.5,
         order: 7,
-        priority: 'HIGH'
-      }
+        priority: 'HIGH',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1662,8 +1783,8 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 1.2,
         order: 8,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
     prisma.packageItem.create({
       data: {
@@ -1672,12 +1793,14 @@ async function main() {
         triggerKm: 30000,
         estimatedTime: 1.5,
         order: 9,
-        priority: 'MEDIUM'
-      }
+        priority: 'MEDIUM',
+      },
     }),
   ]);
 
-  console.log(`✓ Created template "Chevrolet D-MAX Standard" with 4 packages (5K, 10K, 20K, 30K)\n`);
+  console.log(
+    `✓ Created template "Chevrolet D-MAX Standard" with 4 packages (5K, 10K, 20K, 30K)\n`
+  );
 
   // Suppress unused variable warnings
   void package_Hilux_5k;
@@ -1709,7 +1832,7 @@ async function main() {
         expiryWarningDays: 30,
         expiryCriticalDays: 7,
         sortOrder: 1,
-      }
+      },
     }),
     prisma.documentTypeConfig.create({
       data: {
@@ -1724,7 +1847,7 @@ async function main() {
         expiryWarningDays: 45,
         expiryCriticalDays: 15,
         sortOrder: 2,
-      }
+      },
     }),
     prisma.documentTypeConfig.create({
       data: {
@@ -1739,7 +1862,7 @@ async function main() {
         expiryWarningDays: 30,
         expiryCriticalDays: 7,
         sortOrder: 3,
-      }
+      },
     }),
     prisma.documentTypeConfig.create({
       data: {
@@ -1754,7 +1877,7 @@ async function main() {
         expiryWarningDays: 0,
         expiryCriticalDays: 0,
         sortOrder: 4,
-      }
+      },
     }),
     prisma.documentTypeConfig.create({
       data: {
@@ -1769,10 +1892,12 @@ async function main() {
         expiryWarningDays: 30,
         expiryCriticalDays: 7,
         sortOrder: 5,
-      }
+      },
     }),
   ]);
-  console.log(`✓ Created ${globalDocTypes.length} global document type configs (CO)\n`);
+  console.log(
+    `✓ Created ${globalDocTypes.length} global document type configs (CO)\n`
+  );
 
   console.log('✅ Knowledge Base Global created successfully!\n');
 
@@ -1920,7 +2045,9 @@ async function main() {
     },
   });
 
-  console.log(`✓ Created 5 users (SUPER_ADMIN + OWNER, MANAGER, TECHNICIAN, DRIVER)\n`);
+  console.log(
+    `✓ Created 5 users (SUPER_ADMIN + OWNER, MANAGER, TECHNICIAN, DRIVER)\n`
+  );
 
   // TECHNICIANS
   console.log('Creating technicians and providers...');
@@ -1931,7 +2058,7 @@ async function main() {
         name: 'Taller Central',
         specialty: 'GENERAL',
         status: 'ACTIVE',
-      }
+      },
     }),
     prisma.technician.create({
       data: {
@@ -1939,7 +2066,7 @@ async function main() {
         name: 'Especialista Motor',
         specialty: 'MOTOR',
         status: 'ACTIVE',
-      }
+      },
     }),
   ]);
 
@@ -1951,7 +2078,7 @@ async function main() {
         name: 'Repuestos Toyota',
         specialty: 'REPUESTOS',
         status: 'ACTIVE',
-      }
+      },
     }),
     prisma.provider.create({
       data: {
@@ -1959,7 +2086,7 @@ async function main() {
         name: 'Lubricantes Shell',
         specialty: 'LUBRICANTES',
         status: 'ACTIVE',
-      }
+      },
     }),
     prisma.provider.create({
       data: {
@@ -1967,11 +2094,13 @@ async function main() {
         name: 'Taller ABC Frenos',
         specialty: 'FRENOS',
         status: 'ACTIVE',
-      }
+      },
     }),
   ]);
 
-  console.log(`✓ Created ${technicians.length} technicians and ${providers.length} providers\n`);
+  console.log(
+    `✓ Created ${technicians.length} technicians and ${providers.length} providers\n`
+  );
 
   // DRIVERS
   console.log('Creating drivers...');
@@ -1982,7 +2111,7 @@ async function main() {
         name: 'Juan López',
         licenseNumber: '12345678',
         status: 'ACTIVE',
-      }
+      },
     }),
     prisma.driver.create({
       data: {
@@ -1990,7 +2119,7 @@ async function main() {
         name: 'Pedro Gómez',
         licenseNumber: '87654321',
         status: 'ACTIVE',
-      }
+      },
     }),
     prisma.driver.create({
       data: {
@@ -1998,7 +2127,7 @@ async function main() {
         name: 'María Fernández',
         licenseNumber: '11223344',
         status: 'ACTIVE',
-      }
+      },
     }),
   ]);
 
@@ -2012,8 +2141,8 @@ async function main() {
         tenantId: TENANT_ID,
         licensePlate: 'ABC-123',
         brandId: globalBrands[0].id, // Toyota
-        lineId: globalLines[0].id,   // Hilux
-        typeId: globalTypes[0].id,   // Camioneta 4x4
+        lineId: globalLines[0].id, // Hilux
+        typeId: globalTypes[0].id, // Camioneta 4x4
         year: 2022,
         mileage: 45000,
         color: 'Blanco',
@@ -2021,14 +2150,14 @@ async function main() {
         situation: 'AVAILABLE',
         owner: 'OWN',
         typePlate: 'PARTICULAR',
-      }
+      },
     }),
     prisma.vehicle.create({
       data: {
         tenantId: TENANT_ID,
         licensePlate: 'DEF-456',
         brandId: globalBrands[1].id, // Ford
-        lineId: globalLines[3].id,   // Ranger
+        lineId: globalLines[3].id, // Ranger
         typeId: globalTypes[0].id,
         year: 2021,
         mileage: 62000,
@@ -2037,14 +2166,14 @@ async function main() {
         situation: 'IN_USE',
         owner: 'OWN',
         typePlate: 'PARTICULAR',
-      }
+      },
     }),
     prisma.vehicle.create({
       data: {
         tenantId: TENANT_ID,
         licensePlate: 'GHI-789',
         brandId: globalBrands[2].id, // Chevrolet
-        lineId: globalLines[6].id,   // D-MAX
+        lineId: globalLines[6].id, // D-MAX
         typeId: globalTypes[0].id,
         year: 2023,
         mileage: 18000,
@@ -2053,15 +2182,15 @@ async function main() {
         situation: 'AVAILABLE',
         owner: 'LEASED',
         typePlate: 'PARTICULAR',
-      }
+      },
     }),
     prisma.vehicle.create({
       data: {
         tenantId: TENANT_ID,
         licensePlate: 'JKL-012',
         brandId: globalBrands[0].id, // Toyota
-        lineId: globalLines[1].id,   // Land Cruiser
-        typeId: globalTypes[4].id,   // SUV
+        lineId: globalLines[1].id, // Land Cruiser
+        typeId: globalTypes[4].id, // SUV
         year: 2020,
         mileage: 95000,
         color: 'Gris',
@@ -2069,15 +2198,15 @@ async function main() {
         situation: 'MAINTENANCE',
         owner: 'OWN',
         typePlate: 'PARTICULAR',
-      }
+      },
     }),
     prisma.vehicle.create({
       data: {
         tenantId: TENANT_ID,
         licensePlate: 'MNO-345',
         brandId: globalBrands[1].id, // Ford
-        lineId: globalLines[5].id,   // Transit
-        typeId: globalTypes[2].id,   // Camioneta de Pasajeros
+        lineId: globalLines[5].id, // Transit
+        typeId: globalTypes[2].id, // Camioneta de Pasajeros
         year: 2022,
         mileage: 38000,
         color: 'Azul',
@@ -2085,14 +2214,14 @@ async function main() {
         situation: 'AVAILABLE',
         owner: 'OWN',
         typePlate: 'PUBLICO',
-      }
+      },
     }),
     prisma.vehicle.create({
       data: {
         tenantId: TENANT_ID,
         licensePlate: 'PQR-678',
         brandId: globalBrands[3].id, // Nissan
-        lineId: globalLines[9].id,   // Frontier
+        lineId: globalLines[9].id, // Frontier
         typeId: globalTypes[0].id,
         year: 2021,
         mileage: 72000,
@@ -2101,15 +2230,15 @@ async function main() {
         situation: 'IN_USE',
         owner: 'OWN',
         typePlate: 'PARTICULAR',
-      }
+      },
     }),
     prisma.vehicle.create({
       data: {
         tenantId: TENANT_ID,
         licensePlate: 'STU-901',
         brandId: globalBrands[2].id, // Chevrolet
-        lineId: globalLines[8].id,   // NPR
-        typeId: globalTypes[1].id,   // Camión de Carga
+        lineId: globalLines[8].id, // NPR
+        typeId: globalTypes[1].id, // Camión de Carga
         year: 2019,
         mileage: 120000,
         color: 'Blanco',
@@ -2117,14 +2246,14 @@ async function main() {
         situation: 'AVAILABLE',
         owner: 'OWN',
         typePlate: 'PUBLICO',
-      }
+      },
     }),
     prisma.vehicle.create({
       data: {
         tenantId: TENANT_ID,
         licensePlate: 'VWX-234',
         brandId: globalBrands[4].id, // Mitsubishi
-        lineId: globalLines[11].id,  // L200
+        lineId: globalLines[11].id, // L200
         typeId: globalTypes[0].id,
         year: 2023,
         mileage: 12000,
@@ -2133,7 +2262,7 @@ async function main() {
         situation: 'AVAILABLE',
         owner: 'RENTED',
         typePlate: 'PARTICULAR',
-      }
+      },
     }),
   ]);
 
@@ -2158,7 +2287,7 @@ async function main() {
         referencePrice: 45000,
         lastPriceUpdate: new Date(),
         isActive: true,
-      }
+      },
     }),
     prisma.masterPart.create({
       data: {
@@ -2171,7 +2300,7 @@ async function main() {
         referencePrice: 58000,
         lastPriceUpdate: new Date(),
         isActive: true,
-      }
+      },
     }),
     prisma.masterPart.create({
       data: {
@@ -2184,7 +2313,7 @@ async function main() {
         referencePrice: 35000,
         lastPriceUpdate: new Date(),
         isActive: true,
-      }
+      },
     }),
     // FILTROS
     prisma.masterPart.create({
@@ -2198,7 +2327,7 @@ async function main() {
         referencePrice: 28000,
         lastPriceUpdate: new Date(),
         isActive: true,
-      }
+      },
     }),
     prisma.masterPart.create({
       data: {
@@ -2211,7 +2340,7 @@ async function main() {
         referencePrice: 32000,
         lastPriceUpdate: new Date(),
         isActive: true,
-      }
+      },
     }),
     prisma.masterPart.create({
       data: {
@@ -2224,7 +2353,7 @@ async function main() {
         referencePrice: 42000,
         lastPriceUpdate: new Date(),
         isActive: true,
-      }
+      },
     }),
     prisma.masterPart.create({
       data: {
@@ -2237,7 +2366,7 @@ async function main() {
         referencePrice: 48000,
         lastPriceUpdate: new Date(),
         isActive: true,
-      }
+      },
     }),
     prisma.masterPart.create({
       data: {
@@ -2250,7 +2379,7 @@ async function main() {
         referencePrice: 55000,
         lastPriceUpdate: new Date(),
         isActive: true,
-      }
+      },
     }),
     // FRENOS
     prisma.masterPart.create({
@@ -2264,7 +2393,7 @@ async function main() {
         referencePrice: 185000,
         lastPriceUpdate: new Date(),
         isActive: true,
-      }
+      },
     }),
     prisma.masterPart.create({
       data: {
@@ -2277,7 +2406,7 @@ async function main() {
         referencePrice: 22000,
         lastPriceUpdate: new Date(),
         isActive: true,
-      }
+      },
     }),
   ]);
   console.log(`✓ Created ${masterParts.length} master parts\n`);
@@ -2289,37 +2418,39 @@ async function main() {
       data: {
         tenantId: TENANT_ID,
         vehicleId: vehicles[0].id, // ABC-123
-        driverId: drivers[0].id,   // Juan López
+        driverId: drivers[0].id, // Juan López
         status: 'ACTIVE',
         isPrimary: true,
         startDate: new Date(),
         assignedBy: owner.id,
-      }
+      },
     }),
     prisma.vehicleDriver.create({
       data: {
         tenantId: TENANT_ID,
         vehicleId: vehicles[1].id, // DEF-456
-        driverId: drivers[1].id,   // Pedro Gómez
+        driverId: drivers[1].id, // Pedro Gómez
         status: 'ACTIVE',
         isPrimary: true,
         startDate: new Date(),
         assignedBy: owner.id,
-      }
+      },
     }),
     prisma.vehicleDriver.create({
       data: {
         tenantId: TENANT_ID,
         vehicleId: vehicles[4].id, // MNO-345
-        driverId: drivers[2].id,   // María Fernández
+        driverId: drivers[2].id, // María Fernández
         status: 'ACTIVE',
         isPrimary: true,
         startDate: new Date(),
         assignedBy: owner.id,
-      }
+      },
     }),
   ]);
-  console.log(`✓ Created ${vehicleDrivers.length} vehicle-driver assignments\n`);
+  console.log(
+    `✓ Created ${vehicleDrivers.length} vehicle-driver assignments\n`
+  );
 
   // Suppress unused variable warnings
   void manager;
@@ -2331,9 +2462,15 @@ async function main() {
   console.log(`   - Vehicle Lines: ${globalLines.length}`);
   console.log(`   - Vehicle Types: ${globalTypes.length}`);
   console.log(`   - Maintenance Categories: ${globalCategories.length}`);
-  console.log(`   - Maintenance Items: ${globalMantItems.length} (17 preventive + 16 corrective)`);
-  console.log(`   - Maintenance Templates: 3 (Toyota Hilux, Ford Ranger, Chevy D-MAX)`);
-  console.log(`   - Template Packages: 12 total (4 per template: 5K, 10K, 20K, 30K)`);
+  console.log(
+    `   - Maintenance Items: ${globalMantItems.length} (17 preventive + 16 corrective)`
+  );
+  console.log(
+    `   - Maintenance Templates: 3 (Toyota Hilux, Ford Ranger, Chevy D-MAX)`
+  );
+  console.log(
+    `   - Template Packages: 12 total (4 per template: 5K, 10K, 20K, 30K)`
+  );
   console.log(`   - Master Parts (Catalog): ${masterParts.length}`);
   console.log(`   - Document Type Configs (CO): ${globalDocTypes.length}`);
 
@@ -2358,14 +2495,16 @@ async function main() {
   console.log(`   - Vehicle Maintenance Programs: 0\n`);
 
   console.log('🔑 USUARIOS CONFIGURADOS:');
-  console.log('   - grivarol69@gmail.com → SUPER_ADMIN (Platform) + OWNER (TransLogística)');
+  console.log(
+    '   - grivarol69@gmail.com → SUPER_ADMIN (Platform) + OWNER (TransLogística)'
+  );
   console.log('   - manager@translogistica.co → MANAGER (prueba)');
   console.log('   - technician@translogistica.co → TECHNICIAN (prueba)');
   console.log('   - driver@translogistica.co → DRIVER (prueba)\n');
 }
 
 main()
-  .catch((e) => {
+  .catch(e => {
     console.error('❌ Error during seed:', e);
     process.exit(1);
   })

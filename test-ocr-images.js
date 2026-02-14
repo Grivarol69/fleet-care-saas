@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const client = new vision.ImageAnnotatorClient({
-  keyFilename: path.join(__dirname, 'credentials', 'google-vision-key.json')
+  keyFilename: path.join(__dirname, 'credentials', 'google-vision-key.json'),
 });
 
 async function testOCR(filePath) {
@@ -29,15 +29,25 @@ async function testOCR(filePath) {
     console.log('-'.repeat(70));
 
     // Buscar datos clave
-    const invoiceMatch = text.match(/(?:FACTURA.*?No\.?.*?:?)\s*([A-Z]{2,4}\s*\d{4,})/i);
+    const invoiceMatch = text.match(
+      /(?:FACTURA.*?No\.?.*?:?)\s*([A-Z]{2,4}\s*\d{4,})/i
+    );
     const dateMatch = text.match(/\d{2}-[A-Za-z]{3}-\d{4}/);
     const lines = text.split('\n');
-    const totalLine = lines.find(l => l.includes('TOTAL') && /\$?\d+[,.]?\d+/.test(l));
+    const totalLine = lines.find(
+      l => l.includes('TOTAL') && /\$?\d+[,.]?\d+/.test(l)
+    );
 
     console.log('\n🔍 DATOS DETECTADOS:');
-    console.log('  📄 Número Factura:', invoiceMatch ? invoiceMatch[1].trim() : '❌ No detectado');
+    console.log(
+      '  📄 Número Factura:',
+      invoiceMatch ? invoiceMatch[1].trim() : '❌ No detectado'
+    );
     console.log('  📅 Fecha:', dateMatch ? dateMatch[0] : '❌ No detectada');
-    console.log('  💰 Total:', totalLine ? totalLine.trim() : '❌ No detectado');
+    console.log(
+      '  💰 Total:',
+      totalLine ? totalLine.trim() : '❌ No detectado'
+    );
 
     return text;
   } catch (error) {
@@ -46,7 +56,11 @@ async function testOCR(filePath) {
 }
 
 (async () => {
-  await testOCR('/home/grivarol69/Imágenes/Capturas de pantalla/Captura desde 2025-11-20 17-52-00.png');
+  await testOCR(
+    '/home/grivarol69/Imágenes/Capturas de pantalla/Captura desde 2025-11-20 17-52-00.png'
+  );
   console.log('\n' + '='.repeat(70) + '\n');
-  await testOCR('/home/grivarol69/Imágenes/Capturas de pantalla/Captura desde 2025-11-20 17-52-29.png');
+  await testOCR(
+    '/home/grivarol69/Imágenes/Capturas de pantalla/Captura desde 2025-11-20 17-52-29.png'
+  );
 })();

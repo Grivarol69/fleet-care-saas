@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   Table,
@@ -7,19 +7,19 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, FileText, Printer, Download } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { formatDistanceToNow, format } from "date-fns";
-import { es } from "date-fns/locale";
+} from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, Eye, FileText, Printer, Download } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { formatDistanceToNow, format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 type Invoice = {
   id: number;
@@ -65,11 +65,11 @@ type InvoicesListProps = {
 };
 
 const statusConfig = {
-  PENDING: { label: "Pendiente", variant: "secondary" as const },
-  PAID: { label: "Pagada", variant: "default" as const },
-  PARTIAL: { label: "Pago Parcial", variant: "outline" as const },
-  OVERDUE: { label: "Vencida", variant: "destructive" as const },
-  CANCELLED: { label: "Cancelada", variant: "outline" as const },
+  PENDING: { label: 'Pendiente', variant: 'secondary' as const },
+  PAID: { label: 'Pagada', variant: 'default' as const },
+  PARTIAL: { label: 'Pago Parcial', variant: 'outline' as const },
+  OVERDUE: { label: 'Vencida', variant: 'destructive' as const },
+  CANCELLED: { label: 'Cancelada', variant: 'outline' as const },
 };
 
 export function InvoicesList({
@@ -123,13 +123,18 @@ export function InvoicesList({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {invoices.map((invoice) => {
-            const statusInfo = statusConfig[invoice.status as keyof typeof statusConfig] || {
+          {invoices.map(invoice => {
+            const statusInfo = statusConfig[
+              invoice.status as keyof typeof statusConfig
+            ] || {
               label: invoice.status,
-              variant: "outline" as const
+              variant: 'outline' as const,
             };
 
-            const totalPaid = invoice.payments.reduce((sum, p) => sum + p.amount, 0);
+            const totalPaid = invoice.payments.reduce(
+              (sum, p) => sum + p.amount,
+              0
+            );
             const balance = invoice.totalAmount - totalPaid;
 
             return (
@@ -152,18 +157,24 @@ export function InvoicesList({
                 <TableCell>
                   {invoice.workOrder ? (
                     <div>
-                      <div className="font-medium text-sm">{invoice.workOrder.vehicle.licensePlate}</div>
+                      <div className="font-medium text-sm">
+                        {invoice.workOrder.vehicle.licensePlate}
+                      </div>
                       <div className="text-xs text-muted-foreground truncate max-w-[200px]">
                         {invoice.workOrder.title}
                       </div>
                     </div>
                   ) : (
-                    <span className="text-muted-foreground text-sm">Sin WO</span>
+                    <span className="text-muted-foreground text-sm">
+                      Sin WO
+                    </span>
                   )}
                 </TableCell>
                 <TableCell>
                   <div className="text-sm">
-                    {format(new Date(invoice.invoiceDate), "dd MMM yyyy", { locale: es })}
+                    {format(new Date(invoice.invoiceDate), 'dd MMM yyyy', {
+                      locale: es,
+                    })}
                   </div>
                   <div className="text-xs text-muted-foreground">
                     {formatDistanceToNow(new Date(invoice.invoiceDate), {
@@ -175,30 +186,30 @@ export function InvoicesList({
                 <TableCell>
                   {invoice.dueDate ? (
                     <div className="text-sm">
-                      {format(new Date(invoice.dueDate), "dd MMM yyyy", { locale: es })}
+                      {format(new Date(invoice.dueDate), 'dd MMM yyyy', {
+                        locale: es,
+                      })}
                     </div>
                   ) : (
                     <span className="text-muted-foreground text-sm">-</span>
                   )}
                 </TableCell>
                 <TableCell>
-                  <Badge variant={statusInfo.variant}>
-                    {statusInfo.label}
-                  </Badge>
+                  <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
                   {balance > 0 && invoice.status === 'PARTIAL' && (
                     <div className="text-xs text-muted-foreground mt-1">
-                      Saldo: ${balance.toLocaleString("es-CO")}
+                      Saldo: ${balance.toLocaleString('es-CO')}
                     </div>
                   )}
                 </TableCell>
                 <TableCell className="text-right">
-                  ${invoice.subtotal.toLocaleString("es-CO")}
+                  ${invoice.subtotal.toLocaleString('es-CO')}
                 </TableCell>
                 <TableCell className="text-right">
-                  ${invoice.taxAmount.toLocaleString("es-CO")}
+                  ${invoice.taxAmount.toLocaleString('es-CO')}
                 </TableCell>
                 <TableCell className="text-right font-semibold">
-                  ${invoice.totalAmount.toLocaleString("es-CO")}
+                  ${invoice.totalAmount.toLocaleString('es-CO')}
                   <div className="text-xs text-muted-foreground font-normal">
                     {invoice.currency}
                   </div>
@@ -211,13 +222,17 @@ export function InvoicesList({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onViewDetail?.(invoice.id)}>
+                      <DropdownMenuItem
+                        onClick={() => onViewDetail?.(invoice.id)}
+                      >
                         <Eye className="mr-2 h-4 w-4" />
                         Ver Detalles
                       </DropdownMenuItem>
                       {invoice.attachmentUrl && (
                         <DropdownMenuItem
-                          onClick={() => window.open(invoice.attachmentUrl!, '_blank')}
+                          onClick={() =>
+                            window.open(invoice.attachmentUrl!, '_blank')
+                          }
                         >
                           <Download className="mr-2 h-4 w-4" />
                           Ver Factura

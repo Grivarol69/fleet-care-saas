@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Form,
   FormControl,
@@ -19,12 +19,12 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import axios from "axios";
-import { useToast } from "@/components/hooks/use-toast";
-import { useRouter } from "next/navigation";
-import { formSchema } from "./FormEditBrand.form";
-import { FormEditBrandProps } from "./FormEditBrand.types";
+} from '@/components/ui/form';
+import axios from 'axios';
+import { useToast } from '@/components/hooks/use-toast';
+import { useRouter } from 'next/navigation';
+import { formSchema } from './FormEditBrand.form';
+import { FormEditBrandProps } from './FormEditBrand.types';
 
 export function FormEditBrand({
   isOpen,
@@ -58,56 +58,56 @@ export function FormEditBrand({
       setIsOpen(false);
       form.reset();
       toast({
-        title: "Marca actualizada",
-        description: "La marca fue actualizada exitosamente",
+        title: 'Marca actualizada',
+        description: 'La marca fue actualizada exitosamente',
       });
 
       router.refresh();
     } catch (error) {
-      console.error("Error updating brand:", error);
+      console.error('Error updating brand:', error);
 
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 401) {
           toast({
-            title: "No autorizado",
-            description: "Debes iniciar sesión para editar marcas",
-            variant: "destructive",
+            title: 'No autorizado',
+            description: 'Debes iniciar sesión para editar marcas',
+            variant: 'destructive',
           });
           return;
         }
 
         if (error.response?.status === 409) {
           toast({
-            title: "Marca duplicada",
-            description: "Ya existe una marca con ese nombre",
-            variant: "destructive",
+            title: 'Marca duplicada',
+            description: 'Ya existe una marca con ese nombre',
+            variant: 'destructive',
           });
           return;
         }
 
         if (error.response?.status === 400) {
           toast({
-            title: "Datos inválidos",
-            description: "Por favor verifica los datos ingresados",
-            variant: "destructive",
+            title: 'Datos inválidos',
+            description: 'Por favor verifica los datos ingresados',
+            variant: 'destructive',
           });
           return;
         }
 
         if (error.response?.status === 404) {
           toast({
-            title: "Marca no encontrada",
-            description: "La marca que intentas editar no existe",
-            variant: "destructive",
+            title: 'Marca no encontrada',
+            description: 'La marca que intentas editar no existe',
+            variant: 'destructive',
           });
           return;
         }
       }
 
       toast({
-        title: "Error al actualizar marca",
-        description: "Por favor intenta de nuevo más tarde",
-        variant: "destructive",
+        title: 'Error al actualizar marca',
+        description: 'Por favor intenta de nuevo más tarde',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -149,7 +149,7 @@ export function FormEditBrand({
                 Cancelar
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Actualizando..." : "Actualizar Marca"}
+                {isLoading ? 'Actualizando...' : 'Actualizar Marca'}
               </Button>
             </div>
           </form>

@@ -98,12 +98,24 @@ export default function InvoicesPage() {
       // Búsqueda por número de factura, proveedor o work order
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
-        const matchesNumber = inv.invoiceNumber.toLowerCase().includes(searchLower);
-        const matchesSupplier = inv.supplier?.name.toLowerCase().includes(searchLower) || false;
-        const matchesWorkOrder = inv.workOrder?.title.toLowerCase().includes(searchLower) || false;
-        const matchesPlate = inv.workOrder?.vehicle.licensePlate.toLowerCase().includes(searchLower) || false;
+        const matchesNumber = inv.invoiceNumber
+          .toLowerCase()
+          .includes(searchLower);
+        const matchesSupplier =
+          inv.supplier?.name.toLowerCase().includes(searchLower) || false;
+        const matchesWorkOrder =
+          inv.workOrder?.title.toLowerCase().includes(searchLower) || false;
+        const matchesPlate =
+          inv.workOrder?.vehicle.licensePlate
+            .toLowerCase()
+            .includes(searchLower) || false;
 
-        if (!matchesNumber && !matchesSupplier && !matchesWorkOrder && !matchesPlate) {
+        if (
+          !matchesNumber &&
+          !matchesSupplier &&
+          !matchesWorkOrder &&
+          !matchesPlate
+        ) {
           return false;
         }
       }

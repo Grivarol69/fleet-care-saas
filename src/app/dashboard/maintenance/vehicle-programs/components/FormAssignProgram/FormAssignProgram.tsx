@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Dialog,
   DialogContent,
@@ -10,9 +10,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Form,
   FormControl,
@@ -21,29 +21,29 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
+} from '@/components/ui/form';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import axios from "axios";
-import { useToast } from "@/components/hooks/use-toast";
-import { useEffect, useState } from "react";
-import { Loader2, CheckCircle2, Package } from "lucide-react";
+} from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import axios from 'axios';
+import { useToast } from '@/components/hooks/use-toast';
+import { useEffect, useState } from 'react';
+import { Loader2, CheckCircle2, Package } from 'lucide-react';
 
 const formSchema = z.object({
-  vehicleId: z.number().min(1, "Seleccione un vehículo"),
-  templateId: z.number().min(1, "Seleccione un template"),
+  vehicleId: z.number().min(1, 'Seleccione un vehículo'),
+  templateId: z.number().min(1, 'Seleccione un template'),
   assignmentKm: z
     .number()
-    .min(1, "El kilometraje debe ser mayor a 0")
-    .max(500000, "El kilometraje es demasiado alto"),
-  generatedBy: z.string().min(1, "Usuario requerido"),
+    .min(1, 'El kilometraje debe ser mayor a 0')
+    .max(500000, 'El kilometraje es demasiado alto'),
+  generatedBy: z.string().min(1, 'Usuario requerido'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -99,7 +99,7 @@ export function FormAssignProgram({
       vehicleId: 0,
       templateId: 0,
       assignmentKm: 0,
-      generatedBy: "current-user-id", // TODO: Get from auth context
+      generatedBy: 'current-user-id', // TODO: Get from auth context
     },
   });
 
@@ -114,18 +114,18 @@ export function FormAssignProgram({
     setLoadingData(true);
     try {
       const [vehiclesRes, templatesRes] = await Promise.all([
-        axios.get("/api/vehicles/vehicles"),
-        axios.get("/api/maintenance/mant-template"),
+        axios.get('/api/vehicles/vehicles'),
+        axios.get('/api/maintenance/mant-template'),
       ]);
 
       setVehicles(vehiclesRes.data);
       setTemplates(templatesRes.data);
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error('Error fetching data:', error);
       toast({
-        title: "Error",
-        description: "No se pudo cargar los datos",
-        variant: "destructive",
+        title: 'Error',
+        description: 'No se pudo cargar los datos',
+        variant: 'destructive',
       });
     } finally {
       setLoadingData(false);
@@ -133,61 +133,61 @@ export function FormAssignProgram({
   };
 
   // Watch for vehicle selection
-  const watchVehicleId = form.watch("vehicleId");
+  const watchVehicleId = form.watch('vehicleId');
   useEffect(() => {
-    const vehicle = vehicles.find((v) => v.id === watchVehicleId);
+    const vehicle = vehicles.find(v => v.id === watchVehicleId);
     setSelectedVehicle(vehicle || null);
 
     // Auto-populate assignmentKm with current mileage
     if (vehicle) {
-      form.setValue("assignmentKm", vehicle.mileage);
+      form.setValue('assignmentKm', vehicle.mileage);
     }
   }, [watchVehicleId, vehicles]);
 
   // Watch for template selection
-  const watchTemplateId = form.watch("templateId");
+  const watchTemplateId = form.watch('templateId');
   useEffect(() => {
-    const template = templates.find((t) => t.id === watchTemplateId);
+    const template = templates.find(t => t.id === watchTemplateId);
     setSelectedTemplate(template || null);
   }, [watchTemplateId, templates]);
 
   // Filter templates compatible with selected vehicle
   const compatibleTemplates = selectedVehicle
     ? templates.filter(
-        (t) =>
+        t =>
           t.brand.id === selectedVehicle.brand.id &&
           t.line.id === selectedVehicle.line.id
       )
     : [];
 
-  const assignmentKm = form.watch("assignmentKm");
+  const assignmentKm = form.watch('assignmentKm');
 
   async function onSubmit(values: FormValues) {
     setLoading(true);
     try {
-      await axios.post("/api/maintenance/vehicle-programs", values);
+      await axios.post('/api/maintenance/vehicle-programs', values);
 
       toast({
-        title: "¡Éxito!",
-        description: "Programa de mantenimiento asignado correctamente",
+        title: '¡Éxito!',
+        description: 'Programa de mantenimiento asignado correctamente',
       });
 
       form.reset();
       onSuccess();
       onOpenChange(false);
     } catch (error: unknown) {
-      console.error("Error creating program:", error);
+      console.error('Error creating program:', error);
 
-      let errorMessage = "No se pudo asignar el programa";
+      let errorMessage = 'No se pudo asignar el programa';
 
       if (axios.isAxiosError(error) && error.response) {
         errorMessage = error.response.data || errorMessage;
       }
 
       toast({
-        title: "Error",
+        title: 'Error',
         description: errorMessage,
-        variant: "destructive",
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -230,8 +230,8 @@ export function FormAssignProgram({
                   <FormItem>
                     <FormLabel>Vehículo *</FormLabel>
                     <Select
-                      onValueChange={(value) => field.onChange(parseInt(value))}
-                      value={field.value ? field.value.toString() : ""}
+                      onValueChange={value => field.onChange(parseInt(value))}
+                      value={field.value ? field.value.toString() : ''}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -239,12 +239,12 @@ export function FormAssignProgram({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {vehicles.map((vehicle) => (
+                        {vehicles.map(vehicle => (
                           <SelectItem
                             key={vehicle.id}
                             value={vehicle.id.toString()}
                           >
-                            {vehicle.licensePlate} - {vehicle.brand.name}{" "}
+                            {vehicle.licensePlate} - {vehicle.brand.name}{' '}
                             {vehicle.line.name}
                             <span className="text-xs text-gray-500 ml-2">
                               ({vehicle.mileage.toLocaleString()} km)
@@ -267,10 +267,8 @@ export function FormAssignProgram({
                     <FormItem>
                       <FormLabel>Template de Mantenimiento *</FormLabel>
                       <Select
-                        onValueChange={(value) =>
-                          field.onChange(parseInt(value))
-                        }
-                        value={field.value ? field.value.toString() : ""}
+                        onValueChange={value => field.onChange(parseInt(value))}
+                        value={field.value ? field.value.toString() : ''}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -283,7 +281,7 @@ export function FormAssignProgram({
                               No hay templates compatibles para este vehículo
                             </div>
                           ) : (
-                            compatibleTemplates.map((template) => (
+                            compatibleTemplates.map(template => (
                               <SelectItem
                                 key={template.id}
                                 value={template.id.toString()}
@@ -301,7 +299,7 @@ export function FormAssignProgram({
                         </SelectContent>
                       </Select>
                       <FormDescription>
-                        Solo se muestran templates compatibles con{" "}
+                        Solo se muestran templates compatibles con{' '}
                         {selectedVehicle.brand.name} {selectedVehicle.line.name}
                       </FormDescription>
                       <FormMessage />
@@ -324,7 +322,7 @@ export function FormAssignProgram({
                             type="number"
                             placeholder="Ej: 32000"
                             {...field}
-                            onChange={(e) =>
+                            onChange={e =>
                               field.onChange(parseInt(e.target.value) || 0)
                             }
                             className="pr-12"
@@ -335,8 +333,8 @@ export function FormAssignProgram({
                         </div>
                       </FormControl>
                       <FormDescription>
-                        Kilometraje actual del vehículo al momento de asignar
-                        el programa
+                        Kilometraje actual del vehículo al momento de asignar el
+                        programa
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -354,7 +352,7 @@ export function FormAssignProgram({
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    {selectedTemplate.packages.map((pkg) => {
+                    {selectedTemplate.packages.map(pkg => {
                       const scheduledKm = assignmentKm + pkg.triggerKm;
                       return (
                         <div

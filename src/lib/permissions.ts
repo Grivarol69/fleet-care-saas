@@ -1,32 +1,32 @@
-import { User } from "@prisma/client";
-import type { UserWithSuperAdmin } from "@/lib/auth";
+import { User } from '@prisma/client';
+import type { UserWithSuperAdmin } from '@/lib/auth';
 
 // ========================================
 // VALIDADORES DE ROL INDIVIDUAL
 // ========================================
 
 export function isSuperAdmin(user: User | null): boolean {
-  return user?.role === "SUPER_ADMIN";
+  return user?.role === 'SUPER_ADMIN';
 }
 
 export function isOwner(user: User | null): boolean {
-  return user?.role === "OWNER";
+  return user?.role === 'OWNER';
 }
 
 export function isManager(user: User | null): boolean {
-  return user?.role === "MANAGER";
+  return user?.role === 'MANAGER';
 }
 
 export function isTechnician(user: User | null): boolean {
-  return user?.role === "TECHNICIAN";
+  return user?.role === 'TECHNICIAN';
 }
 
 export function isPurchaser(user: User | null): boolean {
-  return user?.role === "PURCHASER";
+  return user?.role === 'PURCHASER';
 }
 
 export function isDriver(user: User | null): boolean {
-  return user?.role === "DRIVER";
+  return user?.role === 'DRIVER';
 }
 
 // ========================================
@@ -46,7 +46,9 @@ export function canManageMasterData(user: User | null): boolean {
  * TECHNICIAN, DRIVER NO pueden ver costos
  */
 export function canViewCosts(user: User | null): boolean {
-  return isSuperAdmin(user) || isOwner(user) || isManager(user) || isPurchaser(user);
+  return (
+    isSuperAdmin(user) || isOwner(user) || isManager(user) || isPurchaser(user)
+  );
 }
 
 /**
@@ -61,10 +63,7 @@ export function canCreateWorkOrders(user: User | null): boolean {
  */
 export function canExecuteWorkOrders(user: User | null): boolean {
   return (
-    isSuperAdmin(user) ||
-    isOwner(user) ||
-    isManager(user) ||
-    isTechnician(user)
+    isSuperAdmin(user) || isOwner(user) || isManager(user) || isTechnician(user)
   );
 }
 
@@ -79,7 +78,9 @@ export function canManageUsers(user: User | null): boolean {
  * SUPER_ADMIN, OWNER, MANAGER, PURCHASER pueden gestionar facturas
  */
 export function canApproveInvoices(user: User | null): boolean {
-  return isSuperAdmin(user) || isOwner(user) || isManager(user) || isPurchaser(user);
+  return (
+    isSuperAdmin(user) || isOwner(user) || isManager(user) || isPurchaser(user)
+  );
 }
 
 /**
@@ -108,10 +109,7 @@ export function canManageMaintenancePrograms(user: User | null): boolean {
  */
 export function canViewAlerts(user: User | null): boolean {
   return (
-    isSuperAdmin(user) ||
-    isOwner(user) ||
-    isManager(user) ||
-    isTechnician(user)
+    isSuperAdmin(user) || isOwner(user) || isManager(user) || isTechnician(user)
   );
 }
 
@@ -140,14 +138,18 @@ export function canDeleteVehicles(user: User | null): boolean {
  * SUPER_ADMIN, OWNER, MANAGER, PURCHASER pueden gestionar compras e inventario
  */
 export function canManagePurchases(user: User | null): boolean {
-  return isSuperAdmin(user) || isOwner(user) || isManager(user) || isPurchaser(user);
+  return (
+    isSuperAdmin(user) || isOwner(user) || isManager(user) || isPurchaser(user)
+  );
 }
 
 /**
  * SUPER_ADMIN, OWNER, MANAGER, PURCHASER pueden gestionar proveedores
  */
 export function canManageProviders(user: User | null): boolean {
-  return isSuperAdmin(user) || isOwner(user) || isManager(user) || isPurchaser(user);
+  return (
+    isSuperAdmin(user) || isOwner(user) || isManager(user) || isPurchaser(user)
+  );
 }
 
 // ========================================
@@ -156,19 +158,19 @@ export function canManageProviders(user: User | null): boolean {
 
 export function requireSuperAdmin(user: User | null): void {
   if (!isSuperAdmin(user)) {
-    throw new Error("Acceso denegado: Se requiere rol SUPER_ADMIN");
+    throw new Error('Acceso denegado: Se requiere rol SUPER_ADMIN');
   }
 }
 
 export function requireManagementRole(user: User | null): void {
   if (!isSuperAdmin(user) && !isOwner(user) && !isManager(user)) {
-    throw new Error("Acceso denegado: Se requiere rol OWNER o MANAGER");
+    throw new Error('Acceso denegado: Se requiere rol OWNER o MANAGER');
   }
 }
 
 export function requireAuthenticated(user: User | null): void {
   if (!user) {
-    throw new Error("No autenticado");
+    throw new Error('No autenticado');
   }
 }
 
@@ -182,21 +184,21 @@ export function requireMasterDataMutationPermission(
   item: { isGlobal: boolean; tenantId: string | null }
 ): void {
   if (item.isGlobal) {
-    if (!user.isSuperAdmin && user.role !== "SUPER_ADMIN") {
+    if (!user.isSuperAdmin && user.role !== 'SUPER_ADMIN') {
       throw new Error(
-        "Solo el administrador de plataforma puede modificar datos globales"
+        'Solo el administrador de plataforma puede modificar datos globales'
       );
     }
   } else {
     if (item.tenantId !== user.tenantId) {
-      throw new Error("Este item pertenece a otro tenant");
+      throw new Error('Este item pertenece a otro tenant');
     }
     if (
       !user.isSuperAdmin &&
-      user.role !== "OWNER" &&
-      user.role !== "MANAGER"
+      user.role !== 'OWNER' &&
+      user.role !== 'MANAGER'
     ) {
-      throw new Error("Se requiere rol OWNER o MANAGER");
+      throw new Error('Se requiere rol OWNER o MANAGER');
     }
   }
 }
@@ -253,4 +255,4 @@ export function canManageTenantData(user: User | null): boolean {
 // ========================================
 
 // Re-export de la constante centralizada en auth.ts
-export { PLATFORM_TENANT_ID } from "@/lib/auth";
+export { PLATFORM_TENANT_ID } from '@/lib/auth';

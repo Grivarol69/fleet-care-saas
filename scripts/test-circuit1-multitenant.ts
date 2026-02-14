@@ -25,7 +25,7 @@ const prisma = new PrismaClient({ adapter });
 
 // Tenant IDs
 const TENANT_A_ID = 'org_36M1mCUcHm4ShrsTQQK3etw9FEk'; // TransLogistica (seed)
-const TENANT_B_ID = 'test-tenant-isolation-b';            // Tenant de prueba
+const TENANT_B_ID = 'test-tenant-isolation-b'; // Tenant de prueba
 
 // Counters
 let passed = 0;
@@ -56,13 +56,24 @@ async function test_1_1_seedData() {
   section('1.1 Verificar datos del Seed (Tenant A: TransLogistica)');
 
   // Tenant existe
-  const tenantA = await prisma.tenant.findUnique({ where: { id: TENANT_A_ID } });
+  const tenantA = await prisma.tenant.findUnique({
+    where: { id: TENANT_A_ID },
+  });
   assert(tenantA !== null, 'Tenant A existe en la BD');
-  assert(tenantA?.name !== undefined && tenantA.name.length > 0, 'Tenant A tiene nombre definido', `got: "${tenantA?.name}"`);
+  assert(
+    tenantA?.name !== undefined && tenantA.name.length > 0,
+    'Tenant A tiene nombre definido',
+    `got: "${tenantA?.name}"`
+  );
 
   // Usuarios del tenant
-  const users = await prisma.user.findMany({ where: { tenantId: TENANT_A_ID } });
-  assert(users.length >= 4, `Tenant A tiene >= 4 usuarios (got ${users.length})`);
+  const users = await prisma.user.findMany({
+    where: { tenantId: TENANT_A_ID },
+  });
+  assert(
+    users.length >= 4,
+    `Tenant A tiene >= 4 usuarios (got ${users.length})`
+  );
 
   const roles = users.map(u => u.role);
   assert(roles.includes('OWNER'), 'Existe usuario OWNER en Tenant A');
@@ -71,38 +82,75 @@ async function test_1_1_seedData() {
   assert(roles.includes('DRIVER'), 'Existe usuario DRIVER en Tenant A');
 
   // Vehiculos
-  const vehicles = await prisma.vehicle.findMany({ where: { tenantId: TENANT_A_ID } });
-  assert(vehicles.length === 8, `Tenant A tiene 8 vehiculos (got ${vehicles.length})`);
+  const vehicles = await prisma.vehicle.findMany({
+    where: { tenantId: TENANT_A_ID },
+  });
+  assert(
+    vehicles.length === 8,
+    `Tenant A tiene 8 vehiculos (got ${vehicles.length})`
+  );
 
   const plates = vehicles.map(v => v.licensePlate).sort();
   assert(plates.includes('ABC-123'), 'Vehiculo ABC-123 existe en Tenant A');
   assert(plates.includes('DEF-456'), 'Vehiculo DEF-456 existe en Tenant A');
 
   // Drivers, Technicians, Providers
-  const drivers = await prisma.driver.findMany({ where: { tenantId: TENANT_A_ID } });
-  assert(drivers.length === 3, `Tenant A tiene 3 conductores (got ${drivers.length})`);
+  const drivers = await prisma.driver.findMany({
+    where: { tenantId: TENANT_A_ID },
+  });
+  assert(
+    drivers.length === 3,
+    `Tenant A tiene 3 conductores (got ${drivers.length})`
+  );
 
-  const techs = await prisma.technician.findMany({ where: { tenantId: TENANT_A_ID } });
+  const techs = await prisma.technician.findMany({
+    where: { tenantId: TENANT_A_ID },
+  });
   assert(techs.length === 2, `Tenant A tiene 2 tecnicos (got ${techs.length})`);
 
-  const providers = await prisma.provider.findMany({ where: { tenantId: TENANT_A_ID } });
-  assert(providers.length === 3, `Tenant A tiene 3 proveedores (got ${providers.length})`);
+  const providers = await prisma.provider.findMany({
+    where: { tenantId: TENANT_A_ID },
+  });
+  assert(
+    providers.length === 3,
+    `Tenant A tiene 3 proveedores (got ${providers.length})`
+  );
 
   // Work Orders
-  const workOrders = await prisma.workOrder.findMany({ where: { tenantId: TENANT_A_ID } });
-  assert(workOrders.length >= 3, `Tenant A tiene >= 3 ordenes de trabajo (got ${workOrders.length})`);
+  const workOrders = await prisma.workOrder.findMany({
+    where: { tenantId: TENANT_A_ID },
+  });
+  assert(
+    workOrders.length >= 3,
+    `Tenant A tiene >= 3 ordenes de trabajo (got ${workOrders.length})`
+  );
 
   // Invoices
-  const invoices = await prisma.invoice.findMany({ where: { tenantId: TENANT_A_ID } });
-  assert(invoices.length >= 4, `Tenant A tiene >= 4 facturas (got ${invoices.length})`);
+  const invoices = await prisma.invoice.findMany({
+    where: { tenantId: TENANT_A_ID },
+  });
+  assert(
+    invoices.length >= 4,
+    `Tenant A tiene >= 4 facturas (got ${invoices.length})`
+  );
 
   // Maintenance Programs
-  const programs = await prisma.vehicleMantProgram.findMany({ where: { tenantId: TENANT_A_ID } });
-  assert(programs.length === 3, `Tenant A tiene 3 programas de mantenimiento (got ${programs.length})`);
+  const programs = await prisma.vehicleMantProgram.findMany({
+    where: { tenantId: TENANT_A_ID },
+  });
+  assert(
+    programs.length === 3,
+    `Tenant A tiene 3 programas de mantenimiento (got ${programs.length})`
+  );
 
   // Maintenance Alerts
-  const alerts = await prisma.maintenanceAlert.findMany({ where: { tenantId: TENANT_A_ID } });
-  assert(alerts.length >= 1, `Tenant A tiene >= 1 alerta de mantenimiento (got ${alerts.length})`);
+  const alerts = await prisma.maintenanceAlert.findMany({
+    where: { tenantId: TENANT_A_ID },
+  });
+  assert(
+    alerts.length >= 1,
+    `Tenant A tiene >= 1 alerta de mantenimiento (got ${alerts.length})`
+  );
 }
 
 // ─── 1.2  Crear Tenant B con datos propios ──────────────────
@@ -207,7 +255,10 @@ async function test_1_2_createTenantB() {
       typePlate: 'PARTICULAR',
     },
   });
-  assert(vehicleB2 !== null, 'Vehiculo ABC-123 creado en Tenant B (misma placa, distinto tenant)');
+  assert(
+    vehicleB2 !== null,
+    'Vehiculo ABC-123 creado en Tenant B (misma placa, distinto tenant)'
+  );
 
   // Crear driver en Tenant B
   const driverB = await prisma.driver.create({
@@ -293,14 +344,23 @@ async function test_1_3_isolation() {
     where: { tenantId: TENANT_B_ID, status: 'ACTIVE' },
   });
 
-  assert(vehiclesA.length === 8, `Query Tenant A retorna 8 vehiculos (got ${vehiclesA.length})`);
-  assert(vehiclesB.length === 2, `Query Tenant B retorna 2 vehiculos (got ${vehiclesB.length})`);
+  assert(
+    vehiclesA.length === 8,
+    `Query Tenant A retorna 8 vehiculos (got ${vehiclesA.length})`
+  );
+  assert(
+    vehiclesB.length === 2,
+    `Query Tenant B retorna 2 vehiculos (got ${vehiclesB.length})`
+  );
 
   // Verificar que ningun vehiculo de B aparece en A
   const vehicleIdsA = vehiclesA.map(v => v.id);
   const vehicleIdsB = vehiclesB.map(v => v.id);
   const crossContamination = vehicleIdsA.some(id => vehicleIdsB.includes(id));
-  assert(!crossContamination, 'No hay contaminacion cruzada de IDs de vehiculos');
+  assert(
+    !crossContamination,
+    'No hay contaminacion cruzada de IDs de vehiculos'
+  );
 
   // Verificar placa duplicada en diferentes tenants
   const abcA = vehiclesA.find(v => v.licensePlate === 'ABC-123');
@@ -319,79 +379,174 @@ async function test_1_3_isolation() {
 
   // --- Usuarios ---
   console.log('\n  --- Usuarios ---');
-  const usersA = await prisma.user.findMany({ where: { tenantId: TENANT_A_ID } });
-  const usersB = await prisma.user.findMany({ where: { tenantId: TENANT_B_ID } });
+  const usersA = await prisma.user.findMany({
+    where: { tenantId: TENANT_A_ID },
+  });
+  const usersB = await prisma.user.findMany({
+    where: { tenantId: TENANT_B_ID },
+  });
 
-  assert(usersA.length >= 4, `Tenant A tiene >= 4 usuarios (got ${usersA.length})`);
-  assert(usersB.length === 2, `Tenant B tiene 2 usuarios (got ${usersB.length})`);
+  assert(
+    usersA.length >= 4,
+    `Tenant A tiene >= 4 usuarios (got ${usersA.length})`
+  );
+  assert(
+    usersB.length === 2,
+    `Tenant B tiene 2 usuarios (got ${usersB.length})`
+  );
 
   const emailsA = usersA.map(u => u.email);
   const emailsB = usersB.map(u => u.email);
-  assert(!emailsA.includes('owner@test-aislamiento.com'), 'Email de Tenant B no aparece en Tenant A');
-  assert(!emailsB.includes('owner@translogistica.co'), 'Email de Tenant A no aparece en Tenant B');
+  assert(
+    !emailsA.includes('owner@test-aislamiento.com'),
+    'Email de Tenant B no aparece en Tenant A'
+  );
+  assert(
+    !emailsB.includes('owner@translogistica.co'),
+    'Email de Tenant A no aparece en Tenant B'
+  );
 
   // --- Drivers ---
   console.log('\n  --- Conductores ---');
-  const driversA = await prisma.driver.findMany({ where: { tenantId: TENANT_A_ID } });
-  const driversB = await prisma.driver.findMany({ where: { tenantId: TENANT_B_ID } });
+  const driversA = await prisma.driver.findMany({
+    where: { tenantId: TENANT_A_ID },
+  });
+  const driversB = await prisma.driver.findMany({
+    where: { tenantId: TENANT_B_ID },
+  });
 
-  assert(driversA.length === 3, `Tenant A tiene 3 conductores (got ${driversA.length})`);
-  assert(driversB.length === 1, `Tenant B tiene 1 conductor (got ${driversB.length})`);
-  assert(!driversA.some(d => d.name === 'Driver Tenant B'), 'Driver de B no aparece en A');
-  assert(!driversB.some(d => d.name === 'Juan Lopez'), 'Driver de A no aparece en B');
+  assert(
+    driversA.length === 3,
+    `Tenant A tiene 3 conductores (got ${driversA.length})`
+  );
+  assert(
+    driversB.length === 1,
+    `Tenant B tiene 1 conductor (got ${driversB.length})`
+  );
+  assert(
+    !driversA.some(d => d.name === 'Driver Tenant B'),
+    'Driver de B no aparece en A'
+  );
+  assert(
+    !driversB.some(d => d.name === 'Juan Lopez'),
+    'Driver de A no aparece en B'
+  );
 
   // --- Technicians ---
   console.log('\n  --- Tecnicos ---');
-  const techsA = await prisma.technician.findMany({ where: { tenantId: TENANT_A_ID } });
-  const techsB = await prisma.technician.findMany({ where: { tenantId: TENANT_B_ID } });
+  const techsA = await prisma.technician.findMany({
+    where: { tenantId: TENANT_A_ID },
+  });
+  const techsB = await prisma.technician.findMany({
+    where: { tenantId: TENANT_B_ID },
+  });
 
-  assert(techsA.length === 2, `Tenant A tiene 2 tecnicos (got ${techsA.length})`);
-  assert(techsB.length === 1, `Tenant B tiene 1 tecnico (got ${techsB.length})`);
-  assert(!techsA.some(t => t.name === 'Tecnico Tenant B'), 'Tecnico de B no aparece en A');
+  assert(
+    techsA.length === 2,
+    `Tenant A tiene 2 tecnicos (got ${techsA.length})`
+  );
+  assert(
+    techsB.length === 1,
+    `Tenant B tiene 1 tecnico (got ${techsB.length})`
+  );
+  assert(
+    !techsA.some(t => t.name === 'Tecnico Tenant B'),
+    'Tecnico de B no aparece en A'
+  );
 
   // --- Providers ---
   console.log('\n  --- Proveedores ---');
-  const provsA = await prisma.provider.findMany({ where: { tenantId: TENANT_A_ID } });
-  const provsB = await prisma.provider.findMany({ where: { tenantId: TENANT_B_ID } });
+  const provsA = await prisma.provider.findMany({
+    where: { tenantId: TENANT_A_ID },
+  });
+  const provsB = await prisma.provider.findMany({
+    where: { tenantId: TENANT_B_ID },
+  });
 
-  assert(provsA.length === 3, `Tenant A tiene 3 proveedores (got ${provsA.length})`);
-  assert(provsB.length === 1, `Tenant B tiene 1 proveedor (got ${provsB.length})`);
-  assert(!provsA.some(p => p.name === 'Proveedor Tenant B'), 'Proveedor de B no aparece en A');
+  assert(
+    provsA.length === 3,
+    `Tenant A tiene 3 proveedores (got ${provsA.length})`
+  );
+  assert(
+    provsB.length === 1,
+    `Tenant B tiene 1 proveedor (got ${provsB.length})`
+  );
+  assert(
+    !provsA.some(p => p.name === 'Proveedor Tenant B'),
+    'Proveedor de B no aparece en A'
+  );
 
   // --- Work Orders ---
   console.log('\n  --- Ordenes de Trabajo ---');
-  const woA = await prisma.workOrder.findMany({ where: { tenantId: TENANT_A_ID } });
-  const woB = await prisma.workOrder.findMany({ where: { tenantId: TENANT_B_ID } });
+  const woA = await prisma.workOrder.findMany({
+    where: { tenantId: TENANT_A_ID },
+  });
+  const woB = await prisma.workOrder.findMany({
+    where: { tenantId: TENANT_B_ID },
+  });
 
   assert(woA.length >= 3, `Tenant A tiene >= 3 OTs (got ${woA.length})`);
   assert(woB.length === 1, `Tenant B tiene 1 OT (got ${woB.length})`);
-  assert(!woA.some(w => w.title === 'OT de prueba Tenant B'), 'OT de B no aparece en A');
-  assert(!woB.some(w => w.title.includes('Preventivo')), 'OTs preventivas de A no aparecen en B');
+  assert(
+    !woA.some(w => w.title === 'OT de prueba Tenant B'),
+    'OT de B no aparece en A'
+  );
+  assert(
+    !woB.some(w => w.title.includes('Preventivo')),
+    'OTs preventivas de A no aparecen en B'
+  );
 
   // --- Invoices ---
   console.log('\n  --- Facturas ---');
-  const invA = await prisma.invoice.findMany({ where: { tenantId: TENANT_A_ID } });
-  const invB = await prisma.invoice.findMany({ where: { tenantId: TENANT_B_ID } });
+  const invA = await prisma.invoice.findMany({
+    where: { tenantId: TENANT_A_ID },
+  });
+  const invB = await prisma.invoice.findMany({
+    where: { tenantId: TENANT_B_ID },
+  });
 
   assert(invA.length >= 4, `Tenant A tiene >= 4 facturas (got ${invA.length})`);
   assert(invB.length === 1, `Tenant B tiene 1 factura (got ${invB.length})`);
-  assert(!invA.some(i => i.invoiceNumber === 'TEST-B-001'), 'Factura de B no aparece en A');
+  assert(
+    !invA.some(i => i.invoiceNumber === 'TEST-B-001'),
+    'Factura de B no aparece en A'
+  );
 
   // --- Maintenance Programs ---
   console.log('\n  --- Programas de Mantenimiento ---');
-  const progA = await prisma.vehicleMantProgram.findMany({ where: { tenantId: TENANT_A_ID } });
-  const progB = await prisma.vehicleMantProgram.findMany({ where: { tenantId: TENANT_B_ID } });
+  const progA = await prisma.vehicleMantProgram.findMany({
+    where: { tenantId: TENANT_A_ID },
+  });
+  const progB = await prisma.vehicleMantProgram.findMany({
+    where: { tenantId: TENANT_B_ID },
+  });
 
-  assert(progA.length === 3, `Tenant A tiene 3 programas (got ${progA.length})`);
-  assert(progB.length === 0, `Tenant B tiene 0 programas (got ${progB.length})`);
+  assert(
+    progA.length === 3,
+    `Tenant A tiene 3 programas (got ${progA.length})`
+  );
+  assert(
+    progB.length === 0,
+    `Tenant B tiene 0 programas (got ${progB.length})`
+  );
 
   // --- Maintenance Alerts ---
   console.log('\n  --- Alertas de Mantenimiento ---');
-  const alertsA = await prisma.maintenanceAlert.findMany({ where: { tenantId: TENANT_A_ID } });
-  const alertsB = await prisma.maintenanceAlert.findMany({ where: { tenantId: TENANT_B_ID } });
+  const alertsA = await prisma.maintenanceAlert.findMany({
+    where: { tenantId: TENANT_A_ID },
+  });
+  const alertsB = await prisma.maintenanceAlert.findMany({
+    where: { tenantId: TENANT_B_ID },
+  });
 
-  assert(alertsA.length >= 1, `Tenant A tiene >= 1 alerta (got ${alertsA.length})`);
-  assert(alertsB.length === 0, `Tenant B tiene 0 alertas (got ${alertsB.length})`);
+  assert(
+    alertsA.length >= 1,
+    `Tenant A tiene >= 1 alerta (got ${alertsA.length})`
+  );
+  assert(
+    alertsB.length === 0,
+    `Tenant B tiene 0 alertas (got ${alertsB.length})`
+  );
 }
 
 // ─── 1.4  Constraints unicos cross-tenant ───────────────────
@@ -401,9 +556,15 @@ async function test_1_4_uniqueConstraints() {
   // Ya probamos que ABC-123 puede existir en ambos tenants (1.2)
   // Ahora probemos que NO se puede duplicar DENTRO del mismo tenant
 
-  const globalBrand = await prisma.vehicleBrand.findFirst({ where: { isGlobal: true, name: 'Ford' } });
-  const globalLine = await prisma.vehicleLine.findFirst({ where: { isGlobal: true, name: 'Ranger' } });
-  const globalType = await prisma.vehicleType.findFirst({ where: { isGlobal: true, name: 'SUV' } });
+  const globalBrand = await prisma.vehicleBrand.findFirst({
+    where: { isGlobal: true, name: 'Ford' },
+  });
+  const globalLine = await prisma.vehicleLine.findFirst({
+    where: { isGlobal: true, name: 'Ranger' },
+  });
+  const globalType = await prisma.vehicleType.findFirst({
+    where: { isGlobal: true, name: 'SUV' },
+  });
 
   if (!globalBrand || !globalLine || !globalType) {
     assert(false, 'Datos globales necesarios para test de constraints');
@@ -432,7 +593,10 @@ async function test_1_4_uniqueConstraints() {
   } catch {
     duplicateError = true;
   }
-  assert(duplicateError, 'Placa duplicada en MISMO tenant es rechazada (unique constraint)');
+  assert(
+    duplicateError,
+    'Placa duplicada en MISMO tenant es rechazada (unique constraint)'
+  );
 
   // Intentar crear usuario con email duplicado en mismo tenant → debe fallar
   let duplicateUserError = false;
@@ -449,7 +613,10 @@ async function test_1_4_uniqueConstraints() {
   } catch {
     duplicateUserError = true;
   }
-  assert(duplicateUserError, 'Email duplicado en MISMO tenant es rechazado (unique constraint)');
+  assert(
+    duplicateUserError,
+    'Email duplicado en MISMO tenant es rechazado (unique constraint)'
+  );
 
   // Mismo email en DIFERENTE tenant → debe funcionar
   let crossTenantEmail = false;
@@ -467,7 +634,10 @@ async function test_1_4_uniqueConstraints() {
   } catch {
     crossTenantEmail = false;
   }
-  assert(crossTenantEmail, 'Mismo email en DIFERENTE tenant es permitido (tenant-scoped unique)');
+  assert(
+    crossTenantEmail,
+    'Mismo email en DIFERENTE tenant es permitido (tenant-scoped unique)'
+  );
 }
 
 // ─── 1.5  Datos Globales visibles desde ambos tenants ───────
@@ -480,87 +650,118 @@ async function test_1_5_globalData() {
   // Marcas globales
   const brandsForA = await prisma.vehicleBrand.findMany({
     where: {
-      OR: [
-        { tenantId: TENANT_A_ID },
-        { isGlobal: true, tenantId: null },
-      ],
+      OR: [{ tenantId: TENANT_A_ID }, { isGlobal: true, tenantId: null }],
       status: 'ACTIVE',
     },
   });
   const brandsForB = await prisma.vehicleBrand.findMany({
     where: {
-      OR: [
-        { tenantId: TENANT_B_ID },
-        { isGlobal: true, tenantId: null },
-      ],
+      OR: [{ tenantId: TENANT_B_ID }, { isGlobal: true, tenantId: null }],
       status: 'ACTIVE',
     },
   });
 
-  assert(brandsForA.length >= 5, `Tenant A ve >= 5 marcas globales (got ${brandsForA.length})`);
-  assert(brandsForB.length >= 5, `Tenant B ve >= 5 marcas globales (got ${brandsForB.length})`);
+  assert(
+    brandsForA.length >= 5,
+    `Tenant A ve >= 5 marcas globales (got ${brandsForA.length})`
+  );
+  assert(
+    brandsForB.length >= 5,
+    `Tenant B ve >= 5 marcas globales (got ${brandsForB.length})`
+  );
 
   // Ambos ven las mismas marcas globales
-  const globalBrandNamesA = brandsForA.filter(b => b.isGlobal).map(b => b.name).sort();
-  const globalBrandNamesB = brandsForB.filter(b => b.isGlobal).map(b => b.name).sort();
+  const globalBrandNamesA = brandsForA
+    .filter(b => b.isGlobal)
+    .map(b => b.name)
+    .sort();
+  const globalBrandNamesB = brandsForB
+    .filter(b => b.isGlobal)
+    .map(b => b.name)
+    .sort();
   assert(
     JSON.stringify(globalBrandNamesA) === JSON.stringify(globalBrandNamesB),
-    'Ambos tenants ven las mismas marcas globales',
+    'Ambos tenants ven las mismas marcas globales'
   );
 
   // Templates globales
   const templatesForA = await prisma.maintenanceTemplate.findMany({
     where: {
-      OR: [
-        { tenantId: TENANT_A_ID },
-        { isGlobal: true, tenantId: null },
-      ],
+      OR: [{ tenantId: TENANT_A_ID }, { isGlobal: true, tenantId: null }],
     },
   });
   const templatesForB = await prisma.maintenanceTemplate.findMany({
     where: {
-      OR: [
-        { tenantId: TENANT_B_ID },
-        { isGlobal: true, tenantId: null },
-      ],
+      OR: [{ tenantId: TENANT_B_ID }, { isGlobal: true, tenantId: null }],
     },
   });
 
-  assert(templatesForA.length >= 3, `Tenant A ve >= 3 templates globales (got ${templatesForA.length})`);
-  assert(templatesForB.length >= 3, `Tenant B ve >= 3 templates globales (got ${templatesForB.length})`);
-
-  const globalTemplateNamesA = templatesForA.filter(t => t.isGlobal).map(t => t.name).sort();
-  const globalTemplateNamesB = templatesForB.filter(t => t.isGlobal).map(t => t.name).sort();
   assert(
-    JSON.stringify(globalTemplateNamesA) === JSON.stringify(globalTemplateNamesB),
-    'Ambos tenants ven los mismos templates globales',
+    templatesForA.length >= 3,
+    `Tenant A ve >= 3 templates globales (got ${templatesForA.length})`
+  );
+  assert(
+    templatesForB.length >= 3,
+    `Tenant B ve >= 3 templates globales (got ${templatesForB.length})`
+  );
+
+  const globalTemplateNamesA = templatesForA
+    .filter(t => t.isGlobal)
+    .map(t => t.name)
+    .sort();
+  const globalTemplateNamesB = templatesForB
+    .filter(t => t.isGlobal)
+    .map(t => t.name)
+    .sort();
+  assert(
+    JSON.stringify(globalTemplateNamesA) ===
+      JSON.stringify(globalTemplateNamesB),
+    'Ambos tenants ven los mismos templates globales'
   );
 
   // Items de mantenimiento globales
   const itemsGlobal = await prisma.mantItem.findMany({
     where: { isGlobal: true, tenantId: null },
   });
-  assert(itemsGlobal.length >= 17, `Existen >= 17 items de mantenimiento globales (got ${itemsGlobal.length})`);
+  assert(
+    itemsGlobal.length >= 17,
+    `Existen >= 17 items de mantenimiento globales (got ${itemsGlobal.length})`
+  );
 
   // Categorias globales
   const catsGlobal = await prisma.mantCategory.findMany({
     where: { isGlobal: true, tenantId: null },
   });
-  assert(catsGlobal.length >= 9, `Existen >= 9 categorias globales (got ${catsGlobal.length})`);
+  assert(
+    catsGlobal.length >= 9,
+    `Existen >= 9 categorias globales (got ${catsGlobal.length})`
+  );
 }
 
 // ─── Cleanup ─────────────────────────────────────────────────
 async function cleanupTenantB() {
   // Orden inverso de dependencias FK
   try {
-    await prisma.invoiceItem.deleteMany({ where: { invoice: { tenantId: TENANT_B_ID } } });
+    await prisma.invoiceItem.deleteMany({
+      where: { invoice: { tenantId: TENANT_B_ID } },
+    });
     await prisma.invoice.deleteMany({ where: { tenantId: TENANT_B_ID } });
-    await prisma.workOrderItem.deleteMany({ where: { workOrder: { tenantId: TENANT_B_ID } } });
+    await prisma.workOrderItem.deleteMany({
+      where: { workOrder: { tenantId: TENANT_B_ID } },
+    });
     await prisma.workOrder.deleteMany({ where: { tenantId: TENANT_B_ID } });
-    await prisma.maintenanceAlert.deleteMany({ where: { tenantId: TENANT_B_ID } });
-    await prisma.vehicleProgramItem.deleteMany({ where: { tenantId: TENANT_B_ID } });
-    await prisma.vehicleProgramPackage.deleteMany({ where: { tenantId: TENANT_B_ID } });
-    await prisma.vehicleMantProgram.deleteMany({ where: { tenantId: TENANT_B_ID } });
+    await prisma.maintenanceAlert.deleteMany({
+      where: { tenantId: TENANT_B_ID },
+    });
+    await prisma.vehicleProgramItem.deleteMany({
+      where: { tenantId: TENANT_B_ID },
+    });
+    await prisma.vehicleProgramPackage.deleteMany({
+      where: { tenantId: TENANT_B_ID },
+    });
+    await prisma.vehicleMantProgram.deleteMany({
+      where: { tenantId: TENANT_B_ID },
+    });
     await prisma.vehicleDriver.deleteMany({ where: { tenantId: TENANT_B_ID } });
     await prisma.vehicle.deleteMany({ where: { tenantId: TENANT_B_ID } });
     await prisma.driver.deleteMany({ where: { tenantId: TENANT_B_ID } });
@@ -598,8 +799,13 @@ async function main() {
   // Cleanup
   section('Cleanup');
   await cleanupTenantB();
-  const tenantBAfter = await prisma.tenant.findUnique({ where: { id: TENANT_B_ID } });
-  assert(tenantBAfter === null, 'Tenant B eliminado correctamente tras las pruebas');
+  const tenantBAfter = await prisma.tenant.findUnique({
+    where: { id: TENANT_B_ID },
+  });
+  assert(
+    tenantBAfter === null,
+    'Tenant B eliminado correctamente tras las pruebas'
+  );
 
   // Resumen
   console.log('\n');
@@ -615,14 +821,16 @@ async function main() {
     failures.forEach(f => console.log(`    - ${f}`));
   }
 
-  console.log(`\n  Resultado: ${failed === 0 ? 'TODOS LOS TESTS PASARON' : 'HAY FALLOS'}`);
+  console.log(
+    `\n  Resultado: ${failed === 0 ? 'TODOS LOS TESTS PASARON' : 'HAY FALLOS'}`
+  );
   console.log('');
 
   process.exit(failed === 0 ? 0 : 1);
 }
 
 main()
-  .catch((e) => {
+  .catch(e => {
     console.error('Error critico:', e);
     process.exit(1);
   })

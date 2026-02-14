@@ -254,10 +254,22 @@ export default function WorkOrderDetailPage() {
         <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="general">Info General</TabsTrigger>
           <TabsTrigger value="services">
-            Servicios ({workOrder.workOrderItems.filter(i => i.mantItem.type === 'ACTION' || i.mantItem.type === 'SERVICE').length})
+            Servicios (
+            {
+              workOrder.workOrderItems.filter(
+                i =>
+                  i.mantItem.type === 'ACTION' || i.mantItem.type === 'SERVICE'
+              ).length
+            }
+            )
           </TabsTrigger>
           <TabsTrigger value="parts">
-            Repuestos ({workOrder.workOrderItems.filter(i => i.mantItem.type === 'PART').length})
+            Repuestos (
+            {
+              workOrder.workOrderItems.filter(i => i.mantItem.type === 'PART')
+                .length
+            }
+            )
           </TabsTrigger>
           <TabsTrigger value="purchase-orders">Órdenes Compra</TabsTrigger>
           <TabsTrigger value="expenses">
@@ -275,7 +287,11 @@ export default function WorkOrderDetailPage() {
         </TabsContent>
 
         <TabsContent value="parts" className="mt-6">
-          <PartsTab workOrderId={workOrder.id} onRefresh={fetchWorkOrder} />
+          <PartsTab
+            workOrderId={workOrder.id}
+            vehicleId={workOrder.vehicle.id}
+            onRefresh={fetchWorkOrder}
+          />
         </TabsContent>
 
         <TabsContent value="purchase-orders" className="mt-6">

@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useCallback } from "react";
-import axios from "axios";
-import { useToast } from "@/components/hooks/use-toast";
+import { useEffect, useState, useCallback } from 'react';
+import axios from 'axios';
+import { useToast } from '@/components/hooks/use-toast';
 
 import {
   OdometerList,
   FormAddOdometer,
   FormEditOdometer,
   OdometerLog,
-} from "./components";
+} from './components';
 
 export default function OdometerPage() {
   const [odometerLogs, setOdometerLogs] = useState<OdometerLog[]>([]);
@@ -24,14 +24,14 @@ export default function OdometerPage() {
   const fetchOdometerLogs = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get("/api/vehicles/odometer");
+      const response = await axios.get('/api/vehicles/odometer');
       setOdometerLogs(response.data);
     } catch (error) {
-      console.error("Error fetching odometer logs:", error);
+      console.error('Error fetching odometer logs:', error);
       toast({
-        title: "Error al cargar registros",
-        description: "No se pudieron cargar los registros de odómetro",
-        variant: "destructive",
+        title: 'Error al cargar registros',
+        description: 'No se pudieron cargar los registros de odómetro',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -43,20 +43,20 @@ export default function OdometerPage() {
   }, [fetchOdometerLogs]);
 
   const handleAddOdometer = (newLog: OdometerLog) => {
-    setOdometerLogs((prev) => [newLog, ...prev]);
+    setOdometerLogs(prev => [newLog, ...prev]);
     toast({
-      title: "Registro creado",
-      description: "El registro de odómetro ha sido creado correctamente",
+      title: 'Registro creado',
+      description: 'El registro de odómetro ha sido creado correctamente',
     });
   };
 
   const handleEditOdometer = (updatedLog: OdometerLog) => {
-    setOdometerLogs((prev) =>
-      prev.map((log) => (log.id === updatedLog.id ? updatedLog : log))
+    setOdometerLogs(prev =>
+      prev.map(log => (log.id === updatedLog.id ? updatedLog : log))
     );
     toast({
-      title: "Registro actualizado",
-      description: "El registro de odómetro ha sido actualizado correctamente",
+      title: 'Registro actualizado',
+      description: 'El registro de odómetro ha sido actualizado correctamente',
     });
   };
 
@@ -66,23 +66,23 @@ export default function OdometerPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("¿Estás seguro de eliminar este registro de odómetro?")) {
+    if (!confirm('¿Estás seguro de eliminar este registro de odómetro?')) {
       return;
     }
 
     try {
       await axios.delete(`/api/vehicles/odometer/${id}`);
-      setOdometerLogs((prev) => prev.filter((log) => log.id !== id));
+      setOdometerLogs(prev => prev.filter(log => log.id !== id));
       toast({
-        title: "Registro eliminado",
-        description: "El registro de odómetro ha sido eliminado correctamente",
+        title: 'Registro eliminado',
+        description: 'El registro de odómetro ha sido eliminado correctamente',
       });
     } catch (error) {
-      console.error("Error deleting odometer log:", error);
+      console.error('Error deleting odometer log:', error);
       toast({
-        title: "Error al eliminar",
-        description: "No se pudo eliminar el registro de odómetro",
-        variant: "destructive",
+        title: 'Error al eliminar',
+        description: 'No se pudo eliminar el registro de odómetro',
+        variant: 'destructive',
       });
     }
   };
@@ -120,7 +120,6 @@ export default function OdometerPage() {
         odometerLog={selectedLog}
         onEditOdometer={handleEditOdometer}
       />
-
     </div>
   );
 }

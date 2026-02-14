@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
   flexRender,
   ColumnDef,
-} from "@tanstack/react-table";
+} from '@tanstack/react-table';
 import {
   Table,
   TableBody,
@@ -14,13 +14,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { FormAddBrand } from "../FormAddBrand";
-import { FormEditBrand } from "../FormEditBrand";
-import axios from "axios";
-import { useToast } from "@/components/hooks/use-toast";
-import { BrandListProps } from "./BrandList.types";
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { FormAddBrand } from '../FormAddBrand';
+import { FormEditBrand } from '../FormEditBrand';
+import axios from 'axios';
+import { useToast } from '@/components/hooks/use-toast';
+import { BrandListProps } from './BrandList.types';
 
 export function BrandList() {
   const [data, setData] = useState<BrandListProps[]>([]);
@@ -33,9 +33,9 @@ export function BrandList() {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetch("/api/auth/me")
-      .then((res) => res.json())
-      .then((data) => {
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
         if (data.isSuperAdmin) setIsSuperAdmin(true);
       })
       .catch(() => {});
@@ -47,21 +47,21 @@ export function BrandList() {
       const response = await axios.get(`/api/vehicles/brands`);
       setData(response.data);
     } catch (error) {
-      console.error("Error fetching Brands: ", error);
+      console.error('Error fetching Brands: ', error);
 
       if (axios.isAxiosError(error) && error.response?.status === 401) {
         toast({
-          title: "No autorizado",
-          description: "Debes iniciar sesión para ver las marcas",
-          variant: "destructive",
+          title: 'No autorizado',
+          description: 'Debes iniciar sesión para ver las marcas',
+          variant: 'destructive',
         });
         return;
       }
 
       toast({
-        title: "Error al cargar marcas",
-        description: "Por favor intenta de nuevo más tarde",
-        variant: "destructive",
+        title: 'Error al cargar marcas',
+        description: 'Por favor intenta de nuevo más tarde',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -80,27 +80,27 @@ export function BrandList() {
   const handleDelete = async (id: number) => {
     try {
       await axios.delete(`/api/vehicles/brands/${id}`);
-      setData(data.filter((brand) => brand.id !== id));
+      setData(data.filter(brand => brand.id !== id));
       toast({
-        title: "Marca eliminada",
-        description: "La marca ha sido eliminada exitosamente",
+        title: 'Marca eliminada',
+        description: 'La marca ha sido eliminada exitosamente',
       });
     } catch (error) {
-      console.error("Error deleting brand:", error);
+      console.error('Error deleting brand:', error);
 
       if (axios.isAxiosError(error) && error.response?.status === 409) {
         toast({
-          title: "No se puede eliminar",
-          description: "La marca tiene vehículos o líneas asociadas",
-          variant: "destructive",
+          title: 'No se puede eliminar',
+          description: 'La marca tiene vehículos o líneas asociadas',
+          variant: 'destructive',
         });
         return;
       }
 
       toast({
-        title: "Error al eliminar marca",
-        description: "Por favor intenta de nuevo más tarde",
-        variant: "destructive",
+        title: 'Error al eliminar marca',
+        description: 'Por favor intenta de nuevo más tarde',
+        variant: 'destructive',
       });
     }
   };
@@ -109,45 +109,48 @@ export function BrandList() {
 
   const columns: ColumnDef<BrandListProps>[] = [
     {
-      accessorKey: "id",
-      header: "ID",
+      accessorKey: 'id',
+      header: 'ID',
     },
     {
-      accessorKey: "name",
-      header: "Nombre",
+      accessorKey: 'name',
+      header: 'Nombre',
     },
     {
-      id: "origen",
-      header: "Origen",
+      id: 'origen',
+      header: 'Origen',
       cell: ({ row }) => (
-        <span className={`px-2 py-1 rounded-full text-xs ${
-          row.original.isGlobal
-            ? "bg-purple-100 text-purple-800"
-            : "bg-slate-100 text-slate-700"
-        }`}>
-          {row.original.isGlobal ? "Global" : "Empresa"}
+        <span
+          className={`px-2 py-1 rounded-full text-xs ${
+            row.original.isGlobal
+              ? 'bg-purple-100 text-purple-800'
+              : 'bg-slate-100 text-slate-700'
+          }`}
+        >
+          {row.original.isGlobal ? 'Global' : 'Empresa'}
         </span>
       ),
     },
     {
-      id: "actions",
-      cell: ({ row }) => canMutate(row.original) ? (
-        <div>
-          <Button
-            variant="outline"
-            className="mr-2"
-            onClick={() => handleEdit(row.original)}
-          >
-            Editar
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={() => handleDelete(row.original.id)}
-          >
-            Eliminar
-          </Button>
-        </div>
-      ) : null,
+      id: 'actions',
+      cell: ({ row }) =>
+        canMutate(row.original) ? (
+          <div>
+            <Button
+              variant="outline"
+              className="mr-2"
+              onClick={() => handleEdit(row.original)}
+            >
+              Editar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => handleDelete(row.original.id)}
+            >
+              Eliminar
+            </Button>
+          </div>
+        ) : null,
     },
   ];
 
@@ -174,9 +177,9 @@ export function BrandList() {
 
       <Table>
         <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
+          {table.getHeaderGroups().map(headerGroup => (
             <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
+              {headerGroup.headers.map(header => (
                 <TableHead key={header.id}>
                   {flexRender(
                     header.column.columnDef.header,
@@ -189,9 +192,9 @@ export function BrandList() {
         </TableHeader>
         <TableBody>
           {table.getRowModel().rows.length ? (
-            table.getRowModel().rows.map((row) => (
+            table.getRowModel().rows.map(row => (
               <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell) => (
+                {row.getVisibleCells().map(cell => (
                   <TableCell key={cell.id}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
@@ -211,7 +214,7 @@ export function BrandList() {
       <FormAddBrand
         isOpen={isAddDialogOpen}
         setIsOpen={setIsAddDialogOpen}
-        onAddBrand={(newBrand) => setData([...data, newBrand])}
+        onAddBrand={newBrand => setData([...data, newBrand])}
       />
 
       {editingBrand && (
@@ -219,9 +222,9 @@ export function BrandList() {
           isOpen={isEditDialogOpen}
           setIsOpen={setIsEditDialogOpen}
           brand={editingBrand}
-          onEditBrand={(editedBrand) => {
+          onEditBrand={editedBrand => {
             setData(
-              data.map((brand) =>
+              data.map(brand =>
                 brand.id === editedBrand.id ? editedBrand : brand
               )
             );

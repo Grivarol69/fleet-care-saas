@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Crear Invoice + InvoiceItems en transacción
-    const invoice = await prisma.$transaction(async (tx) => {
+    const invoice = await prisma.$transaction(async tx => {
       // 1. Crear Invoice
       const newInvoice = await tx.invoice.create({
         data: {
@@ -239,7 +239,7 @@ export async function POST(request: NextRequest) {
       );
 
       // 3. FASE 6.4: Actualizar precios de referencia y registrar histórico
-      const PRICE_DEVIATION_THRESHOLD = 0.20; // 20%
+      const PRICE_DEVIATION_THRESHOLD = 0.2; // 20%
 
       for (const invoiceItem of invoiceItems) {
         // Si tiene masterPartId, actualizar precio de referencia
@@ -289,7 +289,11 @@ export async function POST(request: NextRequest) {
                   severity: deviation > 0.5 ? 'CRITICAL' : 'HIGH',
                   status: 'PENDING',
                   message: `Precio de "${invoiceItem.description}" ($${actual.toLocaleString()}) difiere ${(deviation * 100).toFixed(0)}% del estimado ($${expected.toLocaleString()})`,
-                  details: { expected, actual, deviationPercent: (deviation * 100).toFixed(1) },
+                  details: {
+                    expected,
+                    actual,
+                    deviationPercent: (deviation * 100).toFixed(1),
+                  },
                 },
               });
             }
@@ -350,7 +354,7 @@ export async function POST(request: NextRequest) {
           });
 
           if (alerts.length > 0) {
-            const programItemIds = alerts.map((a) => a.programItemId);
+            const programItemIds = alerts.map(a => a.programItemId);
             await tx.vehicleProgramItem.updateMany({
               where: { id: { in: programItemIds } },
               data: {
@@ -367,7 +371,9 @@ export async function POST(request: NextRequest) {
             select: { actualCost: true },
           });
 
-          const currentCost = currentWO?.actualCost ? Number(currentWO.actualCost) : 0;
+          const currentCost = currentWO?.actualCost
+            ? Number(currentWO.actualCost)
+            : 0;
           await tx.workOrder.update({
             where: { id: workOrderId },
             data: {
@@ -383,8 +389,9 @@ export async function POST(request: NextRequest) {
         for (const poItem of purchaseOrder.items) {
           // Buscar el InvoiceItem correspondiente por workOrderItemId o descripción
           const matchingInvoiceItem = invoiceItems.find(
-            (ii) =>
-              (poItem.workOrderItemId && ii.workOrderItemId === poItem.workOrderItemId) ||
+            ii =>
+              (poItem.workOrderItemId &&
+                ii.workOrderItemId === poItem.workOrderItemId) ||
               ii.description === poItem.description
           );
 

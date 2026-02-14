@@ -1,13 +1,13 @@
-import { prisma } from "@/lib/prisma";
-import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
-import { PurchaseOrderStatus } from "@prisma/client";
-import { Resend } from "resend";
-import { renderToBuffer } from "@react-pdf/renderer";
-import { PurchaseOrderPDF } from "@/components/pdf/PurchaseOrderPDF";
-import { PurchaseOrderEmail } from "@/emails/PurchaseOrderEmail";
-import React from "react";
-import { canManagePurchases } from "@/lib/permissions";
+import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
+import { PurchaseOrderStatus } from '@prisma/client';
+import { Resend } from 'resend';
+import { renderToBuffer } from '@react-pdf/renderer';
+import { PurchaseOrderPDF } from '@/components/pdf/PurchaseOrderPDF';
+import { PurchaseOrderEmail } from '@/emails/PurchaseOrderEmail';
+import React from 'react';
+import { canManagePurchases } from '@/lib/permissions';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -20,7 +20,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -56,16 +56,16 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 
     if (!purchaseOrder) {
       return NextResponse.json(
-        { error: "Orden de compra no encontrada" },
+        { error: 'Orden de compra no encontrada' },
         { status: 404 }
       );
     }
 
     return NextResponse.json(purchaseOrder);
   } catch (error: unknown) {
-    console.error("[PURCHASE_ORDER_GET]", error);
+    console.error('[PURCHASE_ORDER_GET]', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Error interno" },
+      { error: error instanceof Error ? error.message : 'Error interno' },
       { status: 500 }
     );
   }
@@ -79,12 +79,12 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
     if (!canManagePurchases(user)) {
       return NextResponse.json(
-        { error: "No tienes permisos para esta acción" },
+        { error: 'No tienes permisos para esta acción' },
         { status: 403 }
       );
     }
@@ -100,7 +100,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     if (!currentPO) {
       return NextResponse.json(
-        { error: "Orden de compra no encontrada" },
+        { error: 'Orden de compra no encontrada' },
         { status: 404 }
       );
     }
@@ -108,32 +108,36 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     // Definir transiciones validas
     const validTransitions: Record<
       string,
-      { from: PurchaseOrderStatus[]; to: PurchaseOrderStatus; requiredRole?: string[] }
+      {
+        from: PurchaseOrderStatus[];
+        to: PurchaseOrderStatus;
+        requiredRole?: string[];
+      }
     > = {
       submit: {
-        from: ["DRAFT"],
-        to: "PENDING_APPROVAL",
-        requiredRole: ["OWNER", "MANAGER", "PURCHASER"],
+        from: ['DRAFT'],
+        to: 'PENDING_APPROVAL',
+        requiredRole: ['OWNER', 'MANAGER', 'PURCHASER'],
       },
       approve: {
-        from: ["PENDING_APPROVAL"],
-        to: "APPROVED",
-        requiredRole: ["OWNER", "MANAGER"],
+        from: ['PENDING_APPROVAL'],
+        to: 'APPROVED',
+        requiredRole: ['OWNER', 'MANAGER'],
       },
       reject: {
-        from: ["PENDING_APPROVAL"],
-        to: "DRAFT",
-        requiredRole: ["OWNER", "MANAGER"],
+        from: ['PENDING_APPROVAL'],
+        to: 'DRAFT',
+        requiredRole: ['OWNER', 'MANAGER'],
       },
       send: {
-        from: ["APPROVED"],
-        to: "SENT",
-        requiredRole: ["OWNER", "MANAGER", "PURCHASER"],
+        from: ['APPROVED'],
+        to: 'SENT',
+        requiredRole: ['OWNER', 'MANAGER', 'PURCHASER'],
       },
       cancel: {
-        from: ["DRAFT", "PENDING_APPROVAL", "APPROVED"],
-        to: "CANCELLED",
-        requiredRole: ["OWNER", "MANAGER"],
+        from: ['DRAFT', 'PENDING_APPROVAL', 'APPROVED'],
+        to: 'CANCELLED',
+        requiredRole: ['OWNER', 'MANAGER'],
       },
     };
 
@@ -152,9 +156,12 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    if (transition.requiredRole && !transition.requiredRole.includes(user.role)) {
+    if (
+      transition.requiredRole &&
+      !transition.requiredRole.includes(user.role)
+    ) {
       return NextResponse.json(
-        { error: "No tienes permisos para esta accion" },
+        { error: 'No tienes permisos para esta accion' },
         { status: 403 }
       );
     }
@@ -172,10 +179,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     };
 
     // Datos adicionales segun accion
-    if (action === "approve") {
+    if (action === 'approve') {
       updateData.approvedBy = user.id;
       updateData.approvedAt = new Date();
-    } else if (action === "send") {
+    } else if (action === 'send') {
       // Enviar email al proveedor con PDF adjunto
       const fullPO = await prisma.purchaseOrder.findUnique({
         where: { id },
@@ -197,12 +204,18 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       });
 
       if (!fullPO) {
-        return NextResponse.json({ error: "OC no encontrada" }, { status: 404 });
+        return NextResponse.json(
+          { error: 'OC no encontrada' },
+          { status: 404 }
+        );
       }
 
       if (!fullPO.provider.email) {
         return NextResponse.json(
-          { error: "El proveedor no tiene email configurado. Actualice los datos del proveedor antes de enviar." },
+          {
+            error:
+              'El proveedor no tiene email configurado. Actualice los datos del proveedor antes de enviar.',
+          },
           { status: 400 }
         );
       }
@@ -213,19 +226,25 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         select: { name: true },
       });
 
-      const orderDate = fullPO.createdAt.toLocaleDateString("es-CO", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
+      const orderDate = fullPO.createdAt.toLocaleDateString('es-CO', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
       });
 
       // Construir props del PDF
       const pdfVehicle = fullPO.workOrder?.vehicle
         ? {
             licensePlate: fullPO.workOrder.vehicle.licensePlate,
-            ...(fullPO.workOrder.vehicle.brand?.name && { brand: fullPO.workOrder.vehicle.brand.name }),
-            ...(fullPO.workOrder.vehicle.line?.name && { line: fullPO.workOrder.vehicle.line.name }),
-            ...(fullPO.workOrder.vehicle.year && { year: fullPO.workOrder.vehicle.year }),
+            ...(fullPO.workOrder.vehicle.brand?.name && {
+              brand: fullPO.workOrder.vehicle.brand.name,
+            }),
+            ...(fullPO.workOrder.vehicle.line?.name && {
+              line: fullPO.workOrder.vehicle.line.name,
+            }),
+            ...(fullPO.workOrder.vehicle.year && {
+              year: fullPO.workOrder.vehicle.year,
+            }),
           }
         : undefined;
 
@@ -240,9 +259,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       const pdfProps = {
         orderNumber: fullPO.orderNumber,
         orderDate,
-        orderType: fullPO.type as "SERVICES" | "PARTS",
+        orderType: fullPO.type as 'SERVICES' | 'PARTS',
         status: fullPO.status,
-        tenant: { name: tenant?.name || "FleetCare" },
+        tenant: { name: tenant?.name || 'FleetCare' },
         provider: {
           name: fullPO.provider.name,
           email: fullPO.provider.email,
@@ -250,7 +269,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
           address: fullPO.provider.address,
         },
         ...(pdfWorkOrder && { workOrder: pdfWorkOrder }),
-        items: fullPO.items.map((item) => ({
+        items: fullPO.items.map(item => ({
           description: item.description,
           masterPartCode: item.masterPart?.code ?? null,
           masterPartDescription: item.masterPart?.description ?? null,
@@ -265,7 +284,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         notes: fullPO.notes,
         approvedBy: fullPO.approvedBy,
         approvedAt: fullPO.approvedAt
-          ? fullPO.approvedAt.toLocaleDateString("es-CO")
+          ? fullPO.approvedAt.toLocaleDateString('es-CO')
           : null,
       };
 
@@ -276,29 +295,29 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
       // Preparar info del vehiculo para el email
       const vehicleInfo = fullPO.workOrder?.vehicle
-        ? `${fullPO.workOrder.vehicle.licensePlate}${fullPO.workOrder.vehicle.brand ? ` - ${fullPO.workOrder.vehicle.brand.name}` : ""}${fullPO.workOrder.vehicle.line ? ` ${fullPO.workOrder.vehicle.line.name}` : ""}${fullPO.workOrder.vehicle.year ? ` (${fullPO.workOrder.vehicle.year})` : ""}`
+        ? `${fullPO.workOrder.vehicle.licensePlate}${fullPO.workOrder.vehicle.brand ? ` - ${fullPO.workOrder.vehicle.brand.name}` : ''}${fullPO.workOrder.vehicle.line ? ` ${fullPO.workOrder.vehicle.line.name}` : ''}${fullPO.workOrder.vehicle.year ? ` (${fullPO.workOrder.vehicle.year})` : ''}`
         : undefined;
 
       // Enviar email con Resend
       const resend = new Resend(process.env.RESEND_API_KEY);
       const emailProps = {
         orderNumber: fullPO.orderNumber,
-        orderType: fullPO.type as "SERVICES" | "PARTS",
+        orderType: fullPO.type as 'SERVICES' | 'PARTS',
         providerName: fullPO.provider.name,
-        tenantName: tenant?.name || "FleetCare",
+        tenantName: tenant?.name || 'FleetCare',
         ...(vehicleInfo && { vehicleInfo }),
         itemCount: fullPO.items.length,
-        totalAmount: new Intl.NumberFormat("es-CO", {
-          style: "currency",
-          currency: "COP",
+        totalAmount: new Intl.NumberFormat('es-CO', {
+          style: 'currency',
+          currency: 'COP',
           minimumFractionDigits: 0,
         }).format(Number(fullPO.total)),
       };
 
       const { error: emailError } = await resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL || "noreply@fleetcare.com",
+        from: process.env.RESEND_FROM_EMAIL || 'noreply@fleetcare.com',
         to: [fullPO.provider.email],
-        subject: `Orden de Compra ${fullPO.orderNumber} - ${tenant?.name || "FleetCare"}`,
+        subject: `Orden de Compra ${fullPO.orderNumber} - ${tenant?.name || 'FleetCare'}`,
         react: React.createElement(PurchaseOrderEmail, emailProps),
         attachments: [
           {
@@ -309,9 +328,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       });
 
       if (emailError) {
-        console.error("[PURCHASE_ORDER_SEND_EMAIL]", emailError);
+        console.error('[PURCHASE_ORDER_SEND_EMAIL]', emailError);
         return NextResponse.json(
-          { error: "Error al enviar el email al proveedor" },
+          { error: 'Error al enviar el email al proveedor' },
           { status: 500 }
         );
       }
@@ -330,9 +349,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(updatedPO);
   } catch (error: unknown) {
-    console.error("[PURCHASE_ORDER_PATCH]", error);
+    console.error('[PURCHASE_ORDER_PATCH]', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Error interno" },
+      { error: error instanceof Error ? error.message : 'Error interno' },
       { status: 500 }
     );
   }
@@ -345,12 +364,12 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
     if (!canManagePurchases(user)) {
       return NextResponse.json(
-        { error: "No tienes permisos para esta acción" },
+        { error: 'No tienes permisos para esta acción' },
         { status: 403 }
       );
     }
@@ -363,14 +382,14 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 
     if (!purchaseOrder) {
       return NextResponse.json(
-        { error: "Orden de compra no encontrada" },
+        { error: 'Orden de compra no encontrada' },
         { status: 404 }
       );
     }
 
-    if (purchaseOrder.status !== "DRAFT") {
+    if (purchaseOrder.status !== 'DRAFT') {
       return NextResponse.json(
-        { error: "Solo se pueden eliminar OC en estado DRAFT" },
+        { error: 'Solo se pueden eliminar OC en estado DRAFT' },
         { status: 400 }
       );
     }
@@ -381,9 +400,9 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    console.error("[PURCHASE_ORDER_DELETE]", error);
+    console.error('[PURCHASE_ORDER_DELETE]', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Error interno" },
+      { error: error instanceof Error ? error.message : 'Error interno' },
       { status: 500 }
     );
   }

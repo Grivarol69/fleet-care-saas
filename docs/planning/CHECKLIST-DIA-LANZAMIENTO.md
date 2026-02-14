@@ -1,8 +1,8 @@
 # CHECKLIST DIA DE LANZAMIENTO - Fleet Care SaaS
 
-Fecha: ___/___/______
-Cliente: _________________________________
-Responsable: _____________________________
+Fecha: **_/_**/**\_\_**
+Cliente: ****************\_****************
+Responsable: **************\_**************
 
 ---
 
@@ -12,39 +12,39 @@ Enviar este formulario al cliente ANTES del dia de lanzamiento:
 
 ### Datos de la empresa
 
-| Campo | Valor |
-|-------|-------|
-| Razon social | |
-| NIT / RUT | |
-| Pais | |
-| Ciudad | |
-| Email de facturacion | |
-| Telefono contacto | |
+| Campo                | Valor |
+| -------------------- | ----- |
+| Razon social         |       |
+| NIT / RUT            |       |
+| Pais                 |       |
+| Ciudad               |       |
+| Email de facturacion |       |
+| Telefono contacto    |       |
 
 ### Listado de usuarios
 
 Completar una fila por cada persona que usara el sistema:
 
-| # | Nombre completo | Email | Funcion / Cargo | Rol asignado |
-|---|-----------------|-------|-----------------|-------------|
-| 1 | | | | OWNER |
-| 2 | | | | |
-| 3 | | | | |
-| 4 | | | | |
-| 5 | | | | |
-| 6 | | | | |
-| 7 | | | | |
-| 8 | | | | |
+| #   | Nombre completo | Email | Funcion / Cargo | Rol asignado |
+| --- | --------------- | ----- | --------------- | ------------ |
+| 1   |                 |       |                 | OWNER        |
+| 2   |                 |       |                 |              |
+| 3   |                 |       |                 |              |
+| 4   |                 |       |                 |              |
+| 5   |                 |       |                 |              |
+| 6   |                 |       |                 |              |
+| 7   |                 |       |                 |              |
+| 8   |                 |       |                 |              |
 
 ### Guia de roles (compartir con el cliente para que elija)
 
-| Rol | Descripcion sencilla | Ejemplo de cargo |
-|-----|---------------------|------------------|
-| OWNER | Dueno o representante legal. Ve todo, configura la empresa | Gerente General, Socio |
-| MANAGER | Supervisor de operaciones. Ve todo excepto configuracion de usuarios | Jefe de Operaciones, Coordinador |
-| PURCHASER | Encargado de compras. Ve facturas, proveedores, inventario | Jefe de Compras, Auxiliar Contable |
-| TECHNICIAN | Mecanico o tecnico. Ve ordenes de trabajo, alertas, checklist | Mecanico, Tecnico Automotriz |
-| DRIVER | Conductor. Solo registra kilometraje | Conductor, Operador |
+| Rol        | Descripcion sencilla                                                 | Ejemplo de cargo                   |
+| ---------- | -------------------------------------------------------------------- | ---------------------------------- |
+| OWNER      | Dueno o representante legal. Ve todo, configura la empresa           | Gerente General, Socio             |
+| MANAGER    | Supervisor de operaciones. Ve todo excepto configuracion de usuarios | Jefe de Operaciones, Coordinador   |
+| PURCHASER  | Encargado de compras. Ve facturas, proveedores, inventario           | Jefe de Compras, Auxiliar Contable |
+| TECHNICIAN | Mecanico o tecnico. Ve ordenes de trabajo, alertas, checklist        | Mecanico, Tecnico Automotriz       |
+| DRIVER     | Conductor. Solo registra kilometraje                                 | Conductor, Operador                |
 
 ---
 
@@ -68,22 +68,22 @@ Solo necesitas hacer esto UNA VEZ. Si ya existen, saltar al paso 4.
 1. Ir a Clerk Dashboard > Configurar > Roles
 2. Crear estos roles si no existen:
 
-| Clerk Key | Display Name | Creado? |
-|-----------|-------------|---------|
-| org:admin | Admin (OWNER) | [ ] (ya existe por defecto) |
-| org:manager | Manager | [ ] |
-| org:purchaser | Purchaser | [ ] |
-| org:technician | Technician | [ ] |
-| org:driver | Driver | [ ] |
+| Clerk Key      | Display Name  | Creado?                     |
+| -------------- | ------------- | --------------------------- |
+| org:admin      | Admin (OWNER) | [ ] (ya existe por defecto) |
+| org:manager    | Manager       | [ ]                         |
+| org:purchaser  | Purchaser     | [ ]                         |
+| org:technician | Technician    | [ ]                         |
+| org:driver     | Driver        | [ ]                         |
 
 ---
 
 ## 4. CREAR LA ORGANIZACION
 
 1. Clerk Dashboard > Organizations > + Create Organization
-2. Name: _______________________________ (razon social del cliente)
+2. Name: **************\_\_\_************** (razon social del cliente)
 3. Click Create
-4. Copiar Organization ID: org_________________________
+4. Copiar Organization ID: org************\_************
 
    IMPORTANTE: Anotar este ID, es el tenantId en la base de datos.
 
@@ -104,16 +104,16 @@ Para CADA persona del listado:
 
 ### Registro de invitaciones
 
-| # | Nombre | Email | Rol | Invitado? |
-|---|--------|-------|-----|-----------|
-| 1 | | | OWNER (org:admin) | [ ] |
-| 2 | | | | [ ] |
-| 3 | | | | [ ] |
-| 4 | | | | [ ] |
-| 5 | | | | [ ] |
-| 6 | | | | [ ] |
-| 7 | | | | [ ] |
-| 8 | | | | [ ] |
+| #   | Nombre | Email | Rol               | Invitado? |
+| --- | ------ | ----- | ----------------- | --------- |
+| 1   |        |       | OWNER (org:admin) | [ ]       |
+| 2   |        |       |                   | [ ]       |
+| 3   |        |       |                   | [ ]       |
+| 4   |        |       |                   | [ ]       |
+| 5   |        |       |                   | [ ]       |
+| 6   |        |       |                   | [ ]       |
+| 7   |        |       |                   | [ ]       |
+| 8   |        |       |                   | [ ]       |
 
 ---
 
@@ -154,7 +154,6 @@ Enviar este mensaje al OWNER de la empresa:
 Asunto: Tu cuenta de Fleet Care esta lista
 
 Hola [NOMBRE],
-
 
 Tu cuenta de Fleet Care ya esta configurada. Estos son los pasos para entrar:
 
@@ -209,16 +208,20 @@ Despues de que el cliente este operando:
 ## TROUBLESHOOTING RAPIDO
 
 ### "No me llego el email de invitacion"
+
 → Verificar carpeta spam
 → Re-enviar desde Clerk Dashboard > Organizations > Members
 
 ### "Entro pero no veo nada en la sidebar"
+
 → El usuario no tiene organizacion activa en Clerk
 → Verificar en Clerk Dashboard que el usuario sea miembro de la org
 
 ### "Entro pero el rol no es el correcto"
+
 → Verificar el rol en Clerk Dashboard > Organizations > Members
 → Si el user ya existe en Prisma con rol viejo, actualizar en BD:
+
 ```sql
 UPDATE "User"
 SET role = 'ROL_CORRECTO'
@@ -227,6 +230,7 @@ WHERE email = 'email@ejemplo.com'
 ```
 
 ### "Error al cargar el dashboard"
+
 → Verificar que el servidor esta corriendo
 → Verificar logs del servidor
 → Verificar que DATABASE_URL es correcta
@@ -234,7 +238,11 @@ WHERE email = 'email@ejemplo.com'
 ---
 
 Notas adicionales:
-_________________________________________________________________
-_________________________________________________________________
-_________________________________________________________________
-_________________________________________________________________
+
+---
+
+---
+
+---
+
+---

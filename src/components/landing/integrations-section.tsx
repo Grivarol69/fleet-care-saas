@@ -1,36 +1,42 @@
-import { Database, Smartphone, Headphones, FileText } from "lucide-react"
-import Image from "next/image"
+import { Database, Smartphone, Headphones, FileText } from 'lucide-react';
+import Image from 'next/image';
 
 export function IntegrationsSection() {
   const integrations = [
     {
       icon: Database,
-      title: "Amplia gama de integraciones",
-      description: "Conecta con tus sistemas ERP, contabilidad y otras herramientas empresariales existentes.",
+      title: 'Amplia gama de integraciones',
+      description:
+        'Conecta con tus sistemas ERP, contabilidad y otras herramientas empresariales existentes.',
     },
     {
       icon: Smartphone,
-      title: "Aplicación móvil",
-      description: "Acceso completo desde dispositivos móviles para conductores y administradores.",
+      title: 'Aplicación móvil',
+      description:
+        'Acceso completo desde dispositivos móviles para conductores y administradores.',
     },
     {
       icon: Headphones,
-      title: "Soporte 24/7",
-      description: "Nuestro equipo de soporte está disponible cuando lo necesites.",
+      title: 'Soporte 24/7',
+      description:
+        'Nuestro equipo de soporte está disponible cuando lo necesites.',
     },
     {
       icon: FileText,
-      title: "Reportes personalizados",
-      description: "Genera reportes adaptados a las necesidades específicas de tu negocio.",
+      title: 'Reportes personalizados',
+      description:
+        'Genera reportes adaptados a las necesidades específicas de tu negocio.',
     },
-  ]
+  ];
 
   return (
     <section className="py-20">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
-            <h2 className="text-3xl font-bold text-balance mb-6">Compatible con tu negocio</h2>
+            <h2 className="text-3xl font-bold text-balance mb-6">
+              Compatible con tu negocio
+            </h2>
             <div className="space-y-6">
               {integrations.map((integration, index) => (
                 <div key={index} className="flex items-start space-x-4">
@@ -40,8 +46,12 @@ export function IntegrationsSection() {
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-foreground mb-1">{integration.title}</h3>
-                    <p className="text-sm text-muted-foreground text-pretty">{integration.description}</p>
+                    <h3 className="font-semibold text-foreground mb-1">
+                      {integration.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground text-pretty">
+                      {integration.description}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -62,5 +72,5 @@ export function IntegrationsSection() {
         </div>
       </div>
     </section>
-  )
+  );
 }

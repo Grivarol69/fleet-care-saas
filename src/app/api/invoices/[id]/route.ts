@@ -4,25 +4,31 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
 // Schema for invoice update validation - only allow specific fields
-const updateInvoiceSchema = z.object({
-  invoiceNumber: z.string().min(1).max(100).optional(),
-  invoiceDate: z.string().datetime().optional(),
-  dueDate: z.string().datetime().nullable().optional(),
-  supplierId: z.number().int().positive().optional(),
-  workOrderId: z.number().int().positive().nullable().optional(),
-  subtotal: z.number().positive().optional(),
-  taxAmount: z.number().min(0).optional(),
-  totalAmount: z.number().positive().optional(),
-  currency: z.string().max(10).optional(),
-  status: z.enum(['PENDING', 'APPROVED', 'PAID', 'OVERDUE', 'CANCELLED']).optional(),
-  approvedBy: z.string().nullable().optional(),
-  approvedAt: z.string().datetime().nullable().optional(),
-  notes: z.string().max(5000).nullable().optional(),
-  attachmentUrl: z.string().url().nullable().optional(),
-  pdfUrl: z.string().url().nullable().optional(),
-  ocrStatus: z.enum(['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED']).optional(),
-  needsReview: z.boolean().optional(),
-}).strict();
+const updateInvoiceSchema = z
+  .object({
+    invoiceNumber: z.string().min(1).max(100).optional(),
+    invoiceDate: z.string().datetime().optional(),
+    dueDate: z.string().datetime().nullable().optional(),
+    supplierId: z.number().int().positive().optional(),
+    workOrderId: z.number().int().positive().nullable().optional(),
+    subtotal: z.number().positive().optional(),
+    taxAmount: z.number().min(0).optional(),
+    totalAmount: z.number().positive().optional(),
+    currency: z.string().max(10).optional(),
+    status: z
+      .enum(['PENDING', 'APPROVED', 'PAID', 'OVERDUE', 'CANCELLED'])
+      .optional(),
+    approvedBy: z.string().nullable().optional(),
+    approvedAt: z.string().datetime().nullable().optional(),
+    notes: z.string().max(5000).nullable().optional(),
+    attachmentUrl: z.string().url().nullable().optional(),
+    pdfUrl: z.string().url().nullable().optional(),
+    ocrStatus: z
+      .enum(['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED'])
+      .optional(),
+    needsReview: z.boolean().optional(),
+  })
+  .strict();
 
 export async function GET(
   _request: NextRequest,
@@ -184,24 +190,44 @@ export async function PATCH(
     const updateData: Record<string, unknown> = {};
     const validatedData = validation.data;
 
-    if (validatedData.invoiceNumber !== undefined) updateData.invoiceNumber = validatedData.invoiceNumber;
-    if (validatedData.invoiceDate !== undefined) updateData.invoiceDate = new Date(validatedData.invoiceDate);
-    if (validatedData.dueDate !== undefined) updateData.dueDate = validatedData.dueDate ? new Date(validatedData.dueDate) : null;
-    if (validatedData.supplierId !== undefined) updateData.supplierId = validatedData.supplierId;
-    if (validatedData.workOrderId !== undefined) updateData.workOrderId = validatedData.workOrderId;
-    if (validatedData.subtotal !== undefined) updateData.subtotal = validatedData.subtotal;
-    if (validatedData.taxAmount !== undefined) updateData.taxAmount = validatedData.taxAmount;
-    if (validatedData.totalAmount !== undefined) updateData.totalAmount = validatedData.totalAmount;
-    if (validatedData.currency !== undefined) updateData.currency = validatedData.currency;
-    if (validatedData.status !== undefined) updateData.status = validatedData.status;
-    if (validatedData.notes !== undefined) updateData.notes = validatedData.notes;
-    if (validatedData.attachmentUrl !== undefined) updateData.attachmentUrl = validatedData.attachmentUrl;
-    if (validatedData.pdfUrl !== undefined) updateData.pdfUrl = validatedData.pdfUrl;
-    if (validatedData.ocrStatus !== undefined) updateData.ocrStatus = validatedData.ocrStatus;
-    if (validatedData.needsReview !== undefined) updateData.needsReview = validatedData.needsReview;
+    if (validatedData.invoiceNumber !== undefined)
+      updateData.invoiceNumber = validatedData.invoiceNumber;
+    if (validatedData.invoiceDate !== undefined)
+      updateData.invoiceDate = new Date(validatedData.invoiceDate);
+    if (validatedData.dueDate !== undefined)
+      updateData.dueDate = validatedData.dueDate
+        ? new Date(validatedData.dueDate)
+        : null;
+    if (validatedData.supplierId !== undefined)
+      updateData.supplierId = validatedData.supplierId;
+    if (validatedData.workOrderId !== undefined)
+      updateData.workOrderId = validatedData.workOrderId;
+    if (validatedData.subtotal !== undefined)
+      updateData.subtotal = validatedData.subtotal;
+    if (validatedData.taxAmount !== undefined)
+      updateData.taxAmount = validatedData.taxAmount;
+    if (validatedData.totalAmount !== undefined)
+      updateData.totalAmount = validatedData.totalAmount;
+    if (validatedData.currency !== undefined)
+      updateData.currency = validatedData.currency;
+    if (validatedData.status !== undefined)
+      updateData.status = validatedData.status;
+    if (validatedData.notes !== undefined)
+      updateData.notes = validatedData.notes;
+    if (validatedData.attachmentUrl !== undefined)
+      updateData.attachmentUrl = validatedData.attachmentUrl;
+    if (validatedData.pdfUrl !== undefined)
+      updateData.pdfUrl = validatedData.pdfUrl;
+    if (validatedData.ocrStatus !== undefined)
+      updateData.ocrStatus = validatedData.ocrStatus;
+    if (validatedData.needsReview !== undefined)
+      updateData.needsReview = validatedData.needsReview;
 
     // Handle approval fields - only set if status is being changed to APPROVED
-    if (validatedData.status === 'APPROVED' && existingInvoice.status !== 'APPROVED') {
+    if (
+      validatedData.status === 'APPROVED' &&
+      existingInvoice.status !== 'APPROVED'
+    ) {
       updateData.approvedBy = user.id;
       updateData.approvedAt = new Date();
     }
@@ -282,7 +308,7 @@ export async function DELETE(
     }
 
     // Eliminar en transacción
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async tx => {
       // 1. Eliminar items
       await tx.invoiceItem.deleteMany({
         where: { invoiceId: id },
@@ -323,7 +349,7 @@ export async function DELETE(
         });
 
         if (alerts.length > 0) {
-          const programItemIds = alerts.map((a) => a.programItemId);
+          const programItemIds = alerts.map(a => a.programItemId);
           await tx.vehicleProgramItem.updateMany({
             where: { id: { in: programItemIds } },
             data: {

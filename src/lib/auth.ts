@@ -1,15 +1,15 @@
-import { currentUser, auth } from '@clerk/nextjs/server'
+import { currentUser, auth } from '@clerk/nextjs/server';
 
-import { prisma } from '@/lib/prisma'
-import { User } from '@prisma/client'
+import { prisma } from '@/lib/prisma';
+import { User } from '@prisma/client';
 
 // Platform Tenant ID para SUPER_ADMIN (único lugar de definición)
-export const PLATFORM_TENANT_ID = '00000000-0000-0000-0000-000000000000'
+export const PLATFORM_TENANT_ID = '00000000-0000-0000-0000-000000000000';
 
 // Tipo extendido de User que incluye info de SUPER_ADMIN
 export type UserWithSuperAdmin = User & {
-  isSuperAdmin: boolean
-}
+  isSuperAdmin: boolean;
+};
 
 /**
  * Obtiene el usuario autenticado actual
@@ -23,18 +23,39 @@ export type UserWithSuperAdmin = User & {
  */
 export async function getCurrentUser(): Promise<UserWithSuperAdmin | null> {
   try {
-    const { userId, orgId } = await auth()
+    // Timeout de 15s para evitar que la página se cuelgue si Neon tiene cold start
+    const result = await Promise.race([
+      getCurrentUserInternal(),
+      new Promise<null>(resolve => {
+        setTimeout(() => {
+          console.warn(
+            '[AUTH] getCurrentUser() timeout after 15s - possible DB cold start'
+          );
+          resolve(null);
+        }, 15000);
+      }),
+    ]);
+    return result;
+  } catch (error) {
+    console.error('[AUTH ERROR] Error obteniendo usuario:', error);
+    return null;
+  }
+}
+
+async function getCurrentUserInternal(): Promise<UserWithSuperAdmin | null> {
+  try {
+    const { userId, orgId } = await auth();
 
     if (userId) {
       // Obtener info completa del usuario de Clerk (solo para email si es necesario)
-      const clerkUser = await currentUser()
+      const clerkUser = await currentUser();
       if (!clerkUser) {
-        return null
+        return null;
       }
 
-      const email = clerkUser.emailAddresses[0]?.emailAddress
+      const email = clerkUser.emailAddresses[0]?.emailAddress;
       if (!email) {
-        return null
+        return null;
       }
 
       // ========================================
@@ -47,8 +68,8 @@ export async function getCurrentUser(): Promise<UserWithSuperAdmin | null> {
           role: 'SUPER_ADMIN',
           isActive: true,
         },
-      })
-      const isSuperAdmin = !!superAdminUser
+      });
+      const isSuperAdmin = !!superAdminUser;
 
       // Si no tiene org pero es SUPER_ADMIN, retornar usuario del Platform Tenant
       if (!orgId) {
@@ -56,9 +77,9 @@ export async function getCurrentUser(): Promise<UserWithSuperAdmin | null> {
           return {
             ...superAdminUser,
             isSuperAdmin: true,
-          }
+          };
         }
-        return null
+        return null;
       }
 
       // ========================================
@@ -73,38 +94,42 @@ export async function getCurrentUser(): Promise<UserWithSuperAdmin | null> {
           tenantId: orgId,
           isActive: true,
         },
-      })
+      });
 
       // Fallback JIT: si el usuario no existe, el webhook puede estar en tránsito.
       // Esperamos brevemente y reintentamos una vez antes de rendirse.
       if (!user) {
-        console.warn(`[AUTH] User ${email} not found in DB for tenant ${orgId}. Retrying in 1.5s (webhook latency)...`)
-        await new Promise((resolve) => setTimeout(resolve, 1500))
+        console.warn(
+          `[AUTH] User ${email} not found in DB for tenant ${orgId}. Retrying in 1.5s (webhook latency)...`
+        );
+        await new Promise(resolve => setTimeout(resolve, 1500));
         user = await prisma.user.findFirst({
           where: {
             email,
             tenantId: orgId,
             isActive: true,
           },
-        })
+        });
       }
 
       if (!user) {
-        console.warn(`[AUTH] User ${email} still not found after retry for tenant ${orgId}. Webhook may have failed.`)
-        return null
+        console.warn(
+          `[AUTH] User ${email} still not found after retry for tenant ${orgId}. Webhook may have failed.`
+        );
+        return null;
       }
 
       // Retornar usuario
       return {
         ...user,
         isSuperAdmin,
-      }
+      };
     }
 
-    return null
+    return null;
   } catch (error) {
-    console.error('[AUTH ERROR] Error obteniendo usuario:', error)
-    return null
+    console.error('[AUTH ERROR] Error obteniendo usuario:', error);
+    return null;
   }
 }
 
@@ -113,13 +138,13 @@ export async function getCurrentUser(): Promise<UserWithSuperAdmin | null> {
  * Útil para APIs que REQUIEREN autenticación
  */
 export async function requireCurrentUser(): Promise<UserWithSuperAdmin> {
-  const user = await getCurrentUser()
+  const user = await getCurrentUser();
 
   if (!user) {
-    throw new Error('No autenticado')
+    throw new Error('No autenticado');
   }
 
-  return user
+  return user;
 }
 
 /**
@@ -127,8 +152,8 @@ export async function requireCurrentUser(): Promise<UserWithSuperAdmin> {
  * Útil para verificaciones rápidas de permisos
  */
 export async function isSuperAdmin(): Promise<boolean> {
-  const user = await getCurrentUser()
-  return user?.isSuperAdmin ?? false
+  const user = await getCurrentUser();
+  return user?.isSuperAdmin ?? false;
 }
 
 /**
@@ -136,6 +161,6 @@ export async function isSuperAdmin(): Promise<boolean> {
  * Útil para queries que necesitan filtrar por tenant
  */
 export async function getCurrentTenantId(): Promise<string | null> {
-  const user = await getCurrentUser()
-  return user?.tenantId || null
+  const user = await getCurrentUser();
+  return user?.tenantId || null;
 }

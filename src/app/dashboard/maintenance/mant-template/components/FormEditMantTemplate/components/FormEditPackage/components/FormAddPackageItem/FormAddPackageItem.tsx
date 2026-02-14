@@ -81,7 +81,9 @@ export function FormAddPackageItem({
       try {
         setIsLoadingItems(true);
         const response = await axios.get('/api/maintenance/mant-items');
-        setMantItems(response.data.filter((item: MantItem) => item.status === 'ACTIVE'));
+        setMantItems(
+          response.data.filter((item: MantItem) => item.status === 'ACTIVE')
+        );
       } catch (error) {
         console.error('Error al cargar los items de mantenimiento:', error);
         toast({
@@ -103,7 +105,9 @@ export function FormAddPackageItem({
   const selectedMantItemId = form.watch('mantItemId');
   useEffect(() => {
     if (selectedMantItemId > 0) {
-      const selectedItem = mantItems.find(item => item.id === selectedMantItemId);
+      const selectedItem = mantItems.find(
+        item => item.id === selectedMantItemId
+      );
       if (selectedItem) {
         form.setValue('estimatedCost', selectedItem.estimatedCost || 0);
         form.setValue('estimatedTime', selectedItem.estimatedTime || 0);
@@ -141,7 +145,10 @@ export function FormAddPackageItem({
         notes: values.notes || null,
       };
 
-      const response = await axios.post('/api/maintenance/package-items', payload);
+      const response = await axios.post(
+        '/api/maintenance/package-items',
+        payload
+      );
       const newItem = response.data;
 
       onAddItem(newItem);
@@ -160,7 +167,8 @@ export function FormAddPackageItem({
       let errorMessage = 'Algo salió mal al agregar el item';
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 409) {
-          errorMessage = 'Este item de mantenimiento ya está asignado a este paquete';
+          errorMessage =
+            'Este item de mantenimiento ya está asignado a este paquete';
         } else if (error.response?.status === 400) {
           errorMessage = 'Datos inválidos, por favor revise los campos';
         } else if (error.response?.status === 401) {
@@ -201,7 +209,6 @@ export function FormAddPackageItem({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
               {/* Item de Mantenimiento */}
               <FormField
                 control={form.control}
@@ -239,7 +246,9 @@ export function FormAddPackageItem({
                               <div className="flex flex-col">
                                 <span className="font-medium">{item.name}</span>
                                 <span className="text-sm text-gray-500">
-                                  {formatMantType(item.mantType)} • {item.category.name} • {Number(item.estimatedTime).toFixed(1)}h
+                                  {formatMantType(item.mantType)} •{' '}
+                                  {item.category.name} •{' '}
+                                  {Number(item.estimatedTime).toFixed(1)}h
                                 </span>
                               </div>
                             </SelectItem>
@@ -268,7 +277,9 @@ export function FormAddPackageItem({
                         placeholder="5000"
                         {...field}
                         value={field.value || ''}
-                        onChange={e => field.onChange(parseInt(e.target.value) || 0)}
+                        onChange={e =>
+                          field.onChange(parseInt(e.target.value) || 0)
+                        }
                         disabled={isLoading}
                       />
                     </FormControl>
@@ -321,7 +332,11 @@ export function FormAddPackageItem({
                         type="number"
                         placeholder="25000"
                         {...field}
-                        onChange={e => field.onChange(parseFloat(e.target.value) || undefined)}
+                        onChange={e =>
+                          field.onChange(
+                            parseFloat(e.target.value) || undefined
+                          )
+                        }
                         disabled={isLoading}
                       />
                     </FormControl>
@@ -346,7 +361,11 @@ export function FormAddPackageItem({
                         step="0.25"
                         placeholder="1.5"
                         {...field}
-                        onChange={e => field.onChange(parseFloat(e.target.value) || undefined)}
+                        onChange={e =>
+                          field.onChange(
+                            parseFloat(e.target.value) || undefined
+                          )
+                        }
                         disabled={isLoading}
                       />
                     </FormControl>

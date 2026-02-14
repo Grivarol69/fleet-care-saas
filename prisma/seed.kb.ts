@@ -27,7 +27,9 @@ async function main() {
   console.log('   - categoryId en MantItem');
   console.log('   - mantItemId opcional en WorkOrderItem');
   console.log('   - Sistema de inventario\n');
-  console.log('📝 Ver: .claude/sessions/2026-01-21-plan-estrategico-opcion-b-completo.md\n');
+  console.log(
+    '📝 Ver: .claude/sessions/2026-01-21-plan-estrategico-opcion-b-completo.md\n'
+  );
 
   return; // Early return - deshabilitar seed
 
@@ -1593,7 +1595,7 @@ async function main() {
 } // Fin de main()
 
 main()
-  .catch((e) => {
+  .catch(e => {
     console.error('❌ Error in seed:', e);
     process.exit(1);
   })

@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -8,15 +8,15 @@ import {
   getSortedRowModel,
   flexRender,
   ColumnDef,
-} from "@tanstack/react-table";
+} from '@tanstack/react-table';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -24,9 +24,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { User } from "lucide-react";
-import { Driver } from "./types";
+} from '@/components/ui/table';
+import { User } from 'lucide-react';
+import { Driver } from './types';
 
 interface DriverSelectModalProps {
   isOpen: boolean;
@@ -41,35 +41,35 @@ export function DriverSelectModal({
   drivers,
   onSelectDriver,
 }: DriverSelectModalProps) {
-  const [globalFilter, setGlobalFilter] = useState("");
+  const [globalFilter, setGlobalFilter] = useState('');
 
   const columns = useMemo<ColumnDef<Driver>[]>(
     () => [
       {
-        header: "Nombre",
-        accessorKey: "name",
+        header: 'Nombre',
+        accessorKey: 'name',
       },
       {
-        header: "Email",
-        accessorKey: "email",
-        cell: ({ getValue }) => getValue() || "-",
+        header: 'Email',
+        accessorKey: 'email',
+        cell: ({ getValue }) => getValue() || '-',
       },
       {
-        header: "Teléfono",
-        accessorKey: "phone",
-        cell: ({ getValue }) => getValue() || "-",
+        header: 'Teléfono',
+        accessorKey: 'phone',
+        cell: ({ getValue }) => getValue() || '-',
       },
       {
-        header: "N° Licencia",
-        accessorKey: "licenseNumber",
-        cell: ({ getValue }) => getValue() || "-",
+        header: 'N° Licencia',
+        accessorKey: 'licenseNumber',
+        cell: ({ getValue }) => getValue() || '-',
       },
       {
-        header: "Vence Licencia",
-        accessorKey: "licenseExpiry",
+        header: 'Vence Licencia',
+        accessorKey: 'licenseExpiry',
         cell: ({ getValue }) => {
           const value = getValue() as Date | string | null;
-          return value ? new Date(value).toLocaleDateString() : "-";
+          return value ? new Date(value).toLocaleDateString() : '-';
         },
       },
     ],
@@ -103,7 +103,7 @@ export function DriverSelectModal({
         <DialogHeader>
           <DialogTitle>Seleccionar Conductor</DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4">
           <Input
             placeholder="Buscar conductor por nombre, email o licencia..."
@@ -121,9 +121,9 @@ export function DriverSelectModal({
           <div className="overflow-auto max-h-[60vh]">
             <Table>
               <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
+                {table.getHeaderGroups().map(headerGroup => (
                   <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
+                    {headerGroup.headers.map(header => (
                       <TableHead key={header.id} className="whitespace-nowrap">
                         {flexRender(
                           header.column.columnDef.header,
@@ -136,13 +136,13 @@ export function DriverSelectModal({
               </TableHeader>
               <TableBody>
                 {table.getRowModel().rows?.length ? (
-                  table.getRowModel().rows.map((row) => (
+                  table.getRowModel().rows.map(row => (
                     <TableRow
                       key={row.id}
                       onClick={() => onSelectDriver(row.original)}
                       className="cursor-pointer hover:bg-muted/50 transition-colors"
                     >
-                      {row.getVisibleCells().map((cell) => (
+                      {row.getVisibleCells().map(cell => (
                         <TableCell key={cell.id} className="whitespace-nowrap">
                           {flexRender(
                             cell.column.columnDef.cell,
@@ -154,7 +154,10 @@ export function DriverSelectModal({
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={columns.length} className="h-24 text-center">
+                    <TableCell
+                      colSpan={columns.length}
+                      className="h-24 text-center"
+                    >
                       No se encontraron conductores.
                     </TableCell>
                   </TableRow>

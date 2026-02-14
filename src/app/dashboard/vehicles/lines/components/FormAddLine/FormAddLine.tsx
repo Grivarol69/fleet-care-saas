@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect, useState } from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Form,
   FormControl,
@@ -19,26 +19,26 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
+} from '@/components/ui/form';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import axios from "axios";
-import { useToast } from "@/components/hooks/use-toast";
-import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+} from '@/components/ui/select';
+import axios from 'axios';
+import { useToast } from '@/components/hooks/use-toast';
+import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 
 // ✅ Schema corregido
 const formSchema = z.object({
   name: z.string().min(2, {
-    message: "El nombre debe tener al menos 2 caracteres",
+    message: 'El nombre debe tener al menos 2 caracteres',
   }),
   brandId: z.number().min(1, {
-    message: "Debe seleccionar una marca",
+    message: 'Debe seleccionar una marca',
   }),
 });
 
@@ -75,7 +75,7 @@ export function FormAddLine({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
+      name: '',
       brandId: 0, // Se validará que sea > 0
     },
   });
@@ -88,14 +88,14 @@ export function FormAddLine({
     const fetchBrands = async () => {
       try {
         setIsLoadingBrands(true);
-        const response = await axios.get("/api/vehicles/brands");
+        const response = await axios.get('/api/vehicles/brands');
         setVehicleBrands(response.data);
       } catch (error) {
-        console.error("Error al cargar las marcas de vehículos:", error);
+        console.error('Error al cargar las marcas de vehículos:', error);
         toast({
-          title: "Error",
-          description: "No se pudieron cargar las marcas de vehículos",
-          variant: "destructive",
+          title: 'Error',
+          description: 'No se pudieron cargar las marcas de vehículos',
+          variant: 'destructive',
         });
       } finally {
         setIsLoadingBrands(false);
@@ -111,8 +111,8 @@ export function FormAddLine({
     try {
       setIsLoading(true);
 
-      const response = await axios.post("/api/vehicles/lines", values);
-      console.log("response: ", response);
+      const response = await axios.post('/api/vehicles/lines', values);
+      console.log('response: ', response);
 
       const newLine: VehicleLine = response.data;
 
@@ -124,28 +124,28 @@ export function FormAddLine({
       form.reset();
 
       toast({
-        title: "¡Línea de Vehículo creada!",
+        title: '¡Línea de Vehículo creada!',
         description: `La línea "${newLine.name}" fue creada exitosamente.`,
       });
 
       router.refresh();
     } catch (error) {
-      console.error("Error creating line:", error);
+      console.error('Error creating line:', error);
 
       // ✅ Manejo mejorado de errores
-      let errorMessage = "Algo salió mal";
+      let errorMessage = 'Algo salió mal';
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 409) {
-          errorMessage = "Esta línea ya existe para la marca seleccionada";
+          errorMessage = 'Esta línea ya existe para la marca seleccionada';
         } else if (error.response?.data) {
           errorMessage = error.response.data;
         }
       }
 
       toast({
-        title: "Error",
+        title: 'Error',
         description: errorMessage,
-        variant: "destructive",
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -185,8 +185,8 @@ export function FormAddLine({
                 <FormItem>
                   <FormLabel>Marca de Vehículo</FormLabel>
                   <Select
-                    onValueChange={(value) => field.onChange(Number(value))}
-                    value={field.value > 0 ? field.value.toString() : ""}
+                    onValueChange={value => field.onChange(Number(value))}
+                    value={field.value > 0 ? field.value.toString() : ''}
                     disabled={isLoading || isLoadingBrands}
                   >
                     <FormControl>
@@ -194,8 +194,8 @@ export function FormAddLine({
                         <SelectValue
                           placeholder={
                             isLoadingBrands
-                              ? "Cargando marcas..."
-                              : "Seleccione una marca"
+                              ? 'Cargando marcas...'
+                              : 'Seleccione una marca'
                           }
                         />
                       </SelectTrigger>
@@ -206,7 +206,7 @@ export function FormAddLine({
                           No hay marcas disponibles
                         </SelectItem>
                       ) : (
-                        vehicleBrands.map((brand) => (
+                        vehicleBrands.map(brand => (
                           <SelectItem
                             key={brand.id}
                             value={brand.id.toString()}
@@ -233,7 +233,7 @@ export function FormAddLine({
               </Button>
               <Button type="submit" disabled={isLoading || isLoadingBrands}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isLoading ? "Creando..." : "Crear Línea"}
+                {isLoading ? 'Creando...' : 'Crear Línea'}
               </Button>
             </div>
           </form>

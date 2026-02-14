@@ -121,7 +121,8 @@ export function FormEditMantItem({
     } catch (error) {
       console.error('Error updating mant item:', error);
 
-      let errorMessage = 'Algo salió mal al actualizar el item de mantenimiento';
+      let errorMessage =
+        'Algo salió mal al actualizar el item de mantenimiento';
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 409) {
           errorMessage = 'Ya existe un item con este nombre';
@@ -241,9 +242,15 @@ export function FormEditMantItem({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="ACTION">Acción (inspección, revisión)</SelectItem>
-                      <SelectItem value="PART">Repuesto (filtro, aceite)</SelectItem>
-                      <SelectItem value="SERVICE">Servicio externo completo</SelectItem>
+                      <SelectItem value="ACTION">
+                        Acción (inspección, revisión)
+                      </SelectItem>
+                      <SelectItem value="PART">
+                        Repuesto (filtro, aceite)
+                      </SelectItem>
+                      <SelectItem value="SERVICE">
+                        Servicio externo completo
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

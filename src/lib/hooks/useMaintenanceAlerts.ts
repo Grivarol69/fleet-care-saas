@@ -31,7 +31,14 @@ export interface MaintenanceAlert {
   priorityScore: number;
 
   // Estado
-  status: 'PENDING' | 'ACKNOWLEDGED' | 'IN_PROGRESS' | 'COMPLETED' | 'CLOSED' | 'SNOOZED' | 'CANCELLED';
+  status:
+    | 'PENDING'
+    | 'ACKNOWLEDGED'
+    | 'IN_PROGRESS'
+    | 'COMPLETED'
+    | 'CLOSED'
+    | 'SNOOZED'
+    | 'CANCELLED';
 
   // Costos
   estimatedCost: number | null;
@@ -145,7 +152,12 @@ export function useSnoozeAlert() {
 
   return {
     snoozeAlert: (alertId: number, snoozedUntil: Date, reason?: string) => {
-      const params: { alertId: number; status: string; snoozedUntil: Date; notes?: string } = {
+      const params: {
+        alertId: number;
+        status: string;
+        snoozedUntil: Date;
+        notes?: string;
+      } = {
         alertId,
         status: 'SNOOZED',
         snoozedUntil,
@@ -182,28 +194,34 @@ export function useCancelAlert() {
 export function useAlertsGroupedByVehicle(filters?: AlertFilters) {
   const { data: alerts, ...rest } = useMaintenanceAlerts(filters);
 
-  const groupedAlerts = alerts?.reduce((acc, alert) => {
-    const key = alert.vehicleId;
-    if (!acc[key]) {
-      acc[key] = {
-        vehicleId: alert.vehicleId,
-        vehiclePlate: alert.vehiclePlate,
-        vehiclePhoto: alert.vehiclePhoto,
-        brandName: alert.brandName,
-        lineName: alert.lineName,
-        alerts: [],
-      };
-    }
-    acc[key].alerts.push(alert);
-    return acc;
-  }, {} as Record<number, {
-    vehicleId: number;
-    vehiclePlate: string;
-    vehiclePhoto: string;
-    brandName: string;
-    lineName: string;
-    alerts: MaintenanceAlert[];
-  }>);
+  const groupedAlerts = alerts?.reduce(
+    (acc, alert) => {
+      const key = alert.vehicleId;
+      if (!acc[key]) {
+        acc[key] = {
+          vehicleId: alert.vehicleId,
+          vehiclePlate: alert.vehiclePlate,
+          vehiclePhoto: alert.vehiclePhoto,
+          brandName: alert.brandName,
+          lineName: alert.lineName,
+          alerts: [],
+        };
+      }
+      acc[key].alerts.push(alert);
+      return acc;
+    },
+    {} as Record<
+      number,
+      {
+        vehicleId: number;
+        vehiclePlate: string;
+        vehiclePhoto: string;
+        brandName: string;
+        lineName: string;
+        alerts: MaintenanceAlert[];
+      }
+    >
+  );
 
   return {
     groupedAlerts: groupedAlerts ? Object.values(groupedAlerts) : [],
@@ -219,28 +237,34 @@ export function useAlertsGroupedByPackage(vehicleId?: number) {
     vehicleId ? { vehicleId } : undefined
   );
 
-  const groupedAlerts = alerts?.reduce((acc, alert) => {
-    const key = alert.packageName;
-    if (!acc[key]) {
-      acc[key] = {
-        packageName: alert.packageName,
-        scheduledKm: alert.scheduledKm,
-        alerts: [],
-        totalEstimatedCost: 0,
-        totalEstimatedDuration: 0,
-      };
-    }
-    acc[key].alerts.push(alert);
-    acc[key].totalEstimatedCost += alert.estimatedCost || 0;
-    acc[key].totalEstimatedDuration += alert.estimatedDuration || 0;
-    return acc;
-  }, {} as Record<string, {
-    packageName: string;
-    scheduledKm: number;
-    alerts: MaintenanceAlert[];
-    totalEstimatedCost: number;
-    totalEstimatedDuration: number;
-  }>);
+  const groupedAlerts = alerts?.reduce(
+    (acc, alert) => {
+      const key = alert.packageName;
+      if (!acc[key]) {
+        acc[key] = {
+          packageName: alert.packageName,
+          scheduledKm: alert.scheduledKm,
+          alerts: [],
+          totalEstimatedCost: 0,
+          totalEstimatedDuration: 0,
+        };
+      }
+      acc[key].alerts.push(alert);
+      acc[key].totalEstimatedCost += alert.estimatedCost || 0;
+      acc[key].totalEstimatedDuration += alert.estimatedDuration || 0;
+      return acc;
+    },
+    {} as Record<
+      string,
+      {
+        packageName: string;
+        scheduledKm: number;
+        alerts: MaintenanceAlert[];
+        totalEstimatedCost: number;
+        totalEstimatedDuration: number;
+      }
+    >
+  );
 
   return {
     groupedAlerts: groupedAlerts ? Object.values(groupedAlerts) : [],
@@ -279,11 +303,20 @@ export function useAlertStats(filters?: AlertFilters) {
       HIGH: alerts.filter(a => a.alertLevel === 'HIGH').length,
       CRITICAL: alerts.filter(a => a.alertLevel === 'CRITICAL').length,
     },
-    byStatus: alerts.reduce((acc, alert) => {
-      acc[alert.status] = (acc[alert.status] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>),
-    totalEstimatedCost: alerts.reduce((sum, a) => sum + (a.estimatedCost || 0), 0),
-    totalEstimatedDuration: alerts.reduce((sum, a) => sum + (a.estimatedDuration || 0), 0),
+    byStatus: alerts.reduce(
+      (acc, alert) => {
+        acc[alert.status] = (acc[alert.status] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    ),
+    totalEstimatedCost: alerts.reduce(
+      (sum, a) => sum + (a.estimatedCost || 0),
+      0
+    ),
+    totalEstimatedDuration: alerts.reduce(
+      (sum, a) => sum + (a.estimatedDuration || 0),
+      0
+    ),
   };
 }

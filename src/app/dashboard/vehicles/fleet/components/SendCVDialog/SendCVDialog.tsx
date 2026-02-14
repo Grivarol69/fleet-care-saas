@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Form,
   FormControl,
@@ -20,13 +20,13 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import axios from "axios";
-import { useToast } from "@/components/hooks/use-toast";
-import { Loader2, Mail } from "lucide-react";
+} from '@/components/ui/form';
+import axios from 'axios';
+import { useToast } from '@/components/hooks/use-toast';
+import { Loader2, Mail } from 'lucide-react';
 
 const formSchema = z.object({
-  recipientEmail: z.string().email("Email inválido"),
+  recipientEmail: z.string().email('Email inválido'),
   recipientName: z.string().optional(),
 });
 
@@ -49,8 +49,8 @@ export function SendCVDialog({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      recipientEmail: "",
-      recipientName: "",
+      recipientEmail: '',
+      recipientName: '',
     },
   });
 
@@ -58,30 +58,30 @@ export function SendCVDialog({
     try {
       setIsLoading(true);
 
-      await axios.post("/api/vehicles/send-cv", {
+      await axios.post('/api/vehicles/send-cv', {
         vehicleId,
         ...values,
       });
 
       toast({
-        title: "¡Email enviado!",
+        title: '¡Email enviado!',
         description: `El CV del vehículo ${vehiclePlate} ha sido enviado a ${values.recipientEmail}`,
       });
 
       setIsOpen(false);
       form.reset();
     } catch (error) {
-      console.error("Error sending CV:", error);
+      console.error('Error sending CV:', error);
 
-      let description = "No se pudo enviar el email";
+      let description = 'No se pudo enviar el email';
       if (axios.isAxiosError(error) && error.response?.data?.error) {
         description = error.response.data.error;
       }
 
       toast({
-        title: "Error",
+        title: 'Error',
         description,
-        variant: "destructive",
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -97,8 +97,8 @@ export function SendCVDialog({
             Enviar CV por Email
           </DialogTitle>
           <DialogDescription>
-            Envía la hoja de vida del vehículo <strong>{vehiclePlate}</strong> por correo
-            electrónico
+            Envía la hoja de vida del vehículo <strong>{vehiclePlate}</strong>{' '}
+            por correo electrónico
           </DialogDescription>
         </DialogHeader>
 
@@ -155,7 +155,7 @@ export function SendCVDialog({
               </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isLoading ? "Enviando..." : "Enviar Email"}
+                {isLoading ? 'Enviando...' : 'Enviar Email'}
               </Button>
             </div>
           </form>

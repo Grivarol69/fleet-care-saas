@@ -17,6 +17,7 @@
 ## 🔧 Configuración Manual Requerida
 
 ### 1. Dominios Locales (REQUERIDO)
+
 Para probar subdomains en localhost, ejecuta:
 
 ```bash
@@ -24,6 +25,7 @@ sudo bash scripts/setup-local-domains.sh
 ```
 
 Esto agregará a `/etc/hosts`:
+
 - `admin.localhost` → Super Admin Panel
 - `tenant1.localhost` → Tenant de prueba 1
 - `tenant2.localhost` → Tenant de prueba 2
@@ -35,8 +37,9 @@ Esto agregará a `/etc/hosts`:
    - `develop` branch → Preview deployment
 
 2. **Configurar variables de entorno en Vercel:**
-   
+
    **Para Production:**
+
    ```
    NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto-prod.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-key-produccion
@@ -44,8 +47,9 @@ Esto agregará a `/etc/hosts`:
    NEXT_PUBLIC_ENVIRONMENT=production
    NEXT_PUBLIC_DOMAIN=fleetcare.com
    ```
-   
+
    **Para Preview (develop branch):**
+
    ```
    NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto-staging.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-key-staging
@@ -63,16 +67,19 @@ Esto agregará a `/etc/hosts`:
 ## 🧪 Testing de la Configuración
 
 ### Paso 1: Configurar dominios locales
+
 ```bash
 sudo bash scripts/setup-local-domains.sh
 ```
 
 ### Paso 2: Iniciar servidor de desarrollo
+
 ```bash
 pnpm dev
 ```
 
 ### Paso 3: Verificar acceso
+
 - ✅ http://localhost:3000 (app principal)
 - ✅ http://admin.localhost:3000 (super admin)
 - ✅ http://tenant1.localhost:3000 (tenant 1)

@@ -33,7 +33,9 @@ export function HighRiskVehicles() {
         <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5" />
-            <h3 className="text-base font-semibold">Vehículos de Alto Riesgo</h3>
+            <h3 className="text-base font-semibold">
+              Vehículos de Alto Riesgo
+            </h3>
           </div>
         </div>
         <div className="flex items-center justify-center h-64">
@@ -44,25 +46,29 @@ export function HighRiskVehicles() {
   }
 
   // Categorizar vehículos por riesgo
-  const categorizedVehicles: RiskVehicle[] = groupedAlerts.map(vehicle => {
-    const criticalAlerts = vehicle.alerts.filter(a => a.alertLevel === 'CRITICAL');
-    const highAlerts = vehicle.alerts.filter(a => a.alertLevel === 'HIGH');
-    const overdueAlerts = vehicle.alerts.filter(a => a.kmToMaintenance <= 0);
+  const categorizedVehicles: RiskVehicle[] = groupedAlerts
+    .map(vehicle => {
+      const criticalAlerts = vehicle.alerts.filter(
+        a => a.alertLevel === 'CRITICAL'
+      );
+      const highAlerts = vehicle.alerts.filter(a => a.alertLevel === 'HIGH');
+      const overdueAlerts = vehicle.alerts.filter(a => a.kmToMaintenance <= 0);
 
-    let riskCategory: RiskCategory;
+      let riskCategory: RiskCategory;
 
-    if (overdueAlerts.length >= 3 || criticalAlerts.length >= 2) {
-      riskCategory = 'immobilized';
-    } else if (criticalAlerts.length > 0) {
-      riskCategory = 'critical';
-    } else if (highAlerts.length > 0) {
-      riskCategory = 'warning';
-    } else {
-      return null; // No es de alto riesgo
-    }
+      if (overdueAlerts.length >= 3 || criticalAlerts.length >= 2) {
+        riskCategory = 'immobilized';
+      } else if (criticalAlerts.length > 0) {
+        riskCategory = 'critical';
+      } else if (highAlerts.length > 0) {
+        riskCategory = 'warning';
+      } else {
+        return null; // No es de alto riesgo
+      }
 
-    return { ...vehicle, riskCategory };
-  }).filter(Boolean) as RiskVehicle[];
+      return { ...vehicle, riskCategory };
+    })
+    .filter(Boolean) as RiskVehicle[];
 
   // Ordenar: inmovilizados primero, luego críticos, luego advertencia
   const sortedVehicles = categorizedVehicles.sort((a, b) => {
@@ -104,7 +110,9 @@ export function HighRiskVehicles() {
         <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5" />
-            <h3 className="text-base font-semibold">Vehículos de Alto Riesgo</h3>
+            <h3 className="text-base font-semibold">
+              Vehículos de Alto Riesgo
+            </h3>
           </div>
         </div>
 
@@ -129,10 +137,13 @@ export function HighRiskVehicles() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5" />
-            <h3 className="text-base font-semibold">Vehículos de Alto Riesgo</h3>
+            <h3 className="text-base font-semibold">
+              Vehículos de Alto Riesgo
+            </h3>
           </div>
           <Badge className="bg-white/20 text-white border-white/30 font-bold">
-            {sortedVehicles.length} vehículo{sortedVehicles.length !== 1 ? 's' : ''}
+            {sortedVehicles.length} vehículo
+            {sortedVehicles.length !== 1 ? 's' : ''}
           </Badge>
         </div>
       </div>
@@ -142,7 +153,9 @@ export function HighRiskVehicles() {
         {sortedVehicles.map((vehicle, index) => {
           const config = riskConfig[vehicle.riskCategory];
           const isExpanded = expandedVehicle === vehicle.vehicleId;
-          const overdueAlerts = vehicle.alerts.filter(a => a.kmToMaintenance <= 0);
+          const overdueAlerts = vehicle.alerts.filter(
+            a => a.kmToMaintenance <= 0
+          );
 
           return (
             <motion.div
@@ -155,7 +168,9 @@ export function HighRiskVehicles() {
               {/* Fila Principal */}
               <div
                 className="p-3 cursor-pointer hover:bg-opacity-80"
-                onClick={() => setExpandedVehicle(isExpanded ? null : vehicle.vehicleId)}
+                onClick={() =>
+                  setExpandedVehicle(isExpanded ? null : vehicle.vehicleId)
+                }
               >
                 <div className="flex items-center gap-3">
                   {/* Foto */}
@@ -171,10 +186,14 @@ export function HighRiskVehicles() {
                   {/* Info del Vehículo */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <span className={`font-bold text-base ${config.textColor}`}>
+                      <span
+                        className={`font-bold text-base ${config.textColor}`}
+                      >
                         {vehicle.vehiclePlate}
                       </span>
-                      <Badge className={`${config.badge} text-white text-xs px-2 py-0.5 font-semibold`}>
+                      <Badge
+                        className={`${config.badge} text-white text-xs px-2 py-0.5 font-semibold`}
+                      >
                         {config.icon} {config.label}
                       </Badge>
                     </div>
@@ -183,7 +202,9 @@ export function HighRiskVehicles() {
                     </p>
                     {overdueAlerts.length > 0 && (
                       <p className="text-xs font-semibold text-red-600 mt-1">
-                        {overdueAlerts.length} mantenimiento{overdueAlerts.length > 1 ? 's' : ''} vencido{overdueAlerts.length > 1 ? 's' : ''}
+                        {overdueAlerts.length} mantenimiento
+                        {overdueAlerts.length > 1 ? 's' : ''} vencido
+                        {overdueAlerts.length > 1 ? 's' : ''}
                       </p>
                     )}
                   </div>
@@ -191,7 +212,8 @@ export function HighRiskVehicles() {
                   {/* Contador de Alertas */}
                   <div className="flex flex-col items-center gap-1">
                     <Badge variant="outline" className="text-xs font-bold">
-                      {vehicle.alerts.length} alert{vehicle.alerts.length !== 1 ? 'as' : 'a'}
+                      {vehicle.alerts.length} alert
+                      {vehicle.alerts.length !== 1 ? 'as' : 'a'}
                     </Badge>
                   </div>
 
@@ -220,9 +242,11 @@ export function HighRiskVehicles() {
                       {vehicle.alerts
                         .sort((a, b) => a.kmToMaintenance - b.kmToMaintenance)
                         .slice(0, 5)
-                        .map((alert) => {
+                        .map(alert => {
                           const isOverdue = alert.kmToMaintenance <= 0;
-                          const isUrgent = alert.kmToMaintenance > 0 && alert.kmToMaintenance <= 500;
+                          const isUrgent =
+                            alert.kmToMaintenance > 0 &&
+                            alert.kmToMaintenance <= 500;
 
                           return (
                             <div
@@ -237,21 +261,28 @@ export function HighRiskVehicles() {
                                 <span className="font-semibold text-gray-900">
                                   {alert.itemName}
                                 </span>
-                                <span className={`font-bold ${
-                                  isOverdue ? 'text-red-600' :
-                                  isUrgent ? 'text-orange-600' : 'text-gray-700'
-                                }`}>
+                                <span
+                                  className={`font-bold ${
+                                    isOverdue
+                                      ? 'text-red-600'
+                                      : isUrgent
+                                        ? 'text-orange-600'
+                                        : 'text-gray-700'
+                                  }`}
+                                >
                                   {isOverdue
                                     ? `${Math.abs(alert.kmToMaintenance)} km VENCIDO`
-                                    : `${alert.kmToMaintenance} km`
-                                  }
+                                    : `${alert.kmToMaintenance} km`}
                                 </span>
                               </div>
                               <div className="flex items-center justify-between mt-1 text-gray-600">
                                 <span>{alert.packageName}</span>
                                 {alert.estimatedCost && (
                                   <span className="text-green-600 font-semibold">
-                                    ${Math.round(alert.estimatedCost).toLocaleString()}
+                                    $
+                                    {Math.round(
+                                      alert.estimatedCost
+                                    ).toLocaleString()}
                                   </span>
                                 )}
                               </div>
@@ -260,7 +291,8 @@ export function HighRiskVehicles() {
                         })}
                       {vehicle.alerts.length > 5 && (
                         <p className="text-center text-xs text-gray-500 py-1">
-                          +{vehicle.alerts.length - 5} alerta{vehicle.alerts.length - 5 > 1 ? 's' : ''} más
+                          +{vehicle.alerts.length - 5} alerta
+                          {vehicle.alerts.length - 5 > 1 ? 's' : ''} más
                         </p>
                       )}
                     </div>

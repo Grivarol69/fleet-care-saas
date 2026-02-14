@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
   flexRender,
   ColumnDef,
-} from "@tanstack/react-table";
+} from '@tanstack/react-table';
 import {
   Table,
   TableBody,
@@ -14,23 +14,24 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { FormAddTechnician } from "../FormAddTechnician";
-import { FormEditTechnician } from "../FormEditTechnician";
-import axios from "axios";
-import { useToast } from "@/components/hooks/use-toast";
-import { TechnicianListProps } from "./TechnicianList.types";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { FormAddTechnician } from '../FormAddTechnician';
+import { FormEditTechnician } from '../FormEditTechnician';
+import axios from 'axios';
+import { useToast } from '@/components/hooks/use-toast';
+import { TechnicianListProps } from './TechnicianList.types';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 export function TechnicianList() {
   const [data, setData] = useState<TechnicianListProps[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingTechnician, setEditingTechnician] = useState<TechnicianListProps | null>(null);
+  const [editingTechnician, setEditingTechnician] =
+    useState<TechnicianListProps | null>(null);
 
   const { toast } = useToast();
 
@@ -40,21 +41,21 @@ export function TechnicianList() {
       const response = await axios.get(`/api/people/technicians`);
       setData(response.data);
     } catch (error) {
-      console.error("Error fetching Technicians: ", error);
+      console.error('Error fetching Technicians: ', error);
 
       if (axios.isAxiosError(error) && error.response?.status === 401) {
         toast({
-          title: "No autorizado",
-          description: "Debes iniciar sesión para ver los técnicos",
-          variant: "destructive",
+          title: 'No autorizado',
+          description: 'Debes iniciar sesión para ver los técnicos',
+          variant: 'destructive',
         });
         return;
       }
 
       toast({
-        title: "Error",
-        description: "No se pudieron cargar los técnicos",
-        variant: "destructive",
+        title: 'Error',
+        description: 'No se pudieron cargar los técnicos',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -65,37 +66,45 @@ export function TechnicianList() {
     fetchTechnicians();
   }, [fetchTechnicians]);
 
-  const handleAddTechnician = useCallback((newTechnician: TechnicianListProps) => {
-    setData((prevData) => [...prevData, newTechnician]);
-  }, []);
+  const handleAddTechnician = useCallback(
+    (newTechnician: TechnicianListProps) => {
+      setData(prevData => [...prevData, newTechnician]);
+    },
+    []
+  );
 
-  const handleEditTechnician = useCallback((updatedTechnician: TechnicianListProps) => {
-    setData((prevData) =>
-      prevData.map((technician) =>
-        technician.id === updatedTechnician.id ? updatedTechnician : technician
-      )
-    );
-  }, []);
+  const handleEditTechnician = useCallback(
+    (updatedTechnician: TechnicianListProps) => {
+      setData(prevData =>
+        prevData.map(technician =>
+          technician.id === updatedTechnician.id
+            ? updatedTechnician
+            : technician
+        )
+      );
+    },
+    []
+  );
 
   const handleDeleteTechnician = async (id: number) => {
-    if (!confirm("¿Estás seguro de que deseas eliminar este técnico?")) {
+    if (!confirm('¿Estás seguro de que deseas eliminar este técnico?')) {
       return;
     }
 
     try {
       await axios.delete(`/api/people/technicians/${id}`);
-      setData((prevData) => prevData.filter((technician) => technician.id !== id));
-      
+      setData(prevData => prevData.filter(technician => technician.id !== id));
+
       toast({
-        title: "Técnico eliminado",
-        description: "El técnico fue eliminado exitosamente.",
+        title: 'Técnico eliminado',
+        description: 'El técnico fue eliminado exitosamente.',
       });
     } catch (error) {
-      console.error("Error deleting technician:", error);
+      console.error('Error deleting technician:', error);
       toast({
-        title: "Error",
-        description: "No se pudo eliminar el técnico",
-        variant: "destructive",
+        title: 'Error',
+        description: 'No se pudo eliminar el técnico',
+        variant: 'destructive',
       });
     }
   };
@@ -107,56 +116,56 @@ export function TechnicianList() {
 
   const columns: ColumnDef<TechnicianListProps>[] = [
     {
-      accessorKey: "name",
-      header: "Nombre",
+      accessorKey: 'name',
+      header: 'Nombre',
     },
     {
-      accessorKey: "email",
-      header: "Email",
+      accessorKey: 'email',
+      header: 'Email',
       cell: ({ row }) => {
-        const email = row.getValue("email") as string | null;
-        return email || "-";
+        const email = row.getValue('email') as string | null;
+        return email || '-';
       },
     },
     {
-      accessorKey: "phone",
-      header: "Teléfono",
+      accessorKey: 'phone',
+      header: 'Teléfono',
       cell: ({ row }) => {
-        const phone = row.getValue("phone") as string | null;
-        return phone || "-";
+        const phone = row.getValue('phone') as string | null;
+        return phone || '-';
       },
     },
     {
-      accessorKey: "specialty",
-      header: "Especialidad",
+      accessorKey: 'specialty',
+      header: 'Especialidad',
       cell: ({ row }) => {
-        const specialty = row.getValue("specialty") as string | null;
-        return specialty || "-";
+        const specialty = row.getValue('specialty') as string | null;
+        return specialty || '-';
       },
     },
     {
-      accessorKey: "status",
-      header: "Estado",
+      accessorKey: 'status',
+      header: 'Estado',
       cell: ({ row }) => {
-        const status = row.getValue("status") as string;
+        const status = row.getValue('status') as string;
         return (
-          <Badge variant={status === "ACTIVE" ? "default" : "secondary"}>
-            {status === "ACTIVE" ? "Activo" : "Inactivo"}
+          <Badge variant={status === 'ACTIVE' ? 'default' : 'secondary'}>
+            {status === 'ACTIVE' ? 'Activo' : 'Inactivo'}
           </Badge>
         );
       },
     },
     {
-      accessorKey: "createdAt",
-      header: "Fecha de Creación",
+      accessorKey: 'createdAt',
+      header: 'Fecha de Creación',
       cell: ({ row }) => {
-        const date = new Date(row.getValue("createdAt") as string);
-        return format(date, "dd/MM/yyyy", { locale: es });
+        const date = new Date(row.getValue('createdAt') as string);
+        return format(date, 'dd/MM/yyyy', { locale: es });
       },
     },
     {
-      id: "actions",
-      header: "Acciones",
+      id: 'actions',
+      header: 'Acciones',
       cell: ({ row }) => {
         const technician = row.original;
         return (
@@ -212,9 +221,9 @@ export function TechnicianList() {
       <div className="rounded-md border">
         <Table>
           <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
+            {table.getHeaderGroups().map(headerGroup => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
+                {headerGroup.headers.map(header => (
                   <TableHead key={header.id}>
                     {header.isPlaceholder
                       ? null
@@ -229,12 +238,12 @@ export function TechnicianList() {
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
+              table.getRowModel().rows.map(row => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
+                  data-state={row.getIsSelected() && 'selected'}
                 >
-                  {row.getVisibleCells().map((cell) => (
+                  {row.getVisibleCells().map(cell => (
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,

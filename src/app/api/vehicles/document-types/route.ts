@@ -1,8 +1,8 @@
-import { prisma } from "@/lib/prisma";
+import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { canManageMasterData } from "@/lib/permissions";
+import { canManageMasterData } from '@/lib/permissions';
 
 // GET - List document types: global for tenant's country + custom for tenant
 export async function GET() {
@@ -19,7 +19,10 @@ export async function GET() {
     });
 
     if (!tenant) {
-      return NextResponse.json({ error: 'Tenant no encontrado' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Tenant no encontrado' },
+        { status: 404 }
+      );
     }
 
     const documentTypes = await prisma.documentTypeConfig.findMany({
@@ -35,8 +38,11 @@ export async function GET() {
 
     return NextResponse.json(documentTypes);
   } catch (error) {
-    console.error("[DOCUMENT_TYPES_GET]", error);
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+    console.error('[DOCUMENT_TYPES_GET]', error);
+    return NextResponse.json(
+      { error: 'Error interno del servidor' },
+      { status: 500 }
+    );
   }
 }
 
@@ -62,7 +68,10 @@ export async function POST(req: Request) {
     }
 
     if (!canManageMasterData(user)) {
-      return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
+      return NextResponse.json(
+        { error: 'No tienes permisos para esta acción' },
+        { status: 403 }
+      );
     }
 
     const body = await req.json();
@@ -100,8 +109,8 @@ export async function POST(req: Request) {
     });
 
     const countryCode = isGlobal
-      ? (data.countryCode || tenant?.country || 'CO')
-      : (tenant?.country || 'CO');
+      ? data.countryCode || tenant?.country || 'CO'
+      : tenant?.country || 'CO';
 
     const docType = await prisma.documentTypeConfig.create({
       data: {
@@ -121,13 +130,21 @@ export async function POST(req: Request) {
 
     return NextResponse.json(docType, { status: 201 });
   } catch (error) {
-    console.error("[DOCUMENT_TYPES_POST]", error);
-    if (typeof error === 'object' && error !== null && 'code' in error && (error as { code: string }).code === 'P2002') {
+    console.error('[DOCUMENT_TYPES_POST]', error);
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error as { code: string }).code === 'P2002'
+    ) {
       return NextResponse.json(
         { error: 'Ya existe un tipo de documento con ese código' },
         { status: 409 }
       );
     }
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Error interno del servidor' },
+      { status: 500 }
+    );
   }
 }

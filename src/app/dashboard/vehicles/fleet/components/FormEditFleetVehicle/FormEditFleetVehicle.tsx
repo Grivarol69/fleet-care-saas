@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import Image from "next/image";
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import Image from 'next/image';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Form,
   FormControl,
@@ -19,45 +19,45 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+} from '@/components/ui/form';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { UploadButton } from "@/lib/uploadthing";
-import axios from "axios";
-import { useToast } from "@/components/hooks/use-toast";
-import { useRouter } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
-import { DocumentsList } from "./components/DocumentsList";
-import { Loader2, X } from "lucide-react";
+} from '@/components/ui/select';
+import { UploadButton } from '@/lib/uploadthing';
+import axios from 'axios';
+import { useToast } from '@/components/hooks/use-toast';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState, useCallback } from 'react';
+import { DocumentsList } from './components/DocumentsList';
+import { Loader2, X } from 'lucide-react';
 
 // Schema corregido
 const formSchema = z.object({
   id: z.number(),
-  photo: z.string().min(1, "La imagen es requerida"),
-  licensePlate: z.string().min(3, "La placa debe tener al menos 3 caracteres"),
-  typePlate: z.enum(["PARTICULAR", "PUBLICO"]),
-  brandId: z.number().min(1, "Seleccione una marca"),
-  lineId: z.number().min(1, "Seleccione una línea"),
-  typeId: z.number().min(1, "Seleccione un tipo"),
-  mileage: z.number().min(0, "El kilometraje debe ser positivo"),
+  photo: z.string().min(1, 'La imagen es requerida'),
+  licensePlate: z.string().min(3, 'La placa debe tener al menos 3 caracteres'),
+  typePlate: z.enum(['PARTICULAR', 'PUBLICO']),
+  brandId: z.number().min(1, 'Seleccione una marca'),
+  lineId: z.number().min(1, 'Seleccione una línea'),
+  typeId: z.number().min(1, 'Seleccione un tipo'),
+  mileage: z.number().min(0, 'El kilometraje debe ser positivo'),
   cylinder: z.number().optional(),
   bodyWork: z.string().optional(),
   engineNumber: z.string().optional(),
   chasisNumber: z.string().optional(),
   ownerCard: z.string().optional(),
-  color: z.string().min(1, "El color es requerido"),
-  owner: z.enum(["OWN", "LEASED", "RENTED"]),
+  color: z.string().min(1, 'El color es requerido'),
+  owner: z.enum(['OWN', 'LEASED', 'RENTED']),
   year: z
     .number()
-    .min(1900, "Ingrese un año válido")
+    .min(1900, 'Ingrese un año válido')
     .max(new Date().getFullYear() + 1),
-  situation: z.enum(["AVAILABLE", "IN_USE", "MAINTENANCE"]),
+  situation: z.enum(['AVAILABLE', 'IN_USE', 'MAINTENANCE']),
 });
 
 type VehicleBrand = {
@@ -79,7 +79,7 @@ interface FleetVehicle {
   id: number;
   photo: string | null;
   licensePlate: string;
-  typePlate: "PARTICULAR" | "PUBLICO";
+  typePlate: 'PARTICULAR' | 'PUBLICO';
   brandId: number;
   lineId: number;
   typeId: number;
@@ -90,9 +90,9 @@ interface FleetVehicle {
   chasisNumber?: string | null;
   ownerCard?: string | null;
   color: string;
-  owner: "OWN" | "LEASED" | "RENTED";
+  owner: 'OWN' | 'LEASED' | 'RENTED';
   year: number;
-  situation: "AVAILABLE" | "IN_USE" | "MAINTENANCE";
+  situation: 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE';
 }
 
 interface FormEditFleetVehicleProps {
@@ -121,7 +121,7 @@ export function FormEditFleetVehicle({
     resolver: zodResolver(formSchema),
     defaultValues: {
       id: fleetVehicle.id,
-      photo: fleetVehicle.photo || "",
+      photo: fleetVehicle.photo || '',
       licensePlate: fleetVehicle.licensePlate,
       typePlate: fleetVehicle.typePlate,
       brandId: fleetVehicle.brandId,
@@ -129,10 +129,10 @@ export function FormEditFleetVehicle({
       typeId: fleetVehicle.typeId,
       mileage: fleetVehicle.mileage,
       cylinder: fleetVehicle.cylinder || 0,
-      bodyWork: fleetVehicle.bodyWork || "",
-      engineNumber: fleetVehicle.engineNumber || "",
-      chasisNumber: fleetVehicle.chasisNumber || "",
-      ownerCard: fleetVehicle.ownerCard || "",
+      bodyWork: fleetVehicle.bodyWork || '',
+      engineNumber: fleetVehicle.engineNumber || '',
+      chasisNumber: fleetVehicle.chasisNumber || '',
+      ownerCard: fleetVehicle.ownerCard || '',
       color: fleetVehicle.color,
       owner: fleetVehicle.owner,
       year: fleetVehicle.year,
@@ -146,20 +146,20 @@ export function FormEditFleetVehicle({
   const fetchData = useCallback(async () => {
     try {
       const [brandsRes, linesRes, typesRes] = await Promise.all([
-        axios.get("/api/vehicles/brands"),
-        axios.get("/api/vehicles/lines"),
-        axios.get("/api/vehicles/types"),
+        axios.get('/api/vehicles/brands'),
+        axios.get('/api/vehicles/lines'),
+        axios.get('/api/vehicles/types'),
       ]);
 
       setVehicleBrands(brandsRes.data);
       setVehicleLines(linesRes.data);
       setVehicleTypes(typesRes.data);
     } catch (error) {
-      console.error("Error cargando datos:", error);
+      console.error('Error cargando datos:', error);
       toast({
-        title: "Error",
-        description: "No se pudieron cargar los datos del formulario",
-        variant: "destructive",
+        title: 'Error',
+        description: 'No se pudieron cargar los datos del formulario',
+        variant: 'destructive',
       });
     }
   }, [toast]);
@@ -170,7 +170,7 @@ export function FormEditFleetVehicle({
       setPreviewImage(fleetVehicle.photo);
       form.reset({
         id: fleetVehicle.id,
-        photo: fleetVehicle.photo || "",
+        photo: fleetVehicle.photo || '',
         licensePlate: fleetVehicle.licensePlate,
         typePlate: fleetVehicle.typePlate,
         brandId: fleetVehicle.brandId,
@@ -178,10 +178,10 @@ export function FormEditFleetVehicle({
         typeId: fleetVehicle.typeId,
         mileage: fleetVehicle.mileage,
         cylinder: fleetVehicle.cylinder || 0,
-        bodyWork: fleetVehicle.bodyWork || "",
-        engineNumber: fleetVehicle.engineNumber || "",
-        chasisNumber: fleetVehicle.chasisNumber || "",
-        ownerCard: fleetVehicle.ownerCard || "",
+        bodyWork: fleetVehicle.bodyWork || '',
+        engineNumber: fleetVehicle.engineNumber || '',
+        chasisNumber: fleetVehicle.chasisNumber || '',
+        ownerCard: fleetVehicle.ownerCard || '',
         color: fleetVehicle.color,
         owner: fleetVehicle.owner,
         year: fleetVehicle.year,
@@ -192,7 +192,7 @@ export function FormEditFleetVehicle({
 
   const handleRemoveImage = () => {
     setPreviewImage(null);
-    form.setValue("photo", "", { shouldValidate: true });
+    form.setValue('photo', '', { shouldValidate: true });
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
@@ -214,21 +214,21 @@ export function FormEditFleetVehicle({
       setIsOpen(false);
 
       toast({
-        title: "¡Vehículo actualizado!",
-        description: "El vehículo ha sido actualizado exitosamente",
+        title: '¡Vehículo actualizado!',
+        description: 'El vehículo ha sido actualizado exitosamente',
       });
 
       router.refresh();
     } catch (error) {
-      console.error("Error updating vehicle:", error);
-      let description = "No se pudo actualizar el vehículo";
+      console.error('Error updating vehicle:', error);
+      let description = 'No se pudo actualizar el vehículo';
       if (axios.isAxiosError(error) && error.response?.data) {
         description = error.response.data;
       }
       toast({
-        title: "Error",
+        title: 'Error',
         description,
-        variant: "destructive",
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -270,7 +270,7 @@ export function FormEditFleetVehicle({
                             <Input
                               placeholder="ABC123"
                               {...field}
-                              onChange={(e) =>
+                              onChange={e =>
                                 field.onChange(e.target.value.toUpperCase())
                               }
                               disabled={isLoading}
@@ -298,7 +298,9 @@ export function FormEditFleetVehicle({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="PARTICULAR">Particular</SelectItem>
+                              <SelectItem value="PARTICULAR">
+                                Particular
+                              </SelectItem>
                               <SelectItem value="PUBLICO">Público</SelectItem>
                             </SelectContent>
                           </Select>
@@ -315,7 +317,7 @@ export function FormEditFleetVehicle({
                         <FormItem>
                           <FormLabel>Marca *</FormLabel>
                           <Select
-                            onValueChange={(value) =>
+                            onValueChange={value =>
                               field.onChange(Number(value))
                             }
                             value={field.value.toString()}
@@ -326,7 +328,7 @@ export function FormEditFleetVehicle({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {vehicleBrands.map((brand) => (
+                              {vehicleBrands.map(brand => (
                                 <SelectItem
                                   key={brand.id}
                                   value={brand.id.toString()}
@@ -349,7 +351,7 @@ export function FormEditFleetVehicle({
                         <FormItem>
                           <FormLabel>Línea *</FormLabel>
                           <Select
-                            onValueChange={(value) =>
+                            onValueChange={value =>
                               field.onChange(Number(value))
                             }
                             value={field.value.toString()}
@@ -360,7 +362,7 @@ export function FormEditFleetVehicle({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {vehicleLines.map((line) => (
+                              {vehicleLines.map(line => (
                                 <SelectItem
                                   key={line.id}
                                   value={line.id.toString()}
@@ -383,7 +385,7 @@ export function FormEditFleetVehicle({
                         <FormItem>
                           <FormLabel>Tipo *</FormLabel>
                           <Select
-                            onValueChange={(value) =>
+                            onValueChange={value =>
                               field.onChange(Number(value))
                             }
                             value={field.value.toString()}
@@ -394,7 +396,7 @@ export function FormEditFleetVehicle({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {vehicleTypes.map((type) => (
+                              {vehicleTypes.map(type => (
                                 <SelectItem
                                   key={type.id}
                                   value={type.id.toString()}
@@ -421,7 +423,7 @@ export function FormEditFleetVehicle({
                               type="number"
                               placeholder="0"
                               {...field}
-                              onChange={(e) =>
+                              onChange={e =>
                                 field.onChange(Number(e.target.value))
                               }
                               disabled={isLoading}
@@ -463,7 +465,7 @@ export function FormEditFleetVehicle({
                               type="number"
                               placeholder="2024"
                               {...field}
-                              onChange={(e) =>
+                              onChange={e =>
                                 field.onChange(Number(e.target.value))
                               }
                               disabled={isLoading}
@@ -544,7 +546,7 @@ export function FormEditFleetVehicle({
                               type="number"
                               placeholder="1600"
                               {...field}
-                              onChange={(e) =>
+                              onChange={e =>
                                 field.onChange(
                                   Number(e.target.value) || undefined
                                 )
@@ -589,25 +591,25 @@ export function FormEditFleetVehicle({
                               {!previewImage ? (
                                 <UploadButton
                                   endpoint="vehicleImageUploader"
-                                  onClientUploadComplete={(res) => {
+                                  onClientUploadComplete={res => {
                                     if (res?.[0]?.url) {
                                       const imageUrl = res[0].url;
                                       setPreviewImage(imageUrl);
-                                      form.setValue("photo", imageUrl, {
+                                      form.setValue('photo', imageUrl, {
                                         shouldValidate: true,
                                       });
                                       toast({
-                                        title: "¡Imagen actualizada!",
+                                        title: '¡Imagen actualizada!',
                                         description:
-                                          "La imagen se ha cargado correctamente",
+                                          'La imagen se ha cargado correctamente',
                                       });
                                     }
                                   }}
-                                  onUploadError={(error) => {
+                                  onUploadError={error => {
                                     toast({
-                                      title: "Error al subir imagen",
+                                      title: 'Error al subir imagen',
                                       description: error.message,
-                                      variant: "destructive",
+                                      variant: 'destructive',
                                     });
                                   }}
                                   className="ut-button:w-full ut-button:bg-primary ut-button:hover:bg-primary/90"
@@ -661,7 +663,7 @@ export function FormEditFleetVehicle({
                     {isLoading && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                    {isLoading ? "Actualizando..." : "Actualizar Vehículo"}
+                    {isLoading ? 'Actualizando...' : 'Actualizar Vehículo'}
                   </Button>
                 </div>
               </form>

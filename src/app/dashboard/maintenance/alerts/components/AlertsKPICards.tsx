@@ -24,7 +24,9 @@ export function AlertsKPICards({ data }: Props) {
             <Wrench className="h-6 w-6" />
           </div>
           <div className="text-right">
-            <div className="text-3xl font-bold">{data.totalVehiclesWithAlerts}</div>
+            <div className="text-3xl font-bold">
+              {data.totalVehiclesWithAlerts}
+            </div>
           </div>
         </div>
         <div className="text-sm font-medium text-blue-100">Vehículos</div>
@@ -32,11 +34,13 @@ export function AlertsKPICards({ data }: Props) {
       </div>
 
       {/* Alertas Críticas */}
-      <div className={`rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-shadow ${
-        data.criticalAlerts > 0
-          ? 'bg-gradient-to-br from-red-500 to-red-600 animate-pulse'
-          : 'bg-gradient-to-br from-gray-400 to-gray-500'
-      }`}>
+      <div
+        className={`rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-shadow ${
+          data.criticalAlerts > 0
+            ? 'bg-gradient-to-br from-red-500 to-red-600 animate-pulse'
+            : 'bg-gradient-to-br from-gray-400 to-gray-500'
+        }`}
+      >
         <div className="flex items-center justify-between mb-3">
           <div className="bg-white/20 rounded-lg p-2.5">
             <AlertTriangle className="h-6 w-6" />
@@ -47,16 +51,20 @@ export function AlertsKPICards({ data }: Props) {
         </div>
         <div className="text-sm font-medium">Alertas Críticas</div>
         <div className="text-xs opacity-90">
-          {data.criticalAlerts > 0 ? 'acción inmediata requerida' : 'sin urgencias'}
+          {data.criticalAlerts > 0
+            ? 'acción inmediata requerida'
+            : 'sin urgencias'}
         </div>
       </div>
 
       {/* Alertas Próximas */}
-      <div className={`rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-shadow ${
-        data.upcomingAlerts > 0
-          ? 'bg-gradient-to-br from-amber-500 to-orange-500'
-          : 'bg-gradient-to-br from-gray-400 to-gray-500'
-      }`}>
+      <div
+        className={`rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-shadow ${
+          data.upcomingAlerts > 0
+            ? 'bg-gradient-to-br from-amber-500 to-orange-500'
+            : 'bg-gradient-to-br from-gray-400 to-gray-500'
+        }`}
+      >
         <div className="flex items-center justify-between mb-3">
           <div className="bg-white/20 rounded-lg p-2.5">
             <Clock className="h-6 w-6" />
@@ -67,7 +75,9 @@ export function AlertsKPICards({ data }: Props) {
         </div>
         <div className="text-sm font-medium">Próximos Servicios</div>
         <div className="text-xs opacity-90">
-          {data.upcomingAlerts > 0 ? 'en los próximos 1,000 km' : 'flota al día'}
+          {data.upcomingAlerts > 0
+            ? 'en los próximos 1,000 km'
+            : 'flota al día'}
         </div>
       </div>
 

@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
+import { useState, useEffect } from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { format } from 'date-fns';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Form,
   FormControl,
@@ -20,33 +20,38 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
+} from '@/components/ui/form';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { UploadButton } from "@/lib/uploadthing";
-import axios from "axios";
-import { useToast } from "@/components/hooks/use-toast";
-import { useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { CalendarIcon, Loader2 } from "lucide-react";
-import { FormAddDocumentProps, DocumentTypeConfigProps } from "../SharedTypes/SharedTypes";
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { UploadButton } from '@/lib/uploadthing';
+import axios from 'axios';
+import { useToast } from '@/components/hooks/use-toast';
+import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import { CalendarIcon, Loader2 } from 'lucide-react';
+import {
+  FormAddDocumentProps,
+  DocumentTypeConfigProps,
+} from '../SharedTypes/SharedTypes';
 
 const formSchema = z.object({
-  documentTypeId: z.number({ required_error: "Seleccione un tipo de documento" }),
-  documentNumber: z.string().min(1, "El número de documento es requerido"),
+  documentTypeId: z.number({
+    required_error: 'Seleccione un tipo de documento',
+  }),
+  documentNumber: z.string().min(1, 'El número de documento es requerido'),
   entity: z.string().optional(),
-  fileUrl: z.string().min(1, "Debe subir un archivo"),
+  fileUrl: z.string().min(1, 'Debe subir un archivo'),
   expiryDate: z.date().optional(),
 });
 
@@ -58,14 +63,16 @@ export function FormAddDocument({
 }: FormAddDocumentProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [fileUploaded, setFileUploaded] = useState(false);
-  const [documentTypes, setDocumentTypes] = useState<DocumentTypeConfigProps[]>([]);
+  const [documentTypes, setDocumentTypes] = useState<DocumentTypeConfigProps[]>(
+    []
+  );
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      documentNumber: "",
-      entity: "",
-      fileUrl: "",
+      documentNumber: '',
+      entity: '',
+      fileUrl: '',
     },
   });
 
@@ -75,9 +82,10 @@ export function FormAddDocument({
   // Fetch document types from API
   useEffect(() => {
     if (isOpen) {
-      axios.get('/api/vehicles/document-types')
-        .then((res) => setDocumentTypes(res.data))
-        .catch((err) => console.error("Error fetching document types:", err));
+      axios
+        .get('/api/vehicles/document-types')
+        .then(res => setDocumentTypes(res.data))
+        .catch(err => console.error('Error fetching document types:', err));
     }
   }, [isOpen]);
 
@@ -92,7 +100,7 @@ export function FormAddDocument({
       };
 
       const response = await axios.post(
-        "/api/vehicles/documents",
+        '/api/vehicles/documents',
         documentData
       );
 
@@ -102,21 +110,21 @@ export function FormAddDocument({
       setFileUploaded(false);
 
       toast({
-        title: "Documento creado!",
-        description: "El documento ha sido registrado exitosamente",
+        title: 'Documento creado!',
+        description: 'El documento ha sido registrado exitosamente',
       });
 
       router.refresh();
     } catch (error) {
-      console.error("Error creating document:", error);
-      let description = "No se pudo crear el documento";
+      console.error('Error creating document:', error);
+      let description = 'No se pudo crear el documento';
       if (axios.isAxiosError(error) && error.response?.data) {
         description = error.response.data;
       }
       toast({
-        title: "Error",
+        title: 'Error',
         description,
-        variant: "destructive",
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -140,7 +148,7 @@ export function FormAddDocument({
                 <FormItem>
                   <FormLabel>Tipo de Documento *</FormLabel>
                   <Select
-                    onValueChange={(val) => field.onChange(parseInt(val, 10))}
+                    onValueChange={val => field.onChange(parseInt(val, 10))}
                     value={field.value?.toString()}
                   >
                     <FormControl>
@@ -149,7 +157,7 @@ export function FormAddDocument({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {documentTypes.map((dt) => (
+                      {documentTypes.map(dt => (
                         <SelectItem key={dt.id} value={dt.id.toString()}>
                           {dt.name}
                         </SelectItem>
@@ -211,22 +219,22 @@ export function FormAddDocument({
                       {!fileUploaded ? (
                         <UploadButton
                           endpoint="documentUploader"
-                          onClientUploadComplete={(res) => {
+                          onClientUploadComplete={res => {
                             if (res?.[0]?.url) {
                               field.onChange(res[0].url);
                               setFileUploaded(true);
                               toast({
-                                title: "Archivo subido!",
+                                title: 'Archivo subido!',
                                 description:
-                                  "El archivo se ha cargado correctamente",
+                                  'El archivo se ha cargado correctamente',
                               });
                             }
                           }}
-                          onUploadError={(error) => {
+                          onUploadError={error => {
                             toast({
-                              title: "Error al subir archivo",
+                              title: 'Error al subir archivo',
                               description: error.message,
-                              variant: "destructive",
+                              variant: 'destructive',
                             });
                           }}
                           className="ut-button:w-full ut-button:bg-primary ut-button:hover:bg-primary/90"
@@ -241,7 +249,7 @@ export function FormAddDocument({
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              field.onChange("");
+                              field.onChange('');
                               setFileUploaded(false);
                             }}
                           >
@@ -269,13 +277,13 @@ export function FormAddDocument({
                         <Button
                           variant="outline"
                           className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
+                            'w-full pl-3 text-left font-normal',
+                            !field.value && 'text-muted-foreground'
                           )}
                           disabled={isLoading}
                         >
                           {field.value ? (
-                            format(field.value, "PPP")
+                            format(field.value, 'PPP')
                           ) : (
                             <span>Seleccionar fecha</span>
                           )}
@@ -288,7 +296,7 @@ export function FormAddDocument({
                         mode="single"
                         selected={field.value}
                         onSelect={field.onChange}
-                        disabled={(date) => date < new Date("1900-01-01")}
+                        disabled={date => date < new Date('1900-01-01')}
                         initialFocus
                       />
                     </PopoverContent>
@@ -314,7 +322,7 @@ export function FormAddDocument({
               </Button>
               <Button type="submit" disabled={isLoading || !fileUploaded}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isLoading ? "Creando..." : "Crear Documento"}
+                {isLoading ? 'Creando...' : 'Crear Documento'}
               </Button>
             </div>
           </form>

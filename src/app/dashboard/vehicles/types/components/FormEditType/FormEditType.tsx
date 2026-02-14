@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Form,
   FormControl,
@@ -19,12 +19,12 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import axios from "axios";
-import { useToast } from "@/components/hooks/use-toast";
-import { useRouter } from "next/navigation";
-import { formSchema } from "./FormEditType.form";
-import { FormEditTypeProps } from "./FormEditType.types";
+} from '@/components/ui/form';
+import axios from 'axios';
+import { useToast } from '@/components/hooks/use-toast';
+import { useRouter } from 'next/navigation';
+import { formSchema } from './FormEditType.form';
+import { FormEditTypeProps } from './FormEditType.types';
 
 export function FormEditType({
   isOpen,
@@ -58,56 +58,56 @@ export function FormEditType({
       setIsOpen(false);
       form.reset();
       toast({
-        title: "Tipo actualizado",
-        description: "El tipo fue actualizado exitosamente",
+        title: 'Tipo actualizado',
+        description: 'El tipo fue actualizado exitosamente',
       });
 
       router.refresh();
     } catch (error) {
-      console.error("Error updating Type:", error);
+      console.error('Error updating Type:', error);
 
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 401) {
           toast({
-            title: "No autorizado",
-            description: "Debes iniciar sesión para editar tipos",
-            variant: "destructive",
+            title: 'No autorizado',
+            description: 'Debes iniciar sesión para editar tipos',
+            variant: 'destructive',
           });
           return;
         }
 
         if (error.response?.status === 409) {
           toast({
-            title: "Tipo duplicada",
-            description: "Ya existe un tipo con ese nombre",
-            variant: "destructive",
+            title: 'Tipo duplicada',
+            description: 'Ya existe un tipo con ese nombre',
+            variant: 'destructive',
           });
           return;
         }
 
         if (error.response?.status === 400) {
           toast({
-            title: "Datos inválidos",
-            description: "Por favor verifica los datos ingresados",
-            variant: "destructive",
+            title: 'Datos inválidos',
+            description: 'Por favor verifica los datos ingresados',
+            variant: 'destructive',
           });
           return;
         }
 
         if (error.response?.status === 404) {
           toast({
-            title: "Tipo no encontrado",
-            description: "Ell tipo que intentas editar no existe",
-            variant: "destructive",
+            title: 'Tipo no encontrado',
+            description: 'Ell tipo que intentas editar no existe',
+            variant: 'destructive',
           });
           return;
         }
       }
 
       toast({
-        title: "Error al actualizar tipo",
-        description: "Por favor intenta de nuevo más tarde",
-        variant: "destructive",
+        title: 'Error al actualizar tipo',
+        description: 'Por favor intenta de nuevo más tarde',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -149,7 +149,7 @@ export function FormEditType({
                 Cancelar
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Actualizando..." : "Actualizar Tipo"}
+                {isLoading ? 'Actualizando...' : 'Actualizar Tipo'}
               </Button>
             </div>
           </form>

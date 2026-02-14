@@ -7,7 +7,7 @@ const path = require('path');
 const vision = require('@google-cloud/vision');
 
 const client = new vision.ImageAnnotatorClient({
-  keyFilename: path.join(__dirname, 'credentials', 'google-vision-key.json')
+  keyFilename: path.join(__dirname, 'credentials', 'google-vision-key.json'),
 });
 
 async function extractInvoiceData(imageBuffer) {
@@ -25,7 +25,7 @@ async function extractInvoiceData(imageBuffer) {
     total: extractAmount(rawText, ['total', 'valor total']),
     subtotal: extractAmount(rawText, ['subtotal', 'base']),
     tax: extractAmount(rawText, ['iva']),
-    rawText: rawText.substring(0, 500)
+    rawText: rawText.substring(0, 500),
   };
 }
 
@@ -53,17 +53,29 @@ function extractInvoiceNumber(text) {
 
 function extractDate(text) {
   const monthMap = {
-    'ene': '01', 'feb': '02', 'mar': '03', 'abr': '04',
-    'may': '05', 'jun': '06', 'jul': '07', 'ago': '08',
-    'sep': '09', 'oct': '10', 'nov': '11', 'dic': '12',
-    'jan': '01', 'apr': '04', 'aug': '08', 'dec': '12'
+    ene: '01',
+    feb: '02',
+    mar: '03',
+    abr: '04',
+    may: '05',
+    jun: '06',
+    jul: '07',
+    ago: '08',
+    sep: '09',
+    oct: '10',
+    nov: '11',
+    dic: '12',
+    jan: '01',
+    apr: '04',
+    aug: '08',
+    dec: '12',
   };
 
   // Patrones
   const patterns = [
-    /(\d{1,2})-([A-Za-z]{3})-(\d{4})/,  // 05-Nov-2025
-    /(\d{1,2})-(\d{1,2})-(\d{4})/,      // 31-07-2025
-    /(\d{1,2})\/(\d{1,2})\/(\d{4})/,    // 31/07/2025
+    /(\d{1,2})-([A-Za-z]{3})-(\d{4})/, // 05-Nov-2025
+    /(\d{1,2})-(\d{1,2})-(\d{4})/, // 31-07-2025
+    /(\d{1,2})\/(\d{1,2})\/(\d{4})/, // 31/07/2025
   ];
 
   for (const pattern of patterns) {
@@ -127,7 +139,8 @@ function extractAmount(text, keywords) {
         const parts = amountStr.split('.');
         if (parts[parts.length - 1].length === 2) {
           // Último grupo de 2 dígitos = decimal
-          amountStr = parts.slice(0, -1).join('') + '.' + parts[parts.length - 1];
+          amountStr =
+            parts.slice(0, -1).join('') + '.' + parts[parts.length - 1];
         } else {
           // Son separadores de miles
           amountStr = amountStr.replace(/\./g, '');
@@ -154,23 +167,40 @@ async function testOCR(filePath) {
 
     console.log('✅ EXTRACCIÓN EXITOSA\n');
     console.log('📋 DATOS EXTRAÍDOS:');
-    console.log('  📄 Número Factura:', data.invoiceNumber || '❌ No detectado');
+    console.log(
+      '  📄 Número Factura:',
+      data.invoiceNumber || '❌ No detectado'
+    );
     console.log('  📅 Fecha:', data.invoiceDate || '❌ No detectada');
     console.log('  🏢 Proveedor:', data.supplier || '❌ No detectado');
-    console.log('  💰 Subtotal:', data.subtotal ? `$${data.subtotal.toLocaleString('es-CO')}` : '❌ No detectado');
-    console.log('  💵 IVA:', data.tax ? `$${data.tax.toLocaleString('es-CO')}` : '❌ No detectado');
-    console.log('  💰 TOTAL:', data.total ? `$${data.total.toLocaleString('es-CO')}` : '❌ No detectado');
+    console.log(
+      '  💰 Subtotal:',
+      data.subtotal
+        ? `$${data.subtotal.toLocaleString('es-CO')}`
+        : '❌ No detectado'
+    );
+    console.log(
+      '  💵 IVA:',
+      data.tax ? `$${data.tax.toLocaleString('es-CO')}` : '❌ No detectado'
+    );
+    console.log(
+      '  💰 TOTAL:',
+      data.total ? `$${data.total.toLocaleString('es-CO')}` : '❌ No detectado'
+    );
 
     console.log('\n📝 Muestra del texto:');
     console.log(data.rawText);
-
   } catch (error) {
     console.log('❌ ERROR:', error.message);
   }
 }
 
 (async () => {
-  await testOCR('/home/grivarol69/Imágenes/Capturas de pantalla/Captura desde 2025-11-20 17-52-00.png');
+  await testOCR(
+    '/home/grivarol69/Imágenes/Capturas de pantalla/Captura desde 2025-11-20 17-52-00.png'
+  );
   console.log('\n' + '='.repeat(70) + '\n');
-  await testOCR('/home/grivarol69/Imágenes/Capturas de pantalla/Captura desde 2025-11-20 17-52-29.png');
+  await testOCR(
+    '/home/grivarol69/Imágenes/Capturas de pantalla/Captura desde 2025-11-20 17-52-29.png'
+  );
 })();

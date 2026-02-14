@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import { PDFDownloadLink, PDFViewer } from "@react-pdf/renderer";
-import { VehicleCV } from "./VehicleCV";
+import React, { useState } from 'react';
+import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
+import { VehicleCV } from './VehicleCV';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Download, Loader2 } from "lucide-react";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Download, Loader2 } from 'lucide-react';
 
 interface Tenant {
   name: string;
@@ -64,7 +64,7 @@ type VehicleCVData = {
   photo?: string;
   emergencyContactName?: string;
   emergencyContactPhone?: string;
-}
+};
 
 interface VehicleCVViewerProps {
   isOpen: boolean;
@@ -87,7 +87,7 @@ export function VehicleCVViewer({
     setIsClient(true);
   }, []);
 
-  const fileName = `CV_${vehicle.licensePlate}_${new Date().toISOString().split("T")[0]}.pdf`;
+  const fileName = `CV_${vehicle.licensePlate}_${new Date().toISOString().split('T')[0]}.pdf`;
 
   if (!isClient) {
     return (
@@ -117,14 +117,16 @@ export function VehicleCVViewer({
                   {...(tenant && {
                     tenant: {
                       name: tenant.name,
-                      ...(tenant.logo && { logo: tenant.logo })
-                    }
+                      ...(tenant.logo && { logo: tenant.logo }),
+                    },
                   })}
                   documents={documents.map(doc => ({
                     type: doc.type,
-                    ...(doc.documentNumber && { documentNumber: doc.documentNumber }),
+                    ...(doc.documentNumber && {
+                      documentNumber: doc.documentNumber,
+                    }),
                     ...(doc.expiryDate && { expiryDate: doc.expiryDate }),
-                    ...(doc.entity && { entity: doc.entity })
+                    ...(doc.entity && { entity: doc.entity }),
                   }))}
                 />
               }
@@ -150,20 +152,27 @@ export function VehicleCVViewer({
         </DialogHeader>
 
         <div className="w-full flex-1 px-6 pb-6">
-          <PDFViewer width="100%" height="100%" showToolbar={true} className="rounded-lg">
+          <PDFViewer
+            width="100%"
+            height="100%"
+            showToolbar={true}
+            className="rounded-lg"
+          >
             <VehicleCV
               vehicle={vehicle as VehicleCVData}
               {...(tenant && {
                 tenant: {
                   name: tenant.name,
-                  ...(tenant.logo && { logo: tenant.logo })
-                }
+                  ...(tenant.logo && { logo: tenant.logo }),
+                },
               })}
               documents={documents.map(doc => ({
                 type: doc.type,
-                ...(doc.documentNumber && { documentNumber: doc.documentNumber }),
+                ...(doc.documentNumber && {
+                  documentNumber: doc.documentNumber,
+                }),
                 ...(doc.expiryDate && { expiryDate: doc.expiryDate }),
-                ...(doc.entity && { entity: doc.entity })
+                ...(doc.entity && { entity: doc.entity }),
               }))}
             />
           </PDFViewer>

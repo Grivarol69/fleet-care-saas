@@ -1,6 +1,12 @@
-import { prisma } from '@/lib/prisma'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { prisma } from '@/lib/prisma';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -8,9 +14,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
+} from '@/components/ui/table';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 export default async function TenantsPage() {
   // Obtener todos los tenants con conteo de usuarios y vehículos
@@ -26,13 +32,15 @@ export default async function TenantsPage() {
     orderBy: {
       createdAt: 'desc',
     },
-  })
+  });
 
   return (
     <div>
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-900">Tenants</h1>
-        <p className="text-slate-600">Gestión de organizaciones en la plataforma</p>
+        <p className="text-slate-600">
+          Gestión de organizaciones en la plataforma
+        </p>
       </div>
 
       <Card>
@@ -56,20 +64,30 @@ export default async function TenantsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {tenants.map((tenant) => (
+              {tenants.map(tenant => (
                 <TableRow key={tenant.id}>
                   <TableCell className="font-medium">{tenant.name}</TableCell>
-                  <TableCell className="text-slate-500">{tenant.slug}</TableCell>
+                  <TableCell className="text-slate-500">
+                    {tenant.slug}
+                  </TableCell>
                   <TableCell>{tenant.country || '-'}</TableCell>
                   <TableCell>
                     <Badge
-                      variant={tenant.subscriptionStatus === 'ACTIVE' ? 'default' : 'secondary'}
+                      variant={
+                        tenant.subscriptionStatus === 'ACTIVE'
+                          ? 'default'
+                          : 'secondary'
+                      }
                     >
                       {tenant.subscriptionStatus}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-center">{tenant._count.users}</TableCell>
-                  <TableCell className="text-center">{tenant._count.vehicles}</TableCell>
+                  <TableCell className="text-center">
+                    {tenant._count.users}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {tenant._count.vehicles}
+                  </TableCell>
                   <TableCell className="text-slate-500">
                     {format(tenant.createdAt, 'dd MMM yyyy', { locale: es })}
                   </TableCell>
@@ -80,5 +98,5 @@ export default async function TenantsPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

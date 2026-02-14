@@ -1,2 +1,5 @@
 export { FormAddPackage } from './FormAddPackage';
-export type { FormAddPackageProps, AddPackageFormData } from './FormAddPackage.types';
+export type {
+  FormAddPackageProps,
+  AddPackageFormData,
+} from './FormAddPackage.types';

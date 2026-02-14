@@ -13,7 +13,7 @@ import {
   DollarSign,
   Wrench,
   Plus,
-  Lightbulb
+  Lightbulb,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -43,18 +43,27 @@ export function AlertVehicleCard({
   onSelectionChange,
   onCreateWorkOrder,
 }: Props) {
-  const { alerts, vehiclePlate, vehiclePhoto, brandName, lineName } = vehicleGroup;
+  const { alerts, vehiclePlate, vehiclePhoto, brandName, lineName } =
+    vehicleGroup;
 
   // Calcular estadísticas
   const criticalCount = alerts.filter(a => a.alertLevel === 'CRITICAL').length;
   const highCount = alerts.filter(a => a.alertLevel === 'HIGH').length;
   const mediumCount = alerts.filter(a => a.alertLevel === 'MEDIUM').length;
 
-  const totalEstimatedCost = alerts.reduce((sum, a) => sum + (a.estimatedCost || 0), 0);
-  const totalEstimatedDuration = alerts.reduce((sum, a) => sum + (a.estimatedDuration || 0), 0);
+  const totalEstimatedCost = alerts.reduce(
+    (sum, a) => sum + (a.estimatedCost || 0),
+    0
+  );
+  const totalEstimatedDuration = alerts.reduce(
+    (sum, a) => sum + (a.estimatedDuration || 0),
+    0
+  );
 
   // Encontrar próximo vencimiento
-  const nextAlert = [...alerts].sort((a, b) => a.kmToMaintenance - b.kmToMaintenance)[0];
+  const nextAlert = [...alerts].sort(
+    (a, b) => a.kmToMaintenance - b.kmToMaintenance
+  )[0];
 
   // Determinar color del borde
   const getBorderColor = () => {
@@ -70,20 +79,28 @@ export function AlertVehicleCard({
   };
 
   // Agrupar alertas por paquete
-  const alertsByPackage = alerts.reduce((acc, alert) => {
-    const key = alert.packageName;
-    if (!acc[key]) {
-      acc[key] = {
-        packageName: alert.packageName,
-        scheduledKm: alert.scheduledKm,
-        alerts: [],
-      };
-    }
-    acc[key].alerts.push(alert);
-    return acc;
-  }, {} as Record<string, { packageName: string; scheduledKm: number; alerts: MaintenanceAlert[] }>);
+  const alertsByPackage = alerts.reduce(
+    (acc, alert) => {
+      const key = alert.packageName;
+      if (!acc[key]) {
+        acc[key] = {
+          packageName: alert.packageName,
+          scheduledKm: alert.scheduledKm,
+          alerts: [],
+        };
+      }
+      acc[key].alerts.push(alert);
+      return acc;
+    },
+    {} as Record<
+      string,
+      { packageName: string; scheduledKm: number; alerts: MaintenanceAlert[] }
+    >
+  );
 
-  const packages = Object.values(alertsByPackage).sort((a, b) => a.scheduledKm - b.scheduledKm);
+  const packages = Object.values(alertsByPackage).sort(
+    (a, b) => a.scheduledKm - b.scheduledKm
+  );
 
   // Handlers de selección
   const handleToggleAlert = (alertId: number) => {
@@ -96,11 +113,15 @@ export function AlertVehicleCard({
 
   const handleTogglePackage = (packageAlerts: MaintenanceAlert[]) => {
     const packageAlertIds = packageAlerts.map(a => a.id);
-    const allSelected = packageAlertIds.every(id => selectedAlertIds.includes(id));
+    const allSelected = packageAlertIds.every(id =>
+      selectedAlertIds.includes(id)
+    );
 
     if (allSelected) {
       // Deseleccionar todos
-      onSelectionChange(selectedAlertIds.filter(id => !packageAlertIds.includes(id)));
+      onSelectionChange(
+        selectedAlertIds.filter(id => !packageAlertIds.includes(id))
+      );
     } else {
       // Seleccionar todos
       const newIds = [...new Set([...selectedAlertIds, ...packageAlertIds])];
@@ -108,14 +129,23 @@ export function AlertVehicleCard({
     }
   };
 
-  const selectedAlertsData = alerts.filter(a => selectedAlertIds.includes(a.id));
-  const selectedCost = selectedAlertsData.reduce((sum, a) => sum + (a.estimatedCost || 0), 0);
-  const selectedDuration = selectedAlertsData.reduce((sum, a) => sum + (a.estimatedDuration || 0), 0);
+  const selectedAlertsData = alerts.filter(a =>
+    selectedAlertIds.includes(a.id)
+  );
+  const selectedCost = selectedAlertsData.reduce(
+    (sum, a) => sum + (a.estimatedCost || 0),
+    0
+  );
+  const selectedDuration = selectedAlertsData.reduce(
+    (sum, a) => sum + (a.estimatedDuration || 0),
+    0
+  );
 
   return (
-    <Card className={`border-l-4 ${getBorderColor()} ${getBgColor()} transition-all duration-300 hover:shadow-lg`}>
+    <Card
+      className={`border-l-4 ${getBorderColor()} ${getBgColor()} transition-all duration-300 hover:shadow-lg`}
+    >
       <CardContent className="p-0">
-
         {/* Card Header - Siempre visible */}
         <div
           className="p-6 cursor-pointer flex items-center gap-6"
@@ -138,7 +168,9 @@ export function AlertVehicleCard({
                 <h3 className="text-xl font-bold text-gray-900">
                   {brandName} {lineName}
                 </h3>
-                <p className="text-lg text-gray-600 font-semibold">{vehiclePlate}</p>
+                <p className="text-lg text-gray-600 font-semibold">
+                  {vehiclePlate}
+                </p>
               </div>
 
               <Button variant="ghost" size="sm">
@@ -183,7 +215,9 @@ export function AlertVehicleCard({
               </div>
               <div className="flex items-center gap-1.5 text-gray-600">
                 <Wrench className="h-4 w-4" />
-                <span className="font-semibold">{totalEstimatedDuration.toFixed(1)} hrs</span>
+                <span className="font-semibold">
+                  {totalEstimatedDuration.toFixed(1)} hrs
+                </span>
                 <span className="text-gray-400">est.</span>
               </div>
             </div>
@@ -197,8 +231,8 @@ export function AlertVehicleCard({
                     nextAlert.kmToMaintenance <= 0
                       ? 'text-red-600'
                       : nextAlert.kmToMaintenance <= 500
-                      ? 'text-orange-600'
-                      : 'text-yellow-600'
+                        ? 'text-orange-600'
+                        : 'text-yellow-600'
                   }`}
                 >
                   {nextAlert.kmToMaintenance <= 0
@@ -215,15 +249,24 @@ export function AlertVehicleCard({
         {isExpanded && (
           <div className="border-t bg-white">
             <div className="p-6 space-y-4">
-
               {/* Items agrupados por paquete */}
-              {packages.map((pkg) => {
+              {packages.map(pkg => {
                 const packageAlertIds = pkg.alerts.map(a => a.id);
-                const allPackageSelected = packageAlertIds.every(id => selectedAlertIds.includes(id));
+                const allPackageSelected = packageAlertIds.every(id =>
+                  selectedAlertIds.includes(id)
+                );
 
-                const packageCritical = pkg.alerts.filter(a => a.alertLevel === 'CRITICAL').length;
-                const packageCost = pkg.alerts.reduce((sum, a) => sum + (a.estimatedCost || 0), 0);
-                const packageDuration = pkg.alerts.reduce((sum, a) => sum + (a.estimatedDuration || 0), 0);
+                const packageCritical = pkg.alerts.filter(
+                  a => a.alertLevel === 'CRITICAL'
+                ).length;
+                const packageCost = pkg.alerts.reduce(
+                  (sum, a) => sum + (a.estimatedCost || 0),
+                  0
+                );
+                const packageDuration = pkg.alerts.reduce(
+                  (sum, a) => sum + (a.estimatedDuration || 0),
+                  0
+                );
 
                 return (
                   <div
@@ -242,27 +285,35 @@ export function AlertVehicleCard({
                       />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <h4 className="font-semibold text-gray-900">{pkg.packageName}</h4>
+                          <h4 className="font-semibold text-gray-900">
+                            {pkg.packageName}
+                          </h4>
                           <Badge variant="outline" className="text-xs">
                             {pkg.scheduledKm.toLocaleString()} km
                           </Badge>
                           {packageCritical > 0 && (
                             <Badge variant="destructive" className="text-xs">
-                              {packageCritical} crítica{packageCritical > 1 ? 's' : ''}
+                              {packageCritical} crítica
+                              {packageCritical > 1 ? 's' : ''}
                             </Badge>
                           )}
                         </div>
                         <div className="flex gap-4 mt-1 text-sm text-gray-600">
-                          <span>${Math.round(packageCost).toLocaleString()}</span>
+                          <span>
+                            ${Math.round(packageCost).toLocaleString()}
+                          </span>
                           <span>{packageDuration.toFixed(1)} hrs</span>
-                          <span>{pkg.alerts.length} item{pkg.alerts.length > 1 ? 's' : ''}</span>
+                          <span>
+                            {pkg.alerts.length} item
+                            {pkg.alerts.length > 1 ? 's' : ''}
+                          </span>
                         </div>
                       </div>
                     </div>
 
                     {/* Items del paquete */}
                     <div className="space-y-2 ml-8">
-                      {pkg.alerts.map((alert) => {
+                      {pkg.alerts.map(alert => {
                         const isSelected = selectedAlertIds.includes(alert.id);
                         const isOverdue = alert.kmToMaintenance <= 0;
                         const isUrgent = alert.kmToMaintenance <= 500;
@@ -278,14 +329,23 @@ export function AlertVehicleCard({
                           >
                             <Checkbox
                               checked={isSelected}
-                              onCheckedChange={() => handleToggleAlert(alert.id)}
+                              onCheckedChange={() =>
+                                handleToggleAlert(alert.id)
+                              }
                             />
 
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
-                                <p className="font-medium text-gray-900">{alert.itemName}</p>
+                                <p className="font-medium text-gray-900">
+                                  {alert.itemName}
+                                </p>
                                 {alert.priority === 'URGENT' && (
-                                  <Badge variant="destructive" className="text-xs">URGENTE</Badge>
+                                  <Badge
+                                    variant="destructive"
+                                    className="text-xs"
+                                  >
+                                    URGENTE
+                                  </Badge>
                                 )}
                               </div>
                               <div className="flex gap-4 mt-1 text-sm text-gray-600">
@@ -294,8 +354,8 @@ export function AlertVehicleCard({
                                     isOverdue
                                       ? 'text-red-600'
                                       : isUrgent
-                                      ? 'text-orange-600'
-                                      : 'text-green-600'
+                                        ? 'text-orange-600'
+                                        : 'text-green-600'
                                   }`}
                                 >
                                   {isOverdue
@@ -303,10 +363,17 @@ export function AlertVehicleCard({
                                     : `${alert.kmToMaintenance} km`}
                                 </span>
                                 {alert.estimatedCost && (
-                                  <span>${Math.round(alert.estimatedCost).toLocaleString()}</span>
+                                  <span>
+                                    $
+                                    {Math.round(
+                                      alert.estimatedCost
+                                    ).toLocaleString()}
+                                  </span>
                                 )}
                                 {alert.estimatedDuration && (
-                                  <span>{alert.estimatedDuration.toFixed(1)} hrs</span>
+                                  <span>
+                                    {alert.estimatedDuration.toFixed(1)} hrs
+                                  </span>
                                 )}
                               </div>
                             </div>
@@ -320,9 +387,12 @@ export function AlertVehicleCard({
                       <div className="mt-3 ml-8 flex items-start gap-2 text-sm bg-blue-50 border border-blue-200 rounded-md p-3">
                         <Lightbulb className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
                         <div>
-                          <p className="font-medium text-blue-900">Recomendación</p>
+                          <p className="font-medium text-blue-900">
+                            Recomendación
+                          </p>
                           <p className="text-blue-700">
-                            Realizar los {packageCritical} items críticos juntos para optimizar tiempo y costos
+                            Realizar los {packageCritical} items críticos juntos
+                            para optimizar tiempo y costos
                           </p>
                         </div>
                       </div>
@@ -337,7 +407,9 @@ export function AlertVehicleCard({
                   <div className="flex items-center justify-between">
                     <div className="flex gap-8">
                       <div>
-                        <p className="text-sm text-gray-600">Items seleccionados</p>
+                        <p className="text-sm text-gray-600">
+                          Items seleccionados
+                        </p>
                         <p className="text-2xl font-bold text-gray-900">
                           {selectedAlertIds.length}
                         </p>
@@ -371,11 +443,9 @@ export function AlertVehicleCard({
                   </div>
                 </div>
               )}
-
             </div>
           </div>
         )}
-
       </CardContent>
     </Card>
   );

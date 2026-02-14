@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   Table,
@@ -7,18 +7,18 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, Play, FileText } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { formatDistanceToNow } from "date-fns";
-import { es } from "date-fns/locale";
+} from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, Eye, Play, FileText } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 type WorkOrder = {
   id: number;
@@ -61,24 +61,44 @@ type WorkOrdersListProps = {
 };
 
 const statusConfig = {
-  PENDING: { label: "Abierta", variant: "secondary" as const, color: "bg-blue-100 text-blue-700 border-blue-200" },
-  IN_PROGRESS: { label: "En Trabajo", variant: "default" as const, color: "bg-yellow-100 text-yellow-700 border-yellow-200" },
-  PENDING_INVOICE: { label: "Por Cerrar", variant: "outline" as const, color: "bg-orange-100 text-orange-700 border-orange-200" },
-  COMPLETED: { label: "Cerrada", variant: "default" as const, color: "bg-green-100 text-green-700 border-green-200" },
-  CANCELLED: { label: "Cancelada", variant: "outline" as const, color: "bg-gray-100 text-gray-500 border-gray-200" },
+  PENDING: {
+    label: 'Abierta',
+    variant: 'secondary' as const,
+    color: 'bg-blue-100 text-blue-700 border-blue-200',
+  },
+  IN_PROGRESS: {
+    label: 'En Trabajo',
+    variant: 'default' as const,
+    color: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+  },
+  PENDING_INVOICE: {
+    label: 'Por Cerrar',
+    variant: 'outline' as const,
+    color: 'bg-orange-100 text-orange-700 border-orange-200',
+  },
+  COMPLETED: {
+    label: 'Cerrada',
+    variant: 'default' as const,
+    color: 'bg-green-100 text-green-700 border-green-200',
+  },
+  CANCELLED: {
+    label: 'Cancelada',
+    variant: 'outline' as const,
+    color: 'bg-gray-100 text-gray-500 border-gray-200',
+  },
 };
 
 const mantTypeConfig = {
-  PREVENTIVE: { label: "Preventivo", color: "text-blue-600" },
-  CORRECTIVE: { label: "Correctivo", color: "text-orange-600" },
-  PREDICTIVE: { label: "Predictivo", color: "text-purple-600" },
+  PREVENTIVE: { label: 'Preventivo', color: 'text-blue-600' },
+  CORRECTIVE: { label: 'Correctivo', color: 'text-orange-600' },
+  PREDICTIVE: { label: 'Predictivo', color: 'text-purple-600' },
 };
 
 const priorityConfig = {
-  LOW: { label: "Baja", color: "text-gray-600" },
-  MEDIUM: { label: "Media", color: "text-yellow-600" },
-  HIGH: { label: "Alta", color: "text-red-600" },
-  CRITICAL: { label: "Crítica", color: "text-red-700 font-bold" },
+  LOW: { label: 'Baja', color: 'text-gray-600' },
+  MEDIUM: { label: 'Media', color: 'text-yellow-600' },
+  HIGH: { label: 'Alta', color: 'text-red-600' },
+  CRITICAL: { label: 'Crítica', color: 'text-red-700 font-bold' },
 };
 
 export function WorkOrdersList({
@@ -127,16 +147,21 @@ export function WorkOrdersList({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {workOrders.map((wo) => {
-            const statusInfo = statusConfig[wo.status as keyof typeof statusConfig];
-            const mantTypeInfo = mantTypeConfig[wo.mantType as keyof typeof mantTypeConfig];
-            const priorityInfo = priorityConfig[wo.priority as keyof typeof priorityConfig];
+          {workOrders.map(wo => {
+            const statusInfo =
+              statusConfig[wo.status as keyof typeof statusConfig];
+            const mantTypeInfo =
+              mantTypeConfig[wo.mantType as keyof typeof mantTypeConfig];
+            const priorityInfo =
+              priorityConfig[wo.priority as keyof typeof priorityConfig];
 
             return (
               <TableRow key={wo.id}>
                 <TableCell className="font-medium">
                   <div>
-                    <div className="font-semibold">{wo.vehicle.licensePlate}</div>
+                    <div className="font-semibold">
+                      {wo.vehicle.licensePlate}
+                    </div>
                     <div className="text-xs text-muted-foreground">
                       {wo.vehicle.brand.name} {wo.vehicle.line.name}
                     </div>
@@ -161,7 +186,9 @@ export function WorkOrdersList({
                   </span>
                 </TableCell>
                 <TableCell>
-                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${statusInfo?.color || 'bg-gray-100 text-gray-700'}`}>
+                  <span
+                    className={`text-xs font-medium px-2.5 py-1 rounded-full border ${statusInfo?.color || 'bg-gray-100 text-gray-700'}`}
+                  >
                     {statusInfo?.label || wo.status}
                   </span>
                 </TableCell>
@@ -170,12 +197,16 @@ export function WorkOrdersList({
                     {wo.technician ? (
                       <div>
                         <div className="font-medium">{wo.technician.name}</div>
-                        <div className="text-xs text-muted-foreground">Técnico</div>
+                        <div className="text-xs text-muted-foreground">
+                          Técnico
+                        </div>
                       </div>
                     ) : wo.provider ? (
                       <div>
                         <div className="font-medium">{wo.provider.name}</div>
-                        <div className="text-xs text-muted-foreground">Proveedor</div>
+                        <div className="text-xs text-muted-foreground">
+                          Proveedor
+                        </div>
                       </div>
                     ) : (
                       <span className="text-muted-foreground">No asignado</span>
@@ -184,13 +215,13 @@ export function WorkOrdersList({
                 </TableCell>
                 <TableCell className="text-right">
                   {wo.estimatedCost
-                    ? `$${wo.estimatedCost.toLocaleString("es-CO")}`
-                    : "-"}
+                    ? `$${wo.estimatedCost.toLocaleString('es-CO')}`
+                    : '-'}
                 </TableCell>
                 <TableCell className="text-right">
                   {wo.actualCost
-                    ? `$${wo.actualCost.toLocaleString("es-CO")}`
-                    : "-"}
+                    ? `$${wo.actualCost.toLocaleString('es-CO')}`
+                    : '-'}
                 </TableCell>
                 <TableCell>
                   <div className="text-sm">
@@ -212,15 +243,20 @@ export function WorkOrdersList({
                         <Eye className="mr-2 h-4 w-4" />
                         Ver Detalle
                       </DropdownMenuItem>
-                      {wo.status === "PENDING" && onStartWork && (
+                      {wo.status === 'PENDING' && onStartWork && (
                         <DropdownMenuItem onClick={() => onStartWork(wo.id)}>
                           <Play className="mr-2 h-4 w-4" />
                           Iniciar Trabajo
                         </DropdownMenuItem>
                       )}
-                      {(wo.status === "IN_PROGRESS" || wo.status === "PENDING_INVOICE") && (
+                      {(wo.status === 'IN_PROGRESS' ||
+                        wo.status === 'PENDING_INVOICE') && (
                         <DropdownMenuItem
-                          onClick={() => router.push(`/dashboard/invoices/new?workOrderId=${wo.id}`)}
+                          onClick={() =>
+                            router.push(
+                              `/dashboard/invoices/new?workOrderId=${wo.id}`
+                            )
+                          }
                         >
                           <FileText className="mr-2 h-4 w-4" />
                           Cargar Factura

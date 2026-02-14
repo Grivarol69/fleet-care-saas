@@ -1,4 +1,4 @@
-import { TechnicianList } from "./components/TechnicianList";
+import { TechnicianList } from './components/TechnicianList';
 
 export default function TechniciansPage() {
   return (

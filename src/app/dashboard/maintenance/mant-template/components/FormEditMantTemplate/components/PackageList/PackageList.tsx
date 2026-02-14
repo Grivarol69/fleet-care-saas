@@ -26,7 +26,7 @@ import {
   Settings,
   Clock,
   DollarSign,
-  Wrench
+  Wrench,
 } from 'lucide-react';
 import axios from 'axios';
 import { useToast } from '@/components/hooks/use-toast';
@@ -40,14 +40,17 @@ export function PackageList({ templateId }: PackageListProps) {
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingPackage, setEditingPackage] = useState<MaintenancePackage | null>(null);
+  const [editingPackage, setEditingPackage] =
+    useState<MaintenancePackage | null>(null);
 
   const { toast } = useToast();
 
   const fetchPackages = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/maintenance/packages?templateId=${templateId}`);
+      const response = await axios.get(
+        `/api/maintenance/packages?templateId=${templateId}`
+      );
       setData(response.data);
     } catch (error) {
       console.error('Error fetching packages:', error);
@@ -109,11 +112,16 @@ export function PackageList({ templateId }: PackageListProps) {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'LOW': return 'bg-gray-100 text-gray-800';
-      case 'MEDIUM': return 'bg-blue-100 text-blue-800';
-      case 'HIGH': return 'bg-orange-100 text-orange-800';
-      case 'CRITICAL': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'LOW':
+        return 'bg-gray-100 text-gray-800';
+      case 'MEDIUM':
+        return 'bg-blue-100 text-blue-800';
+      case 'HIGH':
+        return 'bg-orange-100 text-orange-800';
+      case 'CRITICAL':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -123,7 +131,7 @@ export function PackageList({ templateId }: PackageListProps) {
       style: 'currency',
       currency: 'COP',
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      maximumFractionDigits: 0,
     }).format(value);
   };
 
@@ -134,7 +142,9 @@ export function PackageList({ templateId }: PackageListProps) {
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Package className="h-4 w-4 text-blue-500" />
-          <span className="font-semibold">{(row.getValue('triggerKm') as number).toLocaleString()} km</span>
+          <span className="font-semibold">
+            {(row.getValue('triggerKm') as number).toLocaleString()} km
+          </span>
         </div>
       ),
     },
@@ -170,7 +180,9 @@ export function PackageList({ templateId }: PackageListProps) {
             <Clock className="h-4 w-4 text-orange-500" />
             <span>{time}h</span>
           </div>
-        ) : '-';
+        ) : (
+          '-'
+        );
       },
     },
     {
@@ -178,11 +190,7 @@ export function PackageList({ templateId }: PackageListProps) {
       header: 'Prioridad',
       cell: ({ row }) => {
         const priority = row.getValue('priority') as string;
-        return (
-          <Badge className={getPriorityColor(priority)}>
-            {priority}
-          </Badge>
-        );
+        return <Badge className={getPriorityColor(priority)}>{priority}</Badge>;
       },
     },
     {
@@ -251,9 +259,12 @@ export function PackageList({ templateId }: PackageListProps) {
           <CardContent className="py-12">
             <div className="text-center">
               <Wrench className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h4 className="text-lg font-semibold mb-2">No hay paquetes configurados</h4>
+              <h4 className="text-lg font-semibold mb-2">
+                No hay paquetes configurados
+              </h4>
               <p className="text-muted-foreground mb-4">
-                Crea paquetes de mantenimiento agrupados por kilometraje para optimizar el proceso.
+                Crea paquetes de mantenimiento agrupados por kilometraje para
+                optimizar el proceso.
               </p>
               <Button onClick={() => setIsAddDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
@@ -267,16 +278,17 @@ export function PackageList({ templateId }: PackageListProps) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Package className="h-5 w-5" />
-              {data.length} Paquete{data.length !== 1 ? 's' : ''} Configurado{data.length !== 1 ? 's' : ''}
+              {data.length} Paquete{data.length !== 1 ? 's' : ''} Configurado
+              {data.length !== 1 ? 's' : ''}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
-                  {table.getHeaderGroups().map((headerGroup) => (
+                  {table.getHeaderGroups().map(headerGroup => (
                     <TableRow key={headerGroup.id}>
-                      {headerGroup.headers.map((header) => (
+                      {headerGroup.headers.map(header => (
                         <TableHead key={header.id}>
                           {header.isPlaceholder
                             ? null
@@ -291,12 +303,12 @@ export function PackageList({ templateId }: PackageListProps) {
                 </TableHeader>
                 <TableBody>
                   {table.getRowModel().rows?.length ? (
-                    table.getRowModel().rows.map((row) => (
+                    table.getRowModel().rows.map(row => (
                       <TableRow
                         key={row.id}
-                        data-state={row.getIsSelected() && "selected"}
+                        data-state={row.getIsSelected() && 'selected'}
                       >
-                        {row.getVisibleCells().map((cell) => (
+                        {row.getVisibleCells().map(cell => (
                           <TableCell key={cell.id}>
                             {flexRender(
                               cell.column.columnDef.cell,

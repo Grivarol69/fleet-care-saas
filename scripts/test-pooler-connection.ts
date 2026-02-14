@@ -2,14 +2,15 @@ import { PrismaClient } from '@prisma/client';
 
 async function testPooler() {
   // Usando CONNECTION POOLER (puerto 6543 que ahora está abierto)
-  const poolerUrl = "postgresql://postgres.qazrjmkfbjgdjfvfylqx:etmcFKSW1984@aws-1-us-east-2.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1";
+  const poolerUrl =
+    'postgresql://postgres.qazrjmkfbjgdjfvfylqx:etmcFKSW1984@aws-1-us-east-2.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1';
 
   console.log('\n🔧 Testeando CONNECTION POOLER (puerto 6543)...\n');
   console.log('Host: aws-1-us-east-2.pooler.supabase.com:6543\n');
 
   const prisma = new PrismaClient({
     datasources: { db: { url: poolerUrl } },
-    log: ['query', 'error', 'warn']
+    log: ['query', 'error', 'warn'],
   });
 
   try {
@@ -18,7 +19,8 @@ async function testPooler() {
     console.log('✅ CONEXIÓN EXITOSA!\n');
 
     console.log('2. Query simple...');
-    const result = await prisma.$queryRaw`SELECT NOW() as current_time, version() as pg_version`;
+    const result =
+      await prisma.$queryRaw`SELECT NOW() as current_time, version() as pg_version`;
     console.log('✅ Query exitosa:', result);
 
     console.log('\n3. Contar tenants...');
@@ -26,7 +28,7 @@ async function testPooler() {
     console.log(`✅ ${count} tenants encontrados\n`);
 
     console.log('4. Test transacción...');
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async tx => {
       await tx.$queryRaw`SELECT 1`;
       await tx.$queryRaw`SELECT 2`;
     });
@@ -39,7 +41,10 @@ async function testPooler() {
     await prisma.$disconnect();
     return true;
   } catch (error) {
-    console.error('❌ Error:', error instanceof Error ? error.message : 'Unknown');
+    console.error(
+      '❌ Error:',
+      error instanceof Error ? error.message : 'Unknown'
+    );
     await prisma.$disconnect();
     return false;
   }

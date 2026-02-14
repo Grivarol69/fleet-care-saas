@@ -1,2 +1,2 @@
-export { FleetStatusBoard } from "./FleetStatusBoard";
-export { QuickOdometerModal } from "./QuickOdometerModal";
+export { FleetStatusBoard } from './FleetStatusBoard';
+export { QuickOdometerModal } from './QuickOdometerModal';

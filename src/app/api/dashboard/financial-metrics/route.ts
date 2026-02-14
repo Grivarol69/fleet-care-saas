@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 
 export type VehicleExpense = {
@@ -9,7 +9,7 @@ export type VehicleExpense = {
   vehicleId: number;
   spent: number;
   percentage: number;
-  trend: "up" | "down" | "neutral";
+  trend: 'up' | 'down' | 'neutral';
   invoiceCount: number;
 };
 
@@ -55,21 +55,21 @@ export type FinancialMetricsResponse = {
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  "MOTOR": "#ef4444",
-  "FRENOS": "#8b5cf6",
-  "LUBRICANTES": "#3b82f6",
-  "FILTROS": "#3b82f6",
-  "LLANTAS": "#f97316",
-  "SUSPENSION": "#10b981",
-  "ELECTRICO": "#f59e0b",
-  "OTROS": "#6b7280",
+  MOTOR: '#ef4444',
+  FRENOS: '#8b5cf6',
+  LUBRICANTES: '#3b82f6',
+  FILTROS: '#3b82f6',
+  LLANTAS: '#f97316',
+  SUSPENSION: '#10b981',
+  ELECTRICO: '#f59e0b',
+  OTROS: '#6b7280',
 };
 
 export async function GET() {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const tenantId = user.tenantId;
@@ -80,10 +80,24 @@ export async function GET() {
     const currentYear = now.getFullYear();
 
     const startOfCurrentMonth = new Date(currentYear, currentMonth, 1);
-    const endOfCurrentMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59);
+    const endOfCurrentMonth = new Date(
+      currentYear,
+      currentMonth + 1,
+      0,
+      23,
+      59,
+      59
+    );
 
     const startOfPreviousMonth = new Date(currentYear, currentMonth - 1, 1);
-    const endOfPreviousMonth = new Date(currentYear, currentMonth, 0, 23, 59, 59);
+    const endOfPreviousMonth = new Date(
+      currentYear,
+      currentMonth,
+      0,
+      23,
+      59,
+      59
+    );
 
     // ============================================
     // 1. GASTOS POR VEHÍCULO (MES ACTUAL)
@@ -96,7 +110,7 @@ export async function GET() {
           gte: startOfCurrentMonth,
           lte: endOfCurrentMonth,
         },
-        status: { in: ["APPROVED", "PAID"] },
+        status: { in: ['APPROVED', 'PAID'] },
         workOrderId: { not: null },
       },
       include: {
@@ -121,7 +135,7 @@ export async function GET() {
           gte: startOfPreviousMonth,
           lte: endOfPreviousMonth,
         },
-        status: { in: ["APPROVED", "PAID"] },
+        status: { in: ['APPROVED', 'PAID'] },
         workOrderId: { not: null },
       },
       include: {
@@ -134,16 +148,19 @@ export async function GET() {
     });
 
     // Agrupar por vehículo (mes actual)
-    const vehicleExpensesMap = new Map<number, {
-      licensePlate: string;
-      vehicle: string;
-      spent: number;
-      invoiceCount: number;
-    }>();
+    const vehicleExpensesMap = new Map<
+      number,
+      {
+        licensePlate: string;
+        vehicle: string;
+        spent: number;
+        invoiceCount: number;
+      }
+    >();
 
     let totalCurrentMonthSpent = 0;
 
-    currentMonthInvoices.forEach((invoice) => {
+    currentMonthInvoices.forEach(invoice => {
       if (!invoice.workOrder) return;
 
       const vehicleId = invoice.workOrder.vehicleId;
@@ -168,7 +185,7 @@ export async function GET() {
     const previousVehicleExpensesMap = new Map<number, number>();
     let totalPreviousMonthSpent = 0;
 
-    previousMonthInvoices.forEach((invoice) => {
+    previousMonthInvoices.forEach(invoice => {
       if (!invoice.workOrder) return;
 
       const vehicleId = invoice.workOrder.vehicleId;
@@ -189,14 +206,14 @@ export async function GET() {
     const vehicleExpensesArray = Array.from(vehicleExpensesMap.entries())
       .map(([vehicleId, data]) => {
         const previousSpent = previousVehicleExpensesMap.get(vehicleId) || 0;
-        let trend: "up" | "down" | "neutral" = "neutral";
+        let trend: 'up' | 'down' | 'neutral' = 'neutral';
 
         if (previousSpent > 0) {
           const change = ((data.spent - previousSpent) / previousSpent) * 100;
-          if (change > 5) trend = "up";
-          else if (change < -5) trend = "down";
+          if (change > 5) trend = 'up';
+          else if (change < -5) trend = 'down';
         } else if (data.spent > 0) {
-          trend = "up";
+          trend = 'up';
         }
 
         return {
@@ -211,9 +228,10 @@ export async function GET() {
 
     // Calcular porcentajes y ranks
     vehicleExpensesArray.forEach((expense, index) => {
-      expense.percentage = totalCurrentMonthSpent > 0
-        ? Math.round((expense.spent / totalCurrentMonthSpent) * 100)
-        : 0;
+      expense.percentage =
+        totalCurrentMonthSpent > 0
+          ? Math.round((expense.spent / totalCurrentMonthSpent) * 100)
+          : 0;
       expense.rank = index + 1;
     });
 
@@ -232,14 +250,14 @@ export async function GET() {
     // ============================================
 
     const maintenanceTypeAgg = await prisma.invoice.groupBy({
-      by: ["workOrderId"],
+      by: ['workOrderId'],
       where: {
         tenantId,
         invoiceDate: {
           gte: startOfCurrentMonth,
           lte: endOfCurrentMonth,
         },
-        status: { in: ["APPROVED", "PAID"] },
+        status: { in: ['APPROVED', 'PAID'] },
         workOrderId: { not: null },
       },
       _sum: {
@@ -249,7 +267,7 @@ export async function GET() {
 
     // Obtener tipos de cada WorkOrder
     const workOrderIds = maintenanceTypeAgg
-      .map((agg) => agg.workOrderId)
+      .map(agg => agg.workOrderId)
       .filter((id): id is number => id !== null);
 
     const workOrders = await prisma.workOrder.findMany({
@@ -263,19 +281,19 @@ export async function GET() {
     });
 
     const workOrderTypeMap = new Map(
-      workOrders.map((wo) => [wo.id, wo.mantType])
+      workOrders.map(wo => [wo.id, wo.mantType])
     );
 
     let preventiveSpent = 0;
     let correctiveSpent = 0;
 
-    maintenanceTypeAgg.forEach((agg) => {
+    maintenanceTypeAgg.forEach(agg => {
       const amount = Number(agg._sum.totalAmount || 0);
       const mantType = workOrderTypeMap.get(agg.workOrderId!);
 
-      if (mantType === "PREVENTIVE" || mantType === "PREDICTIVE") {
+      if (mantType === 'PREVENTIVE' || mantType === 'PREDICTIVE') {
         preventiveSpent += amount;
-      } else if (mantType === "CORRECTIVE" || mantType === "EMERGENCY") {
+      } else if (mantType === 'CORRECTIVE' || mantType === 'EMERGENCY') {
         correctiveSpent += amount;
       }
     });
@@ -284,20 +302,22 @@ export async function GET() {
 
     const maintenanceType: MaintenanceTypeData[] = [
       {
-        name: "Preventivo",
+        name: 'Preventivo',
         value: preventiveSpent,
-        percentage: maintenanceTypeTotal > 0
-          ? Math.round((preventiveSpent / maintenanceTypeTotal) * 100)
-          : 0,
-        color: "#10b981",
+        percentage:
+          maintenanceTypeTotal > 0
+            ? Math.round((preventiveSpent / maintenanceTypeTotal) * 100)
+            : 0,
+        color: '#10b981',
       },
       {
-        name: "Correctivo",
+        name: 'Correctivo',
         value: correctiveSpent,
-        percentage: maintenanceTypeTotal > 0
-          ? Math.round((correctiveSpent / maintenanceTypeTotal) * 100)
-          : 0,
-        color: "#ef4444",
+        percentage:
+          maintenanceTypeTotal > 0
+            ? Math.round((correctiveSpent / maintenanceTypeTotal) * 100)
+            : 0,
+        color: '#ef4444',
       },
     ];
 
@@ -312,7 +332,7 @@ export async function GET() {
           gte: startOfCurrentMonth,
           lte: endOfCurrentMonth,
         },
-        status: { in: ["APPROVED", "PAID"] },
+        status: { in: ['APPROVED', 'PAID'] },
       },
       include: {
         items: {
@@ -333,9 +353,10 @@ export async function GET() {
 
     const categoryMap = new Map<string, number>();
 
-    invoicesWithItems.forEach((invoice) => {
-      invoice.items.forEach((item) => {
-        const categoryName = item.workOrderItem?.mantItem?.category?.name || "OTROS";
+    invoicesWithItems.forEach(invoice => {
+      invoice.items.forEach(item => {
+        const categoryName =
+          item.workOrderItem?.mantItem?.category?.name || 'OTROS';
         const amount = Number(item.total);
 
         if (!categoryMap.has(categoryName)) {
@@ -351,33 +372,40 @@ export async function GET() {
         name,
         value,
         percentage: 0,
-        color: (CATEGORY_COLORS[name] || CATEGORY_COLORS["OTROS"]) as string,
+        color: (CATEGORY_COLORS[name] || CATEGORY_COLORS['OTROS']) as string,
       }))
       .sort((a, b) => b.value - a.value);
 
     // Calcular porcentajes
-    const totalCategorySpent = categoriesArray.reduce((sum, cat) => sum + cat.value, 0);
+    const totalCategorySpent = categoriesArray.reduce(
+      (sum, cat) => sum + cat.value,
+      0
+    );
 
-    categoriesArray.forEach((category) => {
-      category.percentage = totalCategorySpent > 0
-        ? Math.round((category.value / totalCategorySpent) * 100)
-        : 0;
+    categoriesArray.forEach(category => {
+      category.percentage =
+        totalCategorySpent > 0
+          ? Math.round((category.value / totalCategorySpent) * 100)
+          : 0;
     });
 
     // ============================================
     // 4. KPIs
     // ============================================
 
-    const trendPercentage = totalPreviousMonthSpent > 0
-      ? Math.round(
-        ((totalCurrentMonthSpent - totalPreviousMonthSpent) / totalPreviousMonthSpent) * 100
-      )
-      : 0;
+    const trendPercentage =
+      totalPreviousMonthSpent > 0
+        ? Math.round(
+            ((totalCurrentMonthSpent - totalPreviousMonthSpent) /
+              totalPreviousMonthSpent) *
+              100
+          )
+        : 0;
 
     const activeVehiclesCount = await prisma.vehicle.count({
       where: {
         tenantId,
-        status: "ACTIVE",
+        status: 'ACTIVE',
       },
     });
 
@@ -385,7 +413,7 @@ export async function GET() {
     const pendingInvoices = await prisma.invoice.aggregate({
       where: {
         tenantId,
-        status: "PENDING", // Facturas pendientes de aprobación
+        status: 'PENDING', // Facturas pendientes de aprobación
       },
       _sum: {
         totalAmount: true,
@@ -397,9 +425,10 @@ export async function GET() {
       totalSpent: totalCurrentMonthSpent,
       previousMonthSpent: totalPreviousMonthSpent,
       trendPercentage,
-      averagePerVehicle: activeVehiclesCount > 0
-        ? totalCurrentMonthSpent / activeVehiclesCount
-        : 0,
+      averagePerVehicle:
+        activeVehiclesCount > 0
+          ? totalCurrentMonthSpent / activeVehiclesCount
+          : 0,
       invoiceCount: currentMonthInvoices.length,
       pendingInvoicesAmount: Number(pendingInvoices._sum?.totalAmount ?? 0),
       pendingInvoicesCount: pendingInvoices._count,
@@ -410,8 +439,18 @@ export async function GET() {
     // ============================================
 
     const monthNames = [
-      "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-      "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+      'Enero',
+      'Febrero',
+      'Marzo',
+      'Abril',
+      'Mayo',
+      'Junio',
+      'Julio',
+      'Agosto',
+      'Septiembre',
+      'Octubre',
+      'Noviembre',
+      'Diciembre',
     ];
 
     const response: FinancialMetricsResponse = {
@@ -429,9 +468,9 @@ export async function GET() {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error("Error fetching financial metrics:", error);
+    console.error('Error fetching financial metrics:', error);
     return NextResponse.json(
-      { error: "Failed to fetch financial metrics" },
+      { error: 'Failed to fetch financial metrics' },
       { status: 500 }
     );
   }

@@ -1,15 +1,22 @@
-import { prisma } from '@/lib/prisma'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Building2, Users, FileBox, Car } from 'lucide-react'
+import { prisma } from '@/lib/prisma';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Building2, Users, FileBox, Car } from 'lucide-react';
 
 export default async function AdminDashboard() {
   // Obtener estadísticas globales
-  const [tenantsCount, usersCount, templatesCount, vehiclesCount] = await Promise.all([
-    prisma.tenant.count(),
-    prisma.user.count(),
-    prisma.maintenanceTemplate.count({ where: { isGlobal: true } }),
-    prisma.vehicle.count(),
-  ])
+  const [tenantsCount, usersCount, templatesCount, vehiclesCount] =
+    await Promise.all([
+      prisma.tenant.count(),
+      prisma.user.count(),
+      prisma.maintenanceTemplate.count({ where: { isGlobal: true } }),
+      prisma.vehicle.count(),
+    ]);
 
   const stats = [
     {
@@ -40,18 +47,22 @@ export default async function AdminDashboard() {
       icon: Car,
       color: 'text-orange-600',
     },
-  ]
+  ];
 
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">Dashboard de Administración</h1>
-        <p className="text-slate-600">Vista general de la plataforma Fleet Care</p>
+        <h1 className="text-3xl font-bold text-slate-900">
+          Dashboard de Administración
+        </h1>
+        <p className="text-slate-600">
+          Vista general de la plataforma Fleet Care
+        </p>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat) => (
+        {stats.map(stat => (
           <Card key={stat.title}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-slate-600">
@@ -72,7 +83,9 @@ export default async function AdminDashboard() {
         <Card>
           <CardHeader>
             <CardTitle>Tenants Recientes</CardTitle>
-            <CardDescription>Últimas organizaciones registradas</CardDescription>
+            <CardDescription>
+              Últimas organizaciones registradas
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-slate-500">
@@ -94,5 +107,5 @@ export default async function AdminDashboard() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

@@ -1,7 +1,7 @@
-import { prisma } from "@/lib/prisma";
-import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
-import { Prisma, InvoiceStatus } from "@prisma/client";
+import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
+import { Prisma, InvoiceStatus } from '@prisma/client';
 
 type InvoiceItemInput = {
   masterPartId?: string | null;
@@ -21,14 +21,14 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
-    const workOrderId = searchParams.get("workOrderId");
-    const status = searchParams.get("status");
-    const supplierId = searchParams.get("supplierId");
-    const limit = searchParams.get("limit");
+    const workOrderId = searchParams.get('workOrderId');
+    const status = searchParams.get('status');
+    const supplierId = searchParams.get('supplierId');
+    const limit = searchParams.get('limit');
 
     // Construir filtros
     const where: Prisma.InvoiceWhereInput = {
@@ -39,7 +39,10 @@ export async function GET(request: NextRequest) {
       where.workOrderId = parseInt(workOrderId);
     }
 
-    if (status && Object.values(InvoiceStatus).includes(status as InvoiceStatus)) {
+    if (
+      status &&
+      Object.values(InvoiceStatus).includes(status as InvoiceStatus)
+    ) {
       where.status = status as InvoiceStatus;
     }
 
@@ -93,17 +96,17 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: {
-        invoiceDate: "desc",
+        invoiceDate: 'desc',
       },
       ...(limit ? { take: parseInt(limit) } : {}),
     });
 
     return NextResponse.json(invoices);
   } catch (error: unknown) {
-    console.error("[INVOICES_GET]", error);
+    console.error('[INVOICES_GET]', error);
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Error interno",
+        error: error instanceof Error ? error.message : 'Error interno',
       },
       { status: 500 }
     );
@@ -117,14 +120,14 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
     // Validar permisos (OWNER, MANAGER pueden registrar facturas)
-    const { canApproveInvoices } = await import("@/lib/permissions");
+    const { canApproveInvoices } = await import('@/lib/permissions');
     if (!canApproveInvoices(user)) {
       return NextResponse.json(
-        { error: "No tienes permisos para registrar facturas" },
+        { error: 'No tienes permisos para registrar facturas' },
         { status: 403 }
       );
     }
@@ -139,7 +142,7 @@ export async function POST(request: NextRequest) {
       subtotal,
       taxAmount,
       totalAmount,
-      currency = "COP",
+      currency = 'COP',
       notes,
       attachmentUrl,
       items,
@@ -150,7 +153,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "invoiceNumber, invoiceDate, supplierId y totalAmount son requeridos",
+            'invoiceNumber, invoiceDate, supplierId y totalAmount son requeridos',
         },
         { status: 400 }
       );
@@ -158,7 +161,7 @@ export async function POST(request: NextRequest) {
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
-        { error: "Se requiere al menos un item de factura" },
+        { error: 'Se requiere al menos un item de factura' },
         { status: 400 }
       );
     }
@@ -175,7 +178,7 @@ export async function POST(request: NextRequest) {
 
     if (existingInvoice) {
       return NextResponse.json(
-        { error: "Ya existe una factura con este número" },
+        { error: 'Ya existe una factura con este número' },
         { status: 409 }
       );
     }
@@ -189,16 +192,16 @@ export async function POST(request: NextRequest) {
 
       if (!workOrder) {
         return NextResponse.json(
-          { error: "Orden de trabajo no encontrada" },
+          { error: 'Orden de trabajo no encontrada' },
           { status: 404 }
         );
       }
 
-      if (workOrder.status !== "COMPLETED") {
+      if (workOrder.status !== 'COMPLETED') {
         return NextResponse.json(
           {
             error:
-              "La orden de trabajo debe estar completada antes de registrar factura",
+              'La orden de trabajo debe estar completada antes de registrar factura',
           },
           { status: 400 }
         );
@@ -206,7 +209,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Crear Invoice con Items en transacción
-    const invoice = await prisma.$transaction(async (tx) => {
+    const invoice = await prisma.$transaction(async tx => {
       // 1. Crear Invoice
       const newInvoice = await tx.invoice.create({
         data: {
@@ -220,7 +223,7 @@ export async function POST(request: NextRequest) {
           taxAmount: taxAmount || 0,
           totalAmount,
           currency,
-          status: "PENDING",
+          status: 'PENDING',
           registeredBy: user.id,
           notes: notes || null,
           attachmentUrl: attachmentUrl || null,
@@ -271,10 +274,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(invoiceWithRelations, { status: 201 });
   } catch (error: unknown) {
-    console.error("[INVOICES_POST]", error);
+    console.error('[INVOICES_POST]', error);
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Error interno",
+        error: error instanceof Error ? error.message : 'Error interno',
       },
       { status: 500 }
     );

@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
-import { MovementType, MovementReferenceType, ItemSource, ItemClosureType } from '@prisma/client';
+import {
+  MovementType,
+  MovementReferenceType,
+  ItemSource,
+  ItemClosureType,
+} from '@prisma/client';
 import { canExecuteWorkOrders } from '@/lib/permissions';
 
 interface ConsumeItem {
@@ -31,7 +36,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { workOrderId, items } = body as { workOrderId: number; items: ConsumeItem[] };
+    const { workOrderId, items } = body as {
+      workOrderId: number;
+      items: ConsumeItem[];
+    };
 
     if (!workOrderId || !items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -53,7 +61,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Procesar todos los items en una transacción
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async tx => {
       const processedItems: Array<{
         workOrderItemId: number;
         inventoryItemId: string;
@@ -69,12 +77,17 @@ export async function POST(request: NextRequest) {
           include: { workOrder: { select: { tenantId: true } } },
         });
 
-        if (!workOrderItem || workOrderItem.workOrder.tenantId !== user.tenantId) {
+        if (
+          !workOrderItem ||
+          workOrderItem.workOrder.tenantId !== user.tenantId
+        ) {
           throw new Error(`Item de OT #${item.workOrderItemId} no encontrado`);
         }
 
         if (workOrderItem.workOrderId !== workOrderId) {
-          throw new Error(`Item #${item.workOrderItemId} no pertenece a esta OT`);
+          throw new Error(
+            `Item #${item.workOrderItemId} no pertenece a esta OT`
+          );
         }
 
         // 2. Verificar el InventoryItem
@@ -100,7 +113,8 @@ export async function POST(request: NextRequest) {
         const currentTotalValue = Number(inventoryItem.totalValue);
         const movementTotalCost = requestedQty * currentAvgCost;
         const newStock = currentStock - requestedQty;
-        const newTotalValue = newStock === 0 ? 0 : currentTotalValue - movementTotalCost;
+        const newTotalValue =
+          newStock === 0 ? 0 : currentTotalValue - movementTotalCost;
 
         // 4. Actualizar InventoryItem
         await tx.inventoryItem.update({

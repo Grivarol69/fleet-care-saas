@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button"
-import { Truck } from "lucide-react"
+import { Button } from '@/components/ui/button';
+import { Truck } from 'lucide-react';
 
 export function Footer() {
   return (
@@ -7,9 +7,12 @@ export function Footer() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* CTA Section */}
         <div className="py-16 text-center border-b border-background/20">
-          <h2 className="text-3xl font-bold text-balance mb-4">¿Listo para optimizar tu flota?</h2>
+          <h2 className="text-3xl font-bold text-balance mb-4">
+            ¿Listo para optimizar tu flota?
+          </h2>
           <p className="text-background/80 mb-8 max-w-2xl mx-auto text-pretty">
-            Únete a cientos de empresas que ya confían en Fleet Care para gestionar sus flotas de manera eficiente.
+            Únete a cientos de empresas que ya confían en Fleet Care para
+            gestionar sus flotas de manera eficiente.
           </p>
           <Button size="lg" variant="secondary">
             Comenzar Prueba Gratuita
@@ -24,7 +27,8 @@ export function Footer() {
               <span className="text-lg font-bold">Fleet Care</span>
             </div>
             <p className="text-background/80 text-sm text-pretty">
-              La plataforma líder en gestión y mantenimiento de flotas vehiculares.
+              La plataforma líder en gestión y mantenimiento de flotas
+              vehiculares.
             </p>
           </div>
 
@@ -113,5 +117,5 @@ export function Footer() {
         </div>
       </div>
     </footer>
-  )
+  );
 }

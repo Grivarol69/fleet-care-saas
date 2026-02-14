@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   Carousel,
@@ -6,12 +6,12 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-} from "@/components/ui/carousel";
-import Image from "next/image";
-import Autoplay from "embla-carousel-autoplay";
+} from '@/components/ui/carousel';
+import Image from 'next/image';
+import Autoplay from 'embla-carousel-autoplay';
 
-import { dataBrands } from "./SliderBrands.data";
-import { Reveal } from "@/components/shared/Reveal";
+import { dataBrands } from './SliderBrands.data';
+import { Reveal } from '@/components/shared/Reveal';
 
 export default function SliderBrands() {
   return (

@@ -113,14 +113,14 @@ export function FormEditPackage({
 
       onEditPackage();
       setIsOpen(false);
-
     } catch (error) {
       console.error('Error updating package:', error);
 
       let errorMessage = 'Algo salió mal al actualizar el paquete';
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 409) {
-          errorMessage = 'Ya existe un paquete para este kilometraje en este template';
+          errorMessage =
+            'Ya existe un paquete para este kilometraje en este template';
         } else if (error.response?.status === 400) {
           errorMessage = 'Datos inválidos, por favor revise los campos';
         } else if (error.response?.status === 401) {
@@ -168,9 +168,11 @@ export function FormEditPackage({
 
           <TabsContent value="general" className="mt-6">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-6"
+              >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
                   {/* Kilometraje */}
                   <FormField
                     control={form.control}
@@ -183,7 +185,9 @@ export function FormEditPackage({
                             type="number"
                             placeholder="5000"
                             {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                            onChange={e =>
+                              field.onChange(parseInt(e.target.value) || 0)
+                            }
                             disabled={isLoading}
                           />
                         </FormControl>
@@ -223,7 +227,11 @@ export function FormEditPackage({
                             type="number"
                             placeholder="125000"
                             {...field}
-                            onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)}
+                            onChange={e =>
+                              field.onChange(
+                                parseFloat(e.target.value) || undefined
+                              )
+                            }
                             disabled={isLoading}
                           />
                         </FormControl>
@@ -245,7 +253,11 @@ export function FormEditPackage({
                             step="0.5"
                             placeholder="2.5"
                             {...field}
-                            onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)}
+                            onChange={e =>
+                              field.onChange(
+                                parseFloat(e.target.value) || undefined
+                              )
+                            }
                             disabled={isLoading}
                           />
                         </FormControl>
@@ -301,9 +313,15 @@ export function FormEditPackage({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="PREVENTIVE">Preventivo</SelectItem>
-                            <SelectItem value="CORRECTIVE">Correctivo</SelectItem>
-                            <SelectItem value="PREDICTIVE">Predictivo</SelectItem>
+                            <SelectItem value="PREVENTIVE">
+                              Preventivo
+                            </SelectItem>
+                            <SelectItem value="CORRECTIVE">
+                              Correctivo
+                            </SelectItem>
+                            <SelectItem value="PREDICTIVE">
+                              Predictivo
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -344,7 +362,9 @@ export function FormEditPackage({
                     Cancelar
                   </Button>
                   <Button type="submit" disabled={isLoading}>
-                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {isLoading && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
                     {isLoading ? 'Actualizando...' : 'Actualizar Paquete'}
                   </Button>
                 </div>

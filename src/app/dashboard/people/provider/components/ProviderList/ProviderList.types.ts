@@ -5,7 +5,7 @@ export type ProviderListProps = {
   phone: string | null;
   address: string | null;
   specialty: string | null;
-  status: "ACTIVE" | "INACTIVE";
+  status: 'ACTIVE' | 'INACTIVE';
   createdAt: string;
   updatedAt: string;
 };

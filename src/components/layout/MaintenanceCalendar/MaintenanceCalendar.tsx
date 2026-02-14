@@ -2,7 +2,11 @@
 
 import { useState, useMemo } from 'react';
 import { useMaintenanceAlerts } from '@/lib/hooks/useMaintenanceAlerts';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Calendar as CalendarIcon,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -11,8 +15,18 @@ export function MaintenanceCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const monthNames = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    'Enero',
+    'Febrero',
+    'Marzo',
+    'Abril',
+    'Mayo',
+    'Junio',
+    'Julio',
+    'Agosto',
+    'Septiembre',
+    'Octubre',
+    'Noviembre',
+    'Diciembre',
   ];
 
   // Calcular días del mes
@@ -43,7 +57,10 @@ export function MaintenanceCalendar() {
   const alertsByDate = useMemo(() => {
     if (!alerts) return {};
 
-    const grouped: Record<string, Array<{ plate: string; itemName: string; isOverdue: boolean }>> = {};
+    const grouped: Record<
+      string,
+      Array<{ plate: string; itemName: string; isOverdue: boolean }>
+    > = {};
 
     alerts.forEach(alert => {
       // Calcular la fecha de vencimiento basada en currentKm y kmToMaintenance
@@ -73,11 +90,15 @@ export function MaintenanceCalendar() {
   }, [alerts, daysInMonth]);
 
   const goToPreviousMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+    setCurrentDate(
+      new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
+    );
   };
 
   const goToNextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+    setCurrentDate(
+      new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
+    );
   };
 
   if (isLoading) {
@@ -86,7 +107,9 @@ export function MaintenanceCalendar() {
         <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4">
           <div className="flex items-center gap-2">
             <CalendarIcon className="h-5 w-5" />
-            <h3 className="text-base font-semibold">Calendario de Vencimientos</h3>
+            <h3 className="text-base font-semibold">
+              Calendario de Vencimientos
+            </h3>
           </div>
         </div>
         <div className="flex items-center justify-center h-64">
@@ -103,7 +126,9 @@ export function MaintenanceCalendar() {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <CalendarIcon className="h-5 w-5" />
-            <h3 className="text-base font-semibold">Calendario de Vencimientos</h3>
+            <h3 className="text-base font-semibold">
+              Calendario de Vencimientos
+            </h3>
           </div>
         </div>
 
@@ -138,7 +163,10 @@ export function MaintenanceCalendar() {
         {/* Días de la Semana */}
         <div className="grid grid-cols-7 gap-2 mb-2">
           {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
-            <div key={day} className="text-center text-xs font-semibold text-gray-600 py-1">
+            <div
+              key={day}
+              className="text-center text-xs font-semibold text-gray-600 py-1"
+            >
               {day}
             </div>
           ))}
@@ -148,7 +176,9 @@ export function MaintenanceCalendar() {
         <div className="grid grid-cols-7 gap-2">
           {daysInMonth.days.map((day, index) => {
             if (day === null) {
-              return <div key={`empty-${index}`} className="aspect-square"></div>;
+              return (
+                <div key={`empty-${index}`} className="aspect-square"></div>
+              );
             }
 
             const dayAlerts = alertsByDate[day.toString()] || [];
@@ -166,10 +196,15 @@ export function MaintenanceCalendar() {
                 `}
               >
                 <div className="flex flex-col h-full">
-                  <span className={`text-xs font-bold mb-1 ${
-                    hasOverdue ? 'text-red-600' :
-                    hasAlerts ? 'text-blue-600' : 'text-gray-600'
-                  }`}>
+                  <span
+                    className={`text-xs font-bold mb-1 ${
+                      hasOverdue
+                        ? 'text-red-600'
+                        : hasAlerts
+                          ? 'text-blue-600'
+                          : 'text-gray-600'
+                    }`}
+                  >
                     {day}
                   </span>
 

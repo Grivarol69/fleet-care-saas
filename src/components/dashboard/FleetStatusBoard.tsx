@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -11,15 +11,15 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { useToast } from "@/components/hooks/use-toast";
-import axios from "axios";
+} from '@/components/ui/tooltip';
+import { useToast } from '@/components/hooks/use-toast';
+import axios from 'axios';
 import {
   Truck,
   Gauge,
@@ -30,11 +30,11 @@ import {
   RefreshCw,
   Filter,
   ChevronRight,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { QuickOdometerModal } from "./QuickOdometerModal";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { QuickOdometerModal } from './QuickOdometerModal';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 type FleetVehicleStatus = {
   id: number;
@@ -52,9 +52,9 @@ type FleetVehicleStatus = {
   odometer: {
     lastUpdate: Date | null;
     daysSinceUpdate: number;
-    status: "OK" | "WARNING" | "CRITICAL";
+    status: 'OK' | 'WARNING' | 'CRITICAL';
   };
-  overallStatus: "OK" | "WARNING" | "CRITICAL";
+  overallStatus: 'OK' | 'WARNING' | 'CRITICAL';
   driverName: string | null;
 };
 
@@ -74,27 +74,27 @@ type FleetStatusData = {
 
 const statusConfig = {
   CRITICAL: {
-    label: "Crítico",
-    color: "bg-red-500",
-    bgColor: "bg-red-50",
-    borderColor: "border-l-red-500",
-    textColor: "text-red-700",
+    label: 'Crítico',
+    color: 'bg-red-500',
+    bgColor: 'bg-red-50',
+    borderColor: 'border-l-red-500',
+    textColor: 'text-red-700',
     icon: AlertTriangle,
   },
   WARNING: {
-    label: "Atención",
-    color: "bg-yellow-500",
-    bgColor: "bg-yellow-50",
-    borderColor: "border-l-yellow-500",
-    textColor: "text-yellow-700",
+    label: 'Atención',
+    color: 'bg-yellow-500',
+    bgColor: 'bg-yellow-50',
+    borderColor: 'border-l-yellow-500',
+    textColor: 'text-yellow-700',
     icon: Clock,
   },
   OK: {
-    label: "Al día",
-    color: "bg-green-500",
-    bgColor: "bg-green-50",
-    borderColor: "border-l-green-500",
-    textColor: "text-green-700",
+    label: 'Al día',
+    color: 'bg-green-500',
+    bgColor: 'bg-green-50',
+    borderColor: 'border-l-green-500',
+    textColor: 'text-green-700',
     icon: CheckCircle2,
   },
 };
@@ -104,7 +104,9 @@ export function FleetStatusBoard() {
   const router = useRouter();
   const [data, setData] = useState<FleetStatusData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<"ALL" | "CRITICAL" | "WARNING" | "OK">("ALL");
+  const [filter, setFilter] = useState<'ALL' | 'CRITICAL' | 'WARNING' | 'OK'>(
+    'ALL'
+  );
   const [odometerModalOpen, setOdometerModalOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<{
     id: number;
@@ -115,14 +117,14 @@ export function FleetStatusBoard() {
   const fetchData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get("/api/dashboard/fleet-status");
+      const response = await axios.get('/api/dashboard/fleet-status');
       setData(response.data);
     } catch (error) {
-      console.error("Error fetching fleet status:", error);
+      console.error('Error fetching fleet status:', error);
       toast({
-        title: "Error",
-        description: "No se pudo cargar el estado de la flota",
-        variant: "destructive",
+        title: 'Error',
+        description: 'No se pudo cargar el estado de la flota',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -154,8 +156,8 @@ export function FleetStatusBoard() {
     router.push(`/dashboard/maintenance/alerts?vehicleId=${vehicleId}`);
   };
 
-  const filteredVehicles = data?.vehicles.filter((v) => {
-    if (filter === "ALL") return true;
+  const filteredVehicles = data?.vehicles.filter(v => {
+    if (filter === 'ALL') return true;
     return v.overallStatus === filter;
   });
 
@@ -167,7 +169,7 @@ export function FleetStatusBoard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {[1, 2, 3, 4, 5].map((i) => (
+            {[1, 2, 3, 4, 5].map(i => (
               <div key={i} className="h-16 bg-gray-100 rounded"></div>
             ))}
           </div>
@@ -189,7 +191,9 @@ export function FleetStatusBoard() {
                 <Truck className="h-6 w-6" />
               </div>
               <div>
-                <CardTitle className="text-xl font-bold">Estado de la Flota</CardTitle>
+                <CardTitle className="text-xl font-bold">
+                  Estado de la Flota
+                </CardTitle>
                 <p className="text-blue-100 text-sm mt-0.5">
                   Monitoreo en tiempo real de {data.summary.total} vehículos
                 </p>
@@ -219,23 +223,23 @@ export function FleetStatusBoard() {
           {/* Summary Pills */}
           <div className="flex gap-2 mt-4">
             <button
-              onClick={() => setFilter("ALL")}
+              onClick={() => setFilter('ALL')}
               className={cn(
-                "px-4 py-2 rounded-full text-sm font-medium transition-all",
-                filter === "ALL"
-                  ? "bg-white text-blue-600"
-                  : "bg-white/20 text-white hover:bg-white/30"
+                'px-4 py-2 rounded-full text-sm font-medium transition-all',
+                filter === 'ALL'
+                  ? 'bg-white text-blue-600'
+                  : 'bg-white/20 text-white hover:bg-white/30'
               )}
             >
               Todos ({data.summary.total})
             </button>
             <button
-              onClick={() => setFilter("CRITICAL")}
+              onClick={() => setFilter('CRITICAL')}
               className={cn(
-                "px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2",
-                filter === "CRITICAL"
-                  ? "bg-red-500 text-white"
-                  : "bg-red-400/30 text-white hover:bg-red-400/50"
+                'px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2',
+                filter === 'CRITICAL'
+                  ? 'bg-red-500 text-white'
+                  : 'bg-red-400/30 text-white hover:bg-red-400/50'
               )}
             >
               <span className="relative flex h-2 w-2">
@@ -245,23 +249,23 @@ export function FleetStatusBoard() {
               Críticos ({data.summary.critical})
             </button>
             <button
-              onClick={() => setFilter("WARNING")}
+              onClick={() => setFilter('WARNING')}
               className={cn(
-                "px-4 py-2 rounded-full text-sm font-medium transition-all",
-                filter === "WARNING"
-                  ? "bg-yellow-500 text-white"
-                  : "bg-yellow-400/30 text-white hover:bg-yellow-400/50"
+                'px-4 py-2 rounded-full text-sm font-medium transition-all',
+                filter === 'WARNING'
+                  ? 'bg-yellow-500 text-white'
+                  : 'bg-yellow-400/30 text-white hover:bg-yellow-400/50'
               )}
             >
               Atención ({data.summary.warning})
             </button>
             <button
-              onClick={() => setFilter("OK")}
+              onClick={() => setFilter('OK')}
               className={cn(
-                "px-4 py-2 rounded-full text-sm font-medium transition-all",
-                filter === "OK"
-                  ? "bg-green-500 text-white"
-                  : "bg-green-400/30 text-white hover:bg-green-400/50"
+                'px-4 py-2 rounded-full text-sm font-medium transition-all',
+                filter === 'OK'
+                  ? 'bg-green-500 text-white'
+                  : 'bg-green-400/30 text-white hover:bg-green-400/50'
               )}
             >
               Al día ({data.summary.ok})
@@ -284,7 +288,7 @@ export function FleetStatusBoard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredVehicles?.map((vehicle) => {
+                {filteredVehicles?.map(vehicle => {
                   const config = statusConfig[vehicle.overallStatus];
                   const StatusIcon = config.icon;
 
@@ -292,10 +296,10 @@ export function FleetStatusBoard() {
                     <TableRow
                       key={vehicle.id}
                       className={cn(
-                        "transition-all hover:shadow-md border-l-4",
+                        'transition-all hover:shadow-md border-l-4',
                         config.borderColor,
                         config.bgColor,
-                        "hover:scale-[1.01] cursor-pointer"
+                        'hover:scale-[1.01] cursor-pointer'
                       )}
                       onClick={() => handleOpenOdometer(vehicle)}
                     >
@@ -303,9 +307,10 @@ export function FleetStatusBoard() {
                       <TableCell className="pr-0">
                         <div
                           className={cn(
-                            "w-3 h-3 rounded-full",
+                            'w-3 h-3 rounded-full',
                             config.color,
-                            vehicle.overallStatus === "CRITICAL" && "animate-pulse"
+                            vehicle.overallStatus === 'CRITICAL' &&
+                              'animate-pulse'
                           )}
                         />
                       </TableCell>
@@ -344,7 +349,7 @@ export function FleetStatusBoard() {
                             <TooltipTrigger asChild>
                               <div
                                 className="inline-flex items-center gap-2 cursor-pointer"
-                                onClick={(e) => {
+                                onClick={e => {
                                   e.stopPropagation();
                                   if (vehicle.maintenanceAlerts.total > 0) {
                                     goToAlerts(vehicle.id);
@@ -382,12 +387,14 @@ export function FleetStatusBoard() {
                             </TooltipTrigger>
                             <TooltipContent>
                               {vehicle.maintenanceAlerts.total === 0 ? (
-                                "Sin alertas de mantenimiento"
+                                'Sin alertas de mantenimiento'
                               ) : (
                                 <div>
                                   <p>
-                                    {vehicle.maintenanceAlerts.critical} críticas,{" "}
-                                    {vehicle.maintenanceAlerts.warning} en atención
+                                    {vehicle.maintenanceAlerts.critical}{' '}
+                                    críticas,{' '}
+                                    {vehicle.maintenanceAlerts.warning} en
+                                    atención
                                   </p>
                                   <p className="text-xs text-muted-foreground">
                                     Click para ver detalles
@@ -401,17 +408,17 @@ export function FleetStatusBoard() {
 
                       {/* Odómetro */}
                       <TableCell className="text-center">
-                        {vehicle.odometer.status === "OK" ? (
+                        {vehicle.odometer.status === 'OK' ? (
                           <Badge
                             variant="outline"
                             className="gap-1 bg-green-50 text-green-700 border-green-200"
                           >
                             <CheckCircle2 className="h-3 w-3" />
                             {vehicle.odometer.daysSinceUpdate === 0
-                              ? "Hoy"
+                              ? 'Hoy'
                               : `Hace ${vehicle.odometer.daysSinceUpdate}d`}
                           </Badge>
-                        ) : vehicle.odometer.status === "WARNING" ? (
+                        ) : vehicle.odometer.status === 'WARNING' ? (
                           <Badge className="gap-1 bg-yellow-100 text-yellow-800 border-yellow-300">
                             <Clock className="h-3 w-3" />
                             {vehicle.odometer.daysSinceUpdate}d sin reporte
@@ -423,7 +430,7 @@ export function FleetStatusBoard() {
                           >
                             <AlertTriangle className="h-3 w-3" />
                             {vehicle.odometer.daysSinceUpdate === 999
-                              ? "Sin registro"
+                              ? 'Sin registro'
                               : `${vehicle.odometer.daysSinceUpdate}d sin reporte`}
                           </Badge>
                         )}
@@ -436,7 +443,9 @@ export function FleetStatusBoard() {
                           <span className="font-semibold">
                             {vehicle.currentMileage.toLocaleString()}
                           </span>
-                          <span className="text-muted-foreground text-sm">km</span>
+                          <span className="text-muted-foreground text-sm">
+                            km
+                          </span>
                         </div>
                       </TableCell>
 
@@ -444,13 +453,13 @@ export function FleetStatusBoard() {
                       <TableCell className="text-center">
                         <Badge
                           className={cn(
-                            "gap-1 font-medium",
-                            vehicle.overallStatus === "CRITICAL" &&
-                              "bg-red-500 hover:bg-red-600",
-                            vehicle.overallStatus === "WARNING" &&
-                              "bg-yellow-500 hover:bg-yellow-600",
-                            vehicle.overallStatus === "OK" &&
-                              "bg-green-500 hover:bg-green-600"
+                            'gap-1 font-medium',
+                            vehicle.overallStatus === 'CRITICAL' &&
+                              'bg-red-500 hover:bg-red-600',
+                            vehicle.overallStatus === 'WARNING' &&
+                              'bg-yellow-500 hover:bg-yellow-600',
+                            vehicle.overallStatus === 'OK' &&
+                              'bg-green-500 hover:bg-green-600'
                           )}
                         >
                           <StatusIcon className="h-3 w-3" />
@@ -463,7 +472,7 @@ export function FleetStatusBoard() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={(e) => {
+                          onClick={e => {
                             e.stopPropagation();
                             handleOpenOdometer(vehicle);
                           }}

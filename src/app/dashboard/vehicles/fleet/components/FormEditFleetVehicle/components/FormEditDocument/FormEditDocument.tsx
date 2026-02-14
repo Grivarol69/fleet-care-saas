@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
+import { useEffect, useState } from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { format } from 'date-fns';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Form,
   FormControl,
@@ -20,29 +20,34 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
+} from '@/components/ui/form';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import axios from "axios";
-import { useToast } from "@/components/hooks/use-toast";
-import { cn } from "@/lib/utils";
-import { CalendarIcon, Loader2 } from "lucide-react";
-import { FormEditDocumentProps, DocumentTypeConfigProps } from "../SharedTypes/SharedTypes";
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import axios from 'axios';
+import { useToast } from '@/components/hooks/use-toast';
+import { cn } from '@/lib/utils';
+import { CalendarIcon, Loader2 } from 'lucide-react';
+import {
+  FormEditDocumentProps,
+  DocumentTypeConfigProps,
+} from '../SharedTypes/SharedTypes';
 
 const formSchema = z.object({
-  documentTypeId: z.number({ required_error: "Seleccione un tipo de documento" }),
-  documentNumber: z.string().min(1, "El numero de documento es requerido"),
+  documentTypeId: z.number({
+    required_error: 'Seleccione un tipo de documento',
+  }),
+  documentNumber: z.string().min(1, 'El numero de documento es requerido'),
   entity: z.string().optional(),
   expiryDate: z.date().optional(),
 });
@@ -54,33 +59,40 @@ export function FormEditDocument({
   onEditDocument,
 }: FormEditDocumentProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [documentTypes, setDocumentTypes] = useState<DocumentTypeConfigProps[]>([]);
+  const [documentTypes, setDocumentTypes] = useState<DocumentTypeConfigProps[]>(
+    []
+  );
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-        documentTypeId: document.documentTypeId,
-        documentNumber: document.documentNumber || document.fileName || "",
-        entity: document.entity || "",
-        expiryDate: document.expiryDate ? new Date(document.expiryDate) : undefined,
+      documentTypeId: document.documentTypeId,
+      documentNumber: document.documentNumber || document.fileName || '',
+      entity: document.entity || '',
+      expiryDate: document.expiryDate
+        ? new Date(document.expiryDate)
+        : undefined,
     },
   });
 
   useEffect(() => {
     form.reset({
-        documentTypeId: document.documentTypeId,
-        documentNumber: document.documentNumber || document.fileName || "",
-        entity: document.entity || "",
-        expiryDate: document.expiryDate ? new Date(document.expiryDate) : undefined,
+      documentTypeId: document.documentTypeId,
+      documentNumber: document.documentNumber || document.fileName || '',
+      entity: document.entity || '',
+      expiryDate: document.expiryDate
+        ? new Date(document.expiryDate)
+        : undefined,
     });
   }, [document, form]);
 
   // Fetch document types from API
   useEffect(() => {
     if (isOpen) {
-      axios.get('/api/vehicles/document-types')
-        .then((res) => setDocumentTypes(res.data))
-        .catch((err) => console.error("Error fetching document types:", err));
+      axios
+        .get('/api/vehicles/document-types')
+        .then(res => setDocumentTypes(res.data))
+        .catch(err => console.error('Error fetching document types:', err));
     }
   }, [isOpen]);
 
@@ -99,20 +111,19 @@ export function FormEditDocument({
       setIsOpen(false);
 
       toast({
-        title: "Documento actualizado!",
-        description: "El documento ha sido actualizado exitosamente.",
+        title: 'Documento actualizado!',
+        description: 'El documento ha sido actualizado exitosamente.',
       });
-
     } catch (error) {
-      console.error("Error updating document:", error);
-      let description = "No se pudo actualizar el documento";
+      console.error('Error updating document:', error);
+      let description = 'No se pudo actualizar el documento';
       if (axios.isAxiosError(error) && error.response?.data) {
         description = error.response.data;
       }
       toast({
-        title: "Error",
+        title: 'Error',
         description,
-        variant: "destructive",
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -136,7 +147,7 @@ export function FormEditDocument({
                 <FormItem>
                   <FormLabel>Tipo de Documento *</FormLabel>
                   <Select
-                    onValueChange={(val) => field.onChange(parseInt(val, 10))}
+                    onValueChange={val => field.onChange(parseInt(val, 10))}
                     value={field.value?.toString()}
                     disabled={isLoading}
                   >
@@ -146,7 +157,7 @@ export function FormEditDocument({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {documentTypes.map((dt) => (
+                      {documentTypes.map(dt => (
                         <SelectItem key={dt.id} value={dt.id.toString()}>
                           {dt.name}
                         </SelectItem>
@@ -209,13 +220,13 @@ export function FormEditDocument({
                         <Button
                           variant="outline"
                           className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
+                            'w-full pl-3 text-left font-normal',
+                            !field.value && 'text-muted-foreground'
                           )}
                           disabled={isLoading}
                         >
                           {field.value ? (
-                            format(field.value, "PPP")
+                            format(field.value, 'PPP')
                           ) : (
                             <span>Seleccionar fecha</span>
                           )}
@@ -228,7 +239,7 @@ export function FormEditDocument({
                         mode="single"
                         selected={field.value}
                         onSelect={field.onChange}
-                        disabled={(date) => date < new Date("1900-01-01")}
+                        disabled={date => date < new Date('1900-01-01')}
                         initialFocus
                       />
                     </PopoverContent>
@@ -250,7 +261,7 @@ export function FormEditDocument({
               </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isLoading ? "Actualizando..." : "Guardar Cambios"}
+                {isLoading ? 'Actualizando...' : 'Guardar Cambios'}
               </Button>
             </div>
           </form>

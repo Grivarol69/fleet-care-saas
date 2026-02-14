@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect, useState } from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -20,13 +20,13 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import axios from "axios";
-import { useToast } from "@/components/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+} from '@/components/ui/form';
+import axios from 'axios';
+import { useToast } from '@/components/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
-  name: z.string().min(1, "El nombre es requerido").max(100),
+  name: z.string().min(1, 'El nombre es requerido').max(100),
   description: z.string().max(500).nullable().optional(),
   requiresExpiry: z.boolean(),
   isMandatory: z.boolean(),
@@ -71,7 +71,7 @@ export function FormEditDocumentType({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: documentType.name,
-      description: documentType.description || "",
+      description: documentType.description || '',
       requiresExpiry: documentType.requiresExpiry,
       isMandatory: documentType.isMandatory,
       expiryWarningDays: documentType.expiryWarningDays,
@@ -83,7 +83,7 @@ export function FormEditDocumentType({
   useEffect(() => {
     form.reset({
       name: documentType.name,
-      description: documentType.description || "",
+      description: documentType.description || '',
       requiresExpiry: documentType.requiresExpiry,
       isMandatory: documentType.isMandatory,
       expiryWarningDays: documentType.expiryWarningDays,
@@ -102,16 +102,16 @@ export function FormEditDocumentType({
       onEdit(response.data);
       setIsOpen(false);
       toast({
-        title: "Tipo actualizado",
-        description: "El tipo de documento ha sido actualizado exitosamente",
+        title: 'Tipo actualizado',
+        description: 'El tipo de documento ha sido actualizado exitosamente',
       });
     } catch (error) {
-      console.error("Error updating document type:", error);
-      let description = "No se pudo actualizar el tipo de documento";
+      console.error('Error updating document type:', error);
+      let description = 'No se pudo actualizar el tipo de documento';
       if (axios.isAxiosError(error) && error.response?.data?.error) {
         description = error.response.data.error;
       }
-      toast({ title: "Error", description, variant: "destructive" });
+      toast({ title: 'Error', description, variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -123,7 +123,7 @@ export function FormEditDocumentType({
         <DialogHeader>
           <DialogTitle>
             Editar Tipo de Documento: {documentType.code}
-            {documentType.isGlobal && " (Global)"}
+            {documentType.isGlobal && ' (Global)'}
           </DialogTitle>
         </DialogHeader>
 
@@ -150,7 +150,11 @@ export function FormEditDocumentType({
                 <FormItem>
                   <FormLabel>Descripcion</FormLabel>
                   <FormControl>
-                    <Input {...field} value={field.value || ""} disabled={isLoading} />
+                    <Input
+                      {...field}
+                      value={field.value || ''}
+                      disabled={isLoading}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -164,7 +168,11 @@ export function FormEditDocumentType({
                 render={({ field }) => (
                   <FormItem className="flex items-center gap-2 space-y-0">
                     <FormControl>
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} disabled={isLoading} />
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={isLoading}
+                      />
                     </FormControl>
                     <FormLabel>Requiere fecha de vencimiento</FormLabel>
                   </FormItem>
@@ -176,7 +184,11 @@ export function FormEditDocumentType({
                 render={({ field }) => (
                   <FormItem className="flex items-center gap-2 space-y-0">
                     <FormControl>
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} disabled={isLoading} />
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={isLoading}
+                      />
                     </FormControl>
                     <FormLabel>Obligatorio para circular</FormLabel>
                   </FormItem>
@@ -195,7 +207,9 @@ export function FormEditDocumentType({
                       <Input
                         type="number"
                         {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
+                        onChange={e =>
+                          field.onChange(parseInt(e.target.value, 10) || 0)
+                        }
                         disabled={isLoading}
                       />
                     </FormControl>
@@ -213,7 +227,9 @@ export function FormEditDocumentType({
                       <Input
                         type="number"
                         {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
+                        onChange={e =>
+                          field.onChange(parseInt(e.target.value, 10) || 0)
+                        }
                         disabled={isLoading}
                       />
                     </FormControl>
@@ -231,7 +247,9 @@ export function FormEditDocumentType({
                       <Input
                         type="number"
                         {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
+                        onChange={e =>
+                          field.onChange(parseInt(e.target.value, 10) || 0)
+                        }
                         disabled={isLoading}
                       />
                     </FormControl>
@@ -242,12 +260,17 @@ export function FormEditDocumentType({
             </div>
 
             <div className="flex justify-end gap-4 pt-4 border-t">
-              <Button type="button" variant="outline" onClick={() => setIsOpen(false)} disabled={isLoading}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsOpen(false)}
+                disabled={isLoading}
+              >
                 Cancelar
               </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isLoading ? "Guardando..." : "Guardar Cambios"}
+                {isLoading ? 'Guardando...' : 'Guardar Cambios'}
               </Button>
             </div>
           </form>

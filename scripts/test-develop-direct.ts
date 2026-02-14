@@ -2,14 +2,15 @@ import { PrismaClient } from '@prisma/client';
 
 async function test() {
   // Usando DIRECT_URL de .env.local (db.* host)
-  const url = "postgresql://postgres:etmcFKSW1984@db.qazrjmkfbjgdjfvfylqx.supabase.co:5432/postgres";
+  const url =
+    'postgresql://postgres:etmcFKSW1984@db.qazrjmkfbjgdjfvfylqx.supabase.co:5432/postgres';
 
   console.log('\n🔧 Testeando DIRECT CONNECTION (db.* host)...\n');
   console.log('Host: db.qazrjmkfbjgdjfvfylqx.supabase.co:5432\n');
 
   const prisma = new PrismaClient({
     datasources: { db: { url } },
-    log: ['query', 'error', 'warn']
+    log: ['query', 'error', 'warn'],
   });
 
   try {
@@ -28,7 +29,10 @@ async function test() {
     await prisma.$disconnect();
     return true;
   } catch (error) {
-    console.error('❌ Error:', error instanceof Error ? error.message : 'Unknown');
+    console.error(
+      '❌ Error:',
+      error instanceof Error ? error.message : 'Unknown'
+    );
     if (error instanceof Error && error.stack) {
       console.error('\nStack:', error.stack);
     }

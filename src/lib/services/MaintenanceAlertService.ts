@@ -1,22 +1,30 @@
-import { prisma } from "@/lib/prisma";
-import { Prisma, AlertLevel, AlertType, AlertCategory, Priority } from "@prisma/client";
-
-
+import { prisma } from '@/lib/prisma';
+import {
+  Prisma,
+  AlertLevel,
+  AlertType,
+  AlertCategory,
+  Priority,
+} from '@prisma/client';
 
 // Umbrales para generar alertas (en km)
 const ALERT_THRESHOLDS = {
-  EARLY_WARNING: 2000,  // Aviso temprano
-  MEDIUM: 1000,         // Atención
-  HIGH: 500,            // Próximo
-  CRITICAL: 0,          // Vencido
+  EARLY_WARNING: 2000, // Aviso temprano
+  MEDIUM: 1000, // Atención
+  HIGH: 500, // Próximo
+  CRITICAL: 0, // Vencido
 };
 
 export class MaintenanceAlertService {
-
   /**
    * Verifica y genera alertas para un vehículo cuando se actualiza el odómetro
    */
-  static async checkAndGenerateAlerts(vehicleId: number, currentKm: number, tenantId: string): Promise<void> { // Added tenantId param
+  static async checkAndGenerateAlerts(
+    vehicleId: number,
+    currentKm: number,
+    tenantId: string
+  ): Promise<void> {
+    // Added tenantId param
     try {
       // 1. Obtener programa activo del vehículo
       const program = await prisma.vehicleMantProgram.findFirst({
@@ -32,17 +40,19 @@ export class MaintenanceAlertService {
               items: {
                 where: {
                   status: 'PENDING',
-                  scheduledKm: { not: null }
+                  scheduledKm: { not: null },
                 },
-                include: { mantItem: true }
-              }
-            }
-          }
-        }
+                include: { mantItem: true },
+              },
+            },
+          },
+        },
       });
 
       if (!program) {
-        console.log(`[MaintenanceAlertService] No active program found for vehicle ${vehicleId}`);
+        console.log(
+          `[MaintenanceAlertService] No active program found for vehicle ${vehicleId}`
+        );
         return;
       }
 
@@ -93,18 +103,20 @@ export class MaintenanceAlertService {
     category: AlertCategory,
     tenantId: string
   ): Promise<void> {
-
     // Verificar si ya existe alerta activa para este item
     const existingAlert = await prisma.maintenanceAlert.findFirst({
       where: {
         programItemId,
-        status: { in: ['PENDING', 'ACKNOWLEDGED', 'SNOOZED'] }
-      }
+        status: { in: ['PENDING', 'ACKNOWLEDGED', 'SNOOZED'] },
+      },
     });
 
     const alertLevel = this.calculateAlertLevel(kmToMaintenance);
     const priority = this.calculatePriority(kmToMaintenance, category);
-    const priorityScore = this.calculatePriorityScore(kmToMaintenance, category);
+    const priorityScore = this.calculatePriorityScore(
+      kmToMaintenance,
+      category
+    );
     const type = this.determineAlertType(kmToMaintenance);
     const alertThresholdKm = this.getAlertThreshold(kmToMaintenance);
 
@@ -119,11 +131,13 @@ export class MaintenanceAlertService {
           priority,
           priorityScore,
           type,
-          updatedAt: new Date()
-        }
+          updatedAt: new Date(),
+        },
       });
 
-      console.log(`[MaintenanceAlertService] Updated alert ${existingAlert.id} for ${itemName}`);
+      console.log(
+        `[MaintenanceAlertService] Updated alert ${existingAlert.id} for ${itemName}`
+      );
     } else {
       // CREAR nueva alerta
       await prisma.maintenanceAlert.create({
@@ -148,10 +162,12 @@ export class MaintenanceAlertService {
           priorityScore,
           status: 'PENDING',
           viewedBy: [],
-        }
+        },
       });
 
-      console.log(`[MaintenanceAlertService] Created new alert for ${itemName} (${kmToMaintenance} km remaining)`);
+      console.log(
+        `[MaintenanceAlertService] Created new alert for ${itemName} (${kmToMaintenance} km remaining)`
+      );
     }
   }
 
@@ -160,24 +176,27 @@ export class MaintenanceAlertService {
    */
   private static calculateAlertLevel(kmToMaintenance: number): AlertLevel {
     if (kmToMaintenance <= ALERT_THRESHOLDS.CRITICAL) return 'CRITICAL'; // Vencido
-    if (kmToMaintenance <= ALERT_THRESHOLDS.HIGH) return 'HIGH';          // < 500 km
-    if (kmToMaintenance <= ALERT_THRESHOLDS.MEDIUM) return 'MEDIUM';      // < 1000 km
-    return 'LOW';                                                         // < 2000 km
+    if (kmToMaintenance <= ALERT_THRESHOLDS.HIGH) return 'HIGH'; // < 500 km
+    if (kmToMaintenance <= ALERT_THRESHOLDS.MEDIUM) return 'MEDIUM'; // < 1000 km
+    return 'LOW'; // < 2000 km
   }
 
   /**
    * Determina el tipo de alerta
    */
   private static determineAlertType(kmToMaintenance: number): AlertType {
-    if (kmToMaintenance <= 0) return 'OVERDUE';           // Vencido
+    if (kmToMaintenance <= 0) return 'OVERDUE'; // Vencido
     if (kmToMaintenance > ALERT_THRESHOLDS.MEDIUM) return 'EARLY_WARNING'; // Aviso temprano
-    return 'PREVENTIVE';                                  // Normal
+    return 'PREVENTIVE'; // Normal
   }
 
   /**
    * Calcula prioridad basada en km faltantes y categoría
    */
-  private static calculatePriority(kmToMaintenance: number, category: AlertCategory): Priority {
+  private static calculatePriority(
+    kmToMaintenance: number,
+    category: AlertCategory
+  ): Priority {
     // Si es crítico de seguridad, siempre alta prioridad cuando está cerca
     if (category === 'CRITICAL_SAFETY') {
       if (kmToMaintenance <= ALERT_THRESHOLDS.HIGH) return 'URGENT';
@@ -202,20 +221,24 @@ export class MaintenanceAlertService {
   /**
    * Calcula score de prioridad (0-100)
    */
-  private static calculatePriorityScore(kmToMaintenance: number, category: AlertCategory): number {
+  private static calculatePriorityScore(
+    kmToMaintenance: number,
+    category: AlertCategory
+  ): number {
     let score = 0;
 
     // FACTOR 1: Urgencia por km (40 puntos)
-    const kmFactor = Math.max(0, 40 - (kmToMaintenance / 50));
+    const kmFactor = Math.max(0, 40 - kmToMaintenance / 50);
     score += kmFactor;
 
     // FACTOR 2: Criticidad del mantenimiento (30 puntos)
-    const categoryScore = {
-      CRITICAL_SAFETY: 30,
-      MAJOR_COMPONENT: 20,
-      ROUTINE: 10,
-      MINOR: 5
-    }[category] || 10;
+    const categoryScore =
+      {
+        CRITICAL_SAFETY: 30,
+        MAJOR_COMPONENT: 20,
+        ROUTINE: 10,
+        MINOR: 5,
+      }[category] || 10;
     score += categoryScore;
 
     // FACTOR 3: Si está vencido (30 puntos extra)
@@ -273,9 +296,11 @@ export class MaintenanceAlertService {
    * Obtiene el umbral que disparó la alerta
    */
   private static getAlertThreshold(kmToMaintenance: number): number {
-    if (kmToMaintenance <= ALERT_THRESHOLDS.CRITICAL) return ALERT_THRESHOLDS.CRITICAL;
+    if (kmToMaintenance <= ALERT_THRESHOLDS.CRITICAL)
+      return ALERT_THRESHOLDS.CRITICAL;
     if (kmToMaintenance <= ALERT_THRESHOLDS.HIGH) return ALERT_THRESHOLDS.HIGH;
-    if (kmToMaintenance <= ALERT_THRESHOLDS.MEDIUM) return ALERT_THRESHOLDS.MEDIUM;
+    if (kmToMaintenance <= ALERT_THRESHOLDS.MEDIUM)
+      return ALERT_THRESHOLDS.MEDIUM;
     return ALERT_THRESHOLDS.EARLY_WARNING;
   }
 
@@ -287,11 +312,11 @@ export class MaintenanceAlertService {
       // Obtener todas las alertas activas
       const alerts = await prisma.maintenanceAlert.findMany({
         where: {
-          status: { in: ['PENDING', 'ACKNOWLEDGED', 'SNOOZED'] }
+          status: { in: ['PENDING', 'ACKNOWLEDGED', 'SNOOZED'] },
         },
         include: {
-          vehicle: true
-        }
+          vehicle: true,
+        },
       });
 
       let updated = 0;
@@ -301,7 +326,10 @@ export class MaintenanceAlertService {
         const kmToMaintenance = alert.scheduledKm - currentKm;
 
         const alertLevel = this.calculateAlertLevel(kmToMaintenance);
-        const priority = this.calculatePriority(kmToMaintenance, alert.category);
+        const priority = this.calculatePriority(
+          kmToMaintenance,
+          alert.category
+        );
         const type = this.determineAlertType(kmToMaintenance);
 
         await prisma.maintenanceAlert.update({
@@ -312,8 +340,8 @@ export class MaintenanceAlertService {
             alertLevel,
             priority,
             type,
-            updatedAt: new Date()
-          }
+            updatedAt: new Date(),
+          },
         });
 
         updated++;
@@ -321,7 +349,6 @@ export class MaintenanceAlertService {
 
       console.log(`[MaintenanceAlertService] Updated ${updated} active alerts`);
       return updated;
-
     } catch (error) {
       console.error('[MaintenanceAlertService] Error updating alerts:', error);
       throw error;
@@ -338,7 +365,7 @@ export class MaintenanceAlertService {
   ): Promise<void> {
     const alert = await prisma.maintenanceAlert.findUnique({
       where: { id: alertId },
-      include: { programItem: true }
+      include: { programItem: true },
     });
 
     if (!alert) {
@@ -346,36 +373,50 @@ export class MaintenanceAlertService {
     }
 
     const responseTimeMinutes = alert.workOrderCreatedAt
-      ? Math.round((alert.workOrderCreatedAt.getTime() - alert.createdAt.getTime()) / 1000 / 60)
+      ? Math.round(
+          (alert.workOrderCreatedAt.getTime() - alert.createdAt.getTime()) /
+            1000 /
+            60
+        )
       : null;
 
     const completionTimeHours = alert.workOrderCreatedAt
-      ? Math.round((new Date().getTime() - alert.workOrderCreatedAt.getTime()) / 1000 / 60 / 60)
+      ? Math.round(
+          (new Date().getTime() - alert.workOrderCreatedAt.getTime()) /
+            1000 /
+            60 /
+            60
+        )
       : null;
 
     const wasOnTime = alert.kmToMaintenance >= 0;
 
-    const costVariance = actualCost && alert.estimatedCost
-      ? actualCost - Number(alert.estimatedCost)
-      : null;
+    const costVariance =
+      actualCost && alert.estimatedCost
+        ? actualCost - Number(alert.estimatedCost)
+        : null;
 
     const updateData: Prisma.MaintenanceAlertUpdateInput = {
       status: 'CLOSED',
       workOrder: { connect: { id: workOrderId } },
       wasOnTime,
-      closedAt: new Date()
+      closedAt: new Date(),
     };
 
     if (actualCost !== undefined) updateData.actualCost = actualCost;
     if (costVariance !== null) updateData.costVariance = costVariance;
-    if (responseTimeMinutes !== null) updateData.responseTimeMinutes = responseTimeMinutes;
-    if (completionTimeHours !== null) updateData.completionTimeHours = completionTimeHours;
+    if (responseTimeMinutes !== null)
+      updateData.responseTimeMinutes = responseTimeMinutes;
+    if (completionTimeHours !== null)
+      updateData.completionTimeHours = completionTimeHours;
 
     await prisma.maintenanceAlert.update({
       where: { id: alertId },
-      data: updateData
+      data: updateData,
     });
 
-    console.log(`[MaintenanceAlertService] Closed alert ${alertId} for WO ${workOrderId}`);
+    console.log(
+      `[MaintenanceAlertService] Closed alert ${alertId} for WO ${workOrderId}`
+    );
   }
 }

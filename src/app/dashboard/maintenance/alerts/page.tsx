@@ -14,7 +14,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 
 export default function MaintenanceAlertsPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -28,10 +28,11 @@ export default function MaintenanceAlertsPage() {
   );
 
   // Filtrar por búsqueda
-  const filteredAlerts = groupedAlerts.filter(group =>
-    group.vehiclePlate.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    group.brandName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    group.lineName.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredAlerts = groupedAlerts.filter(
+    group =>
+      group.vehiclePlate.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      group.brandName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      group.lineName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Calcular KPIs
@@ -41,11 +42,20 @@ export default function MaintenanceAlertsPage() {
     return {
       totalVehiclesWithAlerts: filteredAlerts.length,
       criticalAlerts: allAlerts.filter(a => a.alertLevel === 'CRITICAL').length,
-      upcomingAlerts: allAlerts.filter(a =>
-        a.alertLevel === 'HIGH' && a.kmToMaintenance > 0 && a.kmToMaintenance <= 1000
+      upcomingAlerts: allAlerts.filter(
+        a =>
+          a.alertLevel === 'HIGH' &&
+          a.kmToMaintenance > 0 &&
+          a.kmToMaintenance <= 1000
       ).length,
-      totalEstimatedCost: allAlerts.reduce((sum, a) => sum + (a.estimatedCost || 0), 0),
-      totalEstimatedHours: allAlerts.reduce((sum, a) => sum + (a.estimatedDuration || 0), 0),
+      totalEstimatedCost: allAlerts.reduce(
+        (sum, a) => sum + (a.estimatedCost || 0),
+        0
+      ),
+      totalEstimatedHours: allAlerts.reduce(
+        (sum, a) => sum + (a.estimatedDuration || 0),
+        0
+      ),
     };
   }, [filteredAlerts]);
 
@@ -54,8 +64,12 @@ export default function MaintenanceAlertsPage() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-lg font-semibold text-gray-700">Cargando alertas de mantenimiento...</p>
-          <p className="text-sm text-gray-500 mt-2">Analizando el estado de tu flota</p>
+          <p className="text-lg font-semibold text-gray-700">
+            Cargando alertas de mantenimiento...
+          </p>
+          <p className="text-sm text-gray-500 mt-2">
+            Analizando el estado de tu flota
+          </p>
         </div>
       </div>
     );
@@ -86,12 +100,15 @@ export default function MaintenanceAlertsPage() {
           <Input
             placeholder="Buscar por placa, marca o línea..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={e => setSearchQuery(e.target.value)}
             className="pl-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
           />
         </div>
 
-        <Select value={priorityFilter || "ALL"} onValueChange={(val) => setPriorityFilter(val === "ALL" ? "" : val)}>
+        <Select
+          value={priorityFilter || 'ALL'}
+          onValueChange={val => setPriorityFilter(val === 'ALL' ? '' : val)}
+        >
           <SelectTrigger className="w-[220px] border-gray-300">
             <Filter className="h-4 w-4 mr-2" />
             <SelectValue placeholder="Todas las prioridades" />
@@ -105,8 +122,12 @@ export default function MaintenanceAlertsPage() {
           </SelectContent>
         </Select>
 
-        <Badge variant="outline" className="text-sm py-2.5 px-4 bg-blue-50 text-blue-700 border-blue-300 font-semibold">
-          {filteredAlerts.length} vehículo{filteredAlerts.length !== 1 ? 's' : ''}
+        <Badge
+          variant="outline"
+          className="text-sm py-2.5 px-4 bg-blue-50 text-blue-700 border-blue-300 font-semibold"
+        >
+          {filteredAlerts.length} vehículo
+          {filteredAlerts.length !== 1 ? 's' : ''}
         </Badge>
       </div>
 
@@ -117,7 +138,9 @@ export default function MaintenanceAlertsPage() {
             <AlertTriangle className="h-12 w-12 text-green-600" />
           </div>
           <p className="text-2xl font-bold text-gray-900 mb-2">
-            {searchQuery || priorityFilter ? 'No hay resultados' : '¡Excelente!'}
+            {searchQuery || priorityFilter
+              ? 'No hay resultados'
+              : '¡Excelente!'}
           </p>
           <p className="text-gray-600 text-center max-w-md text-lg">
             {searchQuery || priorityFilter

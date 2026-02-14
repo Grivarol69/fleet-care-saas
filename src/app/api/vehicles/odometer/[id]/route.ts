@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
-import { requireManagementRole } from "@/lib/permissions";
+import { requireManagementRole } from '@/lib/permissions';
 
 // GET - Fetch specific odometer log
 export async function GET(
@@ -11,13 +11,13 @@ export async function GET(
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
     const id = parseInt(params.id);
 
     if (isNaN(id)) {
-      return new NextResponse("Invalid ID", { status: 400 });
+      return new NextResponse('Invalid ID', { status: 400 });
     }
 
     const odometerLog = await prisma.odometerLog.findFirst({
@@ -40,13 +40,13 @@ export async function GET(
     });
 
     if (!odometerLog) {
-      return new NextResponse("Odometer log not found", { status: 404 });
+      return new NextResponse('Odometer log not found', { status: 404 });
     }
 
     return NextResponse.json(odometerLog);
   } catch (error) {
-    console.error("[ODOMETER_GET_BY_ID]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error('[ODOMETER_GET_BY_ID]', error);
+    return new NextResponse('Internal Error', { status: 500 });
   }
 }
 
@@ -58,23 +58,27 @@ export async function PUT(
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
     try {
       requireManagementRole(user);
     } catch {
-      return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
+      return NextResponse.json(
+        { error: 'No tienes permisos para esta acción' },
+        { status: 403 }
+      );
     }
 
     const id = parseInt(params.id);
 
     if (isNaN(id)) {
-      return new NextResponse("Invalid ID", { status: 400 });
+      return new NextResponse('Invalid ID', { status: 400 });
     }
 
     const body = await request.json();
-    const { vehicleId, driverId, kilometers, hours, measureType, recordedAt } = body;
+    const { vehicleId, driverId, kilometers, hours, measureType, recordedAt } =
+      body;
 
     // Verify odometer log exists and belongs to tenant
     const existingLog = await prisma.odometerLog.findFirst({
@@ -87,7 +91,7 @@ export async function PUT(
     });
 
     if (!existingLog) {
-      return new NextResponse("Odometer log not found", { status: 404 });
+      return new NextResponse('Odometer log not found', { status: 404 });
     }
 
     // Validate vehicle belongs to tenant
@@ -99,7 +103,9 @@ export async function PUT(
     });
 
     if (!vehicle) {
-      return new NextResponse("Vehicle not found or not accessible", { status: 404 });
+      return new NextResponse('Vehicle not found or not accessible', {
+        status: 404,
+      });
     }
 
     // Validate driver belongs to tenant (if provided)
@@ -112,16 +118,18 @@ export async function PUT(
       });
 
       if (!driver) {
-        return new NextResponse("Driver not found or not accessible", { status: 404 });
+        return new NextResponse('Driver not found or not accessible', {
+          status: 404,
+        });
       }
     }
 
     // Validate measure value based on type
-    if (measureType === "KILOMETERS" && !kilometers) {
-      return new NextResponse("Kilometers value is required", { status: 400 });
+    if (measureType === 'KILOMETERS' && !kilometers) {
+      return new NextResponse('Kilometers value is required', { status: 400 });
     }
-    if (measureType === "HOURS" && !hours) {
-      return new NextResponse("Hours value is required", { status: 400 });
+    if (measureType === 'HOURS' && !hours) {
+      return new NextResponse('Hours value is required', { status: 400 });
     }
 
     // Update odometer log
@@ -130,8 +138,8 @@ export async function PUT(
       data: {
         vehicleId,
         driverId: driverId || null,
-        kilometers: measureType === "KILOMETERS" ? kilometers : null,
-        hours: measureType === "HOURS" ? hours : null,
+        kilometers: measureType === 'KILOMETERS' ? kilometers : null,
+        hours: measureType === 'HOURS' ? hours : null,
         measureType,
         recordedAt: new Date(recordedAt),
       },
@@ -148,14 +156,14 @@ export async function PUT(
     });
 
     // Update vehicle mileage if this is the latest reading
-    if (measureType === "KILOMETERS" && kilometers) {
+    if (measureType === 'KILOMETERS' && kilometers) {
       const latestReading = await prisma.odometerLog.findFirst({
         where: {
           vehicleId: vehicleId,
-          measureType: "KILOMETERS",
+          measureType: 'KILOMETERS',
         },
         orderBy: {
-          recordedAt: "desc",
+          recordedAt: 'desc',
         },
       });
 
@@ -173,8 +181,8 @@ export async function PUT(
 
     return NextResponse.json(updatedLog);
   } catch (error) {
-    console.error("[ODOMETER_PUT]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error('[ODOMETER_PUT]', error);
+    return new NextResponse('Internal Error', { status: 500 });
   }
 }
 
@@ -186,19 +194,22 @@ export async function DELETE(
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
     try {
       requireManagementRole(user);
     } catch {
-      return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
+      return NextResponse.json(
+        { error: 'No tienes permisos para esta acción' },
+        { status: 403 }
+      );
     }
 
     const id = parseInt(params.id);
 
     if (isNaN(id)) {
-      return new NextResponse("Invalid ID", { status: 400 });
+      return new NextResponse('Invalid ID', { status: 400 });
     }
 
     // Verify odometer log exists and belongs to tenant
@@ -212,7 +223,7 @@ export async function DELETE(
     });
 
     if (!existingLog) {
-      return new NextResponse("Odometer log not found", { status: 404 });
+      return new NextResponse('Odometer log not found', { status: 404 });
     }
 
     // Delete the log
@@ -221,14 +232,14 @@ export async function DELETE(
     });
 
     // Update vehicle mileage to the latest reading
-    if (existingLog.measureType === "KILOMETERS" && existingLog.kilometers) {
+    if (existingLog.measureType === 'KILOMETERS' && existingLog.kilometers) {
       const latestReading = await prisma.odometerLog.findFirst({
         where: {
           vehicleId: existingLog.vehicleId,
-          measureType: "KILOMETERS",
+          measureType: 'KILOMETERS',
         },
         orderBy: {
-          recordedAt: "desc",
+          recordedAt: 'desc',
         },
       });
 
@@ -256,7 +267,7 @@ export async function DELETE(
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    console.error("[ODOMETER_DELETE]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error('[ODOMETER_DELETE]', error);
+    return new NextResponse('Internal Error', { status: 500 });
   }
 }

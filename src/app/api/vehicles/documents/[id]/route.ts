@@ -1,19 +1,21 @@
-import { prisma } from "@/lib/prisma";
+import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { canManageVehicles } from "@/lib/permissions";
+import { canManageVehicles } from '@/lib/permissions';
 
 // Schema for document update validation
-const updateDocumentSchema = z.object({
-  documentTypeId: z.number().int().positive().optional(),
-  fileName: z.string().min(1).max(255).optional(),
-  fileUrl: z.string().url().optional(),
-  documentNumber: z.string().max(100).nullable().optional(),
-  entity: z.string().max(100).nullable().optional(),
-  expiryDate: z.string().datetime().nullable().optional(),
-  status: z.enum(['ACTIVE', 'EXPIRED', 'EXPIRING_SOON']).optional(),
-}).strict();
+const updateDocumentSchema = z
+  .object({
+    documentTypeId: z.number().int().positive().optional(),
+    fileName: z.string().min(1).max(255).optional(),
+    fileUrl: z.string().url().optional(),
+    documentNumber: z.string().max(100).nullable().optional(),
+    entity: z.string().max(100).nullable().optional(),
+    expiryDate: z.string().datetime().nullable().optional(),
+    status: z.enum(['ACTIVE', 'EXPIRED', 'EXPIRING_SOON']).optional(),
+  })
+  .strict();
 
 // GET - Obtener Document específica por ID
 export async function GET(
@@ -39,7 +41,7 @@ export async function GET(
     const document = await prisma.document.findUnique({
       where: {
         id,
-        tenantId: user.tenantId
+        tenantId: user.tenantId,
       },
       include: {
         documentType: true,
@@ -55,7 +57,7 @@ export async function GET(
 
     return NextResponse.json(document);
   } catch (error) {
-    console.error("[DOCUMENT_GET]", error);
+    console.error('[DOCUMENT_GET]', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }
@@ -77,7 +79,10 @@ export async function PATCH(
     }
 
     if (!canManageVehicles(user)) {
-      return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
+      return NextResponse.json(
+        { error: 'No tienes permisos para esta acción' },
+        { status: 403 }
+      );
     }
 
     // Validate id format
@@ -93,7 +98,7 @@ export async function PATCH(
       where: {
         id,
         tenantId: user.tenantId,
-      }
+      },
     });
 
     if (!documentToUpdate) {
@@ -118,15 +123,23 @@ export async function PATCH(
     const updateData: Record<string, unknown> = {};
     const validatedData = validation.data;
 
-    if (validatedData.documentTypeId !== undefined) updateData.documentTypeId = validatedData.documentTypeId;
-    if (validatedData.fileName !== undefined) updateData.fileName = validatedData.fileName;
-    if (validatedData.fileUrl !== undefined) updateData.fileUrl = validatedData.fileUrl;
-    if (validatedData.documentNumber !== undefined) updateData.documentNumber = validatedData.documentNumber;
-    if (validatedData.entity !== undefined) updateData.entity = validatedData.entity;
+    if (validatedData.documentTypeId !== undefined)
+      updateData.documentTypeId = validatedData.documentTypeId;
+    if (validatedData.fileName !== undefined)
+      updateData.fileName = validatedData.fileName;
+    if (validatedData.fileUrl !== undefined)
+      updateData.fileUrl = validatedData.fileUrl;
+    if (validatedData.documentNumber !== undefined)
+      updateData.documentNumber = validatedData.documentNumber;
+    if (validatedData.entity !== undefined)
+      updateData.entity = validatedData.entity;
     if (validatedData.expiryDate !== undefined) {
-      updateData.expiryDate = validatedData.expiryDate ? new Date(validatedData.expiryDate) : null;
+      updateData.expiryDate = validatedData.expiryDate
+        ? new Date(validatedData.expiryDate)
+        : null;
     }
-    if (validatedData.status !== undefined) updateData.status = validatedData.status;
+    if (validatedData.status !== undefined)
+      updateData.status = validatedData.status;
 
     const updatedDocument = await prisma.document.update({
       where: { id },
@@ -137,9 +150,8 @@ export async function PATCH(
     });
 
     return NextResponse.json(updatedDocument);
-
   } catch (error) {
-    console.error("[DOCUMENT_PATCH]", error);
+    console.error('[DOCUMENT_PATCH]', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }
@@ -161,7 +173,10 @@ export async function DELETE(
     }
 
     if (!canManageVehicles(user)) {
-      return NextResponse.json({ error: "No tienes permisos para esta acción" }, { status: 403 });
+      return NextResponse.json(
+        { error: 'No tienes permisos para esta acción' },
+        { status: 403 }
+      );
     }
 
     // Validate id format
@@ -177,7 +192,7 @@ export async function DELETE(
       where: {
         id,
         tenantId: user.tenantId,
-      }
+      },
     });
 
     if (!documentToDelete) {
@@ -188,13 +203,12 @@ export async function DELETE(
     }
 
     await prisma.document.delete({
-      where: { id }
+      where: { id },
     });
 
     return NextResponse.json({ success: true, message: 'Documento eliminado' });
-
   } catch (error) {
-    console.error("[DOCUMENT_DELETE]", error);
+    console.error('[DOCUMENT_DELETE]', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }

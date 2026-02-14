@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 
 export type RecentInvoice = {
@@ -22,7 +22,7 @@ export async function GET() {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
     const recentInvoices = await prisma.invoice.findMany({
@@ -46,16 +46,16 @@ export async function GET() {
         },
       },
       orderBy: {
-        invoiceDate: "desc",
+        invoiceDate: 'desc',
       },
       take: 10,
     });
 
     return NextResponse.json(recentInvoices);
   } catch (error) {
-    console.error("Error fetching recent invoices:", error);
+    console.error('Error fetching recent invoices:', error);
     return NextResponse.json(
-      { error: "Failed to fetch recent invoices" },
+      { error: 'Failed to fetch recent invoices' },
       { status: 500 }
     );
   }

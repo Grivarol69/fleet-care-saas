@@ -1,1 +1,1 @@
-export { FormEditTechnician } from "./FormEditTechnician";
+export { FormEditTechnician } from './FormEditTechnician';

@@ -1,25 +1,25 @@
-"use client";
+'use client';
 
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect } from 'react';
 
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   Form,
   FormControl,
@@ -27,14 +27,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
+} from '@/components/ui/form';
 
-import axios from "axios";
-import { useToast } from "@/components/hooks/use-toast";
-import { useRouter } from "next/navigation";
-import { formSchema } from "./FormEditTechnician.form";
-import { FormEditTechnicianProps } from "./FormEditTechnician.types";
-import { TECHNICIAN_SPECIALTIES } from "@/lib/constants/specialties";
+import axios from 'axios';
+import { useToast } from '@/components/hooks/use-toast';
+import { useRouter } from 'next/navigation';
+import { formSchema } from './FormEditTechnician.form';
+import { FormEditTechnicianProps } from './FormEditTechnician.types';
+import { TECHNICIAN_SPECIALTIES } from '@/lib/constants/specialties';
 
 export function FormEditTechnician({
   isOpen,
@@ -45,10 +45,10 @@ export function FormEditTechnician({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      email: "",
-      phone: "",
-      specialty: "",
+      name: '',
+      email: '',
+      phone: '',
+      specialty: '',
     },
   });
 
@@ -59,28 +59,32 @@ export function FormEditTechnician({
     if (defaultValues) {
       form.reset({
         name: defaultValues.name,
-        email: defaultValues.email || "",
-        phone: defaultValues.phone || "",
-        specialty: defaultValues.specialty || "",
+        email: defaultValues.email || '',
+        phone: defaultValues.phone || '',
+        specialty: defaultValues.specialty || '',
       });
     }
   }, [defaultValues, form]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      const response = await axios.put(`/api/people/technicians/${defaultValues.id}`, {
-        name: values.name,
-        email: values.email || null,
-        phone: values.phone || null,
-        specialty: values.specialty === "none" ? null : values.specialty || null,
-      });
+      const response = await axios.put(
+        `/api/people/technicians/${defaultValues.id}`,
+        {
+          name: values.name,
+          email: values.email || null,
+          phone: values.phone || null,
+          specialty:
+            values.specialty === 'none' ? null : values.specialty || null,
+        }
+      );
 
       onEditTechnician(response.data);
       setIsOpen(false);
-      
+
       toast({
-        title: "Técnico actualizado!",
-        description: "El técnico fue actualizado exitosamente.",
+        title: 'Técnico actualizado!',
+        description: 'El técnico fue actualizado exitosamente.',
       });
 
       router.refresh();
@@ -88,25 +92,25 @@ export function FormEditTechnician({
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 409) {
           toast({
-            title: "Error",
-            description: "Ya existe un técnico con ese nombre",
-            variant: "destructive",
+            title: 'Error',
+            description: 'Ya existe un técnico con ese nombre',
+            variant: 'destructive',
           });
           return;
         }
         if (error.response?.status === 404) {
           toast({
-            title: "Error",
-            description: "Técnico no encontrado",
-            variant: "destructive",
+            title: 'Error',
+            description: 'Técnico no encontrado',
+            variant: 'destructive',
           });
           return;
         }
       }
       toast({
-        title: "Algo salió mal",
-        description: "No se pudo actualizar el técnico",
-        variant: "destructive",
+        title: 'Algo salió mal',
+        description: 'No se pudo actualizar el técnico',
+        variant: 'destructive',
       });
     }
   };
@@ -132,7 +136,7 @@ export function FormEditTechnician({
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="email"
@@ -140,17 +144,17 @@ export function FormEditTechnician({
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="email" 
-                      placeholder="Ingrese el email (opcional)" 
-                      {...field} 
+                    <Input
+                      type="email"
+                      placeholder="Ingrese el email (opcional)"
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="phone"
@@ -158,20 +162,26 @@ export function FormEditTechnician({
                 <FormItem>
                   <FormLabel>Teléfono</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ingrese el teléfono (opcional)" {...field} />
+                    <Input
+                      placeholder="Ingrese el teléfono (opcional)"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="specialty"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Especialidad</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ""}>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value || ''}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccione una especialidad (opcional)" />
@@ -179,8 +189,11 @@ export function FormEditTechnician({
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="none">Sin especialidad</SelectItem>
-                      {TECHNICIAN_SPECIALTIES.map((specialty) => (
-                        <SelectItem key={specialty.value} value={specialty.value}>
+                      {TECHNICIAN_SPECIALTIES.map(specialty => (
+                        <SelectItem
+                          key={specialty.value}
+                          value={specialty.value}
+                        >
                           {specialty.label}
                         </SelectItem>
                       ))}

@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -19,7 +19,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,7 +29,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog';
 import {
   ArrowLeft,
   Send,
@@ -41,12 +41,12 @@ import {
   Truck,
   Calendar,
   Receipt,
-} from "lucide-react";
-import { useToast } from "@/components/hooks/use-toast";
-import { formatCurrency } from "@/lib/utils";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
-import Link from "next/link";
+} from 'lucide-react';
+import { useToast } from '@/components/hooks/use-toast';
+import { formatCurrency } from '@/lib/utils';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import Link from 'next/link';
 
 interface PurchaseOrderItem {
   id: string;
@@ -64,7 +64,7 @@ interface PurchaseOrderItem {
 interface PurchaseOrder {
   id: string;
   orderNumber: string;
-  type: "SERVICES" | "PARTS";
+  type: 'SERVICES' | 'PARTS';
   status: string;
   requestedBy: string;
   approvedBy: string | null;
@@ -106,22 +106,25 @@ interface PurchaseOrder {
 
 const statusConfig: Record<
   string,
-  { label: string; variant: "default" | "secondary" | "destructive" | "outline" }
+  {
+    label: string;
+    variant: 'default' | 'secondary' | 'destructive' | 'outline';
+  }
 > = {
-  DRAFT: { label: "Borrador", variant: "outline" },
-  PENDING_APPROVAL: { label: "Pendiente Aprobación", variant: "secondary" },
-  APPROVED: { label: "Aprobada", variant: "default" },
-  SENT: { label: "Enviada", variant: "default" },
-  PARTIAL: { label: "Parcialmente Facturada", variant: "secondary" },
-  COMPLETED: { label: "Completada", variant: "default" },
-  CANCELLED: { label: "Cancelada", variant: "destructive" },
+  DRAFT: { label: 'Borrador', variant: 'outline' },
+  PENDING_APPROVAL: { label: 'Pendiente Aprobación', variant: 'secondary' },
+  APPROVED: { label: 'Aprobada', variant: 'default' },
+  SENT: { label: 'Enviada', variant: 'default' },
+  PARTIAL: { label: 'Parcialmente Facturada', variant: 'secondary' },
+  COMPLETED: { label: 'Completada', variant: 'default' },
+  CANCELLED: { label: 'Cancelada', variant: 'destructive' },
 };
 
 const itemStatusLabels: Record<string, string> = {
-  PENDING: "Pendiente",
-  PARTIAL: "Parcial",
-  COMPLETED: "Completado",
-  CANCELLED: "Cancelado",
+  PENDING: 'Pendiente',
+  PARTIAL: 'Parcial',
+  COMPLETED: 'Completado',
+  CANCELLED: 'Cancelado',
 };
 
 export default function PurchaseOrderDetailPage() {
@@ -136,15 +139,19 @@ export default function PurchaseOrderDetailPage() {
     action: string;
     title: string;
     description: string;
-  }>({ open: false, action: "", title: "", description: "" });
+  }>({ open: false, action: '', title: '', description: '' });
 
-  const { data: purchaseOrder, isLoading, error } = useQuery<PurchaseOrder>({
-    queryKey: ["purchase-order", poId],
+  const {
+    data: purchaseOrder,
+    isLoading,
+    error,
+  } = useQuery<PurchaseOrder>({
+    queryKey: ['purchase-order', poId],
     queryFn: async () => {
       const res = await fetch(`/api/purchase-orders/${poId}`);
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error || "Error al cargar");
+        throw new Error(err.error || 'Error al cargar');
       }
       return res.json();
     },
@@ -153,49 +160,53 @@ export default function PurchaseOrderDetailPage() {
   const statusMutation = useMutation({
     mutationFn: async ({ action }: { action: string }) => {
       const res = await fetch(`/api/purchase-orders/${poId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action }),
       });
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error || "Error al actualizar");
+        throw new Error(err.error || 'Error al actualizar');
       }
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["purchase-order", poId] });
-      queryClient.invalidateQueries({ queryKey: ["purchase-orders"] });
-      toast({ title: "Éxito", description: "Orden de compra actualizada" });
+      queryClient.invalidateQueries({ queryKey: ['purchase-order', poId] });
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      toast({ title: 'Éxito', description: 'Orden de compra actualizada' });
       setActionDialog({ ...actionDialog, open: false });
     },
     onError: (err: Error) => {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({
+        title: 'Error',
+        description: err.message,
+        variant: 'destructive',
+      });
     },
   });
 
   const handleAction = (action: string) => {
     const titles: Record<string, string> = {
-      submit: "Enviar a Aprobación",
-      approve: "Aprobar Orden",
-      reject: "Rechazar Orden",
-      send: "Marcar como Enviada",
-      cancel: "Cancelar Orden",
+      submit: 'Enviar a Aprobación',
+      approve: 'Aprobar Orden',
+      reject: 'Rechazar Orden',
+      send: 'Marcar como Enviada',
+      cancel: 'Cancelar Orden',
     };
 
     const descriptions: Record<string, string> = {
-      submit: "La orden será enviada para aprobación de un supervisor.",
-      approve: "La orden quedará aprobada y lista para enviar al proveedor.",
-      reject: "La orden volverá a estado borrador para corrección.",
-      send: "La orden se marcará como enviada al proveedor. Podrá ser facturada.",
-      cancel: "La orden será cancelada permanentemente.",
+      submit: 'La orden será enviada para aprobación de un supervisor.',
+      approve: 'La orden quedará aprobada y lista para enviar al proveedor.',
+      reject: 'La orden volverá a estado borrador para corrección.',
+      send: 'La orden se marcará como enviada al proveedor. Podrá ser facturada.',
+      cancel: 'La orden será cancelada permanentemente.',
     };
 
     setActionDialog({
       open: true,
       action,
-      title: titles[action] || "Confirmar",
-      description: descriptions[action] || "¿Está seguro?",
+      title: titles[action] || 'Confirmar',
+      description: descriptions[action] || '¿Está seguro?',
     });
   };
 
@@ -205,9 +216,9 @@ export default function PurchaseOrderDetailPage() {
 
   const getAvailableActions = (status: string) => {
     const actions: Record<string, string[]> = {
-      DRAFT: ["submit", "cancel"],
-      PENDING_APPROVAL: ["approve", "reject"],
-      APPROVED: ["send", "cancel"],
+      DRAFT: ['submit', 'cancel'],
+      PENDING_APPROVAL: ['approve', 'reject'],
+      APPROVED: ['send', 'cancel'],
       SENT: [],
       PARTIAL: [],
       COMPLETED: [],
@@ -229,11 +240,13 @@ export default function PurchaseOrderDetailPage() {
       <div className="p-6">
         <div className="text-center py-12">
           <p className="text-muted-foreground text-lg">
-            {error instanceof Error ? error.message : "Orden de compra no encontrada"}
+            {error instanceof Error
+              ? error.message
+              : 'Orden de compra no encontrada'}
           </p>
           <Button
             variant="outline"
-            onClick={() => router.push("/dashboard/purchase-orders")}
+            onClick={() => router.push('/dashboard/purchase-orders')}
             className="mt-4"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -254,22 +267,30 @@ export default function PurchaseOrderDetailPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push("/dashboard/purchase-orders")}
+            onClick={() => router.push('/dashboard/purchase-orders')}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold">{purchaseOrder.orderNumber}</h1>
-              <Badge variant={statusConfig[purchaseOrder.status]?.variant || "outline"}>
-                {statusConfig[purchaseOrder.status]?.label || purchaseOrder.status}
+              <h1 className="text-2xl font-bold">
+                {purchaseOrder.orderNumber}
+              </h1>
+              <Badge
+                variant={
+                  statusConfig[purchaseOrder.status]?.variant || 'outline'
+                }
+              >
+                {statusConfig[purchaseOrder.status]?.label ||
+                  purchaseOrder.status}
               </Badge>
               <Badge variant="outline">
-                {purchaseOrder.type === "SERVICES" ? "Servicios" : "Repuestos"}
+                {purchaseOrder.type === 'SERVICES' ? 'Servicios' : 'Repuestos'}
               </Badge>
             </div>
             <p className="text-muted-foreground mt-1">
-              Creada el {format(new Date(purchaseOrder.createdAt), "PPP", { locale: es })}
+              Creada el{' '}
+              {format(new Date(purchaseOrder.createdAt), 'PPP', { locale: es })}
             </p>
           </div>
         </div>
@@ -277,32 +298,35 @@ export default function PurchaseOrderDetailPage() {
         {/* Action Buttons */}
         {availableActions.length > 0 && (
           <div className="flex gap-2">
-            {availableActions.includes("submit") && (
-              <Button onClick={() => handleAction("submit")}>
+            {availableActions.includes('submit') && (
+              <Button onClick={() => handleAction('submit')}>
                 <Send className="h-4 w-4 mr-2" />
                 Enviar a Aprobación
               </Button>
             )}
-            {availableActions.includes("approve") && (
-              <Button onClick={() => handleAction("approve")}>
+            {availableActions.includes('approve') && (
+              <Button onClick={() => handleAction('approve')}>
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Aprobar
               </Button>
             )}
-            {availableActions.includes("reject") && (
-              <Button variant="outline" onClick={() => handleAction("reject")}>
+            {availableActions.includes('reject') && (
+              <Button variant="outline" onClick={() => handleAction('reject')}>
                 <XCircle className="h-4 w-4 mr-2" />
                 Rechazar
               </Button>
             )}
-            {availableActions.includes("send") && (
-              <Button onClick={() => handleAction("send")}>
+            {availableActions.includes('send') && (
+              <Button onClick={() => handleAction('send')}>
                 <FileText className="h-4 w-4 mr-2" />
                 Marcar Enviada
               </Button>
             )}
-            {availableActions.includes("cancel") && (
-              <Button variant="destructive" onClick={() => handleAction("cancel")}>
+            {availableActions.includes('cancel') && (
+              <Button
+                variant="destructive"
+                onClick={() => handleAction('cancel')}
+              >
                 <XCircle className="h-4 w-4 mr-2" />
                 Cancelar
               </Button>
@@ -324,10 +348,14 @@ export default function PurchaseOrderDetailPage() {
           <CardContent>
             <p className="font-semibold">{purchaseOrder.provider.name}</p>
             {purchaseOrder.provider.email && (
-              <p className="text-sm text-muted-foreground">{purchaseOrder.provider.email}</p>
+              <p className="text-sm text-muted-foreground">
+                {purchaseOrder.provider.email}
+              </p>
             )}
             {purchaseOrder.provider.phone && (
-              <p className="text-sm text-muted-foreground">{purchaseOrder.provider.phone}</p>
+              <p className="text-sm text-muted-foreground">
+                {purchaseOrder.provider.phone}
+              </p>
             )}
           </CardContent>
         </Card>
@@ -368,14 +396,16 @@ export default function PurchaseOrderDetailPage() {
           <CardContent className="space-y-1 text-sm">
             {purchaseOrder.approvedAt && (
               <p>
-                <span className="text-muted-foreground">Aprobada:</span>{" "}
-                {format(new Date(purchaseOrder.approvedAt), "Pp", { locale: es })}
+                <span className="text-muted-foreground">Aprobada:</span>{' '}
+                {format(new Date(purchaseOrder.approvedAt), 'Pp', {
+                  locale: es,
+                })}
               </p>
             )}
             {purchaseOrder.sentAt && (
               <p>
-                <span className="text-muted-foreground">Enviada:</span>{" "}
-                {format(new Date(purchaseOrder.sentAt), "Pp", { locale: es })}
+                <span className="text-muted-foreground">Enviada:</span>{' '}
+                {format(new Date(purchaseOrder.sentAt), 'Pp', { locale: es })}
               </p>
             )}
             {!purchaseOrder.approvedAt && !purchaseOrder.sentAt && (
@@ -389,7 +419,9 @@ export default function PurchaseOrderDetailPage() {
       <Card>
         <CardHeader>
           <CardTitle>Items ({purchaseOrder.items.length})</CardTitle>
-          <CardDescription>Detalle de servicios o repuestos solicitados</CardDescription>
+          <CardDescription>
+            Detalle de servicios o repuestos solicitados
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -404,13 +436,17 @@ export default function PurchaseOrderDetailPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {purchaseOrder.items.map((item) => (
+              {purchaseOrder.items.map(item => (
                 <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.description}</TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
-                    {item.masterPart?.code || item.mantItem?.name || "-"}
+                  <TableCell className="font-medium">
+                    {item.description}
                   </TableCell>
-                  <TableCell className="text-right">{Number(item.quantity)}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {item.masterPart?.code || item.mantItem?.name || '-'}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {Number(item.quantity)}
+                  </TableCell>
                   <TableCell className="text-right">
                     {formatCurrency(Number(item.unitPrice))}
                   </TableCell>
@@ -471,11 +507,13 @@ export default function PurchaseOrderDetailPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {purchaseOrder.invoices.map((inv) => (
+                {purchaseOrder.invoices.map(inv => (
                   <TableRow key={inv.id}>
-                    <TableCell className="font-medium">{inv.invoiceNumber}</TableCell>
+                    <TableCell className="font-medium">
+                      {inv.invoiceNumber}
+                    </TableCell>
                     <TableCell>
-                      {format(new Date(inv.invoiceDate), "PP", { locale: es })}
+                      {format(new Date(inv.invoiceDate), 'PP', { locale: es })}
                     </TableCell>
                     <TableCell className="text-right">
                       {formatCurrency(Number(inv.totalAmount))}
@@ -508,16 +546,21 @@ export default function PurchaseOrderDetailPage() {
       {/* Action Dialog */}
       <AlertDialog
         open={actionDialog.open}
-        onOpenChange={(open) => setActionDialog({ ...actionDialog, open })}
+        onOpenChange={open => setActionDialog({ ...actionDialog, open })}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{actionDialog.title}</AlertDialogTitle>
-            <AlertDialogDescription>{actionDialog.description}</AlertDialogDescription>
+            <AlertDialogDescription>
+              {actionDialog.description}
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmAction} disabled={statusMutation.isPending}>
+            <AlertDialogAction
+              onClick={confirmAction}
+              disabled={statusMutation.isPending}
+            >
               {statusMutation.isPending && (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               )}

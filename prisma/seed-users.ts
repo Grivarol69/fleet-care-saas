@@ -49,20 +49,28 @@ async function main() {
       },
     });
 
-    console.log(`✅ ${userData.role.padEnd(15)} - ${userData.email.padEnd(30)} - ${userData.description}`);
+    console.log(
+      `✅ ${userData.role.padEnd(15)} - ${userData.email.padEnd(30)} - ${userData.description}`
+    );
   }
 
   console.log('\n✨ Seed completado!\n');
-  console.log('📝 IMPORTANTE: Estos usuarios están en la tabla User de Prisma.');
-  console.log('   Para hacer login necesitas crear las cuentas en Supabase Auth con estos mismos emails.\n');
+  console.log(
+    '📝 IMPORTANTE: Estos usuarios están en la tabla User de Prisma.'
+  );
+  console.log(
+    '   Para hacer login necesitas crear las cuentas en Supabase Auth con estos mismos emails.\n'
+  );
   console.log('🔐 Pasos para probar:');
   console.log('   1. Ve a Supabase Auth Dashboard');
-  console.log('   2. Crea usuarios con estos emails (o usa el auto-create de getCurrentUser)');
+  console.log(
+    '   2. Crea usuarios con estos emails (o usa el auto-create de getCurrentUser)'
+  );
   console.log('   3. Haz login con cada email para probar los permisos\n');
 }
 
 main()
-  .catch((e) => {
+  .catch(e => {
     console.error('❌ Error:', e);
     process.exit(1);
   })

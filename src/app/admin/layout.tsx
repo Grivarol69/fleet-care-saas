@@ -1,25 +1,25 @@
-import { redirect } from 'next/navigation'
-import { getCurrentUser } from '@/lib/auth'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
+import { redirect } from 'next/navigation';
+import { getCurrentUser } from '@/lib/auth';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 import {
   LayoutDashboard,
   Building2,
   FileBox,
   Settings,
-  ArrowLeft
-} from 'lucide-react'
+  ArrowLeft,
+} from 'lucide-react';
 
 export default async function AdminLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  const user = await getCurrentUser()
+  const user = await getCurrentUser();
 
   // Verificar que el usuario es SUPER_ADMIN
   if (!user || !user.isSuperAdmin) {
-    redirect('/dashboard')
+    redirect('/dashboard');
   }
 
   return (
@@ -33,28 +33,40 @@ export default async function AdminLayout({
 
         <nav className="space-y-2">
           <Link href="/admin">
-            <Button variant="ghost" className="w-full justify-start text-white hover:bg-slate-800">
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-white hover:bg-slate-800"
+            >
               <LayoutDashboard className="mr-2 h-4 w-4" />
               Dashboard
             </Button>
           </Link>
 
           <Link href="/admin/tenants">
-            <Button variant="ghost" className="w-full justify-start text-white hover:bg-slate-800">
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-white hover:bg-slate-800"
+            >
               <Building2 className="mr-2 h-4 w-4" />
               Tenants
             </Button>
           </Link>
 
           <Link href="/admin/templates">
-            <Button variant="ghost" className="w-full justify-start text-white hover:bg-slate-800">
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-white hover:bg-slate-800"
+            >
               <FileBox className="mr-2 h-4 w-4" />
               Templates Globales
             </Button>
           </Link>
 
           <Link href="/admin/settings">
-            <Button variant="ghost" className="w-full justify-start text-white hover:bg-slate-800">
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-white hover:bg-slate-800"
+            >
               <Settings className="mr-2 h-4 w-4" />
               Configuración
             </Button>
@@ -62,7 +74,10 @@ export default async function AdminLayout({
 
           <div className="pt-8">
             <Link href="/dashboard">
-              <Button variant="outline" className="w-full justify-start text-slate-900">
+              <Button
+                variant="outline"
+                className="w-full justify-start text-slate-900"
+              >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Volver al Dashboard
               </Button>
@@ -81,10 +96,8 @@ export default async function AdminLayout({
 
       {/* Main content */}
       <main className="flex-1 bg-slate-100">
-        <div className="p-8">
-          {children}
-        </div>
+        <div className="p-8">{children}</div>
       </main>
     </div>
-  )
+  );
 }

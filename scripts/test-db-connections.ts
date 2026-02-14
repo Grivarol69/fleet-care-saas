@@ -65,8 +65,13 @@ async function testConnection(
     results.connect = true;
     log('✅ Conexión establecida', 'green');
   } catch (error) {
-    results.errors.push(`Connect: ${error instanceof Error ? error.message : 'Unknown'}`);
-    log(`❌ Falló: ${error instanceof Error ? error.message : 'Unknown'}`, 'red');
+    results.errors.push(
+      `Connect: ${error instanceof Error ? error.message : 'Unknown'}`
+    );
+    log(
+      `❌ Falló: ${error instanceof Error ? error.message : 'Unknown'}`,
+      'red'
+    );
   }
 
   if (!results.connect) {
@@ -81,8 +86,13 @@ async function testConnection(
     results.simpleQuery = true;
     log('✅ Query simple exitosa', 'green');
   } catch (error) {
-    results.errors.push(`Simple query: ${error instanceof Error ? error.message : 'Unknown'}`);
-    log(`❌ Falló: ${error instanceof Error ? error.message : 'Unknown'}`, 'red');
+    results.errors.push(
+      `Simple query: ${error instanceof Error ? error.message : 'Unknown'}`
+    );
+    log(
+      `❌ Falló: ${error instanceof Error ? error.message : 'Unknown'}`,
+      'red'
+    );
   }
 
   try {
@@ -92,22 +102,32 @@ async function testConnection(
     results.complexQuery = true;
     log(`✅ Query compleja exitosa - ${count} tenants encontrados`, 'green');
   } catch (error) {
-    results.errors.push(`Complex query: ${error instanceof Error ? error.message : 'Unknown'}`);
-    log(`❌ Falló: ${error instanceof Error ? error.message : 'Unknown'}`, 'red');
+    results.errors.push(
+      `Complex query: ${error instanceof Error ? error.message : 'Unknown'}`
+    );
+    log(
+      `❌ Falló: ${error instanceof Error ? error.message : 'Unknown'}`,
+      'red'
+    );
   }
 
   try {
     // Test 4: Transacción
     log('\n4. Test transacción...', 'yellow');
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async tx => {
       await tx.$queryRaw`SELECT 1`;
       await tx.$queryRaw`SELECT 2`;
     });
     results.transaction = true;
     log('✅ Transacción exitosa', 'green');
   } catch (error) {
-    results.errors.push(`Transaction: ${error instanceof Error ? error.message : 'Unknown'}`);
-    log(`❌ Falló: ${error instanceof Error ? error.message : 'Unknown'}`, 'red');
+    results.errors.push(
+      `Transaction: ${error instanceof Error ? error.message : 'Unknown'}`
+    );
+    log(
+      `❌ Falló: ${error instanceof Error ? error.message : 'Unknown'}`,
+      'red'
+    );
   }
 
   try {
@@ -118,8 +138,13 @@ async function testConnection(
     results.preparedStatement = true;
     log('✅ Prepared statements funcionan', 'green');
   } catch (error) {
-    results.errors.push(`Prepared stmt: ${error instanceof Error ? error.message : 'Unknown'}`);
-    log(`❌ Falló: ${error instanceof Error ? error.message : 'Unknown'}`, 'red');
+    results.errors.push(
+      `Prepared stmt: ${error instanceof Error ? error.message : 'Unknown'}`
+    );
+    log(
+      `❌ Falló: ${error instanceof Error ? error.message : 'Unknown'}`,
+      'red'
+    );
   }
 
   await prisma.$disconnect();
@@ -140,17 +165,17 @@ async function testMigration(url: string, name: string) {
       ? fs.readFileSync('.env', 'utf8')
       : null;
 
-    fs.writeFileSync(
-      '.env.test',
-      `DATABASE_URL="${url}"\nDIRECT_URL="${url}"`
-    );
+    fs.writeFileSync('.env.test', `DATABASE_URL="${url}"\nDIRECT_URL="${url}"`);
 
     log('\n1. Intentando prisma migrate status...', 'yellow');
-    const output = execSync('npx prisma migrate status --schema=./prisma/schema.prisma', {
-      encoding: 'utf8',
-      env: { ...process.env, DATABASE_URL: url, DIRECT_URL: url },
-      stdio: 'pipe',
-    });
+    const output = execSync(
+      'npx prisma migrate status --schema=./prisma/schema.prisma',
+      {
+        encoding: 'utf8',
+        env: { ...process.env, DATABASE_URL: url, DIRECT_URL: url },
+        stdio: 'pipe',
+      }
+    );
 
     log('✅ Comando exitoso', 'green');
     log(`Output:\n${output}`, 'blue');
@@ -163,7 +188,10 @@ async function testMigration(url: string, name: string) {
 
     return true;
   } catch (error) {
-    log(`❌ Falló: ${error instanceof Error ? error.message : 'Unknown'}`, 'red');
+    log(
+      `❌ Falló: ${error instanceof Error ? error.message : 'Unknown'}`,
+      'red'
+    );
     if (error instanceof Error && 'stderr' in error) {
       log(`Stderr: ${(error as any).stderr}`, 'red');
     }
@@ -172,7 +200,10 @@ async function testMigration(url: string, name: string) {
 }
 
 async function main() {
-  log('\n╔════════════════════════════════════════════════════════════╗', 'cyan');
+  log(
+    '\n╔════════════════════════════════════════════════════════════╗',
+    'cyan'
+  );
   log('║     DIAGNÓSTICO DE CONEXIÓN PRISMA-SUPABASE              ║', 'cyan');
   log('╚════════════════════════════════════════════════════════════╝', 'cyan');
 
@@ -213,35 +244,56 @@ async function main() {
     results.push(result);
 
     // Pequeña pausa entre tests
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 2000));
   }
 
   // Resumen
-  log('\n\n╔════════════════════════════════════════════════════════════╗', 'cyan');
+  log(
+    '\n\n╔════════════════════════════════════════════════════════════╗',
+    'cyan'
+  );
   log('║                    RESUMEN DE RESULTADOS                  ║', 'cyan');
   log('╚════════════════════════════════════════════════════════════╝', 'cyan');
 
-  results.forEach((r) => {
+  results.forEach(r => {
     log(`\n${r.name}:`, 'yellow');
-    log(`  Conexión:          ${r.connect ? '✅' : '❌'}`, r.connect ? 'green' : 'red');
-    log(`  Query simple:      ${r.simpleQuery ? '✅' : '❌'}`, r.simpleQuery ? 'green' : 'red');
-    log(`  Query compleja:    ${r.complexQuery ? '✅' : '❌'}`, r.complexQuery ? 'green' : 'red');
-    log(`  Transacciones:     ${r.transaction ? '✅' : '❌'}`, r.transaction ? 'green' : 'red');
-    log(`  Prepared Stmts:    ${r.preparedStatement ? '✅' : '❌'}`, r.preparedStatement ? 'green' : 'red');
+    log(
+      `  Conexión:          ${r.connect ? '✅' : '❌'}`,
+      r.connect ? 'green' : 'red'
+    );
+    log(
+      `  Query simple:      ${r.simpleQuery ? '✅' : '❌'}`,
+      r.simpleQuery ? 'green' : 'red'
+    );
+    log(
+      `  Query compleja:    ${r.complexQuery ? '✅' : '❌'}`,
+      r.complexQuery ? 'green' : 'red'
+    );
+    log(
+      `  Transacciones:     ${r.transaction ? '✅' : '❌'}`,
+      r.transaction ? 'green' : 'red'
+    );
+    log(
+      `  Prepared Stmts:    ${r.preparedStatement ? '✅' : '❌'}`,
+      r.preparedStatement ? 'green' : 'red'
+    );
 
     if (r.errors.length > 0) {
       log(`  Errores:`, 'red');
-      r.errors.forEach((e) => log(`    - ${e}`, 'red'));
+      r.errors.forEach(e => log(`    - ${e}`, 'red'));
     }
   });
 
   // Recomendaciones
-  log('\n\n╔════════════════════════════════════════════════════════════╗', 'cyan');
+  log(
+    '\n\n╔════════════════════════════════════════════════════════════╗',
+    'cyan'
+  );
   log('║                    RECOMENDACIONES                        ║', 'cyan');
   log('╚════════════════════════════════════════════════════════════╝', 'cyan');
 
   const workingConfigs = results.filter(
-    (r) => r.connect && r.simpleQuery && r.complexQuery
+    r => r.connect && r.simpleQuery && r.complexQuery
   );
 
   if (workingConfigs.length === 0) {
@@ -252,29 +304,50 @@ async function main() {
     log('  3. IP no autorizada en Supabase', 'yellow');
     log('  4. Proyecto pausado/suspendido', 'yellow');
     log('\nAcciones recomendadas:', 'cyan');
-    log('  1. Verificar que el proyecto esté activo en Supabase Dashboard', 'cyan');
+    log(
+      '  1. Verificar que el proyecto esté activo en Supabase Dashboard',
+      'cyan'
+    );
     log('  2. Verificar IP allowlist en Settings > Database', 'cyan');
     log('  3. Intentar desde otra red (4G, VPN)', 'cyan');
   } else {
-    log(`\n✅ ${workingConfigs.length} configuración(es) funcionando:`, 'green');
-    workingConfigs.forEach((c) => {
+    log(
+      `\n✅ ${workingConfigs.length} configuración(es) funcionando:`,
+      'green'
+    );
+    workingConfigs.forEach(c => {
       log(`\n  - ${c.name}`, 'green');
-      log(`    Usar para migraciones: ${c.transaction ? 'SÍ' : 'NO'}`, c.transaction ? 'green' : 'yellow');
-      log(`    Usar para seed: ${c.preparedStatement ? 'SÍ' : 'NO'}`, c.preparedStatement ? 'green' : 'yellow');
+      log(
+        `    Usar para migraciones: ${c.transaction ? 'SÍ' : 'NO'}`,
+        c.transaction ? 'green' : 'yellow'
+      );
+      log(
+        `    Usar para seed: ${c.preparedStatement ? 'SÍ' : 'NO'}`,
+        c.preparedStatement ? 'green' : 'yellow'
+      );
     });
   }
 
   // Test de migraciones
   if (workingConfigs.length > 0) {
-    log('\n\n╔════════════════════════════════════════════════════════════╗', 'cyan');
-    log('║              TEST DE MIGRACIONES PRISMA                   ║', 'cyan');
-    log('╚════════════════════════════════════════════════════════════╝', 'cyan');
+    log(
+      '\n\n╔════════════════════════════════════════════════════════════╗',
+      'cyan'
+    );
+    log(
+      '║              TEST DE MIGRACIONES PRISMA                   ║',
+      'cyan'
+    );
+    log(
+      '╚════════════════════════════════════════════════════════════╝',
+      'cyan'
+    );
 
     for (const config of workingConfigs) {
-      const configData = configs.find((c) => c.name === config.name);
+      const configData = configs.find(c => c.name === config.name);
       if (configData) {
         await testMigration(configData.url, config.name);
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
     }
   }
@@ -284,7 +357,7 @@ async function main() {
 }
 
 main()
-  .catch((e) => {
+  .catch(e => {
     console.error('Error fatal:', e);
     process.exit(1);
   })

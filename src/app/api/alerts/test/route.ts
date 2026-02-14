@@ -1,13 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getNotificationService } from "@/lib/notifications/notification-service";
-import { getWhatsAppService } from "@/lib/notifications/whatsapp";
+import { NextRequest, NextResponse } from 'next/server';
+import { getNotificationService } from '@/lib/notifications/notification-service';
+import { getWhatsAppService } from '@/lib/notifications/whatsapp';
 import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
     const searchParams = request.nextUrl.searchParams;
@@ -25,37 +25,51 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({
           success: configResult.valid,
-          message: configResult.valid ? 'Twilio configuration is valid' : 'Twilio configuration is invalid',
+          message: configResult.valid
+            ? 'Twilio configuration is valid'
+            : 'Twilio configuration is invalid',
           error: configResult.error,
           environment: {
             hasAccountSid: !!process.env.TWILIO_ACCOUNT_SID,
             hasAuthToken: !!process.env.TWILIO_AUTH_TOKEN,
             hasPhoneNumber: !!process.env.TWILIO_PHONE_NUMBER,
-            fromNumber: process.env.TWILIO_PHONE_NUMBER
-          }
+            fromNumber: process.env.TWILIO_PHONE_NUMBER,
+          },
         });
 
       case 'test-message':
         // Enviar mensaje de prueba a un número específico
         if (!phone) {
-          return NextResponse.json({
-            success: false,
-            error: 'Phone number is required for test message. Use ?action=test-message&phone=+573001234567'
-          }, { status: 400 });
+          return NextResponse.json(
+            {
+              success: false,
+              error:
+                'Phone number is required for test message. Use ?action=test-message&phone=+573001234567',
+            },
+            { status: 400 }
+          );
         }
 
-        const testResult = await notificationService.sendTestAlert(phone, user.tenantId);
+        const testResult = await notificationService.sendTestAlert(
+          phone,
+          user.tenantId
+        );
 
         return NextResponse.json({
           success: testResult.success,
-          message: testResult.success ? 'Test message sent successfully' : 'Failed to send test message',
+          message: testResult.success
+            ? 'Test message sent successfully'
+            : 'Failed to send test message',
           error: testResult.error,
-          phone: phone
+          phone: phone,
         });
 
       case 'alerts':
         // Obtener alertas sin enviar
-        const alerts = await notificationService.getMaintenanceAlerts(user.tenantId, urgent);
+        const alerts = await notificationService.getMaintenanceAlerts(
+          user.tenantId,
+          urgent
+        );
 
         return NextResponse.json({
           success: true,
@@ -65,13 +79,15 @@ export async function GET(request: NextRequest) {
             totalAlerts: alerts.length,
             criticalAlerts: alerts.filter(a => a.state === 'RED').length,
             urgentOnly: urgent,
-            alerts: alerts
-          }
+            alerts: alerts,
+          },
         });
 
       case 'recipients':
         // Obtener destinatarios sin enviar
-        const recipients = await notificationService.getNotificationRecipients(user.tenantId);
+        const recipients = await notificationService.getNotificationRecipients(
+          user.tenantId
+        );
 
         return NextResponse.json({
           success: true,
@@ -85,29 +101,33 @@ export async function GET(request: NextRequest) {
               name: r.name,
               type: r.type,
               phone: r.phone.replace(/(\d{3})(\d{3})(\d{4})/, '+57$1***$3'), // Ocultar parte del teléfono
-              vehicleId: r.vehicleId
-            }))
-          }
+              vehicleId: r.vehicleId,
+            })),
+          },
         });
 
       case 'send':
       default:
         // Enviar alertas reales (acción por defecto)
-        const result = await notificationService.sendMaintenanceAlerts(user.tenantId, urgent);
+        const result = await notificationService.sendMaintenanceAlerts(
+          user.tenantId,
+          urgent
+        );
 
         if (result.alertsProcessed === 0) {
           return NextResponse.json({
             success: true,
             message: '✅ No maintenance alerts to send',
-            data: result
+            data: result,
           });
         }
 
         return NextResponse.json({
           success: result.messagesSent > 0,
-          message: result.messagesSent > 0
-            ? `✅ Sent ${result.messagesSent}/${result.messagesAttempted} alerts successfully`
-            : `❌ Failed to send any alerts (${result.messagesFailed} failures)`,
+          message:
+            result.messagesSent > 0
+              ? `✅ Sent ${result.messagesSent}/${result.messagesAttempted} alerts successfully`
+              : `❌ Failed to send any alerts (${result.messagesFailed} failures)`,
           data: {
             ...result,
             // Ocultar información sensible en respuesta
@@ -115,20 +135,23 @@ export async function GET(request: NextRequest) {
             recipients: result.recipients.map(r => ({
               name: r.name,
               type: r.type,
-              vehicleId: r.vehicleId
-            }))
-          }
+              vehicleId: r.vehicleId,
+            })),
+          },
         });
     }
-
   } catch (error: unknown) {
-    console.error("[ALERTS_TEST] Error:", error);
+    console.error('[ALERTS_TEST] Error:', error);
 
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
-      message: 'Failed to process alert test request'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          error instanceof Error ? error.message : 'Unknown error occurred',
+        message: 'Failed to process alert test request',
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -136,17 +159,20 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
     const body = await request.json();
     const { phone, message } = body;
 
     if (!phone) {
-      return NextResponse.json({
-        success: false,
-        error: 'Phone number is required'
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Phone number is required',
+        },
+        { status: 400 }
+      );
     }
 
     const whatsappService = getWhatsAppService();
@@ -155,34 +181,44 @@ export async function POST(request: NextRequest) {
     if (message) {
       const result = await whatsappService.sendMessage({
         to: phone,
-        body: message
+        body: message,
       });
 
       return NextResponse.json({
         success: result.success,
-        message: result.success ? 'Custom message sent successfully' : 'Failed to send custom message',
+        message: result.success
+          ? 'Custom message sent successfully'
+          : 'Failed to send custom message',
         error: result.error,
-        messageId: result.messageId
+        messageId: result.messageId,
       });
     }
 
     // Si no, enviar mensaje de prueba estándar
     const notificationService = getNotificationService();
-    const result = await notificationService.sendTestAlert(phone, user.tenantId);
+    const result = await notificationService.sendTestAlert(
+      phone,
+      user.tenantId
+    );
 
     return NextResponse.json({
       success: result.success,
-      message: result.success ? 'Test alert sent successfully' : 'Failed to send test alert',
-      error: result.error
+      message: result.success
+        ? 'Test alert sent successfully'
+        : 'Failed to send test alert',
+      error: result.error,
     });
-
   } catch (error: unknown) {
-    console.error("[ALERTS_TEST_POST] Error:", error);
+    console.error('[ALERTS_TEST_POST] Error:', error);
 
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          error instanceof Error ? error.message : 'Unknown error occurred',
+      },
+      { status: 500 }
+    );
   }
 }
 

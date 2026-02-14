@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import { motion, useAnimation, useInView } from "framer-motion";
-import { useEffect, useRef } from "react";
+import { motion, useAnimation, useInView } from 'framer-motion';
+import { useEffect, useRef } from 'react';
 
 interface RevealProps {
   children: React.ReactNode;
-  position?: "top" | "bottom" | "left" | "right";
+  position?: 'top' | 'bottom' | 'left' | 'right';
   className?: string;
   delay?: number;
 }
 
 export function Reveal({
   children,
-  position = "bottom",
+  position = 'bottom',
   className,
   delay = 0.25,
 }: RevealProps) {
@@ -22,25 +22,25 @@ export function Reveal({
 
   useEffect(() => {
     if (isInView) {
-      mainControls.start("visible");
+      mainControls.start('visible');
     }
   }, [isInView, mainControls]);
 
   const getVariant = () => {
     switch (position) {
-      case "top":
+      case 'top':
         return {
           hidden: { opacity: 0, y: -75 },
           visible: { opacity: 1, y: 0 },
         };
-      case "left":
+      case 'left':
         return {
           hidden: { opacity: 0, x: -75 },
           visible: { opacity: 1, x: 0 },
         };
-      case "right":
+      case 'right':
         return { hidden: { opacity: 0, x: 75 }, visible: { opacity: 1, x: 0 } };
-      case "bottom":
+      case 'bottom':
       default:
         return { hidden: { opacity: 0, y: 75 }, visible: { opacity: 1, y: 0 } };
     }

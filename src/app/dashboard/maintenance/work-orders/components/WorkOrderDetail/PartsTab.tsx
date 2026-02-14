@@ -36,10 +36,12 @@ import {
   AlertCircle,
   AlertTriangle,
   CheckCircle2,
+  Plus,
 } from 'lucide-react';
 import { useToast } from '@/components/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
 import axios from 'axios';
+import { AddItemDialog } from './AddItemDialog';
 
 type PartItem = {
   workOrderItemId: number;
@@ -74,34 +76,43 @@ type InventoryStock = {
 
 type PartsTabProps = {
   workOrderId: number;
+  vehicleId: number;
   onRefresh: () => void;
 };
 
 type ItemOrigin = 'EXTERNAL' | 'STOCK';
 
-const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
+const statusConfig: Record<
+  string,
+  { label: string; variant: 'default' | 'secondary' | 'outline' }
+> = {
   PENDING: { label: 'Pendiente', variant: 'secondary' },
   IN_PROGRESS: { label: 'En Progreso', variant: 'default' },
   COMPLETED: { label: 'Completado', variant: 'default' },
   CANCELLED: { label: 'Cancelado', variant: 'outline' },
 };
 
-export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
+export function PartsTab({ workOrderId, vehicleId, onRefresh }: PartsTabProps) {
   const { toast } = useToast();
 
   // State
   const [items, setItems] = useState<PartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [providers, setProviders] = useState<Provider[]>([]);
-  const [stockInfo, setStockInfo] = useState<Map<string, InventoryStock>>(new Map());
+  const [stockInfo, setStockInfo] = useState<Map<string, InventoryStock>>(
+    new Map()
+  );
 
   // Selection state
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
-  const [itemOrigins, setItemOrigins] = useState<Map<number, ItemOrigin>>(new Map());
+  const [itemOrigins, setItemOrigins] = useState<Map<number, ItemOrigin>>(
+    new Map()
+  );
 
   // Dialog state
   const [showOCDialog, setShowOCDialog] = useState(false);
   const [showStockDialog, setShowStockDialog] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedProviderId, setSelectedProviderId] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -109,13 +120,15 @@ export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
   const fetchItems = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await axios.get(`/api/maintenance/work-orders/${workOrderId}/items?type=PART`);
+      const res = await axios.get(
+        `/api/maintenance/work-orders/${workOrderId}/items?type=PART`
+      );
       const fetchedItems = (res.data.items || []) as PartItem[];
       setItems(fetchedItems);
 
       // Initialize origins for pending items
       const initialOrigins = new Map<number, ItemOrigin>();
-      fetchedItems.forEach((item) => {
+      fetchedItems.forEach(item => {
         if (item.closureType === 'PENDING') {
           initialOrigins.set(item.workOrderItemId, 'EXTERNAL');
         }
@@ -124,8 +137,8 @@ export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
 
       // Fetch stock info for items with masterPartId
       const masterPartIds = fetchedItems
-        .filter((i) => i.masterPartId)
-        .map((i) => i.masterPartId as string);
+        .filter(i => i.masterPartId)
+        .map(i => i.masterPartId as string);
 
       if (masterPartIds.length > 0) {
         fetchStockInfo(masterPartIds);
@@ -150,8 +163,10 @@ export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
       // Fetch stock for each unique masterPartId
       const uniqueIds = [...new Set(masterPartIds)];
       await Promise.all(
-        uniqueIds.map(async (partId) => {
-          const res = await axios.get(`/api/inventory/items?masterPartId=${partId}`);
+        uniqueIds.map(async partId => {
+          const res = await axios.get(
+            `/api/inventory/items?masterPartId=${partId}`
+          );
           const items = res.data;
           if (items.length > 0) {
             stockMap.set(partId, {
@@ -173,7 +188,7 @@ export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
   // Fetch providers
   const fetchProviders = useCallback(async () => {
     try {
-      const res = await axios.get('/api/providers');
+      const res = await axios.get('/api/people/providers');
       setProviders(res.data || []);
     } catch {
       // Non-critical
@@ -198,11 +213,11 @@ export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
 
   // Toggle all items
   const toggleAllItems = () => {
-    const pendingItems = items.filter((i) => i.closureType === 'PENDING');
+    const pendingItems = items.filter(i => i.closureType === 'PENDING');
     if (selectedItems.size === pendingItems.length) {
       setSelectedItems(new Set());
     } else {
-      setSelectedItems(new Set(pendingItems.map((i) => i.workOrderItemId)));
+      setSelectedItems(new Set(pendingItems.map(i => i.workOrderItemId)));
     }
   };
 
@@ -216,7 +231,7 @@ export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
   // Get selected items by origin
   const getSelectedByOrigin = (origin: ItemOrigin) => {
     return items.filter(
-      (item) =>
+      item =>
         selectedItems.has(item.workOrderItemId) &&
         itemOrigins.get(item.workOrderItemId) === origin
     );
@@ -263,11 +278,12 @@ export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
 
     setIsSubmitting(true);
     try {
-      const ocItems = externalItems.map((item) => ({
+      const ocItems = externalItems.map(item => ({
         workOrderItemId: item.workOrderItemId,
         mantItemId: item.mantItemId,
         masterPartId: item.masterPartId || undefined,
-        description: item.masterPartDescription || item.description || item.mantItemName,
+        description:
+          item.masterPartDescription || item.description || item.mantItemName,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
       }));
@@ -282,10 +298,13 @@ export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
 
       // Update itemSource for these items
       await Promise.all(
-        externalItems.map((item) =>
-          axios.patch(`/api/maintenance/work-orders/${workOrderId}/items/${item.workOrderItemId}`, {
-            itemSource: 'EXTERNAL',
-          })
+        externalItems.map(item =>
+          axios.patch(
+            `/api/maintenance/work-orders/${workOrderId}/items/${item.workOrderItemId}`,
+            {
+              itemSource: 'EXTERNAL',
+            }
+          )
         )
       );
 
@@ -326,7 +345,7 @@ export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
     }
 
     // Verify all items have enough stock
-    const insufficientStock = stockItems.filter((item) => !hasEnoughStock(item));
+    const insufficientStock = stockItems.filter(item => !hasEnoughStock(item));
     if (insufficientStock.length > 0) {
       toast({
         title: 'Stock insuficiente',
@@ -339,7 +358,7 @@ export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
     setIsSubmitting(true);
     try {
       // Prepare consumption items
-      const consumeItems = stockItems.map((item) => {
+      const consumeItems = stockItems.map(item => {
         const stock = stockInfo.get(item.masterPartId as string);
         return {
           workOrderItemId: item.workOrderItemId,
@@ -378,13 +397,15 @@ export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
   };
 
   // Calculate totals
-  const pendingItems = items.filter((i) => i.closureType === 'PENDING');
+  const pendingItems = items.filter(i => i.closureType === 'PENDING');
   const externalSelected = getSelectedByOrigin('EXTERNAL');
   const stockSelected = getSelectedByOrigin('STOCK');
   const totalEstimated = items.reduce((sum, i) => sum + i.totalCost, 0);
 
   // Check if any stock item is missing sufficient stock
-  const stockItemsWithIssues = stockSelected.filter((item) => !hasEnoughStock(item));
+  const stockItemsWithIssues = stockSelected.filter(
+    item => !hasEnoughStock(item)
+  );
 
   if (isLoading) {
     return (
@@ -404,6 +425,14 @@ export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
               Repuestos ({items.length})
             </CardTitle>
             <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowAddDialog(true)}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Agregar Repuesto
+              </Button>
               {externalSelected.length > 0 && (
                 <Button
                   size="sm"
@@ -432,7 +461,9 @@ export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
           {items.length === 0 ? (
             <div className="text-center py-8">
               <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No hay repuestos en esta OT</p>
+              <p className="text-muted-foreground">
+                No hay repuestos en esta OT
+              </p>
               <p className="text-sm text-muted-foreground mt-1">
                 Los items tipo PART aparecerán aquí
               </p>
@@ -445,7 +476,10 @@ export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
                     <TableHead className="w-12">
                       {pendingItems.length > 0 && (
                         <Checkbox
-                          checked={selectedItems.size === pendingItems.length && pendingItems.length > 0}
+                          checked={
+                            selectedItems.size === pendingItems.length &&
+                            pendingItems.length > 0
+                          }
                           onCheckedChange={toggleAllItems}
                         />
                       )}
@@ -461,9 +495,10 @@ export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {items.map((item) => {
+                  {items.map(item => {
                     const isPending = item.closureType === 'PENDING';
-                    const origin = itemOrigins.get(item.workOrderItemId) || 'EXTERNAL';
+                    const origin =
+                      itemOrigins.get(item.workOrderItemId) || 'EXTERNAL';
                     const stockDisplay = getStockDisplay(item);
 
                     return (
@@ -472,7 +507,9 @@ export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
                           {isPending && (
                             <Checkbox
                               checked={selectedItems.has(item.workOrderItemId)}
-                              onCheckedChange={() => toggleItemSelection(item.workOrderItemId)}
+                              onCheckedChange={() =>
+                                toggleItemSelection(item.workOrderItemId)
+                              }
                             />
                           )}
                         </TableCell>
@@ -483,15 +520,23 @@ export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
                           <div className="truncate">
                             {item.masterPartDescription || item.mantItemName}
                           </div>
-                          {item.masterPartDescription && item.masterPartDescription !== item.mantItemName && (
-                            <div className="text-xs text-muted-foreground truncate">
-                              {item.mantItemName}
-                            </div>
-                          )}
+                          {item.masterPartDescription &&
+                            item.masterPartDescription !==
+                              item.mantItemName && (
+                              <div className="text-xs text-muted-foreground truncate">
+                                {item.mantItemName}
+                              </div>
+                            )}
                         </TableCell>
-                        <TableCell className="text-right">{item.quantity}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(item.totalCost)}</TableCell>
+                        <TableCell className="text-right">
+                          {item.quantity}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(item.unitPrice)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(item.totalCost)}
+                        </TableCell>
                         <TableCell>
                           {stockDisplay ? (
                             <div className="flex items-center gap-1">
@@ -502,22 +547,29 @@ export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
                               )}
                               <span
                                 className={
-                                  stockDisplay.sufficient ? 'text-green-600' : 'text-amber-500'
+                                  stockDisplay.sufficient
+                                    ? 'text-green-600'
+                                    : 'text-amber-500'
                                 }
                               >
                                 {stockDisplay.quantity}
                               </span>
                             </div>
                           ) : (
-                            <span className="text-muted-foreground text-sm">-</span>
+                            <span className="text-muted-foreground text-sm">
+                              -
+                            </span>
                           )}
                         </TableCell>
                         <TableCell>
                           {isPending ? (
                             <Select
                               value={origin}
-                              onValueChange={(val) =>
-                                setItemOrigin(item.workOrderItemId, val as ItemOrigin)
+                              onValueChange={val =>
+                                setItemOrigin(
+                                  item.workOrderItemId,
+                                  val as ItemOrigin
+                                )
                               }
                             >
                               <SelectTrigger className="w-32">
@@ -532,7 +584,9 @@ export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
                                 </SelectItem>
                                 <SelectItem
                                   value="STOCK"
-                                  disabled={!stockDisplay || !stockDisplay.sufficient}
+                                  disabled={
+                                    !stockDisplay || !stockDisplay.sufficient
+                                  }
                                 >
                                   <div className="flex items-center gap-1">
                                     <Warehouse className="h-3 w-3" />
@@ -543,12 +597,18 @@ export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
                             </Select>
                           ) : (
                             <Badge variant="outline">
-                              {item.itemSource === 'INTERNAL_STOCK' ? 'Inventario' : 'Compra'}
+                              {item.itemSource === 'INTERNAL_STOCK'
+                                ? 'Inventario'
+                                : 'Compra'}
                             </Badge>
                           )}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={statusConfig[item.status]?.variant || 'outline'}>
+                          <Badge
+                            variant={
+                              statusConfig[item.status]?.variant || 'outline'
+                            }
+                          >
                             {statusConfig[item.status]?.label || item.status}
                           </Badge>
                         </TableCell>
@@ -562,8 +622,12 @@ export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
               {totalEstimated > 0 && (
                 <div className="flex justify-end mt-4 pt-4 border-t">
                   <div className="text-right">
-                    <span className="text-sm text-muted-foreground">Total Estimado: </span>
-                    <span className="text-lg font-bold">{formatCurrency(totalEstimated)}</span>
+                    <span className="text-sm text-muted-foreground">
+                      Total Estimado:{' '}
+                    </span>
+                    <span className="text-lg font-bold">
+                      {formatCurrency(totalEstimated)}
+                    </span>
                   </div>
                 </div>
               )}
@@ -585,12 +649,15 @@ export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Proveedor</label>
-              <Select value={selectedProviderId} onValueChange={setSelectedProviderId}>
+              <Select
+                value={selectedProviderId}
+                onValueChange={setSelectedProviderId}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar proveedor..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {providers.map((p) => (
+                  {providers.map(p => (
                     <SelectItem key={p.id} value={p.id.toString()}>
                       {p.name}
                     </SelectItem>
@@ -602,8 +669,11 @@ export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
             <div className="rounded-md bg-muted p-3">
               <h4 className="font-medium mb-2">Items a incluir:</h4>
               <ul className="text-sm space-y-1 max-h-40 overflow-auto">
-                {externalSelected.map((item) => (
-                  <li key={item.workOrderItemId} className="flex justify-between">
+                {externalSelected.map(item => (
+                  <li
+                    key={item.workOrderItemId}
+                    className="flex justify-between"
+                  >
                     <span className="truncate mr-2">
                       {item.masterPartCode || item.mantItemName}
                     </span>
@@ -616,7 +686,9 @@ export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
               <div className="mt-2 pt-2 border-t flex justify-between font-medium">
                 <span>Total:</span>
                 <span>
-                  {formatCurrency(externalSelected.reduce((sum, i) => sum + i.totalCost, 0))}
+                  {formatCurrency(
+                    externalSelected.reduce((sum, i) => sum + i.totalCost, 0)
+                  )}
                 </span>
               </div>
             </div>
@@ -637,7 +709,9 @@ export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
               onClick={handleGeneratePartsOC}
               disabled={isSubmitting || !selectedProviderId}
             >
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSubmitting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Crear OC
             </Button>
           </DialogFooter>
@@ -658,10 +732,13 @@ export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
             <div className="rounded-md bg-muted p-3">
               <h4 className="font-medium mb-2">Repuestos a descontar:</h4>
               <ul className="text-sm space-y-2 max-h-40 overflow-auto">
-                {stockSelected.map((item) => {
+                {stockSelected.map(item => {
                   const stockDisplay = getStockDisplay(item);
                   return (
-                    <li key={item.workOrderItemId} className="flex justify-between items-center">
+                    <li
+                      key={item.workOrderItemId}
+                      className="flex justify-between items-center"
+                    >
                       <span className="truncate mr-2">
                         {item.masterPartCode || item.mantItemName}
                       </span>
@@ -700,12 +777,26 @@ export function PartsTab({ workOrderId, onRefresh }: PartsTabProps) {
               onClick={handleConsumeFromStock}
               disabled={isSubmitting || stockItemsWithIssues.length > 0}
             >
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSubmitting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Confirmar Descuento
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Add Item Dialog */}
+      <AddItemDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        workOrderId={workOrderId}
+        vehicleId={vehicleId}
+        type="PART"
+        onSuccess={() => {
+          fetchItems();
+          onRefresh();
+        }}
+      />
     </div>
   );
 }

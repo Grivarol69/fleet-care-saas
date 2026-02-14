@@ -36,7 +36,9 @@ export function PackageItemList({ packageId }: PackageItemListProps) {
   const fetchPackageItems = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/maintenance/package-items?packageId=${packageId}`);
+      const response = await axios.get(
+        `/api/maintenance/package-items?packageId=${packageId}`
+      );
       setData(response.data);
     } catch (error) {
       console.error('Error fetching Package Items: ', error);
@@ -221,10 +223,9 @@ export function PackageItemList({ packageId }: PackageItemListProps) {
       header: 'Tiempo Est.',
       cell: ({ row }) => (
         <div className="text-center font-mono">
-          {row.original.estimatedTime ?
-            `${Number(row.original.estimatedTime).toFixed(1)}h` :
-            '-'
-          }
+          {row.original.estimatedTime
+            ? `${Number(row.original.estimatedTime).toFixed(1)}h`
+            : '-'}
         </div>
       ),
     },
@@ -233,10 +234,9 @@ export function PackageItemList({ packageId }: PackageItemListProps) {
       header: 'Costo Est.',
       cell: ({ row }) => (
         <div className="text-center font-mono">
-          {row.original.estimatedCost ?
-            `$${Number(row.original.estimatedCost).toLocaleString()}` :
-            '-'
-          }
+          {row.original.estimatedCost
+            ? `$${Number(row.original.estimatedCost).toLocaleString()}`
+            : '-'}
         </div>
       ),
     },
@@ -293,7 +293,10 @@ export function PackageItemList({ packageId }: PackageItemListProps) {
             Gestiona los items de mantenimiento específicos de este paquete
           </p>
         </div>
-        <Button onClick={() => setIsAddDialogOpen(true)} className="flex items-center gap-2">
+        <Button
+          onClick={() => setIsAddDialogOpen(true)}
+          className="flex items-center gap-2"
+        >
           <Plus className="h-4 w-4" />
           Agregar Item
         </Button>
@@ -337,7 +340,9 @@ export function PackageItemList({ packageId }: PackageItemListProps) {
                 >
                   <div className="flex flex-col items-center justify-center space-y-2">
                     <Wrench className="h-8 w-8 text-gray-400" />
-                    <p className="text-gray-500">No hay items configurados en este paquete</p>
+                    <p className="text-gray-500">
+                      No hay items configurados en este paquete
+                    </p>
                     <Button
                       variant="outline"
                       size="sm"
@@ -372,9 +377,7 @@ export function PackageItemList({ packageId }: PackageItemListProps) {
           item={editingItem}
           onEditItem={(editedItem: PackageItem) => {
             setData(
-              data.map(item =>
-                item.id === editedItem.id ? editedItem : item
-              )
+              data.map(item => (item.id === editedItem.id ? editedItem : item))
             );
             fetchPackageItems(); // Refrescar para obtener relaciones completas
           }}

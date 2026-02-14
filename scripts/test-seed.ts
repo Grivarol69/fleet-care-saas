@@ -21,7 +21,10 @@ function log(message: string, color: keyof typeof colors = 'reset') {
 }
 
 async function testSeedOperations() {
-  log('\n╔════════════════════════════════════════════════════════════╗', 'cyan');
+  log(
+    '\n╔════════════════════════════════════════════════════════════╗',
+    'cyan'
+  );
   log('║            TEST DE OPERACIONES TIPO SEED                  ║', 'cyan');
   log('╚════════════════════════════════════════════════════════════╝', 'cyan');
 
@@ -57,7 +60,7 @@ async function testSeedOperations() {
 
     // Test 4: Transacción compleja (similar a seeds reales)
     log('\n4. Transacción compleja (múltiples inserts)...', 'yellow');
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async tx => {
       // Crear VehicleBrand
       const brand = await tx.vehicleBrand.create({
         data: {
@@ -141,7 +144,10 @@ async function testSeedOperations() {
     log('✅ Cleanup exitoso (cascade delete funcionó)', 'green');
   } catch (error) {
     success = false;
-    log(`\n❌ ERROR: ${error instanceof Error ? error.message : 'Unknown'}`, 'red');
+    log(
+      `\n❌ ERROR: ${error instanceof Error ? error.message : 'Unknown'}`,
+      'red'
+    );
 
     if (error instanceof Error && error.stack) {
       log(`\nStack trace:`, 'red');
@@ -167,12 +173,18 @@ async function testSeedOperations() {
   }
 
   // Resumen
-  log('\n╔════════════════════════════════════════════════════════════╗', 'cyan');
+  log(
+    '\n╔════════════════════════════════════════════════════════════╗',
+    'cyan'
+  );
   log('║                        RESUMEN                            ║', 'cyan');
   log('╚════════════════════════════════════════════════════════════╝', 'cyan');
 
   if (success) {
-    log('\n✅ TODAS las operaciones tipo seed funcionaron correctamente', 'green');
+    log(
+      '\n✅ TODAS las operaciones tipo seed funcionaron correctamente',
+      'green'
+    );
     log('\nEsta configuración es APTA para seeds.', 'green');
     return 0;
   } else {
@@ -190,7 +202,10 @@ async function main() {
   if (!databaseUrl || !directUrl) {
     log('❌ ERROR: Variables DATABASE_URL y DIRECT_URL son requeridas', 'red');
     log('\nUso:', 'yellow');
-    log('  DATABASE_URL="..." DIRECT_URL="..." tsx scripts/test-seed.ts', 'cyan');
+    log(
+      '  DATABASE_URL="..." DIRECT_URL="..." tsx scripts/test-seed.ts',
+      'cyan'
+    );
     process.exit(1);
   }
 
@@ -202,7 +217,7 @@ async function main() {
   process.exit(exitCode);
 }
 
-main().catch((e) => {
+main().catch(e => {
   console.error('Error fatal:', e);
   process.exit(1);
 });

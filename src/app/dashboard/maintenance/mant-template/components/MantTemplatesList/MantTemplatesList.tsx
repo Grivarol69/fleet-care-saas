@@ -28,7 +28,7 @@ import {
   Trash2,
   ChevronRight,
   Settings,
-  Search
+  Search,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
@@ -49,7 +49,7 @@ import { useToast } from '@/components/hooks/use-toast';
 import {
   MantTemplatesListProps,
   MaintenancePackage,
-  PackageItem
+  PackageItem,
 } from './MantTemplatesList.types';
 
 // Componente de métricas animadas (no usado actualmente)
@@ -93,20 +93,29 @@ interface TemplateCardProps {
   onDelete: (id: number) => void;
 }
 
-function TemplateCard({ template, onSelect, onEdit, onDelete }: TemplateCardProps) {
+function TemplateCard({
+  template,
+  onSelect,
+  onEdit,
+  onDelete,
+}: TemplateCardProps) {
   return (
     <Card className="hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer group">
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
-            <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2">{template.name}</h3>
-            <p className="text-xs text-gray-500 line-clamp-1">{template.description || 'Sin descripción'}</p>
+            <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2">
+              {template.name}
+            </h3>
+            <p className="text-xs text-gray-500 line-clamp-1">
+              {template.description || 'Sin descripción'}
+            </p>
           </div>
           <div className="flex gap-1 ml-2">
             <Button
               variant="ghost"
               size="sm"
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation();
                 onEdit(template);
               }}
@@ -117,7 +126,7 @@ function TemplateCard({ template, onSelect, onEdit, onDelete }: TemplateCardProp
             <Button
               variant="ghost"
               size="sm"
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation();
                 onDelete(template.id);
               }}
@@ -130,10 +139,16 @@ function TemplateCard({ template, onSelect, onEdit, onDelete }: TemplateCardProp
 
         <div className="space-y-2 mb-3">
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 text-xs px-2 py-0">
+            <Badge
+              variant="outline"
+              className="bg-blue-50 text-blue-700 text-xs px-2 py-0"
+            >
               {template.brand.name}
             </Badge>
-            <Badge variant="outline" className="bg-purple-50 text-purple-700 text-xs px-2 py-0">
+            <Badge
+              variant="outline"
+              className="bg-purple-50 text-purple-700 text-xs px-2 py-0"
+            >
               {template.line.name}
             </Badge>
           </div>
@@ -144,7 +159,7 @@ function TemplateCard({ template, onSelect, onEdit, onDelete }: TemplateCardProp
               <span>{template.packages?.length || 0} paquetes</span>
             </div>
             <Badge
-              variant={template.status === 'ACTIVE' ? "default" : "secondary"}
+              variant={template.status === 'ACTIVE' ? 'default' : 'secondary'}
               className={`text-xs ${
                 template.status === 'ACTIVE'
                   ? 'bg-green-100 text-green-800'
@@ -173,8 +188,10 @@ function TemplateCard({ template, onSelect, onEdit, onDelete }: TemplateCardProp
 export function MantTemplatesList() {
   // Estados principales
   const [activeTab, setActiveTab] = useState('templates');
-  const [selectedTemplate, setSelectedTemplate] = useState<MantTemplatesListProps | null>(null);
-  const [selectedPackage, setSelectedPackage] = useState<MaintenancePackage | null>(null);
+  const [selectedTemplate, setSelectedTemplate] =
+    useState<MantTemplatesListProps | null>(null);
+  const [selectedPackage, setSelectedPackage] =
+    useState<MaintenancePackage | null>(null);
 
   // Estados de datos
   const [templates, setTemplates] = useState<MantTemplatesListProps[]>([]);
@@ -183,20 +200,25 @@ export function MantTemplatesList() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBrandFilter, setSelectedBrandFilter] = useState<string>('all');
-  const [vehicleBrands, setVehicleBrands] = useState<{id: number, name: string}[]>([]);
+  const [vehicleBrands, setVehicleBrands] = useState<
+    { id: number; name: string }[]
+  >([]);
 
   // Estados de modales
   const [isAddTemplateOpen, setIsAddTemplateOpen] = useState(false);
   const [isEditTemplateOpen, setIsEditTemplateOpen] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<MantTemplatesListProps | null>(null);
+  const [editingTemplate, setEditingTemplate] =
+    useState<MantTemplatesListProps | null>(null);
 
   const [isAddPackageOpen, setIsAddPackageOpen] = useState(false);
   const [isEditPackageOpen, setIsEditPackageOpen] = useState(false);
-  const [editingPackage, setEditingPackage] = useState<MaintenancePackage | null>(null);
+  const [editingPackage, setEditingPackage] =
+    useState<MaintenancePackage | null>(null);
 
   const [isAddPackageItemOpen, setIsAddPackageItemOpen] = useState(false);
   const [isEditPackageItemOpen, setIsEditPackageItemOpen] = useState(false);
-  const [editingPackageItem, setEditingPackageItem] = useState<PackageItem | null>(null);
+  const [editingPackageItem, setEditingPackageItem] =
+    useState<PackageItem | null>(null);
 
   const { toast } = useToast();
 
@@ -206,7 +228,7 @@ export function MantTemplatesList() {
       setLoading(true);
       const [templatesRes, brandsRes] = await Promise.all([
         axios.get('/api/maintenance/mant-template'),
-        axios.get('/api/vehicles/brands')
+        axios.get('/api/vehicles/brands'),
       ]);
       setTemplates(templatesRes.data);
       setVehicleBrands(brandsRes.data);
@@ -223,36 +245,46 @@ export function MantTemplatesList() {
   }, [toast]);
 
   // Fetch packages cuando se selecciona un template
-  const fetchPackages = useCallback(async (templateId: number) => {
-    if (!templateId) return;
-    try {
-      const response = await axios.get(`/api/maintenance/packages?templateId=${templateId}`);
-      setPackages(response.data);
-    } catch (error) {
-      console.error('Error fetching packages:', error);
-      toast({
-        title: 'Error',
-        description: 'No se pudieron cargar los paquetes',
-        variant: 'destructive',
-      });
-    }
-  }, [toast]);
+  const fetchPackages = useCallback(
+    async (templateId: number) => {
+      if (!templateId) return;
+      try {
+        const response = await axios.get(
+          `/api/maintenance/packages?templateId=${templateId}`
+        );
+        setPackages(response.data);
+      } catch (error) {
+        console.error('Error fetching packages:', error);
+        toast({
+          title: 'Error',
+          description: 'No se pudieron cargar los paquetes',
+          variant: 'destructive',
+        });
+      }
+    },
+    [toast]
+  );
 
   // Fetch package items cuando se selecciona un package
-  const fetchPackageItems = useCallback(async (packageId: number) => {
-    if (!packageId) return;
-    try {
-      const response = await axios.get(`/api/maintenance/package-items?packageId=${packageId}`);
-      setPackageItems(response.data);
-    } catch (error) {
-      console.error('Error fetching package items:', error);
-      toast({
-        title: 'Error',
-        description: 'No se pudieron cargar los items del paquete',
-        variant: 'destructive',
-      });
-    }
-  }, [toast]);
+  const fetchPackageItems = useCallback(
+    async (packageId: number) => {
+      if (!packageId) return;
+      try {
+        const response = await axios.get(
+          `/api/maintenance/package-items?packageId=${packageId}`
+        );
+        setPackageItems(response.data);
+      } catch (error) {
+        console.error('Error fetching package items:', error);
+        toast({
+          title: 'Error',
+          description: 'No se pudieron cargar los items del paquete',
+          variant: 'destructive',
+        });
+      }
+    },
+    [toast]
+  );
 
   useEffect(() => {
     fetchTemplates();
@@ -359,40 +391,44 @@ export function MantTemplatesList() {
   // Utilidades
   const formatMantType = (mantType: string) => {
     const types = {
-      'PREVENTIVE': 'Preventivo',
-      'PREDICTIVE': 'Predictivo',
-      'CORRECTIVE': 'Correctivo',
-      'EMERGENCY': 'Emergencia'
+      PREVENTIVE: 'Preventivo',
+      PREDICTIVE: 'Predictivo',
+      CORRECTIVE: 'Correctivo',
+      EMERGENCY: 'Emergencia',
     };
     return types[mantType as keyof typeof types] || mantType;
   };
 
   const getMantTypeColor = (mantType: string) => {
     const colors = {
-      'PREVENTIVE': 'bg-green-100 text-green-800',
-      'PREDICTIVE': 'bg-blue-100 text-blue-800',
-      'CORRECTIVE': 'bg-yellow-100 text-yellow-800',
-      'EMERGENCY': 'bg-red-100 text-red-800'
+      PREVENTIVE: 'bg-green-100 text-green-800',
+      PREDICTIVE: 'bg-blue-100 text-blue-800',
+      CORRECTIVE: 'bg-yellow-100 text-yellow-800',
+      EMERGENCY: 'bg-red-100 text-red-800',
     };
-    return colors[mantType as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+    return (
+      colors[mantType as keyof typeof colors] || 'bg-gray-100 text-gray-800'
+    );
   };
 
   const getPriorityColor = (priority: string) => {
     const colors = {
-      'LOW': 'bg-gray-100 text-gray-800',
-      'MEDIUM': 'bg-blue-100 text-blue-800',
-      'HIGH': 'bg-orange-100 text-orange-800',
-      'CRITICAL': 'bg-red-100 text-red-800'
+      LOW: 'bg-gray-100 text-gray-800',
+      MEDIUM: 'bg-blue-100 text-blue-800',
+      HIGH: 'bg-orange-100 text-orange-800',
+      CRITICAL: 'bg-red-100 text-red-800',
     };
-    return colors[priority as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+    return (
+      colors[priority as keyof typeof colors] || 'bg-gray-100 text-gray-800'
+    );
   };
 
   const formatPriority = (priority: string) => {
     const priorities = {
-      'LOW': 'Baja',
-      'MEDIUM': 'Media',
-      'HIGH': 'Alta',
-      'CRITICAL': 'Crítica'
+      LOW: 'Baja',
+      MEDIUM: 'Media',
+      HIGH: 'Alta',
+      CRITICAL: 'Crítica',
     };
     return priorities[priority as keyof typeof priorities] || priority;
   };
@@ -401,23 +437,28 @@ export function MantTemplatesList() {
   const templateMetrics = {
     total: templates.length,
     active: templates.filter(t => t.status === 'ACTIVE').length,
-    withPackages: templates.filter(t => t.packages && t.packages.length > 0).length
+    withPackages: templates.filter(t => t.packages && t.packages.length > 0)
+      .length,
   };
 
-  const packageMetrics = selectedTemplate ? {
-    total: packages.length,
-    preventive: packages.filter(p => p.packageType === 'PREVENTIVE').length,
-    corrective: packages.filter(p => p.packageType === 'CORRECTIVE').length,
-    predictive: packages.filter(p => p.packageType === 'PREDICTIVE').length
-  } : null;
+  const packageMetrics = selectedTemplate
+    ? {
+        total: packages.length,
+        preventive: packages.filter(p => p.packageType === 'PREVENTIVE').length,
+        corrective: packages.filter(p => p.packageType === 'CORRECTIVE').length,
+        predictive: packages.filter(p => p.packageType === 'PREDICTIVE').length,
+      }
+    : null;
 
-  const itemMetrics = selectedPackage ? {
-    total: packageItems.length,
-    low: packageItems.filter(i => i.priority === 'LOW').length,
-    medium: packageItems.filter(i => i.priority === 'MEDIUM').length,
-    high: packageItems.filter(i => i.priority === 'HIGH').length,
-    critical: packageItems.filter(i => i.priority === 'CRITICAL').length
-  } : null;
+  const itemMetrics = selectedPackage
+    ? {
+        total: packageItems.length,
+        low: packageItems.filter(i => i.priority === 'LOW').length,
+        medium: packageItems.filter(i => i.priority === 'MEDIUM').length,
+        high: packageItems.filter(i => i.priority === 'HIGH').length,
+        critical: packageItems.filter(i => i.priority === 'CRITICAL').length,
+      }
+    : null;
 
   // Columnas para templates (no usado - usando grid de cards en su lugar)
   // const templateColumns: ColumnDef<MantTemplatesListProps>[] = [
@@ -513,7 +554,9 @@ export function MantTemplatesList() {
       header: 'Kilometraje',
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
-          <span className="font-semibold">{(row.getValue('triggerKm') as number).toLocaleString()} km</span>
+          <span className="font-semibold">
+            {(row.getValue('triggerKm') as number).toLocaleString()} km
+          </span>
         </div>
       ),
     },
@@ -636,7 +679,9 @@ export function MantTemplatesList() {
       accessorKey: 'triggerKm',
       header: 'Frecuencia',
       cell: ({ row }) => (
-        <span className="font-mono">{(row.getValue('triggerKm') as number).toLocaleString()} km</span>
+        <span className="font-mono">
+          {(row.getValue('triggerKm') as number).toLocaleString()} km
+        </span>
       ),
     },
     {
@@ -681,12 +726,15 @@ export function MantTemplatesList() {
 
   // Filtrar templates
   const filteredTemplates = templates.filter(t => {
-    const matchesSearch = searchTerm === '' ||
+    const matchesSearch =
+      searchTerm === '' ||
       t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       t.brand.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       t.line.name.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesBrand = selectedBrandFilter === 'all' || t.brand.id.toString() === selectedBrandFilter;
+    const matchesBrand =
+      selectedBrandFilter === 'all' ||
+      t.brand.id.toString() === selectedBrandFilter;
 
     return matchesSearch && matchesBrand;
   });
@@ -710,7 +758,9 @@ export function MantTemplatesList() {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <Settings className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-500" />
-          <p className="text-gray-600">Cargando templates de mantenimiento...</p>
+          <p className="text-gray-600">
+            Cargando templates de mantenimiento...
+          </p>
         </div>
       </div>
     );
@@ -721,7 +771,9 @@ export function MantTemplatesList() {
       {/* Header ultra-compacto */}
       <div className="flex items-center justify-between mb-2">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Gestión de Mantenimiento</h1>
+          <h1 className="text-xl font-bold text-gray-900">
+            Gestión de Mantenimiento
+          </h1>
           <div className="flex items-center text-xs text-gray-500 mt-0.5">
             <FileText className="h-4 w-4 mr-1" />
             <span>Plantillas</span>
@@ -744,19 +796,28 @@ export function MantTemplatesList() {
 
         {/* Botón contextual */}
         {activeTab === 'templates' && (
-          <Button onClick={() => setIsAddTemplateOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+          <Button
+            onClick={() => setIsAddTemplateOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Nueva Plantilla
           </Button>
         )}
         {activeTab === 'packages' && selectedTemplate && (
-          <Button onClick={() => setIsAddPackageOpen(true)} className="bg-green-600 hover:bg-green-700">
+          <Button
+            onClick={() => setIsAddPackageOpen(true)}
+            className="bg-green-600 hover:bg-green-700"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Nuevo Paquete
           </Button>
         )}
         {activeTab === 'items' && selectedPackage && (
-          <Button onClick={() => setIsAddPackageItemOpen(true)} className="bg-purple-600 hover:bg-purple-700">
+          <Button
+            onClick={() => setIsAddPackageItemOpen(true)}
+            className="bg-purple-600 hover:bg-purple-700"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Nuevo Item
           </Button>
@@ -796,19 +857,27 @@ export function MantTemplatesList() {
           {/* Métricas ultra-compactas */}
           <div className="grid grid-cols-4 gap-2">
             <div className="bg-blue-50 rounded p-2 text-center">
-              <div className="text-sm font-bold text-blue-600">{templateMetrics.total}</div>
+              <div className="text-sm font-bold text-blue-600">
+                {templateMetrics.total}
+              </div>
               <div className="text-xs text-blue-700">Total</div>
             </div>
             <div className="bg-green-50 rounded p-2 text-center">
-              <div className="text-sm font-bold text-green-600">{templateMetrics.active}</div>
+              <div className="text-sm font-bold text-green-600">
+                {templateMetrics.active}
+              </div>
               <div className="text-xs text-green-700">Activos</div>
             </div>
             <div className="bg-purple-50 rounded p-2 text-center">
-              <div className="text-sm font-bold text-purple-600">{templateMetrics.withPackages}</div>
+              <div className="text-sm font-bold text-purple-600">
+                {templateMetrics.withPackages}
+              </div>
               <div className="text-xs text-purple-700">Con Paquetes</div>
             </div>
             <div className="bg-gray-50 rounded p-2 text-center">
-              <div className="text-sm font-bold text-gray-600">{filteredTemplates.length}</div>
+              <div className="text-sm font-bold text-gray-600">
+                {filteredTemplates.length}
+              </div>
               <div className="text-xs text-gray-700">Filtrados</div>
             </div>
           </div>
@@ -820,17 +889,20 @@ export function MantTemplatesList() {
               <Input
                 placeholder="Buscar..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={e => setSearchTerm(e.target.value)}
                 className="pl-8 h-8 text-sm"
               />
             </div>
-            <Select value={selectedBrandFilter} onValueChange={setSelectedBrandFilter}>
+            <Select
+              value={selectedBrandFilter}
+              onValueChange={setSelectedBrandFilter}
+            >
               <SelectTrigger className="w-full sm:w-40 h-8 text-sm">
                 <SelectValue placeholder="Marca" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas las marcas</SelectItem>
-                {vehicleBrands.map((brand) => (
+                {vehicleBrands.map(brand => (
                   <SelectItem key={brand.id} value={brand.id.toString()}>
                     {brand.name}
                   </SelectItem>
@@ -842,7 +914,7 @@ export function MantTemplatesList() {
           {/* Grid de templates */}
           {filteredTemplates.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredTemplates.map((template) => (
+              {filteredTemplates.map(template => (
                 <TemplateCard
                   key={template.id}
                   template={template}
@@ -858,7 +930,9 @@ export function MantTemplatesList() {
                 <div className="text-center">
                   <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
                   <h4 className="text-lg font-semibold mb-2">
-                    {templates.length === 0 ? 'No hay plantillas registradas' : 'No se encontraron plantillas'}
+                    {templates.length === 0
+                      ? 'No hay plantillas registradas'
+                      : 'No se encontraron plantillas'}
                   </h4>
                   <p className="text-gray-600 mb-4">
                     {templates.length === 0
@@ -890,7 +964,8 @@ export function MantTemplatesList() {
                         {selectedTemplate.name}
                       </h3>
                       <p className="text-green-600 text-xs">
-                        {selectedTemplate.brand.name} - {selectedTemplate.line.name}
+                        {selectedTemplate.brand.name} -{' '}
+                        {selectedTemplate.line.name}
                       </p>
                     </div>
                     <Button
@@ -910,19 +985,27 @@ export function MantTemplatesList() {
               {packageMetrics && (
                 <div className="grid grid-cols-4 gap-2">
                   <div className="bg-green-50 rounded p-2 text-center">
-                    <div className="text-sm font-bold text-green-600">{packageMetrics.total}</div>
+                    <div className="text-sm font-bold text-green-600">
+                      {packageMetrics.total}
+                    </div>
                     <div className="text-xs text-green-700">Total</div>
                   </div>
                   <div className="bg-blue-50 rounded p-2 text-center">
-                    <div className="text-sm font-bold text-blue-600">{packageMetrics.preventive}</div>
+                    <div className="text-sm font-bold text-blue-600">
+                      {packageMetrics.preventive}
+                    </div>
                     <div className="text-xs text-blue-700">Preventivos</div>
                   </div>
                   <div className="bg-yellow-50 rounded p-2 text-center">
-                    <div className="text-sm font-bold text-yellow-600">{packageMetrics.corrective}</div>
+                    <div className="text-sm font-bold text-yellow-600">
+                      {packageMetrics.corrective}
+                    </div>
                     <div className="text-xs text-yellow-700">Correctivos</div>
                   </div>
                   <div className="bg-purple-50 rounded p-2 text-center">
-                    <div className="text-sm font-bold text-purple-600">{packageMetrics.predictive}</div>
+                    <div className="text-sm font-bold text-purple-600">
+                      {packageMetrics.predictive}
+                    </div>
                     <div className="text-xs text-purple-700">Predictivos</div>
                   </div>
                 </div>
@@ -940,10 +1023,13 @@ export function MantTemplatesList() {
                   <div className="rounded-md border">
                     <Table>
                       <TableHeader>
-                        {packagesTable.getHeaderGroups().map((headerGroup) => (
+                        {packagesTable.getHeaderGroups().map(headerGroup => (
                           <TableRow key={headerGroup.id}>
-                            {headerGroup.headers.map((header) => (
-                              <TableHead key={header.id} className="font-semibold">
+                            {headerGroup.headers.map(header => (
+                              <TableHead
+                                key={header.id}
+                                className="font-semibold"
+                              >
                                 {header.isPlaceholder
                                   ? null
                                   : flexRender(
@@ -957,13 +1043,13 @@ export function MantTemplatesList() {
                       </TableHeader>
                       <TableBody>
                         {packagesTable.getRowModel().rows?.length ? (
-                          packagesTable.getRowModel().rows.map((row) => (
+                          packagesTable.getRowModel().rows.map(row => (
                             <TableRow
                               key={row.id}
                               className="hover:bg-gray-50"
-                              data-state={row.getIsSelected() && "selected"}
+                              data-state={row.getIsSelected() && 'selected'}
                             >
-                              {row.getVisibleCells().map((cell) => (
+                              {row.getVisibleCells().map(cell => (
                                 <TableCell key={cell.id}>
                                   {flexRender(
                                     cell.column.columnDef.cell,
@@ -981,7 +1067,9 @@ export function MantTemplatesList() {
                             >
                               <div className="flex flex-col items-center justify-center space-y-2">
                                 <Package className="h-8 w-8 text-gray-400" />
-                                <p className="text-gray-500">No hay paquetes configurados en este template</p>
+                                <p className="text-gray-500">
+                                  No hay paquetes configurados en este template
+                                </p>
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -1016,7 +1104,8 @@ export function MantTemplatesList() {
                         {selectedPackage.name}
                       </h3>
                       <p className="text-purple-600 text-xs">
-                        {selectedPackage.triggerKm.toLocaleString()} km • {formatMantType(selectedPackage.packageType)}
+                        {selectedPackage.triggerKm.toLocaleString()} km •{' '}
+                        {formatMantType(selectedPackage.packageType)}
                       </p>
                     </div>
                     <Button
@@ -1036,23 +1125,33 @@ export function MantTemplatesList() {
               {itemMetrics && (
                 <div className="grid grid-cols-5 gap-2">
                   <div className="bg-purple-50 rounded p-2 text-center">
-                    <div className="text-sm font-bold text-purple-600">{itemMetrics.total}</div>
+                    <div className="text-sm font-bold text-purple-600">
+                      {itemMetrics.total}
+                    </div>
                     <div className="text-xs text-purple-700">Total</div>
                   </div>
                   <div className="bg-gray-50 rounded p-2 text-center">
-                    <div className="text-sm font-bold text-gray-600">{itemMetrics.low}</div>
+                    <div className="text-sm font-bold text-gray-600">
+                      {itemMetrics.low}
+                    </div>
                     <div className="text-xs text-gray-700">Baja</div>
                   </div>
                   <div className="bg-blue-50 rounded p-2 text-center">
-                    <div className="text-sm font-bold text-blue-600">{itemMetrics.medium}</div>
+                    <div className="text-sm font-bold text-blue-600">
+                      {itemMetrics.medium}
+                    </div>
                     <div className="text-xs text-blue-700">Media</div>
                   </div>
                   <div className="bg-orange-50 rounded p-2 text-center">
-                    <div className="text-sm font-bold text-orange-600">{itemMetrics.high}</div>
+                    <div className="text-sm font-bold text-orange-600">
+                      {itemMetrics.high}
+                    </div>
                     <div className="text-xs text-orange-700">Alta</div>
                   </div>
                   <div className="bg-red-50 rounded p-2 text-center">
-                    <div className="text-sm font-bold text-red-600">{itemMetrics.critical}</div>
+                    <div className="text-sm font-bold text-red-600">
+                      {itemMetrics.critical}
+                    </div>
                     <div className="text-xs text-red-700">Crítica</div>
                   </div>
                 </div>
@@ -1070,30 +1169,35 @@ export function MantTemplatesList() {
                   <div className="rounded-md border">
                     <Table>
                       <TableHeader>
-                        {packageItemsTable.getHeaderGroups().map((headerGroup) => (
-                          <TableRow key={headerGroup.id}>
-                            {headerGroup.headers.map((header) => (
-                              <TableHead key={header.id} className="font-semibold">
-                                {header.isPlaceholder
-                                  ? null
-                                  : flexRender(
-                                      header.column.columnDef.header,
-                                      header.getContext()
-                                    )}
-                              </TableHead>
-                            ))}
-                          </TableRow>
-                        ))}
+                        {packageItemsTable
+                          .getHeaderGroups()
+                          .map(headerGroup => (
+                            <TableRow key={headerGroup.id}>
+                              {headerGroup.headers.map(header => (
+                                <TableHead
+                                  key={header.id}
+                                  className="font-semibold"
+                                >
+                                  {header.isPlaceholder
+                                    ? null
+                                    : flexRender(
+                                        header.column.columnDef.header,
+                                        header.getContext()
+                                      )}
+                                </TableHead>
+                              ))}
+                            </TableRow>
+                          ))}
                       </TableHeader>
                       <TableBody>
                         {packageItemsTable.getRowModel().rows?.length ? (
-                          packageItemsTable.getRowModel().rows.map((row) => (
+                          packageItemsTable.getRowModel().rows.map(row => (
                             <TableRow
                               key={row.id}
                               className="hover:bg-gray-50"
-                              data-state={row.getIsSelected() && "selected"}
+                              data-state={row.getIsSelected() && 'selected'}
                             >
-                              {row.getVisibleCells().map((cell) => (
+                              {row.getVisibleCells().map(cell => (
                                 <TableCell key={cell.id}>
                                   {flexRender(
                                     cell.column.columnDef.cell,
@@ -1111,7 +1215,9 @@ export function MantTemplatesList() {
                             >
                               <div className="flex flex-col items-center justify-center space-y-2">
                                 <Wrench className="h-8 w-8 text-gray-400" />
-                                <p className="text-gray-500">No hay items configurados en este paquete</p>
+                                <p className="text-gray-500">
+                                  No hay items configurados en este paquete
+                                </p>
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -1140,7 +1246,7 @@ export function MantTemplatesList() {
       <FormAddMantTemplate
         isOpen={isAddTemplateOpen}
         setIsOpen={setIsAddTemplateOpen}
-        onAddTemplate={(newTemplate) => {
+        onAddTemplate={newTemplate => {
           setTemplates([...templates, newTemplate]);
           fetchTemplates();
         }}
@@ -1151,8 +1257,12 @@ export function MantTemplatesList() {
           isOpen={isEditTemplateOpen}
           setIsOpen={setIsEditTemplateOpen}
           template={editingTemplate}
-          onEditTemplate={(editedTemplate) => {
-            setTemplates(templates.map(t => t.id === editedTemplate.id ? editedTemplate : t));
+          onEditTemplate={editedTemplate => {
+            setTemplates(
+              templates.map(t =>
+                t.id === editedTemplate.id ? editedTemplate : t
+              )
+            );
             if (selectedTemplate?.id === editedTemplate.id) {
               setSelectedTemplate(editedTemplate);
             }

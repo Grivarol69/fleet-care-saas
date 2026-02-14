@@ -9,7 +9,7 @@ async function main() {
     include: {
       items: true,
       supplier: {
-        select: { id: true, name: true }
+        select: { id: true, name: true },
       },
       workOrder: {
         select: {
@@ -18,11 +18,11 @@ async function main() {
           status: true,
           actualCost: true,
           vehicle: {
-            select: { licensePlate: true }
-          }
-        }
-      }
-    }
+            select: { licensePlate: true },
+          },
+        },
+      },
+    },
   });
 
   console.log('\n📄 ÚLTIMA FACTURA CREADA:');

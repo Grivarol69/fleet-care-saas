@@ -1,1 +1,1 @@
-export * from "./SliderBrands";
+export * from './SliderBrands';

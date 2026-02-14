@@ -1,6 +1,14 @@
-import { prisma } from "@/lib/prisma";
-import { getWhatsAppService, WhatsAppMessage, WhatsAppBatchResponse } from "./whatsapp";
-import { WhatsAppTemplates, MaintenanceAlert, AlertSummary } from "./message-templates";
+import { prisma } from '@/lib/prisma';
+import {
+  getWhatsAppService,
+  WhatsAppMessage,
+  WhatsAppBatchResponse,
+} from './whatsapp';
+import {
+  WhatsAppTemplates,
+  MaintenanceAlert,
+  AlertSummary,
+} from './message-templates';
 
 // Tipos para el servicio de notificaciones
 export interface NotificationRecipient {
@@ -26,7 +34,10 @@ export class NotificationService {
   /**
    * Obtiene alertas de mantenimiento próximas para un tenant
    */
-  async getMaintenanceAlerts(tenantId: string, urgentOnly: boolean = false): Promise<MaintenanceAlert[]> {
+  async getMaintenanceAlerts(
+    tenantId: string,
+    urgentOnly: boolean = false
+  ): Promise<MaintenanceAlert[]> {
     try {
       const whereClause = {
         tenantId: tenantId,
@@ -34,10 +45,10 @@ export class NotificationService {
         package: {
           program: {
             status: 'ACTIVE' as const,
-            isActive: true
-          }
+            isActive: true,
+          },
         },
-        scheduledKm: { not: null }
+        scheduledKm: { not: null },
       };
 
       const maintenanceItems = await prisma.vehicleProgramItem.findMany({
@@ -50,31 +61,31 @@ export class NotificationService {
                   vehicle: {
                     include: {
                       brand: true,
-                      line: true
-                    }
-                  }
-                }
-              }
-            }
+                      line: true,
+                    },
+                  },
+                },
+              },
+            },
           },
-          mantItem: true
+          mantItem: true,
         },
         orderBy: {
-          scheduledKm: 'asc'
-        }
+          scheduledKm: 'asc',
+        },
       });
 
-      const alerts: MaintenanceAlert[] = maintenanceItems.map((item) => {
+      const alerts: MaintenanceAlert[] = maintenanceItems.map(item => {
         const vehicle = item.package.program.vehicle;
         const currentKm = vehicle.mileage;
         const executionKm = item.scheduledKm!;
         const kmToMaintenance = executionKm - currentKm;
-        
-        let state: "YELLOW" | "RED" = "YELLOW";
+
+        let state: 'YELLOW' | 'RED' = 'YELLOW';
         if (kmToMaintenance <= 500) {
-          state = "RED";
+          state = 'RED';
         } else if (kmToMaintenance <= 2000) {
-          state = "YELLOW";
+          state = 'YELLOW';
         }
 
         return {
@@ -85,30 +96,37 @@ export class NotificationService {
           kmToMaintenance: Math.max(0, kmToMaintenance),
           state: state,
           brandName: vehicle.brand.name,
-          lineName: vehicle.line.name
+          lineName: vehicle.line.name,
         };
       });
 
       // Filtrar solo alertas próximas o urgentes
       const filteredAlerts = alerts.filter(alert => {
         if (urgentOnly) {
-          return alert.state === "RED"; // Solo críticas
+          return alert.state === 'RED'; // Solo críticas
         }
         return alert.kmToMaintenance <= 3000; // Próximas y críticas
       });
 
-      return filteredAlerts.sort((a, b) => a.kmToMaintenance - b.kmToMaintenance);
-
+      return filteredAlerts.sort(
+        (a, b) => a.kmToMaintenance - b.kmToMaintenance
+      );
     } catch (error) {
-      console.error("[NOTIFICATION_SERVICE] Error getting maintenance alerts:", error);
-      throw new Error("Failed to fetch maintenance alerts");
+      console.error(
+        '[NOTIFICATION_SERVICE] Error getting maintenance alerts:',
+        error
+      );
+      throw new Error('Failed to fetch maintenance alerts');
     }
   }
 
   /**
    * Obtiene destinatarios para las alertas (conductores + supervisores)
    */
-  async getNotificationRecipients(tenantId: string, vehicleIds?: number[]): Promise<NotificationRecipient[]> {
+  async getNotificationRecipients(
+    tenantId: string,
+    vehicleIds?: number[]
+  ): Promise<NotificationRecipient[]> {
     try {
       const recipients: NotificationRecipient[] = [];
 
@@ -118,16 +136,18 @@ export class NotificationService {
           tenantId: tenantId,
           role: 'MANAGER',
           phone: { not: null },
-          isActive: true
-        }
+          isActive: true,
+        },
       });
 
       supervisors.forEach(supervisor => {
         if (supervisor.phone) {
           recipients.push({
             phone: supervisor.phone,
-            name: `${supervisor.firstName} ${supervisor.lastName}`.trim() || supervisor.email,
-            type: 'SUPERVISOR'
+            name:
+              `${supervisor.firstName} ${supervisor.lastName}`.trim() ||
+              supervisor.email,
+            type: 'SUPERVISOR',
           });
         }
       });
@@ -139,12 +159,12 @@ export class NotificationService {
             tenantId: tenantId,
             vehicleId: { in: vehicleIds },
             status: 'ACTIVE',
-            isPrimary: true
+            isPrimary: true,
           },
           include: {
             driver: true,
-            vehicle: true
-          }
+            vehicle: true,
+          },
         });
 
         vehicleDrivers.forEach(vd => {
@@ -153,30 +173,34 @@ export class NotificationService {
               phone: vd.driver.phone,
               name: vd.driver.name,
               type: 'DRIVER',
-              vehicleId: vd.vehicleId
+              vehicleId: vd.vehicleId,
             });
           }
         });
       }
 
-      console.log(`📋 Found ${recipients.length} recipients: ${recipients.filter(r => r.type === 'SUPERVISOR').length} supervisors, ${recipients.filter(r => r.type === 'DRIVER').length} drivers`);
+      console.log(
+        `📋 Found ${recipients.length} recipients: ${recipients.filter(r => r.type === 'SUPERVISOR').length} supervisors, ${recipients.filter(r => r.type === 'DRIVER').length} drivers`
+      );
 
       return recipients;
-
     } catch (error) {
-      console.error("[NOTIFICATION_SERVICE] Error getting recipients:", error);
-      throw new Error("Failed to fetch notification recipients");
+      console.error('[NOTIFICATION_SERVICE] Error getting recipients:', error);
+      throw new Error('Failed to fetch notification recipients');
     }
   }
 
   /**
    * Envía alertas de mantenimiento para un tenant específico
    */
-  async sendMaintenanceAlerts(tenantId: string, urgentOnly: boolean = false): Promise<AlertNotificationResult> {
+  async sendMaintenanceAlerts(
+    tenantId: string,
+    urgentOnly: boolean = false
+  ): Promise<AlertNotificationResult> {
     try {
       // 1. Obtener información del tenant
       const tenant = await prisma.tenant.findUnique({
-        where: { id: tenantId }
+        where: { id: tenantId },
       });
 
       if (!tenant) {
@@ -185,7 +209,7 @@ export class NotificationService {
 
       // 2. Obtener alertas de mantenimiento
       const alerts = await this.getMaintenanceAlerts(tenantId, urgentOnly);
-      
+
       if (alerts.length === 0) {
         console.log(`📭 No maintenance alerts found for tenant ${tenant.name}`);
         return {
@@ -194,7 +218,7 @@ export class NotificationService {
           messagesSent: 0,
           messagesFailed: 0,
           recipients: [],
-          errors: []
+          errors: [],
         };
       }
 
@@ -208,20 +232,26 @@ export class NotificationService {
       const vehicles = await prisma.vehicle.findMany({
         where: {
           tenantId: tenantId,
-          licensePlate: { in: vehicleIds }
+          licensePlate: { in: vehicleIds },
         },
-        select: { id: true, licensePlate: true }
+        select: { id: true, licensePlate: true },
       });
 
-      const vehicleIdMap = vehicles.reduce((map, vehicle) => {
-        map[vehicle.licensePlate] = vehicle.id;
-        return map;
-      }, {} as Record<string, number>);
+      const vehicleIdMap = vehicles.reduce(
+        (map, vehicle) => {
+          map[vehicle.licensePlate] = vehicle.id;
+          return map;
+        },
+        {} as Record<string, number>
+      );
 
       const actualVehicleIds = Object.values(vehicleIdMap);
 
       // 4. Obtener destinatarios
-      const recipients = await this.getNotificationRecipients(tenantId, actualVehicleIds);
+      const recipients = await this.getNotificationRecipients(
+        tenantId,
+        actualVehicleIds
+      );
 
       if (recipients.length === 0) {
         console.log(`📭 No recipients found for tenant ${tenant.name}`);
@@ -231,19 +261,19 @@ export class NotificationService {
           messagesSent: 0,
           messagesFailed: 0,
           recipients: [],
-          errors: ["No recipients with phone numbers found"]
+          errors: ['No recipients with phone numbers found'],
         };
       }
 
       // 5. Preparar mensajes
       const messages: WhatsAppMessage[] = [];
 
-      const criticalAlerts = alerts.filter(a => a.state === "RED").length;
+      const criticalAlerts = alerts.filter(a => a.state === 'RED').length;
       const alertSummary: AlertSummary = {
         tenantName: tenant.name,
         alerts: alerts,
         totalAlerts: alerts.length,
-        criticalAlerts: criticalAlerts
+        criticalAlerts: criticalAlerts,
       };
 
       // Mensajes para supervisores (resumen)
@@ -251,7 +281,7 @@ export class NotificationService {
       supervisors.forEach(supervisor => {
         messages.push({
           to: supervisor.phone,
-          body: WhatsAppTemplates.getSupervisorSummaryMessage(alertSummary)
+          body: WhatsAppTemplates.getSupervisorSummaryMessage(alertSummary),
         });
       });
 
@@ -262,12 +292,18 @@ export class NotificationService {
           // Encontrar alertas específicas para este vehículo
           const vehicle = vehicles.find(v => v.id === driver.vehicleId);
           if (vehicle) {
-            const vehicleAlerts = alerts.filter(a => a.vehiclePlate === vehicle.licensePlate);
-            
+            const vehicleAlerts = alerts.filter(
+              a => a.vehiclePlate === vehicle.licensePlate
+            );
+
             vehicleAlerts.forEach(alert => {
               messages.push({
                 to: driver.phone,
-                body: WhatsAppTemplates.getDriverMessage(alert, tenant.name, driver.name)
+                body: WhatsAppTemplates.getDriverMessage(
+                  alert,
+                  tenant.name,
+                  driver.name
+                ),
               });
             });
           }
@@ -275,7 +311,8 @@ export class NotificationService {
       });
 
       // 6. Enviar mensajes
-      const whatsappResponse = await this.whatsappService.sendBatchMessages(messages);
+      const whatsappResponse =
+        await this.whatsappService.sendBatchMessages(messages);
 
       console.log(`📊 Alert notification summary for ${tenant.name}:`);
       console.log(`   - Alerts processed: ${alerts.length}`);
@@ -290,42 +327,51 @@ export class NotificationService {
         messagesFailed: whatsappResponse.totalFailed,
         recipients: recipients,
         errors: whatsappResponse.failed.map(f => f.error || 'Unknown error'),
-        whatsappResponse: whatsappResponse
+        whatsappResponse: whatsappResponse,
       };
-
     } catch (error: unknown) {
-      console.error("[NOTIFICATION_SERVICE] Error sending maintenance alerts:", error);
-      throw new Error(`Failed to send maintenance alerts: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error(
+        '[NOTIFICATION_SERVICE] Error sending maintenance alerts:',
+        error
+      );
+      throw new Error(
+        `Failed to send maintenance alerts: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
   /**
    * Envía mensaje de prueba a un número específico
    */
-  async sendTestAlert(phoneNumber: string, tenantId?: string): Promise<{ success: boolean; error?: string }> {
+  async sendTestAlert(
+    phoneNumber: string,
+    tenantId?: string
+  ): Promise<{ success: boolean; error?: string }> {
     try {
-      let tenantName = "Fleet Care";
-      
+      let tenantName = 'Fleet Care';
+
       if (tenantId) {
         const tenant = await prisma.tenant.findUnique({
-          where: { id: tenantId }
+          where: { id: tenantId },
         });
         if (tenant) {
           tenantName = tenant.name;
         }
       }
 
-      const result = await this.whatsappService.sendTestMessage(phoneNumber, tenantName);
-      
+      const result = await this.whatsappService.sendTestMessage(
+        phoneNumber,
+        tenantName
+      );
+
       return {
         success: result.success,
-        ...(result.error && { error: result.error })
+        ...(result.error && { error: result.error }),
       };
-
     } catch (error: unknown) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }

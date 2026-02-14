@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 
 export type FleetVehicleStatus = {
@@ -14,7 +14,7 @@ export type FleetVehicleStatus = {
   maintenanceAlerts: {
     total: number;
     critical: number; // URGENT/Vencido
-    warning: number;  // MEDIUM/Próximo
+    warning: number; // MEDIUM/Próximo
   };
   // Estado del odómetro
   odometer: {
@@ -50,7 +50,7 @@ export async function GET() {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const tenantId = user.tenantId;
@@ -59,29 +59,29 @@ export async function GET() {
     const vehicles = await prisma.vehicle.findMany({
       where: {
         tenantId: tenantId,
-        status: "ACTIVE",
+        status: 'ACTIVE',
       },
       include: {
         brand: { select: { name: true } },
         line: { select: { name: true } },
         type: { select: { name: true } },
         vehicleDrivers: {
-          where: { status: "ACTIVE", isPrimary: true },
+          where: { status: 'ACTIVE', isPrimary: true },
           include: { driver: { select: { name: true } } },
           take: 1,
         },
       },
       orderBy: {
-        licensePlate: "asc",
+        licensePlate: 'asc',
       },
     });
 
     // Obtener alertas de mantenimiento agrupadas por vehículo
     const alertsByVehicle = await prisma.maintenanceAlert.groupBy({
-      by: ["vehicleId", "priority"],
+      by: ['vehicleId', 'priority'],
       where: {
         tenantId: tenantId,
-        status: { in: ["PENDING", "ACKNOWLEDGED", "IN_PROGRESS"] },
+        status: { in: ['PENDING', 'ACKNOWLEDGED', 'IN_PROGRESS'] },
       },
       _count: true,
     });
@@ -91,8 +91,8 @@ export async function GET() {
       where: {
         vehicle: { tenantId: tenantId },
       },
-      orderBy: { recordedAt: "desc" },
-      distinct: ["vehicleId"],
+      orderBy: { recordedAt: 'desc' },
+      distinct: ['vehicleId'],
       select: {
         vehicleId: true,
         recordedAt: true,
@@ -102,10 +102,13 @@ export async function GET() {
 
     // Crear mapa de alertas por vehículo
     const alertsMap = new Map<number, { critical: number; warning: number }>();
-    alertsByVehicle.forEach((alert) => {
-      const current = alertsMap.get(alert.vehicleId) || { critical: 0, warning: 0 };
+    alertsByVehicle.forEach(alert => {
+      const current = alertsMap.get(alert.vehicleId) || {
+        critical: 0,
+        warning: 0,
+      };
       // URGENT es crítico, MEDIUM y LOW son warning
-      if (alert.priority === "URGENT") {
+      if (alert.priority === 'URGENT') {
         current.critical += alert._count;
       } else {
         current.warning += alert._count;
@@ -114,8 +117,11 @@ export async function GET() {
     });
 
     // Crear mapa de último odómetro por vehículo
-    const odometerMap = new Map<number, { recordedAt: Date; kilometers: number }>();
-    lastOdometerByVehicle.forEach((log) => {
+    const odometerMap = new Map<
+      number,
+      { recordedAt: Date; kilometers: number }
+    >();
+    lastOdometerByVehicle.forEach(log => {
       odometerMap.set(log.vehicleId, {
         recordedAt: log.recordedAt,
         kilometers: log.kilometers || 0,
@@ -125,7 +131,7 @@ export async function GET() {
     const now = new Date();
 
     // Procesar cada vehículo
-    const fleetStatus: FleetVehicleStatus[] = vehicles.map((vehicle) => {
+    const fleetStatus: FleetVehicleStatus[] = vehicles.map(vehicle => {
       const alerts = alertsMap.get(vehicle.id) || { critical: 0, warning: 0 };
       const lastOdometer = odometerMap.get(vehicle.id);
 
@@ -159,7 +165,10 @@ export async function GET() {
       let overallStatus: 'OK' | 'WARNING' | 'CRITICAL' = 'OK';
       if (maintenanceStatus === 'CRITICAL' || odometerStatus === 'CRITICAL') {
         overallStatus = 'CRITICAL';
-      } else if (maintenanceStatus === 'WARNING' || odometerStatus === 'WARNING') {
+      } else if (
+        maintenanceStatus === 'WARNING' ||
+        odometerStatus === 'WARNING'
+      ) {
         overallStatus = 'WARNING';
       }
 
@@ -170,9 +179,9 @@ export async function GET() {
         id: vehicle.id,
         licensePlate: vehicle.licensePlate,
         photo: vehicle.photo,
-        brandName: vehicle.brand?.name || "Sin marca",
-        lineName: vehicle.line?.name || "Sin línea",
-        typeName: vehicle.type?.name || "Sin tipo",
+        brandName: vehicle.brand?.name || 'Sin marca',
+        lineName: vehicle.line?.name || 'Sin línea',
+        typeName: vehicle.type?.name || 'Sin tipo',
         currentMileage: vehicle.mileage || lastOdometer?.kilometers || 0,
         maintenanceAlerts: {
           total: alerts.critical + alerts.warning,
@@ -198,9 +207,9 @@ export async function GET() {
     // Calcular resumen
     const summary = {
       total: fleetStatus.length,
-      critical: fleetStatus.filter((v) => v.overallStatus === "CRITICAL").length,
-      warning: fleetStatus.filter((v) => v.overallStatus === "WARNING").length,
-      ok: fleetStatus.filter((v) => v.overallStatus === "OK").length,
+      critical: fleetStatus.filter(v => v.overallStatus === 'CRITICAL').length,
+      warning: fleetStatus.filter(v => v.overallStatus === 'WARNING').length,
+      ok: fleetStatus.filter(v => v.overallStatus === 'OK').length,
     };
 
     const response: FleetStatusResponse = {
@@ -214,7 +223,7 @@ export async function GET() {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error("[FLEET_STATUS_GET]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error('[FLEET_STATUS_GET]', error);
+    return new NextResponse('Internal Error', { status: 500 });
   }
 }

@@ -1,21 +1,21 @@
 export function StatsSection() {
   const stats = [
     {
-      value: "85%",
-      label: "Reducción en costos de mantenimiento",
-      description: "Nuestros clientes ahorran en promedio",
+      value: '85%',
+      label: 'Reducción en costos de mantenimiento',
+      description: 'Nuestros clientes ahorran en promedio',
     },
     {
-      value: "50%",
-      label: "Menos tiempo de inactividad",
-      description: "Mantenimiento predictivo efectivo",
+      value: '50%',
+      label: 'Menos tiempo de inactividad',
+      description: 'Mantenimiento predictivo efectivo',
     },
     {
-      value: "30%",
-      label: "Mejora en eficiencia de combustible",
-      description: "Optimización de rutas y conducción",
+      value: '30%',
+      label: 'Mejora en eficiencia de combustible',
+      description: 'Optimización de rutas y conducción',
     },
-  ]
+  ];
 
   return (
     <section className="py-24 bg-gradient-to-b from-muted/30 to-background">
@@ -28,7 +28,8 @@ export function StatsSection() {
             Útil para tu <span className="text-primary">negocio</span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto text-pretty leading-relaxed">
-            Nuestras tecnologías avanzadas entregan resultados reales que impulsan tu negocio hacia adelante.
+            Nuestras tecnologías avanzadas entregan resultados reales que
+            impulsan tu negocio hacia adelante.
           </p>
         </div>
 
@@ -44,12 +45,14 @@ export function StatsSection() {
                 <h3 className="text-xl font-bold text-foreground mb-3 group-hover:text-primary transition-colors">
                   {stat.label}
                 </h3>
-                <p className="text-muted-foreground leading-relaxed">{stat.description}</p>
+                <p className="text-muted-foreground leading-relaxed">
+                  {stat.description}
+                </p>
               </div>
             </div>
           ))}
         </div>
       </div>
     </section>
-  )
+  );
 }

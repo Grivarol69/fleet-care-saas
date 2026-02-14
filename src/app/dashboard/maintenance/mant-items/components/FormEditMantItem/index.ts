@@ -1,1 +1,4 @@
-export { FormEditMantItem, type FormEditMantItemProps } from './FormEditMantItem';
+export {
+  FormEditMantItem,
+  type FormEditMantItemProps,
+} from './FormEditMantItem';

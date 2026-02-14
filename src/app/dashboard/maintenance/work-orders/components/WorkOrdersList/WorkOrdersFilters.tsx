@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { Input } from "@/components/ui/input";
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Search, X } from "lucide-react";
+} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Search, X } from 'lucide-react';
 
 type WorkOrdersFiltersProps = {
   filters: {
@@ -39,7 +39,7 @@ export function WorkOrdersFilters({
           <Input
             placeholder="Buscar por título o vehículo..."
             value={filters.search}
-            onChange={(e) => onFilterChange("search", e.target.value)}
+            onChange={e => onFilterChange('search', e.target.value)}
             className="pl-9"
           />
         </div>
@@ -47,7 +47,7 @@ export function WorkOrdersFilters({
         {/* Estado */}
         <Select
           value={filters.status}
-          onValueChange={(value) => onFilterChange("status", value)}
+          onValueChange={value => onFilterChange('status', value)}
         >
           <SelectTrigger>
             <SelectValue placeholder="Todos los estados" />
@@ -65,7 +65,7 @@ export function WorkOrdersFilters({
         {/* Tipo de Mantenimiento */}
         <Select
           value={filters.mantType}
-          onValueChange={(value) => onFilterChange("mantType", value)}
+          onValueChange={value => onFilterChange('mantType', value)}
         >
           <SelectTrigger>
             <SelectValue placeholder="Tipo de mantenimiento" />
@@ -81,7 +81,7 @@ export function WorkOrdersFilters({
         {/* Prioridad */}
         <Select
           value={filters.priority}
-          onValueChange={(value) => onFilterChange("priority", value)}
+          onValueChange={value => onFilterChange('priority', value)}
         >
           <SelectTrigger>
             <SelectValue placeholder="Prioridad" />

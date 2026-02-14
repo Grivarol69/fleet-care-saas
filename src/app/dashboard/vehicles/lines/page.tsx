@@ -1,5 +1,5 @@
-import React from "react";
-import { LineList } from "./components/LineList";
+import React from 'react';
+import { LineList } from './components/LineList';
 
 export default function CategoriesPage() {
   return (

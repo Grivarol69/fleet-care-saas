@@ -1,5 +1,5 @@
-import React from "react";
-import { FleetVehiclesList } from "./components/FleetVehiclesList/FleetVehiclesList";
+import React from 'react';
+import { FleetVehiclesList } from './components/FleetVehiclesList/FleetVehiclesList';
 
 export default function CategoriesPage() {
   return (

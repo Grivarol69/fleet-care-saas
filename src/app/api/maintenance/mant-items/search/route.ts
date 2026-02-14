@@ -19,10 +19,7 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type'); // ACTION, PART, SERVICE
 
     const where: Prisma.MantItemWhereInput = {
-      OR: [
-        { tenantId: user.tenantId },
-        { tenantId: null, isGlobal: true },
-      ],
+      OR: [{ tenantId: user.tenantId }, { tenantId: null, isGlobal: true }],
       status: 'ACTIVE',
     };
 
@@ -57,13 +54,13 @@ export async function GET(request: NextRequest) {
       orderBy: { name: 'asc' },
     });
 
-    const results = items.map((item) => ({
+    const results = items.map(item => ({
       id: item.id,
       name: item.name,
       description: item.description,
       type: item.type,
       categoryName: item.category.name,
-      parts: item.parts.map((p) => ({
+      parts: item.parts.map(p => ({
         masterPartId: p.masterPart.id,
         code: p.masterPart.code,
         description: p.masterPart.description,

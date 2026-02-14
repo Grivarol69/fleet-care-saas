@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
   flexRender,
   ColumnDef,
-} from "@tanstack/react-table";
+} from '@tanstack/react-table';
 import {
   Table,
   TableBody,
@@ -14,23 +14,24 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { FormAddProvider } from "../FormAddProvider";
-import { FormEditProvider } from "../FormEditProvider";
-import axios from "axios";
-import { useToast } from "@/components/hooks/use-toast";
-import { ProviderListProps } from "./ProviderList.types";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { FormAddProvider } from '../FormAddProvider';
+import { FormEditProvider } from '../FormEditProvider';
+import axios from 'axios';
+import { useToast } from '@/components/hooks/use-toast';
+import { ProviderListProps } from './ProviderList.types';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 export function ProviderList() {
   const [data, setData] = useState<ProviderListProps[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingProvider, setEditingProvider] = useState<ProviderListProps | null>(null);
+  const [editingProvider, setEditingProvider] =
+    useState<ProviderListProps | null>(null);
 
   const { toast } = useToast();
 
@@ -40,21 +41,21 @@ export function ProviderList() {
       const response = await axios.get(`/api/people/providers`);
       setData(response.data);
     } catch (error) {
-      console.error("Error fetching Providers: ", error);
+      console.error('Error fetching Providers: ', error);
 
       if (axios.isAxiosError(error) && error.response?.status === 401) {
         toast({
-          title: "No autorizado",
-          description: "Debes iniciar sesión para ver los proveedores",
-          variant: "destructive",
+          title: 'No autorizado',
+          description: 'Debes iniciar sesión para ver los proveedores',
+          variant: 'destructive',
         });
         return;
       }
 
       toast({
-        title: "Error",
-        description: "No se pudieron cargar los proveedores",
-        variant: "destructive",
+        title: 'Error',
+        description: 'No se pudieron cargar los proveedores',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -66,36 +67,39 @@ export function ProviderList() {
   }, [fetchProviders]);
 
   const handleAddProvider = useCallback((newProvider: ProviderListProps) => {
-    setData((prevData) => [...prevData, newProvider]);
+    setData(prevData => [...prevData, newProvider]);
   }, []);
 
-  const handleEditProvider = useCallback((updatedProvider: ProviderListProps) => {
-    setData((prevData) =>
-      prevData.map((provider) =>
-        provider.id === updatedProvider.id ? updatedProvider : provider
-      )
-    );
-  }, []);
+  const handleEditProvider = useCallback(
+    (updatedProvider: ProviderListProps) => {
+      setData(prevData =>
+        prevData.map(provider =>
+          provider.id === updatedProvider.id ? updatedProvider : provider
+        )
+      );
+    },
+    []
+  );
 
   const handleDeleteProvider = async (id: number) => {
-    if (!confirm("¿Estás seguro de que deseas eliminar este proveedor?")) {
+    if (!confirm('¿Estás seguro de que deseas eliminar este proveedor?')) {
       return;
     }
 
     try {
       await axios.delete(`/api/people/providers/${id}`);
-      setData((prevData) => prevData.filter((provider) => provider.id !== id));
-      
+      setData(prevData => prevData.filter(provider => provider.id !== id));
+
       toast({
-        title: "Proveedor eliminado",
-        description: "El proveedor fue eliminado exitosamente.",
+        title: 'Proveedor eliminado',
+        description: 'El proveedor fue eliminado exitosamente.',
       });
     } catch (error) {
-      console.error("Error deleting provider:", error);
+      console.error('Error deleting provider:', error);
       toast({
-        title: "Error",
-        description: "No se pudo eliminar el proveedor",
-        variant: "destructive",
+        title: 'Error',
+        description: 'No se pudo eliminar el proveedor',
+        variant: 'destructive',
       });
     }
   };
@@ -107,68 +111,70 @@ export function ProviderList() {
 
   const columns: ColumnDef<ProviderListProps>[] = [
     {
-      accessorKey: "name",
-      header: "Nombre",
+      accessorKey: 'name',
+      header: 'Nombre',
     },
     {
-      accessorKey: "email",
-      header: "Email",
+      accessorKey: 'email',
+      header: 'Email',
       cell: ({ row }) => {
-        const email = row.getValue("email") as string | null;
-        return email || "-";
+        const email = row.getValue('email') as string | null;
+        return email || '-';
       },
     },
     {
-      accessorKey: "phone",
-      header: "Teléfono",
+      accessorKey: 'phone',
+      header: 'Teléfono',
       cell: ({ row }) => {
-        const phone = row.getValue("phone") as string | null;
-        return phone || "-";
+        const phone = row.getValue('phone') as string | null;
+        return phone || '-';
       },
     },
     {
-      accessorKey: "address",
-      header: "Dirección",
+      accessorKey: 'address',
+      header: 'Dirección',
       cell: ({ row }) => {
-        const address = row.getValue("address") as string | null;
+        const address = row.getValue('address') as string | null;
         return address ? (
           <div className="max-w-[200px] truncate" title={address}>
             {address}
           </div>
-        ) : "-";
+        ) : (
+          '-'
+        );
       },
     },
     {
-      accessorKey: "specialty",
-      header: "Especialidad",
+      accessorKey: 'specialty',
+      header: 'Especialidad',
       cell: ({ row }) => {
-        const specialty = row.getValue("specialty") as string | null;
-        return specialty || "-";
+        const specialty = row.getValue('specialty') as string | null;
+        return specialty || '-';
       },
     },
     {
-      accessorKey: "status",
-      header: "Estado",
+      accessorKey: 'status',
+      header: 'Estado',
       cell: ({ row }) => {
-        const status = row.getValue("status") as string;
+        const status = row.getValue('status') as string;
         return (
-          <Badge variant={status === "ACTIVE" ? "default" : "secondary"}>
-            {status === "ACTIVE" ? "Activo" : "Inactivo"}
+          <Badge variant={status === 'ACTIVE' ? 'default' : 'secondary'}>
+            {status === 'ACTIVE' ? 'Activo' : 'Inactivo'}
           </Badge>
         );
       },
     },
     {
-      accessorKey: "createdAt",
-      header: "Fecha de Creación",
+      accessorKey: 'createdAt',
+      header: 'Fecha de Creación',
       cell: ({ row }) => {
-        const date = new Date(row.getValue("createdAt") as string);
-        return format(date, "dd/MM/yyyy", { locale: es });
+        const date = new Date(row.getValue('createdAt') as string);
+        return format(date, 'dd/MM/yyyy', { locale: es });
       },
     },
     {
-      id: "actions",
-      header: "Acciones",
+      id: 'actions',
+      header: 'Acciones',
       cell: ({ row }) => {
         const provider = row.original;
         return (
@@ -224,9 +230,9 @@ export function ProviderList() {
       <div className="rounded-md border">
         <Table>
           <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
+            {table.getHeaderGroups().map(headerGroup => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
+                {headerGroup.headers.map(header => (
                   <TableHead key={header.id}>
                     {header.isPlaceholder
                       ? null
@@ -241,12 +247,12 @@ export function ProviderList() {
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
+              table.getRowModel().rows.map(row => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
+                  data-state={row.getIsSelected() && 'selected'}
                 >
-                  {row.getVisibleCells().map((cell) => (
+                  {row.getVisibleCells().map(cell => (
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,

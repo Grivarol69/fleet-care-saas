@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Form,
   FormControl,
@@ -19,13 +19,13 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
+} from '@/components/ui/form';
 
-import axios from "axios";
-import { useToast } from "@/components/hooks/use-toast";
-import { useRouter } from "next/navigation";
-import { formSchema } from "./FormAddDriver.form";
-import { FormAddDriverProps } from "./FormAddDriver.types";
+import axios from 'axios';
+import { useToast } from '@/components/hooks/use-toast';
+import { useRouter } from 'next/navigation';
+import { formSchema } from './FormAddDriver.form';
+import { FormAddDriverProps } from './FormAddDriver.types';
 
 export function FormAddDriver({
   isOpen,
@@ -35,11 +35,11 @@ export function FormAddDriver({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      email: "",
-      phone: "",
-      licenseNumber: "",
-      licenseExpiry: "",
+      name: '',
+      email: '',
+      phone: '',
+      licenseNumber: '',
+      licenseExpiry: '',
     },
   });
 
@@ -59,10 +59,10 @@ export function FormAddDriver({
       onAddDriver(response.data);
       setIsOpen(false);
       form.reset();
-      
+
       toast({
-        title: "Conductor creado!",
-        description: "El conductor fue creado exitosamente.",
+        title: 'Conductor creado!',
+        description: 'El conductor fue creado exitosamente.',
       });
 
       router.refresh();
@@ -70,17 +70,17 @@ export function FormAddDriver({
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 409) {
           toast({
-            title: "Error",
-            description: "Ya existe un conductor con ese número de licencia",
-            variant: "destructive",
+            title: 'Error',
+            description: 'Ya existe un conductor con ese número de licencia',
+            variant: 'destructive',
           });
           return;
         }
       }
       toast({
-        title: "Algo salió mal",
-        description: "No se pudo crear el conductor",
-        variant: "destructive",
+        title: 'Algo salió mal',
+        description: 'No se pudo crear el conductor',
+        variant: 'destructive',
       });
     }
   };
@@ -106,7 +106,7 @@ export function FormAddDriver({
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="email"
@@ -114,17 +114,17 @@ export function FormAddDriver({
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="email" 
-                      placeholder="Ingrese el email (opcional)" 
-                      {...field} 
+                    <Input
+                      type="email"
+                      placeholder="Ingrese el email (opcional)"
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="phone"
@@ -132,13 +132,16 @@ export function FormAddDriver({
                 <FormItem>
                   <FormLabel>Teléfono</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ingrese el teléfono (opcional)" {...field} />
+                    <Input
+                      placeholder="Ingrese el teléfono (opcional)"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="licenseNumber"
@@ -146,13 +149,16 @@ export function FormAddDriver({
                 <FormItem>
                   <FormLabel>Número de Licencia</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ingrese el número de licencia (opcional)" {...field} />
+                    <Input
+                      placeholder="Ingrese el número de licencia (opcional)"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="licenseExpiry"
@@ -160,10 +166,10 @@ export function FormAddDriver({
                 <FormItem>
                   <FormLabel>Vencimiento de Licencia</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="date" 
-                      placeholder="Fecha de vencimiento (opcional)" 
-                      {...field} 
+                    <Input
+                      type="date"
+                      placeholder="Fecha de vencimiento (opcional)"
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />

@@ -1,5 +1,5 @@
 export type BrandListProps = {
-    id: number;
-    name: string;
-    isGlobal?: boolean;
+  id: number;
+  name: string;
+  isGlobal?: boolean;
 };

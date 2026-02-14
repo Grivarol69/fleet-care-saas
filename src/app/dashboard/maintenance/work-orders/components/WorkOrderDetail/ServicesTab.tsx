@@ -35,10 +35,12 @@ import {
   ShoppingCart,
   Loader2,
   AlertCircle,
+  Plus,
 } from 'lucide-react';
 import { useToast } from '@/components/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
 import axios from 'axios';
+import { AddItemDialog } from './AddItemDialog';
 
 type ServiceItem = {
   workOrderItemId: number;
@@ -79,7 +81,10 @@ const typeConfig = {
   SERVICE: { label: 'Servicio', className: 'bg-green-100 text-green-700' },
 };
 
-const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
+const statusConfig: Record<
+  string,
+  { label: string; variant: 'default' | 'secondary' | 'outline' }
+> = {
   PENDING: { label: 'Pendiente', variant: 'secondary' },
   IN_PROGRESS: { label: 'En Progreso', variant: 'default' },
   COMPLETED: { label: 'Completado', variant: 'default' },
@@ -97,11 +102,14 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
 
   // Selection state
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
-  const [itemDestinations, setItemDestinations] = useState<Map<number, ItemDestination>>(new Map());
+  const [itemDestinations, setItemDestinations] = useState<
+    Map<number, ItemDestination>
+  >(new Map());
 
   // Dialog state
   const [showOCDialog, setShowOCDialog] = useState(false);
   const [showTicketDialog, setShowTicketDialog] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedProviderId, setSelectedProviderId] = useState<string>('');
   const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -110,13 +118,15 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
   const fetchItems = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await axios.get(`/api/maintenance/work-orders/${workOrderId}/items?type=SERVICE,ACTION`);
+      const res = await axios.get(
+        `/api/maintenance/work-orders/${workOrderId}/items?type=SERVICE,ACTION`
+      );
       const fetchedItems = (res.data.items || []) as ServiceItem[];
       setItems(fetchedItems);
 
       // Initialize destinations for pending items
       const initialDestinations = new Map<number, ItemDestination>();
-      fetchedItems.forEach((item) => {
+      fetchedItems.forEach(item => {
         if (item.closureType === 'PENDING') {
           initialDestinations.set(item.workOrderItemId, 'EXTERNAL');
         }
@@ -138,8 +148,8 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
   const fetchResources = useCallback(async () => {
     try {
       const [providersRes, techniciansRes] = await Promise.all([
-        axios.get('/api/providers'),
-        axios.get('/api/technicians'),
+        axios.get('/api/people/providers'),
+        axios.get('/api/people/technicians'),
       ]);
       setProviders(providersRes.data || []);
       setTechnicians(techniciansRes.data || []);
@@ -166,11 +176,11 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
 
   // Toggle all items
   const toggleAllItems = () => {
-    const pendingItems = items.filter((i) => i.closureType === 'PENDING');
+    const pendingItems = items.filter(i => i.closureType === 'PENDING');
     if (selectedItems.size === pendingItems.length) {
       setSelectedItems(new Set());
     } else {
-      setSelectedItems(new Set(pendingItems.map((i) => i.workOrderItemId)));
+      setSelectedItems(new Set(pendingItems.map(i => i.workOrderItemId)));
     }
   };
 
@@ -184,7 +194,7 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
   // Get selected items by destination
   const getSelectedByDestination = (destination: ItemDestination) => {
     return items.filter(
-      (item) =>
+      item =>
         selectedItems.has(item.workOrderItemId) &&
         itemDestinations.get(item.workOrderItemId) === destination
     );
@@ -213,7 +223,7 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
 
     setIsSubmitting(true);
     try {
-      const ocItems = externalItems.map((item) => ({
+      const ocItems = externalItems.map(item => ({
         workOrderItemId: item.workOrderItemId,
         mantItemId: item.mantItemId,
         description: item.description || item.mantItemName,
@@ -231,10 +241,13 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
 
       // Update itemSource for these items
       await Promise.all(
-        externalItems.map((item) =>
-          axios.patch(`/api/maintenance/work-orders/${workOrderId}/items/${item.workOrderItemId}`, {
-            itemSource: 'EXTERNAL',
-          })
+        externalItems.map(item =>
+          axios.patch(
+            `/api/maintenance/work-orders/${workOrderId}/items/${item.workOrderItemId}`,
+            {
+              itemSource: 'EXTERNAL',
+            }
+          )
         )
       );
 
@@ -285,10 +298,12 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
 
     setIsSubmitting(true);
     try {
-      const technician = technicians.find((t) => t.id === parseInt(selectedTechnicianId));
+      const technician = technicians.find(
+        t => t.id === parseInt(selectedTechnicianId)
+      );
       const hourlyRate = technician?.hourlyRate || 50000; // Default hourly rate
 
-      const laborEntries = internalItems.map((item) => ({
+      const laborEntries = internalItems.map(item => ({
         description: item.description || item.mantItemName,
         hours: 1, // Default 1 hour per service
         hourlyRate,
@@ -305,11 +320,14 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
 
       // Update itemSource and closureType for these items
       await Promise.all(
-        internalItems.map((item) =>
-          axios.patch(`/api/maintenance/work-orders/${workOrderId}/items/${item.workOrderItemId}`, {
-            itemSource: 'INTERNAL_STOCK',
-            closureType: 'INTERNAL_TICKET',
-          })
+        internalItems.map(item =>
+          axios.patch(
+            `/api/maintenance/work-orders/${workOrderId}/items/${item.workOrderItemId}`,
+            {
+              itemSource: 'INTERNAL_STOCK',
+              closureType: 'INTERNAL_TICKET',
+            }
+          )
         )
       );
 
@@ -338,7 +356,7 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
   };
 
   // Calculate totals
-  const pendingItems = items.filter((i) => i.closureType === 'PENDING');
+  const pendingItems = items.filter(i => i.closureType === 'PENDING');
   const externalSelected = getSelectedByDestination('EXTERNAL');
   const internalSelected = getSelectedByDestination('INTERNAL');
   const totalEstimated = items.reduce((sum, i) => sum + i.totalCost, 0);
@@ -361,6 +379,14 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
               Servicios ({items.length})
             </CardTitle>
             <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowAddDialog(true)}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Agregar Servicio
+              </Button>
               {externalSelected.length > 0 && (
                 <Button
                   size="sm"
@@ -388,7 +414,9 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
           {items.length === 0 ? (
             <div className="text-center py-8">
               <Wrench className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No hay servicios en esta OT</p>
+              <p className="text-muted-foreground">
+                No hay servicios en esta OT
+              </p>
               <p className="text-sm text-muted-foreground mt-1">
                 Los servicios tipo ACTION y SERVICE aparecerán aquí
               </p>
@@ -401,7 +429,10 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
                     <TableHead className="w-12">
                       {pendingItems.length > 0 && (
                         <Checkbox
-                          checked={selectedItems.size === pendingItems.length && pendingItems.length > 0}
+                          checked={
+                            selectedItems.size === pendingItems.length &&
+                            pendingItems.length > 0
+                          }
                           onCheckedChange={toggleAllItems}
                         />
                       )}
@@ -417,9 +448,10 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {items.map((item) => {
+                  {items.map(item => {
                     const isPending = item.closureType === 'PENDING';
-                    const destination = itemDestinations.get(item.workOrderItemId) || 'EXTERNAL';
+                    const destination =
+                      itemDestinations.get(item.workOrderItemId) || 'EXTERNAL';
 
                     return (
                       <TableRow key={item.workOrderItemId}>
@@ -427,30 +459,47 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
                           {isPending && (
                             <Checkbox
                               checked={selectedItems.has(item.workOrderItemId)}
-                              onCheckedChange={() => toggleItemSelection(item.workOrderItemId)}
+                              onCheckedChange={() =>
+                                toggleItemSelection(item.workOrderItemId)
+                              }
                             />
                           )}
                         </TableCell>
-                        <TableCell className="font-medium">{item.mantItemName}</TableCell>
+                        <TableCell className="font-medium">
+                          {item.mantItemName}
+                        </TableCell>
                         <TableCell>
                           <span
                             className={`text-xs px-1.5 py-0.5 rounded-full ${
-                              typeConfig[item.mantItemType]?.className || 'bg-gray-100 text-gray-700'
+                              typeConfig[item.mantItemType]?.className ||
+                              'bg-gray-100 text-gray-700'
                             }`}
                           >
-                            {typeConfig[item.mantItemType]?.label || item.mantItemType}
+                            {typeConfig[item.mantItemType]?.label ||
+                              item.mantItemType}
                           </span>
                         </TableCell>
-                        <TableCell className="max-w-xs truncate">{item.description}</TableCell>
-                        <TableCell className="text-right">{item.quantity}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(item.totalCost)}</TableCell>
+                        <TableCell className="max-w-xs truncate">
+                          {item.description}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {item.quantity}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(item.unitPrice)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(item.totalCost)}
+                        </TableCell>
                         <TableCell>
                           {isPending ? (
                             <Select
                               value={destination}
-                              onValueChange={(val) =>
-                                setItemDestination(item.workOrderItemId, val as ItemDestination)
+                              onValueChange={val =>
+                                setItemDestination(
+                                  item.workOrderItemId,
+                                  val as ItemDestination
+                                )
                               }
                             >
                               <SelectTrigger className="w-32">
@@ -473,12 +522,18 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
                             </Select>
                           ) : (
                             <Badge variant="outline">
-                              {item.itemSource === 'EXTERNAL' ? 'Externo' : 'Interno'}
+                              {item.itemSource === 'EXTERNAL'
+                                ? 'Externo'
+                                : 'Interno'}
                             </Badge>
                           )}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={statusConfig[item.status]?.variant || 'outline'}>
+                          <Badge
+                            variant={
+                              statusConfig[item.status]?.variant || 'outline'
+                            }
+                          >
                             {statusConfig[item.status]?.label || item.status}
                           </Badge>
                         </TableCell>
@@ -492,8 +547,12 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
               {totalEstimated > 0 && (
                 <div className="flex justify-end mt-4 pt-4 border-t">
                   <div className="text-right">
-                    <span className="text-sm text-muted-foreground">Total Estimado: </span>
-                    <span className="text-lg font-bold">{formatCurrency(totalEstimated)}</span>
+                    <span className="text-sm text-muted-foreground">
+                      Total Estimado:{' '}
+                    </span>
+                    <span className="text-lg font-bold">
+                      {formatCurrency(totalEstimated)}
+                    </span>
                   </div>
                 </div>
               )}
@@ -508,19 +567,23 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
           <DialogHeader>
             <DialogTitle>Generar Orden de Compra de Servicios</DialogTitle>
             <DialogDescription>
-              Se creará una OC para {externalSelected.length} servicio(s) externo(s).
+              Se creará una OC para {externalSelected.length} servicio(s)
+              externo(s).
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Proveedor</label>
-              <Select value={selectedProviderId} onValueChange={setSelectedProviderId}>
+              <Select
+                value={selectedProviderId}
+                onValueChange={setSelectedProviderId}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar proveedor..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {providers.map((p) => (
+                  {providers.map(p => (
                     <SelectItem key={p.id} value={p.id.toString()}>
                       {p.name}
                     </SelectItem>
@@ -532,17 +595,24 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
             <div className="rounded-md bg-muted p-3">
               <h4 className="font-medium mb-2">Items a incluir:</h4>
               <ul className="text-sm space-y-1">
-                {externalSelected.map((item) => (
-                  <li key={item.workOrderItemId} className="flex justify-between">
+                {externalSelected.map(item => (
+                  <li
+                    key={item.workOrderItemId}
+                    className="flex justify-between"
+                  >
                     <span>{item.mantItemName}</span>
-                    <span className="text-muted-foreground">{formatCurrency(item.totalCost)}</span>
+                    <span className="text-muted-foreground">
+                      {formatCurrency(item.totalCost)}
+                    </span>
                   </li>
                 ))}
               </ul>
               <div className="mt-2 pt-2 border-t flex justify-between font-medium">
                 <span>Total:</span>
                 <span>
-                  {formatCurrency(externalSelected.reduce((sum, i) => sum + i.totalCost, 0))}
+                  {formatCurrency(
+                    externalSelected.reduce((sum, i) => sum + i.totalCost, 0)
+                  )}
                 </span>
               </div>
             </div>
@@ -563,7 +633,9 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
               onClick={handleGenerateServiceOC}
               disabled={isSubmitting || !selectedProviderId}
             >
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSubmitting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Crear OC
             </Button>
           </DialogFooter>
@@ -576,19 +648,23 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
           <DialogHeader>
             <DialogTitle>Generar Ticket Interno</DialogTitle>
             <DialogDescription>
-              Se creará un ticket interno para {internalSelected.length} servicio(s).
+              Se creará un ticket interno para {internalSelected.length}{' '}
+              servicio(s).
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Técnico Asignado</label>
-              <Select value={selectedTechnicianId} onValueChange={setSelectedTechnicianId}>
+              <Select
+                value={selectedTechnicianId}
+                onValueChange={setSelectedTechnicianId}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar técnico..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {technicians.map((t) => (
+                  {technicians.map(t => (
                     <SelectItem key={t.id} value={t.id.toString()}>
                       {t.name}
                     </SelectItem>
@@ -600,7 +676,7 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
             <div className="rounded-md bg-muted p-3">
               <h4 className="font-medium mb-2">Servicios a realizar:</h4>
               <ul className="text-sm space-y-1">
-                {internalSelected.map((item) => (
+                {internalSelected.map(item => (
                   <li key={item.workOrderItemId}>{item.mantItemName}</li>
                 ))}
               </ul>
@@ -615,19 +691,35 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowTicketDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowTicketDialog(false)}
+            >
               Cancelar
             </Button>
             <Button
               onClick={handleGenerateInternalTicket}
               disabled={isSubmitting || !selectedTechnicianId}
             >
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSubmitting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Crear Ticket
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Add Item Dialog */}
+      <AddItemDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        workOrderId={workOrderId}
+        type="SERVICE"
+        onSuccess={() => {
+          fetchItems();
+          onRefresh();
+        }}
+      />
     </div>
   );
 }

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,7 +33,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useState } from 'react';
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type WorkOrder = {
   id: number;
@@ -113,10 +112,13 @@ export function ExpensesTab({ workOrder, onRefresh }: ExpensesTabProps) {
   const [loadingRecs, setLoadingRecs] = useState(false);
   const [showRecs, setShowRecs] = useState(false);
 
-  const handleUpdateStatus = async (expenseId: string, newStatus: 'APPROVED' | 'REJECTED') => {
+  const handleUpdateStatus = async (
+    expenseId: string,
+    newStatus: 'APPROVED' | 'REJECTED'
+  ) => {
     try {
       await axios.patch(`/api/maintenance/expenses/${expenseId}`, {
-        status: newStatus
+        status: newStatus,
       });
       toast({
         title: 'Estado actualizado',
@@ -138,10 +140,12 @@ export function ExpensesTab({ workOrder, onRefresh }: ExpensesTabProps) {
     setLoadingRecs(true);
     setShowRecs(true);
     try {
-      const res = await axios.get(`/api/inventory/parts/recommendations?vehicleId=${workOrder.vehicle.id}`);
+      const res = await axios.get(
+        `/api/inventory/parts/recommendations?vehicleId=${workOrder.vehicle.id}`
+      );
       setRecommendations(res.data);
     } catch (error) {
-      console.error("Failed to load recommendations", error);
+      console.error('Failed to load recommendations', error);
     } finally {
       setLoadingRecs(false);
     }
@@ -159,21 +163,31 @@ export function ExpensesTab({ workOrder, onRefresh }: ExpensesTabProps) {
 
   const handleCreateExpense = async () => {
     if (!description || !amount) {
-      toast({ title: "Faltan datos", description: "Descripción y Monto son obligatorios", variant: "destructive" });
+      toast({
+        title: 'Faltan datos',
+        description: 'Descripción y Monto son obligatorios',
+        variant: 'destructive',
+      });
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await axios.post(`/api/maintenance/work-orders/${workOrder.id}/expenses`, {
-        description,
-        amount: parseFloat(amount),
-        expenseType: type,
-        vendor,
-        masterPartId // Pass linked part ID for Watchdog
-      });
+      await axios.post(
+        `/api/maintenance/work-orders/${workOrder.id}/expenses`,
+        {
+          description,
+          amount: parseFloat(amount),
+          expenseType: type,
+          vendor,
+          masterPartId, // Pass linked part ID for Watchdog
+        }
+      );
 
-      toast({ title: "Gasto Registrado", description: "El gasto se ha guardado correctamente" });
+      toast({
+        title: 'Gasto Registrado',
+        description: 'El gasto se ha guardado correctamente',
+      });
       setIsAddOpen(false);
       // Reset Form
       setDescription('');
@@ -183,7 +197,11 @@ export function ExpensesTab({ workOrder, onRefresh }: ExpensesTabProps) {
       onRefresh();
     } catch (error) {
       console.error(error);
-      toast({ title: "Error", description: "No se pudo registrar el gasto", variant: "destructive" });
+      toast({
+        title: 'Error',
+        description: 'No se pudo registrar el gasto',
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -216,10 +234,15 @@ export function ExpensesTab({ workOrder, onRefresh }: ExpensesTabProps) {
                 <Input
                   placeholder="Ej: Filtro de Aceite"
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  onChange={e => setDescription(e.target.value)}
                 />
               </div>
-              <Button variant="outline" size="icon" onClick={loadRecommendations} title="Buscar Compatible">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={loadRecommendations}
+                title="Buscar Compatible"
+              >
                 <Search className="h-4 w-4" />
               </Button>
             </div>
@@ -229,26 +252,52 @@ export function ExpensesTab({ workOrder, onRefresh }: ExpensesTabProps) {
               <Card className="border-blue-200 bg-blue-50/50">
                 <CardHeader className="py-2 px-4 pb-0">
                   <div className="flex justify-between items-center text-xs text-blue-800 font-semibold mb-2">
-                    <span>Repuestos Compatibles ({workOrder.vehicle.brand.name} {workOrder.vehicle.line.name})</span>
-                    <Button variant="ghost" size="sm" className="h-5 w-5 p-0" onClick={() => setShowRecs(false)}><XCircle className="h-4 w-4" /></Button>
+                    <span>
+                      Repuestos Compatibles ({workOrder.vehicle.brand.name}{' '}
+                      {workOrder.vehicle.line.name})
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-5 w-5 p-0"
+                      onClick={() => setShowRecs(false)}
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </Button>
                   </div>
                 </CardHeader>
                 <ScrollArea className="h-[200px] px-4 pb-2">
                   {loadingRecs ? (
                     <div className="text-center py-4 text-xs">Buscando...</div>
                   ) : recommendations.length === 0 ? (
-                    <div className="text-center py-4 text-xs text-muted-foreground">No se encontraron repuestos específicos.</div>
+                    <div className="text-center py-4 text-xs text-muted-foreground">
+                      No se encontraron repuestos específicos.
+                    </div>
                   ) : (
                     <div className="space-y-2">
                       {recommendations.map(part => (
-                        <div key={part.id} className="flex justify-between items-center bg-white p-2 rounded border text-sm cursor-pointer hover:border-blue-400" onClick={() => handleSelectPart(part)}>
+                        <div
+                          key={part.id}
+                          className="flex justify-between items-center bg-white p-2 rounded border text-sm cursor-pointer hover:border-blue-400"
+                          onClick={() => handleSelectPart(part)}
+                        >
                           <div>
-                            <div className="font-medium">{part.description}</div>
-                            <div className="text-xs text-muted-foreground">{part.code}</div>
+                            <div className="font-medium">
+                              {part.description}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {part.code}
+                            </div>
                           </div>
                           <div className="text-right">
-                            {part.referencePrice && <div className="font-bold">${Number(part.referencePrice).toLocaleString()}</div>}
-                            <Badge variant="secondary" className="text-[10px]">Compatible</Badge>
+                            {part.referencePrice && (
+                              <div className="font-bold">
+                                ${Number(part.referencePrice).toLocaleString()}
+                              </div>
+                            )}
+                            <Badge variant="secondary" className="text-[10px]">
+                              Compatible
+                            </Badge>
                           </div>
                         </div>
                       ))}
@@ -265,7 +314,7 @@ export function ExpensesTab({ workOrder, onRefresh }: ExpensesTabProps) {
                   type="number"
                   placeholder="0.00"
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  onChange={e => setAmount(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -276,7 +325,9 @@ export function ExpensesTab({ workOrder, onRefresh }: ExpensesTabProps) {
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(expenseTypeConfig).map(([key, label]) => (
-                      <SelectItem key={key} value={key}>{label}</SelectItem>
+                      <SelectItem key={key} value={key}>
+                        {label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -287,12 +338,14 @@ export function ExpensesTab({ workOrder, onRefresh }: ExpensesTabProps) {
               <Input
                 placeholder="Nombre del taller o tienda"
                 value={vendor}
-                onChange={(e) => setVendor(e.target.value)}
+                onChange={e => setVendor(e.target.value)}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setIsAddOpen(false)}>
+              Cancelar
+            </Button>
             <Button onClick={handleCreateExpense} disabled={isSubmitting}>
               {isSubmitting ? 'Guardando...' : 'Registrar Gasto'}
             </Button>
@@ -377,7 +430,7 @@ export function ExpensesTab({ workOrder, onRefresh }: ExpensesTabProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {workOrder.workOrderExpenses.map((expense) => (
+                {workOrder.workOrderExpenses.map(expense => (
                   <TableRow key={expense.id}>
                     <TableCell className="font-medium">
                       {expense.description}
@@ -415,7 +468,9 @@ export function ExpensesTab({ workOrder, onRefresh }: ExpensesTabProps) {
                             size="icon"
                             variant="ghost"
                             className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
-                            onClick={() => handleUpdateStatus(expense.id, 'APPROVED')}
+                            onClick={() =>
+                              handleUpdateStatus(expense.id, 'APPROVED')
+                            }
                             title="Aprobar"
                           >
                             <CheckCircle2 className="h-4 w-4" />
@@ -424,7 +479,9 @@ export function ExpensesTab({ workOrder, onRefresh }: ExpensesTabProps) {
                             size="icon"
                             variant="ghost"
                             className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            onClick={() => handleUpdateStatus(expense.id, 'REJECTED')}
+                            onClick={() =>
+                              handleUpdateStatus(expense.id, 'REJECTED')
+                            }
                             title="Rechazar"
                           >
                             <XCircle className="h-4 w-4" />
@@ -458,7 +515,7 @@ export function ExpensesTab({ workOrder, onRefresh }: ExpensesTabProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {workOrder.invoices.map((invoice) => (
+                {workOrder.invoices.map(invoice => (
                   <TableRow key={invoice.id}>
                     <TableCell className="font-medium">
                       {invoice.invoiceNumber}

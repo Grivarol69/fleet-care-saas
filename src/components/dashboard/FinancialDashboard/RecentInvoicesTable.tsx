@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import useSWR from "swr";
-import axios from "axios";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import useSWR from 'swr';
+import axios from 'axios';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -10,31 +10,34 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Loader2, AlertCircle, FileText, ExternalLink } from "lucide-react";
-import Link from "next/link";
-import type { RecentInvoice } from "@/app/api/invoices/recent/route";
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Loader2, AlertCircle, FileText, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
+import type { RecentInvoice } from '@/app/api/invoices/recent/route';
 
-const fetcher = (url: string) => axios.get(url).then((res) => res.data);
+const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
 // Mapeo de estados a variantes de Badge
-const statusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  PENDING: "outline",
-  APPROVED: "secondary",
-  PAID: "default",
-  OVERDUE: "destructive",
-  CANCELLED: "outline",
+const statusVariants: Record<
+  string,
+  'default' | 'secondary' | 'destructive' | 'outline'
+> = {
+  PENDING: 'outline',
+  APPROVED: 'secondary',
+  PAID: 'default',
+  OVERDUE: 'destructive',
+  CANCELLED: 'outline',
 };
 
 // Labels en español
 const statusLabels: Record<string, string> = {
-  PENDING: "Pendiente",
-  APPROVED: "Aprobada",
-  PAID: "Pagada",
-  OVERDUE: "Vencida",
-  CANCELLED: "Cancelada",
+  PENDING: 'Pendiente',
+  APPROVED: 'Aprobada',
+  PAID: 'Pagada',
+  OVERDUE: 'Vencida',
+  CANCELLED: 'Cancelada',
 };
 
 // Componente de Loading
@@ -76,7 +79,9 @@ function EmptyState() {
       <div className="text-center text-muted-foreground">
         <FileText className="h-16 w-16 mx-auto mb-4 text-gray-300" />
         <p className="text-lg font-medium">No hay facturas registradas</p>
-        <p className="text-sm mt-1">Las facturas aparecerán aquí cuando las registres</p>
+        <p className="text-sm mt-1">
+          Las facturas aparecerán aquí cuando las registres
+        </p>
       </div>
     </div>
   );
@@ -84,7 +89,7 @@ function EmptyState() {
 
 export function RecentInvoicesTable() {
   const { data, error, isLoading, mutate } = useSWR<RecentInvoice[]>(
-    "/api/invoices/recent",
+    '/api/invoices/recent',
     fetcher,
     {
       revalidateOnFocus: false,
@@ -123,7 +128,7 @@ export function RecentInvoicesTable() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.map((invoice) => (
+              {data.map(invoice => (
                 <TableRow
                   key={invoice.id}
                   className="hover:bg-purple-50/50 transition-colors"
@@ -155,10 +160,10 @@ export function RecentInvoicesTable() {
 
                   {/* Fecha */}
                   <TableCell>
-                    {new Date(invoice.invoiceDate).toLocaleDateString("es-ES", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
+                    {new Date(invoice.invoiceDate).toLocaleDateString('es-ES', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
                     })}
                   </TableCell>
 
