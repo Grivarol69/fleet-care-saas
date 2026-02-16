@@ -1,0 +1,2492 @@
+
+> fleet-care-saas@0.1.0 dev /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas
+> next dev
+
+   ▲ Next.js 15.4.7
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.0.13:3000
+   - Environments: .env.local, .env
+   - Experiments (use with caution):
+     ✓ optimizeCss
+     · optimizePackageImports
+
+ ✓ Starting...
+ ✓ Ready in 1738ms
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 694ms (216 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (187kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+ ○ Compiling / ...
+ ✓ Compiled / in 6.3s (1746 modules)
+ ✓ Compiled in 868ms (439 modules)
+ GET / 307 in 7805ms
+ ○ Compiling /sign-in/[[...sign-in]] ...
+ ✓ Compiled /sign-in/[[...sign-in]] in 2s (1719 modules)
+ GET /sign-in 200 in 3212ms
+ POST /sign-in 200 in 62ms
+ HEAD / 307 in 98ms
+ GET /sign-in 200 in 112ms
+ POST /sign-in 200 in 23ms
+ GET /sign-in/SignIn_clerk_catchall_check_1771283378834 200 in 69ms
+ GET /sign-in 200 in 72ms
+ POST /sign-in 200 in 22ms
+ GET /sign-in/SignIn_clerk_catchall_check_1771283479938 200 in 58ms
+ GET /sign-in 200 in 80ms
+ POST /sign-in 200 in 20ms
+ GET /sign-in/SignIn_clerk_catchall_check_1771283570391 200 in 71ms
+ GET /sign-in 200 in 179ms
+ GET /sign-in 200 in 200ms
+ GET /sign-in 200 in 115ms
+ POST /sign-in 200 in 57ms
+ POST /sign-in 200 in 50ms
+ GET /sign-in/SignIn_clerk_catchall_check_1771283651843 200 in 77ms
+ GET /sign-in 200 in 67ms
+ GET /sign-in 200 in 100ms
+ GET /sign-in 200 in 120ms
+ POST /sign-in 200 in 38ms
+ POST /sign-in 200 in 17ms
+ GET / 307 in 88ms
+ GET /sign-in 200 in 86ms
+ POST /sign-in 200 in 83ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 525ms (1298 modules)
+ GET /favicon.ico 200 in 641ms
+ GET /sign-in/SignIn_clerk_catchall_check_1771283995288 200 in 498ms
+ GET / 307 in 71ms
+[ResponseAborted: ]
+ GET /sign-in 200 in 137ms
+ GET /sign-in 200 in 42ms
+ GET /favicon.ico 200 in 18ms
+ GET / 307 in 47ms
+ GET / 307 in 41ms
+[ResponseAborted: ]
+ GET /sign-in 200 in 271ms
+ GET /sign-in 200 in 43ms
+ GET /sign-in 200 in 75ms
+ GET /favicon.ico 200 in 20ms
+ GET /sign-in 200 in 48ms
+ GET /favicon.ico 200 in 12ms
+ GET / 307 in 35ms
+ GET /sign-in 200 in 57ms
+ GET / 307 in 92ms
+ GET /sign-in 200 in 73ms
+ GET /favicon.ico 200 in 13ms
+ GET /sign-in 200 in 51ms
+ GET / 307 in 73ms
+ GET /sign-in 200 in 45ms
+ GET /sign-in 200 in 71ms
+ GET /favicon.ico 200 in 41ms
+ GET /sign-in 200 in 33ms
+ GET /favicon.ico 200 in 11ms
+ GET / 307 in 35ms
+ GET /sign-in 200 in 46ms
+ GET /sign-in 200 in 31ms
+ GET /favicon.ico 200 in 10ms
+ GET / 307 in 34ms
+[ResponseAborted: ]
+ GET / 307 in 43ms
+ GET /sign-in 200 in 68ms
+ GET /sign-in 200 in 39ms
+ GET /sign-in 200 in 67ms
+ GET /favicon.ico 200 in 17ms
+ GET /sign-in 200 in 41ms
+ GET /favicon.ico 200 in 13ms
+ GET / 307 in 56ms
+ GET /sign-in 200 in 45ms
+ GET /sign-in 200 in 35ms
+ GET /favicon.ico 200 in 10ms
+ GET / 307 in 33ms
+ GET /sign-in 200 in 48ms
+ GET /sign-in 200 in 31ms
+ GET /favicon.ico 200 in 11ms
+ GET / 307 in 33ms
+ GET /sign-in 200 in 39ms
+ GET / 307 in 65ms
+ GET /sign-in 200 in 32ms
+ GET /favicon.ico 200 in 12ms
+ GET /sign-in 200 in 43ms
+ GET /sign-in 200 in 33ms
+ GET /favicon.ico 200 in 12ms
+ GET / 307 in 40ms
+ GET /sign-in 200 in 39ms
+ GET /sign-in 200 in 38ms
+ GET /favicon.ico 200 in 9ms
+ GET / 307 in 35ms
+ GET /sign-in 200 in 44ms
+ GET /sign-in 200 in 32ms
+ GET /favicon.ico 200 in 10ms
+ GET / 307 in 35ms
+ GET /sign-in 200 in 31ms
+ GET /sign-in 200 in 34ms
+ GET /favicon.ico 200 in 10ms
+ GET / 307 in 37ms
+ GET /sign-in 200 in 33ms
+ GET / 307 in 37ms
+ GET /sign-in 200 in 64ms
+ GET /favicon.ico 200 in 12ms
+ GET /sign-in 200 in 51ms
+ GET /sign-in 200 in 38ms
+ GET /favicon.ico 200 in 34ms
+ GET / 307 in 63ms
+ GET /sign-in 200 in 30ms
+ GET /sign-in 200 in 31ms
+ GET /favicon.ico 200 in 12ms
+ GET / 307 in 31ms
+ GET /sign-in 200 in 32ms
+ GET /sign-in 200 in 32ms
+ GET /favicon.ico 200 in 8ms
+ GET / 307 in 32ms
+ GET /sign-in 200 in 36ms
+ GET /sign-in 200 in 32ms
+ GET /favicon.ico 200 in 9ms
+ GET / 307 in 41ms
+ GET /sign-in 200 in 46ms
+ GET /sign-in 200 in 31ms
+ GET /favicon.ico 200 in 9ms
+ GET / 307 in 36ms
+ GET /sign-in 200 in 32ms
+ GET /sign-in 200 in 41ms
+ GET /favicon.ico 200 in 37ms
+ GET / 307 in 52ms
+ GET / 307 in 44ms
+ GET /sign-in 200 in 66ms
+ GET /sign-in 200 in 40ms
+ GET /sign-in 200 in 62ms
+ GET /favicon.ico 200 in 15ms
+ GET /sign-in 200 in 35ms
+ GET /favicon.ico 200 in 9ms
+ GET / 307 in 32ms
+ GET /sign-in 200 in 31ms
+ GET /sign-in 200 in 45ms
+ GET /favicon.ico 200 in 9ms
+ GET / 307 in 28ms
+ GET /sign-in 200 in 34ms
+ GET /sign-in 200 in 31ms
+ GET /favicon.ico 200 in 11ms
+ GET / 307 in 40ms
+ GET /sign-in 200 in 38ms
+ GET /sign-in 200 in 29ms
+ GET /favicon.ico 200 in 9ms
+ GET / 307 in 32ms
+ GET /sign-in 200 in 33ms
+ GET /sign-in 200 in 32ms
+ GET /favicon.ico 200 in 9ms
+ GET / 307 in 46ms
+ GET / 307 in 69ms
+ GET / 307 in 72ms
+ GET /sign-in 200 in 86ms
+ GET /sign-in 200 in 83ms
+ GET /sign-in 200 in 64ms
+ GET /sign-in 200 in 71ms
+ GET /sign-in 200 in 77ms
+ GET /favicon.ico 200 in 47ms
+ GET /sign-in 200 in 83ms
+ GET /favicon.ico 200 in 65ms
+ GET / 307 in 109ms
+ GET /favicon.ico 200 in 48ms
+ GET / 307 in 43ms
+ GET /sign-in 200 in 62ms
+ GET /sign-in 200 in 38ms
+ GET /sign-in 200 in 60ms
+ GET /favicon.ico 200 in 16ms
+ GET /sign-in 200 in 37ms
+ GET /favicon.ico 200 in 9ms
+ GET / 307 in 31ms
+ GET /sign-in 200 in 32ms
+ GET /sign-in 200 in 32ms
+ GET /favicon.ico 200 in 8ms
+ GET / 307 in 31ms
+ GET /sign-in 200 in 41ms
+ GET /sign-in 200 in 31ms
+ GET /favicon.ico 200 in 13ms
+ GET / 307 in 33ms
+ GET /sign-in 200 in 35ms
+ GET / 307 in 41ms
+ GET /sign-in 200 in 68ms
+ GET /favicon.ico 200 in 39ms
+ GET / 307 in 55ms
+ GET /sign-in 200 in 68ms
+ GET /sign-in 200 in 41ms
+ GET /sign-in 200 in 74ms
+ GET / 307 in 79ms
+ GET /favicon.ico 200 in 74ms
+ GET / 307 in 112ms
+ GET /sign-in 200 in 122ms
+ GET / 307 in 146ms
+ GET /favicon.ico 200 in 52ms
+ GET /sign-in 200 in 51ms
+ GET /sign-in 200 in 82ms
+ GET /sign-in 200 in 76ms
+ GET / 307 in 99ms
+ GET /sign-in 200 in 100ms
+ GET /sign-in 200 in 101ms
+ GET /favicon.ico 200 in 51ms
+ GET /sign-in 200 in 78ms
+ GET /favicon.ico 200 in 72ms
+ GET /sign-in 200 in 105ms
+ GET /favicon.ico 200 in 46ms
+ GET / 307 in 74ms
+ GET /sign-in 200 in 58ms
+ GET /favicon.ico 200 in 23ms
+ GET /sign-in 200 in 64ms
+ GET /sign-in 200 in 46ms
+ GET /favicon.ico 200 in 8ms
+ GET / 307 in 39ms
+ GET /sign-in 200 in 44ms
+ GET /sign-in 200 in 31ms
+ GET /favicon.ico 200 in 8ms
+ GET / 307 in 31ms
+ GET /sign-in 200 in 31ms
+ GET /sign-in 200 in 33ms
+ GET /favicon.ico 200 in 16ms
+ GET / 307 in 35ms
+ GET /sign-in 200 in 31ms
+ GET /sign-in 200 in 29ms
+ GET /favicon.ico 200 in 9ms
+ GET / 307 in 39ms
+ GET /sign-in 200 in 35ms
+ GET / 307 in 50ms
+ GET /sign-in 200 in 102ms
+ GET / 307 in 109ms
+[ResponseAborted: ]
+ GET / 307 in 341ms
+ GET /favicon.ico 200 in 56ms
+ GET /sign-in 200 in 89ms
+ GET /sign-in 200 in 153ms
+ GET / 307 in 165ms
+[ResponseAborted: ]
+ GET / 307 in 320ms
+ GET /sign-in 200 in 53ms
+ GET /sign-in 200 in 79ms
+ GET /sign-in 200 in 117ms
+ GET / 307 in 134ms
+ GET /favicon.ico 200 in 73ms
+ GET /sign-in 200 in 163ms
+ GET /sign-in 200 in 163ms
+ GET /favicon.ico 200 in 101ms
+ GET /sign-in 200 in 152ms
+ GET / 307 in 170ms
+ GET / 307 in 113ms
+ GET /sign-in 200 in 136ms
+ GET /favicon.ico 200 in 79ms
+ GET /sign-in 200 in 129ms
+ GET /sign-in 200 in 130ms
+ GET /favicon.ico 200 in 59ms
+ GET /sign-in 200 in 115ms
+ GET /favicon.ico 200 in 73ms
+ GET /sign-in 200 in 120ms
+ GET /sign-in 200 in 121ms
+ GET /favicon.ico 200 in 17ms
+ GET /sign-in 200 in 49ms
+ GET /sign-in 200 in 64ms
+ GET /favicon.ico 200 in 36ms
+ GET /favicon.ico 200 in 9ms
+ GET / 307 in 34ms
+ GET /sign-in 200 in 39ms
+ GET /sign-in 200 in 38ms
+ GET /favicon.ico 200 in 9ms
+ GET / 307 in 28ms
+ GET /sign-in 200 in 34ms
+ GET /sign-in 200 in 33ms
+ GET /favicon.ico 200 in 11ms
+ GET / 307 in 31ms
+ GET /sign-in 200 in 43ms
+ GET / 307 in 42ms
+ GET /sign-in 200 in 63ms
+ GET /favicon.ico 200 in 16ms
+ GET /sign-in 200 in 36ms
+ GET / 307 in 39ms
+ GET /sign-in 200 in 61ms
+ GET /favicon.ico 200 in 18ms
+ GET /sign-in 200 in 42ms
+ GET / 307 in 42ms
+ GET /sign-in 200 in 67ms
+ GET / 307 in 100ms
+ GET /favicon.ico 200 in 47ms
+ GET /sign-in 200 in 76ms
+ GET / 307 in 74ms
+ GET /sign-in 200 in 95ms
+ GET / 307 in 74ms
+ GET /sign-in 200 in 140ms
+ GET /sign-in 200 in 122ms
+ GET / 307 in 151ms
+[ResponseAborted: ]
+ GET /favicon.ico 200 in 102ms
+ GET /sign-in 200 in 329ms
+ GET /sign-in 200 in 131ms
+ GET /favicon.ico 200 in 61ms
+ GET / 307 in 133ms
+ GET /sign-in 200 in 172ms
+ GET /sign-in 200 in 174ms
+ GET / 307 in 201ms
+ GET /favicon.ico 200 in 55ms
+ GET /sign-in 200 in 72ms
+ GET /sign-in 200 in 87ms
+ GET /sign-in 200 in 111ms
+ GET /favicon.ico 200 in 73ms
+ GET /sign-in 200 in 121ms
+ GET / 307 in 130ms
+ GET /favicon.ico 200 in 72ms
+ GET /sign-in 200 in 106ms
+ GET / 307 in 79ms
+ GET / 307 in 102ms
+ GET /favicon.ico 200 in 71ms
+ GET /sign-in 200 in 151ms
+ GET /sign-in 200 in 144ms
+ GET /favicon.ico 200 in 26ms
+ GET /sign-in 200 in 60ms
+ GET / 307 in 89ms
+ GET /sign-in 200 in 128ms
+ GET /sign-in 200 in 147ms
+ GET /sign-in 200 in 74ms
+ GET /favicon.ico 200 in 68ms
+ GET /sign-in 200 in 88ms
+ GET /sign-in 200 in 106ms
+ GET /favicon.ico 200 in 71ms
+ GET /favicon.ico 200 in 18ms
+ GET /sign-in 200 in 37ms
+ GET /favicon.ico 200 in 11ms
+ GET / 307 in 32ms
+ GET /sign-in 200 in 32ms
+ GET / 307 in 39ms
+ GET /sign-in 200 in 62ms
+ GET /favicon.ico 200 in 16ms
+ GET /sign-in 200 in 37ms
+ GET /sign-in 200 in 31ms
+ GET /favicon.ico 200 in 10ms
+ GET / 307 in 33ms
+ GET /sign-in 200 in 32ms
+ GET /sign-in 200 in 31ms
+ GET /favicon.ico 200 in 12ms
+ GET / 307 in 32ms
+ GET /sign-in 200 in 49ms
+ GET / 307 in 41ms
+ GET /sign-in 200 in 60ms
+ GET /favicon.ico 200 in 23ms
+ GET /sign-in 200 in 51ms
+ GET / 307 in 62ms
+ GET /sign-in 200 in 42ms
+ GET / 307 in 75ms
+ GET /favicon.ico 200 in 68ms
+ GET /sign-in 200 in 102ms
+ GET /sign-in 200 in 37ms
+ GET /sign-in 200 in 61ms
+ GET /favicon.ico 200 in 17ms
+ GET /sign-in 200 in 38ms
+ GET /favicon.ico 200 in 14ms
+ GET / 307 in 37ms
+ GET / 307 in 47ms
+ GET /sign-in 200 in 97ms
+ GET / 307 in 101ms
+[ResponseAborted: ]
+ GET / 307 in 201ms
+ GET / 307 in 90ms
+ GET /sign-in 200 in 126ms
+ GET /sign-in 200 in 187ms
+ GET /sign-in 200 in 188ms
+ GET / 307 in 194ms
+[ResponseAborted: ]
+ GET /sign-in 200 in 271ms
+ GET /favicon.ico 200 in 67ms
+ GET /sign-in 200 in 313ms
+ GET /sign-in 200 in 165ms
+ GET / 307 in 389ms
+[ResponseAborted: ]
+ GET /sign-in 200 in 401ms
+ GET /sign-in 200 in 399ms
+ GET / 307 in 434ms
+[ResponseAborted: ]
+ GET /favicon.ico 200 in 262ms
+ GET / 307 in 355ms
+ GET /sign-in 200 in 422ms
+ GET /favicon.ico 200 in 189ms
+ GET /sign-in 200 in 296ms
+ GET /sign-in 200 in 296ms
+ GET / 307 in 310ms
+[ResponseAborted: ]
+ GET / 307 in 462ms
+[ResponseAborted: ]
+ GET / 307 in 608ms
+ GET /favicon.ico 200 in 446ms
+ GET /sign-in 200 in 523ms
+ GET /sign-in 200 in 524ms
+ GET /favicon.ico 200 in 97ms
+ GET /sign-in 200 in 120ms
+ GET /sign-in 200 in 138ms
+ GET /favicon.ico 200 in 82ms
+ GET /sign-in 200 in 184ms
+ GET /sign-in 200 in 185ms
+ GET /sign-in 200 in 186ms
+ GET / 307 in 197ms
+[ResponseAborted: ]
+ GET / 307 in 339ms
+[ResponseAborted: ]
+ GET /favicon.ico 200 in 414ms
+ GET /sign-in 200 in 469ms
+ GET /sign-in 200 in 99ms
+ GET /favicon.ico 200 in 51ms
+ GET / 307 in 88ms
+ GET /sign-in 200 in 187ms
+ GET /sign-in 200 in 188ms
+ GET /sign-in 200 in 189ms
+ GET /sign-in 200 in 189ms
+ GET /sign-in 200 in 190ms
+ GET / 307 in 215ms
+ GET /favicon.ico 200 in 192ms
+ GET /favicon.ico 200 in 57ms
+ GET /favicon.ico 200 in 56ms
+ GET /favicon.ico 200 in 56ms
+ GET /sign-in 200 in 79ms
+ GET /sign-in 200 in 80ms
+ GET /sign-in 200 in 81ms
+ GET /sign-in 200 in 112ms
+ GET /favicon.ico 200 in 42ms
+ GET /favicon.ico 200 in 41ms
+ GET /sign-in 200 in 43ms
+ GET /sign-in 200 in 67ms
+ GET /favicon.ico 200 in 41ms
+ GET /favicon.ico 200 in 46ms
+ GET / 307 in 75ms
+ GET / 307 in 37ms
+ GET /sign-in 200 in 47ms
+ GET /sign-in 200 in 68ms
+ GET / 307 in 72ms
+ GET /sign-in 200 in 82ms
+ GET /sign-in 200 in 84ms
+ GET /favicon.ico 200 in 79ms
+ GET /sign-in 200 in 123ms
+ GET /favicon.ico 200 in 46ms
+ GET / 307 in 51ms
+ GET /sign-in 200 in 61ms
+ GET /favicon.ico 200 in 16ms
+ GET /sign-in 200 in 38ms
+ GET /sign-in 200 in 33ms
+ GET /favicon.ico 200 in 11ms
+ GET / 307 in 32ms
+ GET /sign-in 200 in 31ms
+ GET /sign-in 200 in 32ms
+ GET /favicon.ico 200 in 16ms
+ GET / 307 in 36ms
+ GET /sign-in 200 in 29ms
+ GET /sign-in 200 in 32ms
+ GET /favicon.ico 200 in 10ms
+ GET / 307 in 32ms
+ GET / 307 in 42ms
+ GET /sign-in 200 in 107ms
+ GET / 307 in 113ms
+[ResponseAborted: ]
+ GET / 307 in 265ms
+[ResponseAborted: ]
+ GET /sign-in 200 in 72ms
+ GET /sign-in 200 in 111ms
+ GET /sign-in 200 in 113ms
+ GET / 307 in 206ms
+[ResponseAborted: ]
+ GET / 307 in 398ms
+[ResponseAborted: ]
+ GET / 307 in 584ms
+[ResponseAborted: ]
+ GET / 307 in 781ms
+ GET /sign-in 200 in 834ms
+ GET /favicon.ico 200 in 750ms
+ GET /sign-in 200 in 116ms
+ GET / 307 in 201ms
+[ResponseAborted: ]
+ GET / 307 in 360ms
+ GET /sign-in 200 in 333ms
+ GET / 307 in 417ms
+[ResponseAborted: ]
+ GET / 307 in 583ms
+[ResponseAborted: ]
+ GET / 307 in 711ms
+[ResponseAborted: ]
+ GET / 307 in 863ms
+ GET /sign-in 200 in 951ms
+ GET /sign-in 200 in 952ms
+ GET /sign-in 200 in 953ms
+ GET /favicon.ico 200 in 886ms
+ GET / 307 in 974ms
+ GET /sign-in 200 in 981ms
+ GET /sign-in 200 in 979ms
+ GET /favicon.ico 200 in 729ms
+ GET /sign-in 200 in 115ms
+ GET /favicon.ico 200 in 74ms
+ GET /sign-in 200 in 160ms
+ GET /sign-in 200 in 246ms
+ GET /sign-in 200 in 247ms
+ GET /sign-in 200 in 248ms
+ GET /sign-in 200 in 249ms
+ GET /sign-in 200 in 250ms
+ GET /sign-in 200 in 251ms
+ GET /sign-in 200 in 252ms
+ GET /sign-in 200 in 304ms
+ GET / 307 in 317ms
+ GET /sign-in 200 in 283ms
+ GET /favicon.ico 200 in 123ms
+ GET /favicon.ico 200 in 123ms
+ GET /favicon.ico 200 in 123ms
+ GET /sign-in 200 in 154ms
+ GET /sign-in 200 in 178ms
+ GET /sign-in 200 in 140ms
+ GET /favicon.ico 200 in 113ms
+ GET / 307 in 246ms
+[ResponseAborted: ]
+ GET /sign-in 200 in 381ms
+ GET /sign-in 200 in 382ms
+ GET /sign-in 200 in 383ms
+ GET /favicon.ico 200 in 312ms
+ GET /sign-in 200 in 381ms
+ GET /sign-in 200 in 382ms
+ GET /favicon.ico 200 in 322ms
+ GET /favicon.ico 200 in 322ms
+ GET /favicon.ico 200 in 94ms
+ GET /favicon.ico 200 in 94ms
+ GET /favicon.ico 200 in 95ms
+ GET /favicon.ico 200 in 28ms
+ GET /sign-in 200 in 47ms
+ GET /sign-in 200 in 60ms
+ GET /sign-in 200 in 43ms
+ GET /favicon.ico 200 in 43ms
+ GET /favicon.ico 200 in 11ms
+ GET / 307 in 36ms
+ GET / 307 in 39ms
+ GET /sign-in 200 in 65ms
+ GET /sign-in 200 in 43ms
+ GET /sign-in 200 in 90ms
+ GET / 307 in 94ms
+[ResponseAborted: ]
+ GET /favicon.ico 200 in 20ms
+ GET /sign-in 200 in 49ms
+ GET /sign-in 200 in 73ms
+ GET /favicon.ico 200 in 46ms
+ GET / 307 in 45ms
+ GET / 307 in 96ms
+[ResponseAborted: ]
+ GET / 307 in 253ms
+ GET /sign-in 200 in 294ms
+ GET /favicon.ico 200 in 48ms
+ GET /sign-in 200 in 98ms
+ GET / 307 in 82ms
+ GET /sign-in 200 in 133ms
+ GET /sign-in 200 in 134ms
+ GET / 307 in 123ms
+ GET / 307 in 125ms
+ GET /sign-in 200 in 133ms
+ GET /sign-in 200 in 177ms
+ GET / 307 in 285ms
+[ResponseAborted: ]
+ GET / 307 in 445ms
+[ResponseAborted: ]
+ GET / 307 in 595ms
+[ResponseAborted: ]
+ GET / 307 in 788ms
+[ResponseAborted: ]
+ GET / 307 in 931ms
+[ResponseAborted: ]
+ GET / 307 in 1073ms
+ GET /sign-in 200 in 1127ms
+ GET /sign-in 200 in 1120ms
+ GET /favicon.ico 200 in 1047ms
+ GET /sign-in 200 in 953ms
+ GET / 307 in 1073ms
+ GET /sign-in 200 in 142ms
+ GET /favicon.ico 200 in 153ms
+ GET /favicon.ico 200 in 154ms
+ GET / 307 in 238ms
+ GET /sign-in 200 in 195ms
+ GET / 307 in 254ms
+[ResponseAborted: ]
+ GET / 307 in 395ms
+[ResponseAborted: ]
+ GET / 307 in 554ms
+ GET /sign-in 200 in 654ms
+ GET /sign-in 200 in 655ms
+ GET /sign-in 200 in 656ms
+ GET /sign-in 200 in 657ms
+ GET /sign-in 200 in 658ms
+ GET /sign-in 200 in 657ms
+ GET /favicon.ico 200 in 523ms
+ GET /sign-in 200 in 596ms
+ GET /sign-in 200 in 530ms
+ GET /sign-in 200 in 189ms
+ GET /sign-in 200 in 150ms
+ GET /favicon.ico 200 in 82ms
+ GET /sign-in 200 in 147ms
+ GET /sign-in 200 in 148ms
+ GET /sign-in 200 in 146ms
+ GET / 307 in 200ms
+ GET /favicon.ico 200 in 256ms
+ GET /sign-in 200 in 315ms
+ GET /sign-in 200 in 316ms
+ GET /sign-in 200 in 317ms
+ GET /sign-in 200 in 318ms
+ GET /sign-in 200 in 319ms
+ GET /sign-in 200 in 320ms
+ GET /sign-in 200 in 307ms
+ GET /favicon.ico 200 in 92ms
+ GET /favicon.ico 200 in 92ms
+ GET /favicon.ico 200 in 92ms
+ GET /favicon.ico 200 in 92ms
+ GET /favicon.ico 200 in 92ms
+ GET /favicon.ico 200 in 92ms
+ GET /sign-in 200 in 247ms
+ GET /sign-in 200 in 168ms
+ GET /sign-in 200 in 169ms
+ GET /sign-in 200 in 170ms
+ GET /favicon.ico 200 in 147ms
+ GET /sign-in 200 in 225ms
+ GET / 307 in 227ms
+[ResponseAborted: ]
+ GET / 307 in 377ms
+[ResponseAborted: ]
+ GET / 307 in 537ms
+[ResponseAborted: ]
+ GET /favicon.ico 200 in 636ms
+ GET /favicon.ico 200 in 558ms
+ GET /favicon.ico 200 in 558ms
+ GET /favicon.ico 200 in 558ms
+ GET / 307 in 41ms
+ GET /sign-in 200 in 174ms
+ GET /sign-in 200 in 176ms
+ GET /sign-in 200 in 176ms
+ GET /sign-in 200 in 176ms
+ GET / 307 in 178ms
+[ResponseAborted: ]
+ GET / 307 in 330ms
+[ResponseAborted: ]
+ GET /favicon.ico 200 in 37ms
+ GET /sign-in 200 in 69ms
+ GET /sign-in 200 in 138ms
+ GET /sign-in 200 in 139ms
+ GET /sign-in 200 in 139ms
+ GET /sign-in 200 in 140ms
+ GET / 307 in 315ms
+[ResponseAborted: ]
+ GET / 307 in 471ms
+[ResponseAborted: ]
+ GET / 307 in 655ms
+[ResponseAborted: ]
+ GET / 307 in 804ms
+[ResponseAborted: ]
+ GET / 307 in 965ms
+[ResponseAborted: ]
+ GET / 307 in 1117ms
+[ResponseAborted: ]
+ GET / 307 in 1261ms
+[ResponseAborted: ]
+ GET / 307 in 1415ms
+ GET /sign-in 200 in 1458ms
+ GET /favicon.ico 200 in 1344ms
+ GET /favicon.ico 200 in 1344ms
+ GET /favicon.ico 200 in 1344ms
+ GET /sign-in 200 in 93ms
+ GET /sign-in 200 in 94ms
+ GET / 307 in 230ms
+[ResponseAborted: ]
+ GET / 307 in 392ms
+[ResponseAborted: ]
+ GET / 307 in 553ms
+[ResponseAborted: ]
+ GET / 307 in 705ms
+[ResponseAborted: ]
+ GET / 307 in 860ms
+ GET /sign-in 200 in 1046ms
+ GET /sign-in 200 in 1047ms
+ GET /sign-in 200 in 1036ms
+ GET /sign-in 200 in 1038ms
+ GET /sign-in 200 in 1039ms
+ GET /sign-in 200 in 1040ms
+ GET /sign-in 200 in 1041ms
+ GET /sign-in 200 in 1041ms
+ GET / 307 in 1068ms
+ GET /sign-in 200 in 1105ms
+ GET /favicon.ico 200 in 1052ms
+ GET /favicon.ico 200 in 1052ms
+ GET / 307 in 65ms
+ GET /favicon.ico 200 in 70ms
+ GET /sign-in 200 in 378ms
+ GET /sign-in 200 in 378ms
+ GET /sign-in 200 in 379ms
+ GET /sign-in 200 in 381ms
+ GET /sign-in 200 in 382ms
+ GET /sign-in 200 in 382ms
+ GET /sign-in 200 in 383ms
+ GET /sign-in 200 in 384ms
+ GET /sign-in 200 in 385ms
+ GET /sign-in 200 in 386ms
+ GET /sign-in 200 in 387ms
+ GET /sign-in 200 in 388ms
+ GET /sign-in 200 in 388ms
+ GET / 307 in 399ms
+[ResponseAborted: ]
+ GET / 307 in 547ms
+[ResponseAborted: ]
+ GET /sign-in 200 in 734ms
+ GET /favicon.ico 200 in 95ms
+ GET /favicon.ico 200 in 109ms
+ GET /favicon.ico 200 in 109ms
+ GET /favicon.ico 200 in 109ms
+ GET /favicon.ico 200 in 108ms
+ GET /favicon.ico 200 in 108ms
+ GET /favicon.ico 200 in 108ms
+ GET /favicon.ico 200 in 108ms
+ GET /sign-in 200 in 91ms
+ GET /sign-in 200 in 211ms
+ GET /sign-in 200 in 213ms
+ GET /sign-in 200 in 213ms
+ GET /sign-in 200 in 213ms
+ GET /sign-in 200 in 214ms
+ GET /sign-in 200 in 215ms
+ GET /sign-in 200 in 216ms
+ GET /sign-in 200 in 232ms
+ GET /favicon.ico 200 in 65ms
+ GET /favicon.ico 200 in 65ms
+ GET /favicon.ico 200 in 65ms
+ GET /favicon.ico 200 in 65ms
+ GET /favicon.ico 200 in 65ms
+ GET /favicon.ico 200 in 79ms
+ GET /sign-in 200 in 107ms
+ GET / 307 in 215ms
+[ResponseAborted: ]
+ GET / 307 in 381ms
+ GET /sign-in 200 in 383ms
+ GET /sign-in 200 in 384ms
+ GET /favicon.ico 200 in 329ms
+ GET / 307 in 365ms
+[ResponseAborted: ]
+ GET /favicon.ico 200 in 210ms
+ GET /favicon.ico 200 in 210ms
+ GET /sign-in 200 in 84ms
+ GET /sign-in 200 in 85ms
+ GET /sign-in 200 in 100ms
+ GET /sign-in 200 in 56ms
+ GET /sign-in 200 in 89ms
+ GET /sign-in 200 in 114ms
+ GET /favicon.ico 200 in 80ms
+ GET /favicon.ico 200 in 64ms
+ GET / 307 in 131ms
+ GET / 307 in 236ms
+[ResponseAborted: ]
+ GET / 307 in 387ms
+[ResponseAborted: ]
+ GET / 307 in 537ms
+[ResponseAborted: ]
+ GET / 307 in 685ms
+[ResponseAborted: ]
+ GET / 307 in 824ms
+[ResponseAborted: ]
+ GET / 307 in 969ms
+[ResponseAborted: ]
+ GET / 307 in 1119ms
+ GET /favicon.ico 200 in 1086ms
+ GET /sign-in 200 in 76ms
+ GET /sign-in 200 in 134ms
+ GET /sign-in 200 in 135ms
+ GET /sign-in 200 in 136ms
+ GET / 307 in 383ms
+[ResponseAborted: ]
+ GET / 307 in 549ms
+[ResponseAborted: ]
+ GET / 307 in 702ms
+[ResponseAborted: ]
+ GET / 307 in 862ms
+[ResponseAborted: ]
+ GET / 307 in 1049ms
+[ResponseAborted: ]
+ GET / 307 in 1191ms
+[ResponseAborted: ]
+ GET / 307 in 1333ms
+[ResponseAborted: ]
+ GET / 307 in 1484ms
+[ResponseAborted: ]
+ GET / 307 in 1651ms
+[ResponseAborted: ]
+ GET / 307 in 1795ms
+[ResponseAborted: ]
+ GET / 307 in 1945ms
+ GET /sign-in 200 in 2044ms
+ GET /sign-in 200 in 2045ms
+ GET /sign-in 200 in 2046ms
+ GET /sign-in 200 in 2046ms
+ GET /sign-in 200 in 103ms
+ GET /sign-in 200 in 147ms
+ GET /sign-in 200 in 148ms
+ GET /sign-in 200 in 149ms
+ GET /sign-in 200 in 230ms
+ GET /sign-in 200 in 228ms
+ GET /sign-in 200 in 229ms
+ GET / 307 in 248ms
+ GET /sign-in 200 in 474ms
+ GET /sign-in 200 in 475ms
+ GET /sign-in 200 in 476ms
+ GET /sign-in 200 in 474ms
+ GET /sign-in 200 in 473ms
+ GET /sign-in 200 in 468ms
+ GET /sign-in 200 in 469ms
+ GET /sign-in 200 in 468ms
+ GET /sign-in 200 in 469ms
+ GET /sign-in 200 in 470ms
+ GET /sign-in 200 in 471ms
+ GET /sign-in 200 in 472ms
+ GET /favicon.ico 200 in 437ms
+ GET /favicon.ico 200 in 376ms
+ GET /favicon.ico 200 in 376ms
+ GET /favicon.ico 200 in 376ms
+ GET /favicon.ico 200 in 59ms
+ GET /favicon.ico 200 in 59ms
+ GET /sign-in 200 in 187ms
+ GET /sign-in 200 in 187ms
+ GET /sign-in 200 in 188ms
+ GET /sign-in 200 in 189ms
+ GET /sign-in 200 in 281ms
+ GET /sign-in 200 in 282ms
+ GET /sign-in 200 in 283ms
+ GET /sign-in 200 in 284ms
+ GET /sign-in 200 in 285ms
+ GET /favicon.ico 200 in 155ms
+ GET /favicon.ico 200 in 155ms
+ GET /favicon.ico 200 in 145ms
+ GET /favicon.ico 200 in 145ms
+ GET /favicon.ico 200 in 145ms
+ GET /favicon.ico 200 in 82ms
+ GET /favicon.ico 200 in 82ms
+ GET /favicon.ico 200 in 82ms
+ GET /favicon.ico 200 in 82ms
+ GET /favicon.ico 200 in 82ms
+ GET /sign-in 200 in 208ms
+ GET /sign-in 200 in 209ms
+ GET /sign-in 200 in 128ms
+ GET /sign-in 200 in 129ms
+ GET /favicon.ico 200 in 59ms
+ GET /favicon.ico 200 in 59ms
+ GET /favicon.ico 200 in 20ms
+ GET /favicon.ico 200 in 20ms
+ GET / 307 in 47ms
+ GET / 307 in 77ms
+ GET /sign-in 200 in 68ms
+ GET / 307 in 131ms
+[ResponseAborted: ]
+ GET / 307 in 284ms
+[ResponseAborted: ]
+ GET / 307 in 439ms
+ GET /sign-in 200 in 469ms
+ GET / 307 in 73ms
+ GET /sign-in 200 in 110ms
+ GET /sign-in 200 in 102ms
+ GET / 307 in 388ms
+[ResponseAborted: ]
+ GET / 307 in 531ms
+[ResponseAborted: ]
+ GET / 307 in 682ms
+[ResponseAborted: ]
+ GET / 307 in 997ms
+[ResponseAborted: ]
+ GET / 307 in 1148ms
+[ResponseAborted: ]
+ GET / 307 in 1297ms
+[ResponseAborted: ]
+ GET / 307 in 1436ms
+[ResponseAborted: ]
+ GET / 307 in 1582ms
+[ResponseAborted: ]
+ GET / 307 in 1732ms
+[ResponseAborted: ]
+ GET / 307 in 1875ms
+[ResponseAborted: ]
+ GET / 307 in 2020ms
+[ResponseAborted: ]
+ GET / 307 in 2164ms
+[ResponseAborted: ]
+ GET / 307 in 2310ms
+[ResponseAborted: ]
+ GET / 307 in 2451ms
+ GET /sign-in 200 in 2528ms
+ GET /sign-in 200 in 2528ms
+ GET /sign-in 200 in 2529ms
+ GET /favicon.ico 200 in 2457ms
+ GET /favicon.ico 200 in 71ms
+ GET /sign-in 200 in 94ms
+ GET /sign-in 200 in 95ms
+ GET /sign-in 200 in 285ms
+ GET /sign-in 200 in 286ms
+ GET /sign-in 200 in 287ms
+ GET /sign-in 200 in 273ms
+ GET /sign-in 200 in 274ms
+ GET /sign-in 200 in 275ms
+ GET /sign-in 200 in 276ms
+ GET /sign-in 200 in 277ms
+ GET /sign-in 200 in 278ms
+ GET /favicon.ico 200 in 357ms
+ GET /sign-in 200 in 418ms
+ GET /sign-in 200 in 419ms
+ GET /sign-in 200 in 420ms
+ GET /sign-in 200 in 421ms
+ GET /sign-in 200 in 422ms
+ GET /sign-in 200 in 423ms
+ GET /sign-in 200 in 424ms
+ GET /favicon.ico 200 in 68ms
+ GET /favicon.ico 200 in 68ms
+ GET /sign-in 200 in 229ms
+ GET /sign-in 200 in 351ms
+ GET /sign-in 200 in 353ms
+ GET /sign-in 200 in 353ms
+ GET /sign-in 200 in 354ms
+ GET /sign-in 200 in 355ms
+ GET /sign-in 200 in 356ms
+ GET /sign-in 200 in 357ms
+ GET /sign-in 200 in 358ms
+ GET /sign-in 200 in 360ms
+ GET /sign-in 200 in 360ms
+ GET /sign-in 200 in 361ms
+ GET /sign-in 200 in 362ms
+ GET /sign-in 200 in 366ms
+ GET /sign-in 200 in 367ms
+ GET /favicon.ico 200 in 336ms
+ GET /favicon.ico 200 in 13ms
+ GET /favicon.ico 200 in 27ms
+ GET /favicon.ico 200 in 27ms
+ GET /favicon.ico 200 in 27ms
+ GET /favicon.ico 200 in 27ms
+ GET /favicon.ico 200 in 27ms
+ GET /favicon.ico 200 in 27ms
+ GET /favicon.ico 200 in 27ms
+ GET /favicon.ico 200 in 27ms
+ GET /favicon.ico 200 in 27ms
+ GET /favicon.ico 200 in 27ms
+ GET /favicon.ico 200 in 27ms
+ GET /favicon.ico 200 in 27ms
+ GET /favicon.ico 200 in 27ms
+ GET / 307 in 36ms
+ GET / 307 in 38ms
+ GET /sign-in 200 in 81ms
+ GET /sign-in 200 in 51ms
+ GET /sign-in 200 in 105ms
+ GET /favicon.ico 200 in 18ms
+ GET /sign-in 200 in 43ms
+ GET /favicon.ico 200 in 11ms
+ GET / 307 in 28ms
+ GET /sign-in 200 in 26ms
+ GET /sign-in 200 in 31ms
+ GET /favicon.ico 200 in 19ms
+ GET / 307 in 56ms
+[ResponseAborted: ]
+ GET / 307 in 208ms
+ GET /sign-in 200 in 35ms
+ GET /sign-in 200 in 80ms
+ GET /sign-in 200 in 41ms
+ GET /sign-in 200 in 65ms
+ GET /favicon.ico 200 in 61ms
+ GET / 307 in 95ms
+ GET /favicon.ico 200 in 66ms
+ GET / 307 in 303ms
+[ResponseAborted: ]
+ GET / 307 in 442ms
+[ResponseAborted: ]
+ GET / 307 in 591ms
+[ResponseAborted: ]
+ GET / 307 in 740ms
+[ResponseAborted: ]
+ GET / 307 in 876ms
+[ResponseAborted: ]
+ GET / 307 in 1018ms
+[ResponseAborted: ]
+ GET / 307 in 1165ms
+[ResponseAborted: ]
+ GET / 307 in 1306ms
+[ResponseAborted: ]
+ GET / 307 in 1448ms
+[ResponseAborted: ]
+ GET / 307 in 1587ms
+[ResponseAborted: ]
+ GET / 307 in 1729ms
+[ResponseAborted: ]
+ GET / 307 in 1871ms
+[ResponseAborted: ]
+ GET / 307 in 2007ms
+[ResponseAborted: ]
+ GET / 307 in 2148ms
+ GET /sign-in 200 in 2180ms
+ GET / 307 in 343ms
+[ResponseAborted: ]
+ GET / 307 in 499ms
+[ResponseAborted: ]
+ GET / 307 in 641ms
+[ResponseAborted: ]
+ GET / 307 in 815ms
+[ResponseAborted: ]
+ GET / 307 in 957ms
+[ResponseAborted: ]
+ GET /sign-in 200 in 1117ms
+ GET /sign-in 200 in 1118ms
+ GET /sign-in 200 in 1119ms
+ GET /sign-in 200 in 1120ms
+ GET /sign-in 200 in 1121ms
+ GET /sign-in 200 in 1113ms
+ GET /sign-in 200 in 1113ms
+ GET /sign-in 200 in 1114ms
+ GET /sign-in 200 in 1114ms
+ GET /sign-in 200 in 1115ms
+ GET /sign-in 200 in 1119ms
+ GET /sign-in 200 in 1206ms
+ GET /sign-in 200 in 1207ms
+ GET /sign-in 200 in 1209ms
+ GET /sign-in 200 in 224ms
+ GET /sign-in 200 in 386ms
+ GET /sign-in 200 in 386ms
+ GET /sign-in 200 in 387ms
+ GET /sign-in 200 in 387ms
+ GET /sign-in 200 in 388ms
+ GET /sign-in 200 in 389ms
+ GET /sign-in 200 in 390ms
+ GET /sign-in 200 in 391ms
+ GET /sign-in 200 in 391ms
+ GET /sign-in 200 in 392ms
+ GET /sign-in 200 in 393ms
+ GET /sign-in 200 in 394ms
+ GET /sign-in 200 in 395ms
+ GET /sign-in 200 in 395ms
+ GET /sign-in 200 in 393ms
+ GET /sign-in 200 in 378ms
+ GET /favicon.ico 200 in 349ms
+ GET /sign-in 200 in 416ms
+ GET /sign-in 200 in 417ms
+ GET /sign-in 200 in 418ms
+ GET /favicon.ico 200 in 89ms
+ GET /favicon.ico 200 in 102ms
+ GET /favicon.ico 200 in 101ms
+ GET /favicon.ico 200 in 101ms
+ GET /favicon.ico 200 in 101ms
+ GET /favicon.ico 200 in 101ms
+ GET /favicon.ico 200 in 101ms
+ GET /favicon.ico 200 in 101ms
+ GET /favicon.ico 200 in 101ms
+ GET /favicon.ico 200 in 101ms
+ GET /favicon.ico 200 in 101ms
+ GET /favicon.ico 200 in 31ms
+ GET /favicon.ico 200 in 31ms
+ GET /favicon.ico 200 in 31ms
+ GET /sign-in 200 in 120ms
+ GET /sign-in 200 in 120ms
+ GET /sign-in 200 in 120ms
+ GET /sign-in 200 in 121ms
+ GET /sign-in 200 in 122ms
+ GET /favicon.ico 200 in 10ms
+ GET /favicon.ico 200 in 18ms
+ GET /favicon.ico 200 in 18ms
+ GET /favicon.ico 200 in 18ms
+ GET /favicon.ico 200 in 18ms
+ GET / 307 in 32ms
+ GET /sign-in 200 in 45ms
+ GET / 307 in 51ms
+ GET /sign-in 200 in 75ms
+ GET / 307 in 259ms
+[ResponseAborted: ]
+ GET / 307 in 406ms
+[ResponseAborted: ]
+ GET / 307 in 553ms
+[ResponseAborted: ]
+ GET / 307 in 700ms
+[ResponseAborted: ]
+ GET / 307 in 847ms
+[ResponseAborted: ]
+ GET / 307 in 998ms
+[ResponseAborted: ]
+ GET / 307 in 1139ms
+[ResponseAborted: ]
+ GET / 307 in 1272ms
+[ResponseAborted: ]
+ GET / 307 in 1413ms
+[ResponseAborted: ]
+ GET / 307 in 1564ms
+ GET /favicon.ico 200 in 1511ms
+ GET / 307 in 1675ms
+[ResponseAborted: ]
+ GET / 307 in 1817ms
+[ResponseAborted: ]
+ GET / 307 in 1973ms
+[ResponseAborted: ]
+ GET /sign-in 200 in 2131ms
+ GET / 307 in 658ms
+ GET /sign-in 200 in 636ms
+ GET / 307 in 776ms
+[ResponseAborted: ]
+ GET / 307 in 918ms
+[ResponseAborted: ]
+ GET / 307 in 1059ms
+[ResponseAborted: ]
+ GET / 307 in 1200ms
+ GET /sign-in 200 in 790ms
+ GET /sign-in 200 in 791ms
+ GET /sign-in 200 in 792ms
+ GET /sign-in 200 in 793ms
+ GET /sign-in 200 in 793ms
+ GET /sign-in 200 in 794ms
+ GET /sign-in 200 in 792ms
+ GET /sign-in 200 in 793ms
+ GET /sign-in 200 in 794ms
+ GET /sign-in 200 in 807ms
+ GET /sign-in 200 in 850ms
+ GET /sign-in 200 in 844ms
+ GET /sign-in 200 in 845ms
+ GET /sign-in 200 in 234ms
+ GET /sign-in 200 in 235ms
+ GET /sign-in 200 in 225ms
+ GET /sign-in 200 in 226ms
+ GET /sign-in 200 in 226ms
+ GET /sign-in 200 in 227ms
+ GET / 307 in 280ms
+ GET /favicon.ico 200 in 212ms
+ GET /sign-in 200 in 235ms
+ GET /sign-in 200 in 406ms
+ GET /sign-in 200 in 406ms
+ GET /sign-in 200 in 407ms
+ GET /sign-in 200 in 408ms
+ GET /sign-in 200 in 409ms
+ GET /sign-in 200 in 410ms
+ GET /sign-in 200 in 411ms
+ GET /sign-in 200 in 406ms
+ GET /sign-in 200 in 441ms
+ GET /favicon.ico 200 in 308ms
+ GET /favicon.ico 200 in 277ms
+ GET /sign-in 200 in 330ms
+ GET /sign-in 200 in 331ms
+ GET /favicon.ico 200 in 130ms
+ GET /favicon.ico 200 in 130ms
+ GET /favicon.ico 200 in 130ms
+ GET /favicon.ico 200 in 130ms
+ GET /favicon.ico 200 in 130ms
+ GET /favicon.ico 200 in 130ms
+ GET /favicon.ico 200 in 130ms
+ GET /favicon.ico 200 in 130ms
+ GET /sign-in 200 in 236ms
+ GET /sign-in 200 in 237ms
+ GET /sign-in 200 in 238ms
+ GET /sign-in 200 in 239ms
+ GET /sign-in 200 in 240ms
+ GET /favicon.ico 200 in 202ms
+ GET /sign-in 200 in 223ms
+ GET /favicon.ico 200 in 166ms
+ GET /favicon.ico 200 in 166ms
+ GET /favicon.ico 200 in 47ms
+ GET /favicon.ico 200 in 46ms
+ GET /favicon.ico 200 in 46ms
+ GET /favicon.ico 200 in 46ms
+ GET /favicon.ico 200 in 46ms
+ GET /sign-in 200 in 31ms
+ GET /favicon.ico 200 in 8ms
+ GET / 307 in 32ms
+ GET /sign-in 200 in 47ms
+ GET /sign-in 200 in 29ms
+ GET /favicon.ico 200 in 11ms
+ GET / 307 in 38ms
+ GET / 307 in 41ms
+ GET /sign-in 200 in 67ms
+ GET / 307 in 70ms
+[ResponseAborted: ]
+ GET /sign-in 200 in 240ms
+ GET / 307 in 422ms
+[ResponseAborted: ]
+ GET / 307 in 604ms
+[ResponseAborted: ]
+ GET / 307 in 742ms
+[ResponseAborted: ]
+ GET / 307 in 888ms
+[ResponseAborted: ]
+ GET / 307 in 1033ms
+[ResponseAborted: ]
+ GET / 307 in 1173ms
+[ResponseAborted: ]
+ GET / 307 in 1314ms
+ GET /sign-in 200 in 1357ms
+ GET /favicon.ico 200 in 37ms
+ GET /sign-in 200 in 77ms
+ GET /sign-in 200 in 78ms
+ GET / 307 in 275ms
+[ResponseAborted: ]
+ GET / 307 in 424ms
+[ResponseAborted: ]
+ GET / 307 in 573ms
+[ResponseAborted: ]
+ GET / 307 in 715ms
+[ResponseAborted: ]
+ GET / 307 in 879ms
+[ResponseAborted: ]
+ GET / 307 in 1017ms
+[ResponseAborted: ]
+ GET / 307 in 1158ms
+[ResponseAborted: ]
+ GET / 307 in 1304ms
+[ResponseAborted: ]
+ GET / 307 in 1444ms
+[ResponseAborted: ]
+ GET / 307 in 1578ms
+ GET /sign-in 200 in 1729ms
+ GET /sign-in 200 in 1730ms
+ GET /sign-in 200 in 1731ms
+ GET /sign-in 200 in 1732ms
+ GET /sign-in 200 in 1728ms
+ GET /sign-in 200 in 1729ms
+ GET /sign-in 200 in 1729ms
+ GET /favicon.ico 200 in 1688ms
+ GET /sign-in 200 in 70ms
+ GET / 307 in 105ms
+ GET /sign-in 200 in 271ms
+ GET /sign-in 200 in 272ms
+ GET /sign-in 200 in 273ms
+ GET /sign-in 200 in 266ms
+ GET /sign-in 200 in 267ms
+ GET /sign-in 200 in 268ms
+ GET /sign-in 200 in 268ms
+ GET /sign-in 200 in 269ms
+ GET /sign-in 200 in 270ms
+ GET /sign-in 200 in 415ms
+ GET /sign-in 200 in 416ms
+ GET /sign-in 200 in 416ms
+ GET /sign-in 200 in 417ms
+ GET /sign-in 200 in 418ms
+ GET /sign-in 200 in 418ms
+ GET /sign-in 200 in 417ms
+ GET /sign-in 200 in 418ms
+ GET /favicon.ico 200 in 383ms
+ GET /favicon.ico 200 in 30ms
+ GET /favicon.ico 200 in 81ms
+ GET /favicon.ico 200 in 81ms
+ GET /favicon.ico 200 in 81ms
+ GET /favicon.ico 200 in 81ms
+ GET /favicon.ico 200 in 81ms
+ GET /favicon.ico 200 in 81ms
+ GET /sign-in 200 in 83ms
+ GET /sign-in 200 in 263ms
+ GET /sign-in 200 in 265ms
+ GET /sign-in 200 in 266ms
+ GET /sign-in 200 in 267ms
+ GET /sign-in 200 in 268ms
+ GET /sign-in 200 in 269ms
+ GET /sign-in 200 in 270ms
+ GET /sign-in 200 in 270ms
+ GET /sign-in 200 in 271ms
+ GET /sign-in 200 in 287ms
+ GET /favicon.ico 200 in 45ms
+ GET /favicon.ico 200 in 45ms
+ GET /favicon.ico 200 in 45ms
+ GET /favicon.ico 200 in 45ms
+ GET /favicon.ico 200 in 45ms
+ GET /favicon.ico 200 in 45ms
+ GET /favicon.ico 200 in 45ms
+ GET /favicon.ico 200 in 45ms
+ GET /favicon.ico 200 in 45ms
+ GET /sign-in 200 in 72ms
+ GET /favicon.ico 200 in 43ms
+ GET /favicon.ico 200 in 11ms
+ GET / 307 in 33ms
+ GET /sign-in 200 in 45ms
+ GET /sign-in 200 in 42ms
+ GET /favicon.ico 200 in 9ms
+ GET / 307 in 37ms
+ GET / 307 in 39ms
+ GET /sign-in 200 in 76ms
+ GET / 307 in 55ms
+ GET /sign-in 200 in 167ms
+ GET / 307 in 175ms
+[ResponseAborted: ]
+ GET / 307 in 329ms
+[ResponseAborted: ]
+ GET / 307 in 468ms
+[ResponseAborted: ]
+ GET / 307 in 616ms
+[ResponseAborted: ]
+ GET / 307 in 756ms
+[ResponseAborted: ]
+ GET /sign-in 200 in 944ms
+ GET /favicon.ico 200 in 44ms
+ GET /sign-in 200 in 299ms
+ GET /sign-in 200 in 299ms
+ GET / 307 in 311ms
+[ResponseAborted: ]
+ GET / 307 in 454ms
+[ResponseAborted: ]
+ GET / 307 in 600ms
+[ResponseAborted: ]
+ GET / 307 in 956ms
+[ResponseAborted: ]
+ GET / 307 in 1106ms
+[ResponseAborted: ]
+ GET / 307 in 1258ms
+[ResponseAborted: ]
+ GET / 307 in 1401ms
+[ResponseAborted: ]
+ GET / 307 in 1550ms
+[ResponseAborted: ]
+ GET / 307 in 1699ms
+[ResponseAborted: ]
+ GET / 307 in 1837ms
+[ResponseAborted: ]
+ GET / 307 in 1991ms
+[ResponseAborted: ]
+ GET / 307 in 2127ms
+[ResponseAborted: ]
+ GET /sign-in 200 in 2405ms
+ GET /sign-in 200 in 2406ms
+ GET /sign-in 200 in 2401ms
+ GET /sign-in 200 in 2401ms
+ GET /sign-in 200 in 2402ms
+ GET /favicon.ico 200 in 158ms
+ GET / 307 in 56ms
+ GET /sign-in 200 in 351ms
+ GET /sign-in 200 in 352ms
+ GET /sign-in 200 in 353ms
+ GET /sign-in 200 in 354ms
+ GET /sign-in 200 in 354ms
+ GET /sign-in 200 in 355ms
+ GET /sign-in 200 in 356ms
+ GET /sign-in 200 in 357ms
+ GET /sign-in 200 in 358ms
+ GET /sign-in 200 in 359ms
+ GET /sign-in 200 in 358ms
+ GET /sign-in 200 in 359ms
+ GET /sign-in 200 in 360ms
+ GET /sign-in 200 in 361ms
+ GET /sign-in 200 in 362ms
+ GET /sign-in 200 in 363ms
+ GET /sign-in 200 in 404ms
+ GET /sign-in 200 in 405ms
+ GET /favicon.ico 200 in 76ms
+ GET /favicon.ico 200 in 76ms
+ GET /favicon.ico 200 in 76ms
+ GET /favicon.ico 200 in 76ms
+ GET /favicon.ico 200 in 76ms
+ GET /favicon.ico 200 in 76ms
+ GET /sign-in 200 in 246ms
+ GET /sign-in 200 in 248ms
+ GET /sign-in 200 in 249ms
+ GET /sign-in 200 in 249ms
+ GET /sign-in 200 in 250ms
+ GET /sign-in 200 in 251ms
+ GET /sign-in 200 in 252ms
+ GET /sign-in 200 in 253ms
+ GET /sign-in 200 in 253ms
+ GET /sign-in 200 in 254ms
+ GET /sign-in 200 in 255ms
+ GET /favicon.ico 200 in 81ms
+ GET /sign-in 200 in 329ms
+ GET /sign-in 200 in 330ms
+ GET /favicon.ico 200 in 103ms
+ GET /favicon.ico 200 in 103ms
+ GET /favicon.ico 200 in 103ms
+ GET /favicon.ico 200 in 103ms
+ GET /favicon.ico 200 in 103ms
+ GET /favicon.ico 200 in 103ms
+ GET /favicon.ico 200 in 103ms
+ GET /favicon.ico 200 in 103ms
+ GET /favicon.ico 200 in 103ms
+ GET /favicon.ico 200 in 24ms
+ GET /favicon.ico 200 in 24ms
+ GET /sign-in 200 in 46ms
+ GET /favicon.ico 200 in 10ms
+ GET / 307 in 35ms
+ GET /sign-in 200 in 33ms
+ GET /sign-in 200 in 32ms
+ GET /favicon.ico 200 in 9ms
+ GET / 307 in 40ms
+ GET / 307 in 142ms
+[ResponseAborted: ]
+ GET / 307 in 283ms
+[ResponseAborted: ]
+ GET / 307 in 430ms
+[ResponseAborted: ]
+ GET / 307 in 573ms
+[ResponseAborted: ]
+ GET / 307 in 717ms
+ GET /sign-in 200 in 79ms
+ GET /sign-in 200 in 94ms
+ GET / 307 in 391ms
+[ResponseAborted: ]
+ GET / 307 in 544ms
+[ResponseAborted: ]
+ GET / 307 in 722ms
+[ResponseAborted: ]
+ GET / 307 in 874ms
+[ResponseAborted: ]
+ GET / 307 in 1017ms
+[ResponseAborted: ]
+ GET / 307 in 1167ms
+[ResponseAborted: ]
+ GET / 307 in 1308ms
+[ResponseAborted: ]
+ GET / 307 in 1461ms
+[ResponseAborted: ]
+ GET / 307 in 1612ms
+[ResponseAborted: ]
+ GET / 307 in 1765ms
+[ResponseAborted: ]
+ GET / 307 in 1906ms
+[ResponseAborted: ]
+ GET / 307 in 2053ms
+[ResponseAborted: ]
+ GET / 307 in 2199ms
+[ResponseAborted: ]
+ GET / 307 in 2341ms
+ GET /sign-in 200 in 2439ms
+ GET /sign-in 200 in 2440ms
+ GET /sign-in 200 in 2441ms
+ GET /sign-in 200 in 2442ms
+ GET /sign-in 200 in 95ms
+ GET /sign-in 200 in 109ms
+ GET /sign-in 200 in 177ms
+ GET /sign-in 200 in 178ms
+ GET /sign-in 200 in 177ms
+ GET /sign-in 200 in 434ms
+ GET /sign-in 200 in 436ms
+ GET /sign-in 200 in 437ms
+ GET /sign-in 200 in 438ms
+ GET /sign-in 200 in 439ms
+ GET /sign-in 200 in 440ms
+ GET /sign-in 200 in 441ms
+ GET /sign-in 200 in 442ms
+ GET /sign-in 200 in 443ms
+ GET /sign-in 200 in 444ms
+ GET /sign-in 200 in 445ms
+ GET /sign-in 200 in 446ms
+ GET /sign-in 200 in 447ms
+ GET /sign-in 200 in 448ms
+ GET /favicon.ico 200 in 420ms
+ GET /sign-in 200 in 448ms
+ GET /favicon.ico 200 in 422ms
+ GET /favicon.ico 200 in 66ms
+ GET /favicon.ico 200 in 66ms
+ GET /favicon.ico 200 in 66ms
+ GET /favicon.ico 200 in 66ms
+ GET /sign-in 200 in 305ms
+ GET /sign-in 200 in 305ms
+ GET /sign-in 200 in 306ms
+ GET /sign-in 200 in 307ms
+ GET /sign-in 200 in 308ms
+ GET /sign-in 200 in 309ms
+ GET /sign-in 200 in 310ms
+ GET /sign-in 200 in 311ms
+ GET /sign-in 200 in 312ms
+ GET /sign-in 200 in 313ms
+ GET /sign-in 200 in 314ms
+ GET /sign-in 200 in 315ms
+ GET /sign-in 200 in 316ms
+ GET /favicon.ico 200 in 45ms
+ GET /sign-in 200 in 343ms
+ GET /favicon.ico 200 in 57ms
+ GET /favicon.ico 200 in 57ms
+ GET /favicon.ico 200 in 57ms
+ GET /favicon.ico 200 in 57ms
+ GET /favicon.ico 200 in 57ms
+ GET /favicon.ico 200 in 57ms
+ GET /favicon.ico 200 in 57ms
+ GET /favicon.ico 200 in 57ms
+ GET /favicon.ico 200 in 57ms
+ GET /favicon.ico 200 in 57ms
+ GET /favicon.ico 200 in 57ms
+ GET /favicon.ico 200 in 57ms
+ GET /favicon.ico 200 in 21ms
+ GET / 307 in 55ms
+ GET / 307 in 68ms
+ GET /sign-in 200 in 108ms
+ GET / 307 in 184ms
+[ResponseAborted: ]
+ GET / 307 in 340ms
+[ResponseAborted: ]
+ GET / 307 in 483ms
+[ResponseAborted: ]
+ GET / 307 in 637ms
+ GET /sign-in 200 in 599ms
+ GET /sign-in 200 in 570ms
+ GET / 307 in 337ms
+[ResponseAborted: ]
+ GET / 307 in 477ms
+[ResponseAborted: ]
+ GET / 307 in 633ms
+[ResponseAborted: ]
+ GET / 307 in 778ms
+[ResponseAborted: ]
+ GET / 307 in 930ms
+[ResponseAborted: ]
+ GET / 307 in 1068ms
+[ResponseAborted: ]
+ GET / 307 in 1214ms
+[ResponseAborted: ]
+ GET / 307 in 1362ms
+[ResponseAborted: ]
+ GET / 307 in 1515ms
+[ResponseAborted: ]
+ GET / 307 in 1656ms
+[ResponseAborted: ]
+ GET / 307 in 1798ms
+[ResponseAborted: ]
+ GET / 307 in 1948ms
+[ResponseAborted: ]
+ GET / 307 in 2089ms
+[ResponseAborted: ]
+ GET / 307 in 2266ms
+[ResponseAborted: ]
+ GET /favicon.ico 200 in 2461ms
+ GET /sign-in 200 in 2503ms
+ GET /sign-in 200 in 2504ms
+ GET /sign-in 200 in 2500ms
+ GET /sign-in 200 in 2500ms
+ GET /sign-in 200 in 2523ms
+ GET /sign-in 200 in 110ms
+ GET /sign-in 200 in 413ms
+ GET /sign-in 200 in 414ms
+ GET /sign-in 200 in 415ms
+ GET /sign-in 200 in 416ms
+ GET /sign-in 200 in 417ms
+ GET /sign-in 200 in 408ms
+ GET /sign-in 200 in 409ms
+ GET /sign-in 200 in 409ms
+ GET /sign-in 200 in 414ms
+ GET /sign-in 200 in 416ms
+ GET /sign-in 200 in 417ms
+ GET /sign-in 200 in 418ms
+ GET /sign-in 200 in 419ms
+ GET /sign-in 200 in 420ms
+ GET /favicon.ico 200 in 395ms
+ GET /sign-in 200 in 470ms
+ GET /sign-in 200 in 471ms
+ GET /sign-in 200 in 471ms
+ GET /favicon.ico 200 in 103ms
+ GET /favicon.ico 200 in 103ms
+ GET /favicon.ico 200 in 103ms
+ GET /favicon.ico 200 in 103ms
+ GET /sign-in 200 in 66ms
+ GET /sign-in 200 in 279ms
+ GET /sign-in 200 in 280ms
+ GET /sign-in 200 in 281ms
+ GET /sign-in 200 in 282ms
+ GET /sign-in 200 in 283ms
+ GET /sign-in 200 in 284ms
+ GET /sign-in 200 in 285ms
+ GET /sign-in 200 in 286ms
+ GET /sign-in 200 in 287ms
+ GET /sign-in 200 in 288ms
+ GET /favicon.ico 200 in 253ms
+ GET /favicon.ico 200 in 78ms
+ GET /sign-in 200 in 324ms
+ GET /sign-in 200 in 325ms
+ GET /sign-in 200 in 326ms
+ GET /favicon.ico 200 in 105ms
+ GET /favicon.ico 200 in 104ms
+ GET /favicon.ico 200 in 104ms
+ GET /favicon.ico 200 in 104ms
+ GET /favicon.ico 200 in 104ms
+ GET /favicon.ico 200 in 104ms
+ GET /favicon.ico 200 in 104ms
+ GET /favicon.ico 200 in 104ms
+ GET /favicon.ico 200 in 104ms
+ GET /favicon.ico 200 in 20ms
+ GET /favicon.ico 200 in 20ms
+ GET /favicon.ico 200 in 20ms
+ GET / 307 in 30ms
+ GET /sign-in 200 in 28ms
+ GET /sign-in 200 in 28ms
+ GET /favicon.ico 200 in 14ms
+ GET / 307 in 35ms
+ GET /sign-in 200 in 53ms
+ GET /sign-in 200 in 45ms
+ GET / 307 in 76ms
+ GET /favicon.ico 200 in 108ms
+ GET / 307 in 153ms
+[ResponseAborted: ]
+ GET / 307 in 317ms
+[ResponseAborted: ]
+ GET / 307 in 489ms
+ GET /sign-in 200 in 63ms
+ GET /sign-in 200 in 405ms
+ GET /sign-in 200 in 406ms
+ GET /sign-in 200 in 407ms
+ GET / 307 in 422ms
+[ResponseAborted: ]
+ GET / 307 in 577ms
+[ResponseAborted: ]
+ GET / 307 in 723ms
+[ResponseAborted: ]
+ GET / 307 in 882ms
+[ResponseAborted: ]
+ GET / 307 in 1025ms
+[ResponseAborted: ]
+ GET / 307 in 1173ms
+[ResponseAborted: ]
+ GET / 307 in 1354ms
+[ResponseAborted: ]
+ GET / 307 in 1516ms
+[ResponseAborted: ]
+ GET / 307 in 1667ms
+[ResponseAborted: ]
+ GET / 307 in 1821ms
+[ResponseAborted: ]
+ GET / 307 in 1976ms
+[ResponseAborted: ]
+ GET / 307 in 2128ms
+[ResponseAborted: ]
+ GET / 307 in 2276ms
+[ResponseAborted: ]
+ GET / 307 in 2426ms
+[ResponseAborted: ]
+ GET / 307 in 2344ms
+ GET /sign-in 200 in 140ms
+ GET / 307 in 151ms
+ GET /sign-in 200 in 180ms
+ GET /sign-in 200 in 328ms
+ GET /sign-in 200 in 329ms
+ GET /sign-in 200 in 330ms
+ GET /sign-in 200 in 330ms
+ GET /sign-in 200 in 331ms
+ GET /sign-in 200 in 332ms
+ GET /favicon.ico 200 in 353ms
+ GET /sign-in 200 in 414ms
+ GET /sign-in 200 in 415ms
+ GET /sign-in 200 in 416ms
+ GET /sign-in 200 in 417ms
+ GET /sign-in 200 in 418ms
+ GET /sign-in 200 in 419ms
+ GET /sign-in 200 in 471ms
+ GET /sign-in 200 in 472ms
+ GET /sign-in 200 in 473ms
+ GET /sign-in 200 in 473ms
+ GET /favicon.ico 200 in 394ms
+ GET /favicon.ico 200 in 270ms
+ GET /favicon.ico 200 in 270ms
+ GET /sign-in 200 in 310ms
+ GET /sign-in 200 in 209ms
+ GET /sign-in 200 in 201ms
+ GET /sign-in 200 in 213ms
+ GET /sign-in 200 in 213ms
+ GET /sign-in 200 in 214ms
+ GET /sign-in 200 in 215ms
+ GET /sign-in 200 in 342ms
+ GET /sign-in 200 in 343ms
+ GET /sign-in 200 in 345ms
+ GET /sign-in 200 in 346ms
+ GET /sign-in 200 in 347ms
+ GET /sign-in 200 in 368ms
+ GET /sign-in 200 in 362ms
+ GET /sign-in 200 in 361ms
+ GET /sign-in 200 in 362ms
+ GET /favicon.ico 200 in 264ms
+ GET /favicon.ico 200 in 264ms
+ GET /favicon.ico 200 in 264ms
+ GET /favicon.ico 200 in 264ms
+ GET /favicon.ico 200 in 264ms
+ GET /sign-in 200 in 411ms
+ GET /favicon.ico 200 in 171ms
+ GET /favicon.ico 200 in 171ms
+ GET /favicon.ico 200 in 171ms
+ GET /favicon.ico 200 in 170ms
+ GET /favicon.ico 200 in 170ms
+ GET /sign-in 200 in 207ms
+ GET /favicon.ico 200 in 110ms
+ GET /favicon.ico 200 in 110ms
+ GET /favicon.ico 200 in 109ms
+ GET /favicon.ico 200 in 109ms
+ GET /favicon.ico 200 in 51ms
+ GET /favicon.ico 200 in 18ms
+ GET / 307 in 32ms
+ GET /sign-in 200 in 46ms
+ GET /sign-in 200 in 29ms
+ GET /favicon.ico 200 in 21ms
+ GET / 307 in 53ms
+ GET / 307 in 76ms
+ GET / 307 in 108ms
+ GET /sign-in 200 in 60ms
+ GET /sign-in 200 in 117ms
+ GET /sign-in 200 in 148ms
+ GET /sign-in 200 in 71ms
+ GET /sign-in 200 in 95ms
+ GET /favicon.ico 200 in 44ms
+ GET /favicon.ico 200 in 43ms
+ GET /sign-in 200 in 76ms
+ GET /favicon.ico 200 in 13ms
+ GET / 307 in 41ms
+ GET / 307 in 126ms
+[ResponseAborted: ]
+ GET / 307 in 286ms
+[ResponseAborted: ]
+ GET / 307 in 456ms
+[ResponseAborted: ]
+ GET / 307 in 611ms
+ GET / 307 in 64ms
+ GET / 307 in 149ms
+[ResponseAborted: ]
+ GET / 307 in 299ms
+[ResponseAborted: ]
+ GET / 307 in 439ms
+[ResponseAborted: ]
+ GET / 307 in 607ms
+ GET /sign-in 200 in 652ms
+ GET / 307 in 800ms
+[ResponseAborted: ]
+ GET / 307 in 962ms
+[ResponseAborted: ]
+ GET / 307 in 1120ms
+[ResponseAborted: ]
+ GET / 307 in 1277ms
+[ResponseAborted: ]
+ GET / 307 in 1646ms
+[ResponseAborted: ]
+ GET / 307 in 1795ms
+[ResponseAborted: ]
+ GET / 307 in 1943ms
+ GET /sign-in 200 in 2055ms
+ GET /sign-in 200 in 2056ms
+ GET /sign-in 200 in 2058ms
+ GET /sign-in 200 in 2060ms
+ GET /sign-in 200 in 67ms
+ GET /sign-in 200 in 184ms
+ GET /sign-in 200 in 186ms
+ GET /sign-in 200 in 189ms
+ GET /sign-in 200 in 192ms
+ GET /sign-in 200 in 194ms
+ GET / 307 in 316ms
+[ResponseAborted: ]
+ GET / 307 in 472ms
+[ResponseAborted: ]
+ GET / 307 in 630ms
+ GET /sign-in 200 in 725ms
+ GET /sign-in 200 in 726ms
+ GET /sign-in 200 in 727ms
+ GET /sign-in 200 in 728ms
+ GET /favicon.ico 200 in 688ms
+ GET /sign-in 200 in 870ms
+ GET /sign-in 200 in 871ms
+ GET /sign-in 200 in 872ms
+ GET /sign-in 200 in 873ms
+ GET /sign-in 200 in 874ms
+ GET /sign-in 200 in 875ms
+ GET /sign-in 200 in 874ms
+ GET /sign-in 200 in 237ms
+ GET /sign-in 200 in 321ms
+ GET /sign-in 200 in 322ms
+ GET /sign-in 200 in 324ms
+ GET /sign-in 200 in 325ms
+ GET /favicon.ico 200 in 157ms
+ GET /favicon.ico 200 in 157ms
+ GET /favicon.ico 200 in 157ms
+ GET /favicon.ico 200 in 157ms
+ GET /sign-in 200 in 236ms
+ GET /sign-in 200 in 237ms
+ GET /sign-in 200 in 237ms
+ GET /favicon.ico 200 in 195ms
+ GET /sign-in 200 in 295ms
+ GET /sign-in 200 in 296ms
+ GET /sign-in 200 in 297ms
+ GET /sign-in 200 in 296ms
+ GET /favicon.ico 200 in 194ms
+ GET /favicon.ico 200 in 195ms
+ GET /favicon.ico 200 in 195ms
+ GET /favicon.ico 200 in 195ms
+ GET /sign-in 200 in 294ms
+ GET /sign-in 200 in 287ms
+ GET /sign-in 200 in 288ms
+ GET /favicon.ico 200 in 94ms
+ GET /favicon.ico 200 in 106ms
+ GET /favicon.ico 200 in 106ms
+ GET /favicon.ico 200 in 106ms
+ GET /favicon.ico 200 in 27ms
+ GET /favicon.ico 200 in 28ms
+ GET /favicon.ico 200 in 28ms
+ GET /sign-in 200 in 105ms
+ GET /sign-in 200 in 106ms
+ GET /sign-in 200 in 107ms
+ GET /favicon.ico 200 in 16ms
+ GET /favicon.ico 200 in 21ms
+ GET /favicon.ico 200 in 21ms
+ GET / 307 in 28ms
+ GET /sign-in 200 in 32ms
+ GET /sign-in 200 in 31ms
+ GET /favicon.ico 200 in 11ms
+ GET / 307 in 42ms
+ GET / 307 in 104ms
+[ResponseAborted: ]
+ GET / 307 in 249ms
+[ResponseAborted: ]
+ GET / 307 in 393ms
+ GET /sign-in 200 in 75ms
+ GET /sign-in 200 in 381ms
+ GET / 307 in 385ms
+[ResponseAborted: ]
+ GET / 307 in 535ms
+[ResponseAborted: ]
+ GET / 307 in 679ms
+[ResponseAborted: ]
+ GET / 307 in 826ms
+[ResponseAborted: ]
+ GET / 307 in 990ms
+[ResponseAborted: ]
+ GET / 307 in 1144ms
+[ResponseAborted: ]
+ GET / 307 in 1294ms
+[ResponseAborted: ]
+ GET / 307 in 1458ms
+[ResponseAborted: ]
+ GET / 307 in 1603ms
+[ResponseAborted: ]
+ GET / 307 in 1760ms
+[ResponseAborted: ]
+ GET / 307 in 1914ms
+[ResponseAborted: ]
+ GET / 307 in 2061ms
+[ResponseAborted: ]
+ GET / 307 in 2209ms
+[ResponseAborted: ]
+ GET / 307 in 2352ms
+[ResponseAborted: ]
+ GET / 307 in 2499ms
+[ResponseAborted: ]
+ GET /sign-in 200 in 2709ms
+ GET /sign-in 200 in 2710ms
+ GET /sign-in 200 in 81ms
+ GET /sign-in 200 in 225ms
+ GET /sign-in 200 in 227ms
+ GET /sign-in 200 in 228ms
+ GET /sign-in 200 in 229ms
+ GET /sign-in 200 in 228ms
+ GET /sign-in 200 in 229ms
+ GET / 307 in 248ms
+ GET /sign-in 200 in 340ms
+ GET /sign-in 200 in 342ms
+ GET /sign-in 200 in 343ms
+ GET /sign-in 200 in 344ms
+ GET /sign-in 200 in 345ms
+ GET /favicon.ico 200 in 305ms
+ GET /sign-in 200 in 492ms
+ GET /sign-in 200 in 492ms
+ GET /sign-in 200 in 493ms
+ GET /sign-in 200 in 494ms
+ GET /sign-in 200 in 495ms
+ GET /sign-in 200 in 495ms
+ GET /sign-in 200 in 496ms
+ GET /favicon.ico 200 in 297ms
+ GET /favicon.ico 200 in 36ms
+ GET /favicon.ico 200 in 36ms
+ GET /sign-in 200 in 164ms
+ GET /sign-in 200 in 165ms
+ GET /sign-in 200 in 167ms
+ GET /sign-in 200 in 168ms
+ GET /sign-in 200 in 169ms
+ GET /sign-in 200 in 170ms
+ GET /sign-in 200 in 213ms
+ GET /sign-in 200 in 304ms
+ GET /sign-in 200 in 305ms
+ GET /sign-in 200 in 306ms
+ GET /sign-in 200 in 307ms
+ GET /favicon.ico 200 in 156ms
+ GET /favicon.ico 200 in 156ms
+ GET /favicon.ico 200 in 156ms
+ GET /favicon.ico 200 in 156ms
+ GET /favicon.ico 200 in 156ms
+ GET /sign-in 200 in 293ms
+ GET /sign-in 200 in 295ms
+ GET /sign-in 200 in 296ms
+ GET /sign-in 200 in 285ms
+ GET /sign-in 200 in 286ms
+ GET /favicon.ico 200 in 230ms
+ GET /favicon.ico 200 in 147ms
+ GET /favicon.ico 200 in 147ms
+ GET /favicon.ico 200 in 147ms
+ GET /favicon.ico 200 in 147ms
+ GET /sign-in 200 in 176ms
+ GET /favicon.ico 200 in 60ms
+ GET /favicon.ico 200 in 60ms
+ GET /favicon.ico 200 in 60ms
+ GET /favicon.ico 200 in 60ms
+ GET /favicon.ico 200 in 60ms
+ GET /favicon.ico 200 in 15ms
+ GET / 307 in 43ms
+ GET /sign-in 200 in 76ms
+ GET /sign-in 200 in 32ms
+ GET /favicon.ico 200 in 12ms
+ GET / 307 in 38ms
+ GET / 307 in 47ms
+ GET / 307 in 74ms
+ GET /sign-in 200 in 89ms
+ GET /sign-in 200 in 46ms
+ GET /sign-in 200 in 75ms
+ GET /sign-in 200 in 101ms
+ GET /favicon.ico 200 in 44ms
+ GET /sign-in 200 in 47ms
+ GET /sign-in 200 in 72ms
+ GET /favicon.ico 200 in 44ms
+ GET /favicon.ico 200 in 24ms
+ GET / 307 in 121ms
+[ResponseAborted: ]
+ GET / 307 in 264ms
+[ResponseAborted: ]
+ GET / 307 in 411ms
+[ResponseAborted: ]
+ GET / 307 in 565ms
+[ResponseAborted: ]
+ GET / 307 in 717ms
+ GET / 307 in 48ms
+ GET /sign-in 200 in 381ms
+ GET /sign-in 200 in 381ms
+ GET /sign-in 200 in 382ms
+ GET /sign-in 200 in 378ms
+ GET /sign-in 200 in 379ms
+ GET / 307 in 390ms
+[ResponseAborted: ]
+ GET / 307 in 538ms
+[ResponseAborted: ]
+ GET / 307 in 684ms
+[ResponseAborted: ]
+ GET / 307 in 832ms
+[ResponseAborted: ]
+ GET / 307 in 983ms
+[ResponseAborted: ]
+ GET / 307 in 1124ms
+[ResponseAborted: ]
+ GET / 307 in 1270ms
+[ResponseAborted: ]
+ GET / 307 in 1414ms
+[ResponseAborted: ]
+ GET / 307 in 1563ms
+[ResponseAborted: ]
+ GET / 307 in 1706ms
+[ResponseAborted: ]
+ GET / 307 in 1856ms
+[ResponseAborted: ]
+ GET /sign-in 200 in 100ms
+ GET /sign-in 200 in 233ms
+ GET /sign-in 200 in 234ms
+ GET /sign-in 200 in 235ms
+ GET /sign-in 200 in 237ms
+ GET /sign-in 200 in 238ms
+ GET /sign-in 200 in 238ms
+ GET /sign-in 200 in 237ms
+ GET / 307 in 446ms
+[ResponseAborted: ]
+ GET / 307 in 595ms
+[ResponseAborted: ]
+ GET / 307 in 751ms
+[ResponseAborted: ]
+ GET /sign-in 200 in 901ms
+ GET /sign-in 200 in 902ms
+ GET /sign-in 200 in 903ms
+ GET /sign-in 200 in 904ms
+ GET /sign-in 200 in 905ms
+ GET /sign-in 200 in 905ms
+ GET /sign-in 200 in 902ms
+ GET /favicon.ico 200 in 750ms
+ GET /sign-in 200 in 990ms
+ GET /sign-in 200 in 991ms
+ GET /favicon.ico 200 in 790ms
+ GET /favicon.ico 200 in 790ms
+ GET /favicon.ico 200 in 790ms
+ GET /favicon.ico 200 in 790ms
+ GET /sign-in 200 in 149ms
+ GET /sign-in 200 in 133ms
+ GET /sign-in 200 in 133ms
+ GET /sign-in 200 in 124ms
+ GET /sign-in 200 in 314ms
+ GET /sign-in 200 in 316ms
+ GET /sign-in 200 in 317ms
+ GET /sign-in 200 in 318ms
+ GET /sign-in 200 in 319ms
+ GET /sign-in 200 in 320ms
+ GET /sign-in 200 in 321ms
+ GET /sign-in 200 in 322ms
+ GET /sign-in 200 in 322ms
+ GET /favicon.ico 200 in 289ms
+ GET /favicon.ico 200 in 271ms
+ GET /favicon.ico 200 in 270ms
+ GET /sign-in 200 in 356ms
+ GET /sign-in 200 in 355ms
+ GET /favicon.ico 200 in 83ms
+ GET /favicon.ico 200 in 83ms
+ GET /favicon.ico 200 in 83ms
+ GET /favicon.ico 200 in 83ms
+ GET /favicon.ico 200 in 83ms
+ GET /favicon.ico 200 in 83ms
+ GET /favicon.ico 200 in 83ms
+ GET /favicon.ico 200 in 59ms
+ GET /favicon.ico 200 in 59ms
+ GET /sign-in 200 in 125ms
+ GET /sign-in 200 in 78ms
+ GET /sign-in 200 in 107ms
+ GET /favicon.ico 200 in 66ms
+ GET /favicon.ico 200 in 40ms
+ GET /favicon.ico 200 in 11ms
+ GET / 307 in 33ms
+ GET /sign-in 200 in 68ms
+ GET / 307 in 137ms
+[ResponseAborted: ]
+ GET / 307 in 303ms
+[ResponseAborted: ]
+ GET / 307 in 447ms
+[ResponseAborted: ]
+ GET / 307 in 603ms
+ GET /sign-in 200 in 64ms
+ GET / 307 in 322ms
+[ResponseAborted: ]
+ GET / 307 in 467ms
+[ResponseAborted: ]
+ GET / 307 in 667ms
+[ResponseAborted: ]
+ GET / 307 in 810ms
+[ResponseAborted: ]
+ GET / 307 in 957ms
+[ResponseAborted: ]
+ GET / 307 in 1107ms
+[ResponseAborted: ]
+ GET / 307 in 1250ms
+[ResponseAborted: ]
+ GET / 307 in 1396ms
+[ResponseAborted: ]
+ GET / 307 in 1543ms
+[ResponseAborted: ]
+ GET / 307 in 1691ms
+[ResponseAborted: ]
+ GET / 307 in 1838ms
+[ResponseAborted: ]
+ GET / 307 in 1980ms
+[ResponseAborted: ]
+ GET / 307 in 2132ms
+[ResponseAborted: ]
+ GET / 307 in 2314ms
+ GET /sign-in 200 in 2418ms
+ GET /sign-in 200 in 2419ms
+ GET /sign-in 200 in 2420ms
+ GET /sign-in 200 in 2421ms
+ GET /favicon.ico 200 in 2395ms
+ GET /sign-in 200 in 91ms
+ GET /sign-in 200 in 204ms
+ GET /sign-in 200 in 205ms
+ GET /sign-in 200 in 207ms
+ GET /sign-in 200 in 207ms
+ GET /sign-in 200 in 521ms
+ GET /sign-in 200 in 520ms
+ GET /sign-in 200 in 521ms
+ GET /sign-in 200 in 522ms
+ GET /sign-in 200 in 522ms
+ GET /sign-in 200 in 519ms
+ GET /sign-in 200 in 520ms
+ GET /sign-in 200 in 522ms
+ GET /sign-in 200 in 523ms
+ GET /sign-in 200 in 525ms
+ GET /sign-in 200 in 526ms
+ GET /sign-in 200 in 527ms
+ GET /sign-in 200 in 528ms
+ GET /favicon.ico 200 in 69ms
+ GET /favicon.ico 200 in 69ms
+ GET /favicon.ico 200 in 69ms
+ GET /favicon.ico 200 in 68ms
+ GET /sign-in 200 in 99ms
+ GET /sign-in 200 in 156ms
+ GET /sign-in 200 in 158ms
+ GET /sign-in 200 in 159ms
+ GET /sign-in 200 in 160ms
+ GET /sign-in 200 in 355ms
+ GET /sign-in 200 in 356ms
+ GET /sign-in 200 in 358ms
+ GET /sign-in 200 in 357ms
+ GET /sign-in 200 in 359ms
+ GET /sign-in 200 in 360ms
+ GET /sign-in 200 in 360ms
+ GET /sign-in 200 in 361ms
+ GET /sign-in 200 in 362ms
+ GET /favicon.ico 200 in 333ms
+ GET /favicon.ico 200 in 239ms
+ GET /favicon.ico 200 in 239ms
+ GET /favicon.ico 200 in 239ms
+ GET /favicon.ico 200 in 239ms
+ GET /favicon.ico 200 in 29ms
+ GET /favicon.ico 200 in 29ms
+ GET /favicon.ico 200 in 30ms
+ GET /favicon.ico 200 in 30ms
+ GET /favicon.ico 200 in 30ms
+ GET /favicon.ico 200 in 30ms
+ GET /favicon.ico 200 in 30ms
+ GET /favicon.ico 200 in 29ms
+ GET /favicon.ico 200 in 29ms
+ GET / 307 in 41ms
+ GET /sign-in 200 in 34ms
+ GET /sign-in 200 in 29ms
+ GET /favicon.ico 200 in 9ms
+ GET / 307 in 39ms
+ GET / 307 in 103ms
+[ResponseAborted: ]
+ GET / 307 in 250ms
+[ResponseAborted: ]
+ GET / 307 in 402ms
+ GET /sign-in 200 in 79ms
+ GET /sign-in 200 in 101ms
+ GET / 307 in 330ms
+[ResponseAborted: ]
+ GET / 307 in 489ms
+[ResponseAborted: ]
+ GET / 307 in 640ms
+[ResponseAborted: ]
+ GET / 307 in 792ms
+[ResponseAborted: ]
+ GET / 307 in 941ms
+[ResponseAborted: ]
+ GET / 307 in 1089ms
+[ResponseAborted: ]
+ GET / 307 in 1250ms
+[ResponseAborted: ]
+ GET / 307 in 1413ms
+[ResponseAborted: ]
+ GET / 307 in 1561ms
+[ResponseAborted: ]
+ GET / 307 in 1713ms
+[ResponseAborted: ]
+ GET / 307 in 1869ms
+ GET /sign-in 200 in 1933ms
+ GET /sign-in 200 in 1933ms
+ GET / 307 in 149ms
+ GET /sign-in 200 in 127ms
+ GET /sign-in 200 in 141ms
+ GET /sign-in 200 in 211ms
+ GET /sign-in 200 in 212ms
+ GET /sign-in 200 in 213ms
+ GET /sign-in 200 in 416ms
+ GET /sign-in 200 in 417ms
+ GET /sign-in 200 in 417ms
+ GET /sign-in 200 in 418ms
+ GET /sign-in 200 in 420ms
+ GET /sign-in 200 in 420ms
+ GET /sign-in 200 in 421ms
+ GET /sign-in 200 in 422ms
+ GET /sign-in 200 in 423ms
+ GET /sign-in 200 in 418ms
+ GET /favicon.ico 200 in 356ms
+ GET /favicon.ico 200 in 330ms
+ GET /favicon.ico 200 in 74ms
+ GET /favicon.ico 200 in 74ms
+ GET /sign-in 200 in 95ms
+ GET /sign-in 200 in 132ms
+ GET /sign-in 200 in 132ms
+ GET /sign-in 200 in 133ms
+ GET /sign-in 200 in 482ms
+ GET /sign-in 200 in 483ms
+ GET /sign-in 200 in 485ms
+ GET /sign-in 200 in 486ms
+ GET /sign-in 200 in 486ms
+ GET /sign-in 200 in 487ms
+ GET /sign-in 200 in 488ms
+ GET /sign-in 200 in 489ms
+ GET /favicon.ico 200 in 395ms
+ GET /favicon.ico 200 in 408ms
+ GET /favicon.ico 200 in 403ms
+ GET /sign-in 200 in 433ms
+ GET /favicon.ico 200 in 65ms
+ GET /favicon.ico 200 in 65ms
+ GET /favicon.ico 200 in 65ms
+ GET /favicon.ico 200 in 65ms
+ GET /favicon.ico 200 in 65ms
+ GET /favicon.ico 200 in 65ms
+ GET /favicon.ico 200 in 65ms
+ GET /favicon.ico 200 in 64ms
+ GET /favicon.ico 200 in 9ms
+ GET / 307 in 53ms
+ GET / 307 in 54ms
+ GET / 307 in 65ms
+ GET /sign-in 200 in 102ms
+ GET /sign-in 200 in 83ms
+ GET /sign-in 200 in 63ms
+ GET /sign-in 200 in 97ms
+ GET /sign-in 200 in 69ms
+ GET /favicon.ico 200 in 42ms
+ GET /sign-in 200 in 71ms
+ GET /favicon.ico 200 in 40ms
+ GET /favicon.ico 200 in 9ms
+ GET / 307 in 35ms
+ GET / 307 in 53ms
+ GET /sign-in 200 in 121ms
+ GET / 307 in 214ms
+[ResponseAborted: ]
+ GET / 307 in 370ms
+[ResponseAborted: ]
+ GET / 307 in 511ms
+[ResponseAborted: ]
+ GET / 307 in 661ms
+[ResponseAborted: ]
+ GET / 307 in 806ms
+[ResponseAborted: ]
+ GET / 307 in 956ms
+[ResponseAborted: ]
+ GET / 307 in 1104ms
+ GET / 307 in 1113ms
+ GET /sign-in 200 in 131ms
+ GET / 307 in 123ms
+ GET /sign-in 200 in 177ms
+ GET /sign-in 200 in 178ms
+ GET / 307 in 239ms
+[ResponseAborted: ]
+ GET / 307 in 410ms
+ GET /sign-in 200 in 532ms
+ GET /sign-in 200 in 534ms
+ GET /sign-in 200 in 536ms
+ GET /sign-in 200 in 536ms
+ GET /sign-in 200 in 537ms
+ GET /sign-in 200 in 539ms
+ GET /sign-in 200 in 549ms
+ GET /favicon.ico 200 in 413ms
+ GET /sign-in 200 in 220ms
+ GET /sign-in 200 in 168ms
+ GET /sign-in 200 in 175ms
+ GET /sign-in 200 in 341ms
+ GET /sign-in 200 in 341ms
+ GET /sign-in 200 in 342ms
+ GET /sign-in 200 in 343ms
+ GET /sign-in 200 in 344ms
+ GET /sign-in 200 in 345ms
+ GET /sign-in 200 in 346ms
+ GET /sign-in 200 in 347ms
+ GET /favicon.ico 200 in 253ms
+ GET /sign-in 200 in 306ms
+ GET /favicon.ico 200 in 263ms
+ GET /favicon.ico 200 in 82ms
+ GET /favicon.ico 200 in 82ms
+ GET /favicon.ico 200 in 82ms
+ GET /favicon.ico 200 in 82ms
+ GET /favicon.ico 200 in 82ms
+ GET /favicon.ico 200 in 82ms
+ GET /sign-in 200 in 297ms
+ GET /favicon.ico 200 in 57ms
+ GET /sign-in 200 in 95ms
+ GET /sign-in 200 in 95ms
+ GET /favicon.ico 200 in 66ms
+ GET /favicon.ico 200 in 14ms
+ GET /favicon.ico 200 in 20ms
+ GET / 307 in 30ms
+ GET /sign-in 200 in 29ms
+ GET /sign-in 200 in 47ms
+ GET /favicon.ico 200 in 7ms
+ GET / 307 in 32ms
+ GET /sign-in 200 in 29ms
+ GET / 307 in 53ms
+ GET /sign-in 200 in 74ms
+ GET / 307 in 151ms
+[ResponseAborted: ]
+ GET / 307 in 293ms
+[ResponseAborted: ]
+ GET / 307 in 431ms
+[ResponseAborted: ]
+ GET / 307 in 574ms
+[ResponseAborted: ]
+ GET / 307 in 717ms
+ GET /favicon.ico 200 in 684ms
+ GET /sign-in 200 in 732ms
+ GET / 307 in 136ms
+[ResponseAborted: ]
+ GET / 307 in 284ms
+[ResponseAborted: ]
+ GET / 307 in 422ms
+[ResponseAborted: ]
+ GET / 307 in 564ms
+ GET /sign-in 200 in 656ms
+ GET /sign-in 200 in 657ms
+ GET /sign-in 200 in 658ms
+ GET /sign-in 200 in 659ms
+ GET /sign-in 200 in 659ms
+ GET /sign-in 200 in 169ms
+ GET /sign-in 200 in 134ms
+ GET /sign-in 200 in 135ms
+ GET /sign-in 200 in 136ms
+ GET /sign-in 200 in 137ms
+ GET /favicon.ico 200 in 179ms
+ GET /sign-in 200 in 238ms
+ GET /sign-in 200 in 239ms
+ GET /sign-in 200 in 240ms
+ GET /sign-in 200 in 241ms
+ GET /sign-in 200 in 242ms
+ GET /favicon.ico 200 in 22ms
+ GET /favicon.ico 200 in 33ms
+ GET /favicon.ico 200 in 33ms
+ GET /favicon.ico 200 in 33ms
+ GET /favicon.ico 200 in 33ms
+ GET /sign-in 200 in 110ms
+ GET /sign-in 200 in 110ms
+ GET /sign-in 200 in 110ms
+ GET /sign-in 200 in 111ms
+ GET /favicon.ico 200 in 17ms
+ GET /favicon.ico 200 in 27ms
+ GET /favicon.ico 200 in 27ms
+ GET /favicon.ico 200 in 27ms
+ GET / 307 in 45ms
+ GET /sign-in 200 in 35ms
+ GET /sign-in 200 in 32ms
+ GET /favicon.ico 200 in 13ms
+ GET / 307 in 37ms
+ GET / 307 in 39ms
+ GET /sign-in 200 in 83ms
+ GET / 307 in 126ms
+[ResponseAborted: ]
+ GET / 307 in 281ms
+ GET /sign-in 200 in 236ms
+ GET /sign-in 200 in 235ms
+ GET / 307 in 72ms
+ GET /favicon.ico 200 in 139ms
+ GET /sign-in 200 in 199ms
+ GET /sign-in 200 in 200ms
+ GET / 307 in 209ms
+[ResponseAborted: ]
+ GET / 307 in 351ms
+[ResponseAborted: ]
+ GET / 307 in 508ms
+[ResponseAborted: ]
+ GET / 307 in 661ms
+[ResponseAborted: ]
+ GET /sign-in 200 in 812ms
+ GET /favicon.ico 200 in 36ms
+ GET /sign-in 200 in 53ms
+ GET /sign-in 200 in 162ms
+ GET /sign-in 200 in 163ms
+ GET /sign-in 200 in 164ms
+ GET /sign-in 200 in 165ms
+ GET /sign-in 200 in 167ms
+ GET /sign-in 200 in 168ms
+ GET /favicon.ico 200 in 23ms
+ GET /favicon.ico 200 in 33ms
+ GET /sign-in 200 in 52ms
+ GET /sign-in 200 in 119ms
+ GET /sign-in 200 in 120ms
+ GET /sign-in 200 in 121ms
+ GET /sign-in 200 in 122ms
+ GET /favicon.ico 200 in 93ms
+ GET /favicon.ico 200 in 23ms
+ GET /favicon.ico 200 in 29ms
+ GET /favicon.ico 200 in 29ms
+ GET /favicon.ico 200 in 29ms
+ GET / 307 in 34ms
+ GET /sign-in 200 in 29ms
+ GET /sign-in 200 in 34ms
+ GET /favicon.ico 200 in 8ms
+ GET / 307 in 31ms
+ GET /sign-in 200 in 44ms
+ GET /sign-in 200 in 30ms
+ GET /favicon.ico 200 in 10ms
+ GET / 307 in 29ms
+ GET /sign-in 200 in 32ms
+ GET /sign-in 200 in 26ms
+ GET /favicon.ico 200 in 12ms
+ GET / 307 in 39ms
+ GET / 307 in 84ms
+[ResponseAborted: ]
+ GET / 307 in 219ms
+[ResponseAborted: ]
+ GET / 307 in 365ms
+ GET /sign-in 200 in 37ms
+ GET /sign-in 200 in 138ms
+ GET /sign-in 200 in 139ms
+ GET /sign-in 200 in 140ms
+ GET / 307 in 143ms
+[ResponseAborted: ]
+ GET /sign-in 200 in 44ms
+ GET /sign-in 200 in 67ms
+ GET /favicon.ico 200 in 104ms
+ GET /sign-in 200 in 137ms
+ GET /sign-in 200 in 138ms
+ GET /sign-in 200 in 139ms
+ GET /favicon.ico 200 in 84ms
+ GET /favicon.ico 200 in 21ms
+ GET /favicon.ico 200 in 31ms
+ GET / 307 in 64ms
+[ResponseAborted: ]
+ GET /sign-in 200 in 201ms
+ GET /favicon.ico 200 in 17ms
+ GET / 307 in 37ms
+ GET /sign-in 200 in 61ms
+ GET /sign-in 200 in 51ms
+ GET /sign-in 200 in 75ms
+ GET /favicon.ico 200 in 12ms
+ GET /sign-in 200 in 33ms
+ GET /favicon.ico 200 in 11ms
+ GET / 307 in 38ms
+ GET / 307 in 47ms
+ GET / 307 in 85ms
+[ResponseAborted: ]
+ GET / 307 in 229ms
+ GET /sign-in 200 in 260ms
+ GET /sign-in 200 in 46ms
+ GET /sign-in 200 in 108ms
+ GET /sign-in 200 in 109ms
+ GET / 307 in 120ms
+[ResponseAborted: ]
+ GET /sign-in 200 in 271ms
+ GET /favicon.ico 200 in 21ms
+ GET /sign-in 200 in 51ms
+ GET / 307 in 77ms
+ GET /sign-in 200 in 131ms
+ GET /sign-in 200 in 132ms
+ GET /sign-in 200 in 133ms
+ GET /favicon.ico 200 in 105ms
+ GET /favicon.ico 200 in 25ms
+ GET /favicon.ico 200 in 37ms
+ GET /sign-in 200 in 44ms
+ GET /sign-in 200 in 57ms
+ GET /favicon.ico 200 in 17ms
+ GET /sign-in 200 in 36ms
+ GET /favicon.ico 200 in 11ms
+ GET / 307 in 38ms
+ GET /sign-in 200 in 48ms
+ GET /sign-in 200 in 30ms
+ GET /favicon.ico 200 in 9ms
+ GET / 307 in 33ms
+ GET / 307 in 51ms
+ GET /sign-in 200 in 36ms
+ GET /sign-in 200 in 59ms
+ GET / 307 in 48ms
+ GET /sign-in 200 in 69ms
+ GET / 307 in 94ms
+ GET /sign-in 200 in 117ms
+ GET /favicon.ico 200 in 68ms
+ GET /favicon.ico 200 in 28ms
+ GET /sign-in 200 in 40ms
+ GET /sign-in 200 in 63ms
+ GET /sign-in 200 in 35ms
+ GET /sign-in 200 in 59ms
+ GET /favicon.ico 200 in 37ms
+ GET /favicon.ico 200 in 14ms
+ GET / 307 in 35ms
+ GET /sign-in 200 in 47ms
+ GET /sign-in 200 in 29ms
+ GET /favicon.ico 200 in 7ms
+ GET / 307 in 30ms
+ GET /sign-in 200 in 30ms
+ GET /sign-in 200 in 29ms
+ GET /favicon.ico 200 in 7ms
+ GET / 307 in 34ms
+ GET / 307 in 56ms
+ GET /sign-in 200 in 31ms
+ GET /sign-in 200 in 38ms
+ GET /sign-in 200 in 56ms
+ GET /sign-in 200 in 40ms
+ GET /favicon.ico 200 in 35ms
+ GET /favicon.ico 200 in 12ms
+ GET / 307 in 37ms
+ GET /sign-in 200 in 45ms
+ GET /sign-in 200 in 25ms
+ GET /favicon.ico 200 in 10ms
+ GET / 307 in 32ms
+ GET / 307 in 36ms
+ GET /sign-in 200 in 57ms
+ GET /sign-in 200 in 38ms
+ GET /sign-in 200 in 59ms
+ GET /favicon.ico 200 in 12ms
+ GET /sign-in 200 in 34ms
+ GET /favicon.ico 200 in 11ms
+ GET / 307 in 29ms
+ GET /sign-in 200 in 43ms
+ GET /sign-in 200 in 26ms
+ GET /favicon.ico 200 in 11ms
+ GET / 307 in 29ms
+ GET /sign-in 200 in 36ms
+ GET / 307 in 64ms
+ GET /sign-in 200 in 51ms
+ GET /favicon.ico 200 in 11ms
+ GET /sign-in 200 in 36ms
+ GET /sign-in 200 in 45ms
+ GET /favicon.ico 200 in 7ms
+ GET / 307 in 34ms
+ GET /sign-in 200 in 44ms
+ GET /sign-in 200 in 29ms
+ GET /favicon.ico 200 in 8ms
+ GET / 307 in 32ms
+ GET /sign-in 200 in 46ms
+ GET /sign-in 200 in 29ms
+ GET /favicon.ico 200 in 11ms
