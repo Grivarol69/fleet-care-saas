@@ -172,10 +172,10 @@ const nextConfig: NextConfig = {
     },
 
     // Configuración de ESLint
-    eslint: {
-        // Ignorar errores de ESLint durante builds (usar con cuidado)
-        ignoreDuringBuilds: true,
-    },
+    // eslint: {
+    //     // Ignorar errores de ESLint durante builds (usar con cuidado)
+    //     ignoreDuringBuilds: true,
+    // },
 
     // Configuración de salida
     output: 'standalone', // Para optimizar deployments en contenedores
