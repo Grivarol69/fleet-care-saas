@@ -1,5 +1,7 @@
 import { MantTemplatesList } from '../mant-template/components/MantTemplatesList';
 
+export const dynamic = 'force-dynamic';
+
 export default function MaintenancePackagesPage() {
   return (
     <div className="container mx-auto py-10">
