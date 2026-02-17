@@ -71,7 +71,7 @@ async function main() {
             owner: 'OWN',
             color: 'White'
         }));
-        await prisma.vehicle.createMany({ data: vehiclesData });
+        await prisma.vehicle.createMany({ data: vehiclesData as any });
     }
     console.log('✅ Created 150 Vehicles');
 
