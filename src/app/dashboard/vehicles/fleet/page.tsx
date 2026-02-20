@@ -1,4 +1,3 @@
-import React from 'react';
 import { FleetVehiclesList } from './components/FleetVehiclesList/FleetVehiclesList';
 
 export default function CategoriesPage() {

@@ -34,6 +34,7 @@ export async function GET(
         brand: true,
         line: true,
         type: true,
+        documents: true,
       },
     });
 

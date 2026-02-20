@@ -1,4 +1,3 @@
-import React from 'react';
 import { MantItemsList } from './components/MantItemsList';
 
 export default function CategoriesPage() {

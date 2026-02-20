@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "build": "prisma generate && next build --webpack",
     "build:analyze": "ANALYZE=true npm run build",
     "start": "next start",
@@ -22,6 +22,7 @@
     "seed": "tsx prisma/seed.ts",
     "seed:kb": "tsx prisma/seed.kb.ts",
     "seed:mt": "tsx prisma/seed-multitenancy.ts",
+    "seed:financial": "tsx prisma/seed-financial-demo.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky",
@@ -31,6 +32,7 @@
     "db:test:seed": "dotenv -e .env.test -- tsx prisma/seed-test.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
     "@clerk/nextjs": "^6.35.5",
     "@hookform/resolvers": "^3.6.0",
     "@next/eslint-plugin-next": "^15.5.3",
