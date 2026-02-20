@@ -44,7 +44,9 @@ import {
   FileText,
   Loader2,
   ShoppingCart,
+  Sparkles,
 } from 'lucide-react';
+import type { InvoiceOCRResult } from '@/lib/ocr/claude-vision';
 import { useToast } from '@/components/hooks/use-toast';
 import axios from 'axios';
 import { cn } from '@/lib/utils';
@@ -148,6 +150,7 @@ function NewInvoiceContent() {
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [attachmentUrl, setAttachmentUrl] = useState('');
   const [fileUploaded, setFileUploaded] = useState(false);
+  const [ocrResult, setOcrResult] = useState<InvoiceOCRResult | null>(null);
 
   // Dialog agregar item
   const [addItemDialogOpen, setAddItemDialogOpen] = useState(false);
@@ -198,11 +201,13 @@ function NewInvoiceContent() {
       try {
         // Cargar providers y OC pendientes en paralelo
         const [providersRes, posRes] = await Promise.all([
-          axios.get('/api/people/providers'),
-          axios.get('/api/purchase-orders?status=APPROVED,SENT'),
+          axios.get('/api/people/providers').catch(_err => ({ data: [] })),
+          axios
+            .get('/api/purchase-orders?status=APPROVED,SENT')
+            .catch(_err => ({ data: [] })),
         ]);
-        setProviders(providersRes.data);
-        setPendingPOs(posRes.data);
+        setProviders(Array.isArray(providersRes.data) ? providersRes.data : []);
+        setPendingPOs(Array.isArray(posRes.data) ? posRes.data : []);
 
         // Si viene purchaseOrderId, cargar esa OC directamente
         if (purchaseOrderIdParam) {
@@ -1229,13 +1234,68 @@ function NewInvoiceContent() {
                 <UploadButton
                   endpoint="invoiceUploader"
                   onClientUploadComplete={res => {
-                    if (res?.[0]?.url) {
-                      setAttachmentUrl(res[0].url);
+                    const uploaded = res?.[0];
+                    if (uploaded?.url) {
+                      setAttachmentUrl(uploaded.url);
                       setFileUploaded(true);
-                      toast({
-                        title: '¡Archivo subido!',
-                        description: 'La factura se ha cargado correctamente',
-                      });
+
+                      const sd = uploaded.serverData;
+                      const confidence =
+                        typeof sd?.ocrConfidence === 'number'
+                          ? sd.ocrConfidence
+                          : 0;
+                      if (confidence >= 40) {
+                        const parsedItems =
+                          typeof sd?.ocrItemsJson === 'string'
+                            ? (JSON.parse(
+                                sd.ocrItemsJson
+                              ) as InvoiceOCRResult['items'])
+                            : undefined;
+                        const ocr: InvoiceOCRResult = {
+                          confidence,
+                          ...(typeof sd?.ocrInvoiceNumber === 'string' && {
+                            invoiceNumber: sd.ocrInvoiceNumber,
+                          }),
+                          ...(typeof sd?.ocrInvoiceDate === 'string' && {
+                            invoiceDate: sd.ocrInvoiceDate,
+                          }),
+                          ...(typeof sd?.ocrDueDate === 'string' && {
+                            dueDate: sd.ocrDueDate,
+                          }),
+                          ...(typeof sd?.ocrSupplierName === 'string' && {
+                            supplierName: sd.ocrSupplierName,
+                          }),
+                          ...(typeof sd?.ocrSupplierNit === 'string' && {
+                            supplierNit: sd.ocrSupplierNit,
+                          }),
+                          ...(typeof sd?.ocrSubtotal === 'number' && {
+                            subtotal: sd.ocrSubtotal,
+                          }),
+                          ...(typeof sd?.ocrTaxAmount === 'number' && {
+                            taxAmount: sd.ocrTaxAmount,
+                          }),
+                          ...(typeof sd?.ocrTotal === 'number' && {
+                            total: sd.ocrTotal,
+                          }),
+                          ...(parsedItems !== undefined && {
+                            items: parsedItems,
+                          }),
+                        };
+                        setOcrResult(ocr);
+                        if (ocr.invoiceNumber)
+                          setInvoiceNumber(ocr.invoiceNumber);
+                        if (ocr.invoiceDate) setInvoiceDate(ocr.invoiceDate);
+                        if (ocr.dueDate) setDueDate(ocr.dueDate);
+                        toast({
+                          title: '¡Factura detectada!',
+                          description: `OCR completado con ${confidence}% de confianza`,
+                        });
+                      } else {
+                        toast({
+                          title: '¡Archivo subido!',
+                          description: 'La factura se ha cargado correctamente',
+                        });
+                      }
                     }
                   }}
                   onUploadError={error => {
@@ -1271,6 +1331,155 @@ function NewInvoiceContent() {
             )}
           </CardContent>
         </Card>
+
+        {/* Panel OCR — Datos detectados de la factura */}
+        {ocrResult && ocrResult.confidence > 0 && (
+          <Card className="border-blue-200 bg-blue-50">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-blue-700 text-base">
+                <Sparkles className="h-4 w-4" />
+                Factura detectada ({ocrResult.confidence}% confianza)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {/* Resumen de datos de cabecera */}
+              <div className="grid grid-cols-2 gap-2 text-sm text-blue-600">
+                {ocrResult.invoiceNumber && (
+                  <p>
+                    <span className="font-medium">N° Factura:</span>{' '}
+                    {ocrResult.invoiceNumber}
+                  </p>
+                )}
+                {ocrResult.supplierName && (
+                  <p>
+                    <span className="font-medium">Proveedor:</span>{' '}
+                    {ocrResult.supplierName}
+                    {ocrResult.supplierNit &&
+                      ` (NIT: ${ocrResult.supplierNit})`}
+                  </p>
+                )}
+                {ocrResult.invoiceDate && (
+                  <p>
+                    <span className="font-medium">Fecha:</span>{' '}
+                    {new Date(ocrResult.invoiceDate).toLocaleDateString(
+                      'es-CO'
+                    )}
+                  </p>
+                )}
+                {ocrResult.total !== undefined && (
+                  <p>
+                    <span className="font-medium">Total:</span> $
+                    {ocrResult.total.toLocaleString('es-CO')}
+                  </p>
+                )}
+              </div>
+
+              {/* Tabla de ítems detectados */}
+              {ocrResult.items && ocrResult.items.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-blue-700">
+                    {ocrResult.items.length} ítem
+                    {ocrResult.items.length !== 1 ? 's' : ''} detectado
+                    {ocrResult.items.length !== 1 ? 's' : ''}:
+                  </p>
+                  <div className="rounded border border-blue-200 bg-white overflow-hidden">
+                    <table className="w-full text-xs">
+                      <thead className="bg-blue-100">
+                        <tr>
+                          <th className="px-3 py-2 text-left font-medium text-blue-700">
+                            Descripción
+                          </th>
+                          <th className="px-3 py-2 text-center font-medium text-blue-700 w-14">
+                            Qty
+                          </th>
+                          <th className="px-3 py-2 text-right font-medium text-blue-700 w-28">
+                            P/Unit
+                          </th>
+                          <th className="px-3 py-2 text-right font-medium text-blue-700 w-28">
+                            Total
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {ocrResult.items.map((item, idx) => (
+                          <tr key={idx} className="border-t border-blue-100">
+                            <td className="px-3 py-1.5 text-gray-700">
+                              {item.description}
+                            </td>
+                            <td className="px-3 py-1.5 text-center text-gray-600">
+                              {item.quantity}
+                            </td>
+                            <td className="px-3 py-1.5 text-right text-gray-600">
+                              ${item.unitPrice.toLocaleString('es-CO')}
+                            </td>
+                            <td className="px-3 py-1.5 text-right text-gray-600">
+                              ${item.total.toLocaleString('es-CO')}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => {
+                        const ocrItems = (ocrResult.items ?? []).map(item => {
+                          const totals = calculateItemTotals(
+                            item.quantity,
+                            item.unitPrice,
+                            19
+                          );
+                          return {
+                            id: crypto.randomUUID(),
+                            description: item.description,
+                            quantity: item.quantity,
+                            estimatedUnitPrice: item.unitPrice,
+                            estimatedTotal: item.quantity * item.unitPrice,
+                            realUnitPrice: item.unitPrice,
+                            taxRate: 19,
+                            included: true,
+                            isFree: false,
+                            ...totals,
+                          } satisfies InvoiceItem;
+                        });
+                        setItems(prev => [...prev, ...ocrItems]);
+                        setOcrResult(prev =>
+                          prev ? { ...prev, items: [] } : null
+                        );
+                        toast({
+                          title: 'Ítems agregados',
+                          description: `${ocrItems.length} ítem${ocrItems.length !== 1 ? 's' : ''} agregado${ocrItems.length !== 1 ? 's' : ''} al formulario`,
+                        });
+                      }}
+                    >
+                      Agregar al formulario
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="text-blue-600 hover:text-blue-700"
+                      onClick={() =>
+                        setOcrResult(prev =>
+                          prev ? { ...prev, items: [] } : null
+                        )
+                      }
+                    >
+                      Ignorar ítems
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <p className="text-xs text-blue-500">
+                N° de factura y fechas aplicados al formulario — revisá y
+                corregí si es necesario
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Actions */}
         <div className="flex justify-end gap-3">

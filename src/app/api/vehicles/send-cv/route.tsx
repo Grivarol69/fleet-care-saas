@@ -5,7 +5,6 @@ import { renderToBuffer } from '@react-pdf/renderer';
 import { VehicleCV } from '@/app/dashboard/vehicles/fleet/components/VehicleCV/VehicleCV';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
-import React from 'react';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 

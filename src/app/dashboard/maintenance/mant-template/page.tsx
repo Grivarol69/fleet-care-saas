@@ -1,4 +1,3 @@
-import React from 'react';
 import { MantTemplatesList } from './components/MantTemplatesList';
 
 export default function MantTemplatesPage() {

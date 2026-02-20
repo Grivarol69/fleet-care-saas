@@ -48,10 +48,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export function FleetVehiclesList() {
   const [data, setData] = useState<FleetVehicle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'own' | 'third_party'
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCVDialogOpen, setIsCVDialogOpen] = useState(false);
@@ -332,8 +334,14 @@ export function FleetVehiclesList() {
     [handleDelete, handleEdit]
   );
 
+  const filteredData = useMemo(() => {
+    if (activeTab === 'own') return data.filter(v => v.owner === 'OWN');
+    if (activeTab === 'third_party') return data.filter(v => v.owner !== 'OWN');
+    return data;
+  }, [data, activeTab]);
+
   const table = useReactTable({
-    data,
+    data: filteredData,
     columns,
     getFilteredRowModel: getFilteredRowModel(),
     getCoreRowModel: getCoreRowModel(),
@@ -364,6 +372,15 @@ export function FleetVehiclesList() {
         </Button>
         <DownloadBtn data={data} fileName="vehiculos" />
       </div>
+
+      {/* Tabs Filter */}
+      <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="all">Todos</TabsTrigger>
+          <TabsTrigger value="own">Propios</TabsTrigger>
+          <TabsTrigger value="third_party">Terceros</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {/* Filtros */}
       <div className="flex items-center gap-4">

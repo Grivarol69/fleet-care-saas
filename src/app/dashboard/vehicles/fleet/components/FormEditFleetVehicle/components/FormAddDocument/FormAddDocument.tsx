@@ -39,11 +39,12 @@ import axios from 'axios';
 import { useToast } from '@/components/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { CalendarIcon, Loader2 } from 'lucide-react';
+import { CalendarIcon, Loader2, Sparkles } from 'lucide-react';
 import {
   FormAddDocumentProps,
   DocumentTypeConfigProps,
 } from '../SharedTypes/SharedTypes';
+import type { DocumentOCRResult } from '@/lib/ocr/claude-vision';
 
 const formSchema = z.object({
   documentTypeId: z.number({
@@ -63,6 +64,7 @@ export function FormAddDocument({
 }: FormAddDocumentProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [fileUploaded, setFileUploaded] = useState(false);
+  const [ocrResult, setOcrResult] = useState<DocumentOCRResult | null>(null);
   const [documentTypes, setDocumentTypes] = useState<DocumentTypeConfigProps[]>(
     []
   );
@@ -108,6 +110,7 @@ export function FormAddDocument({
       setIsOpen(false);
       form.reset();
       setFileUploaded(false);
+      setOcrResult(null);
 
       toast({
         title: 'Documento creado!',
@@ -220,14 +223,65 @@ export function FormAddDocument({
                         <UploadButton
                           endpoint="documentUploader"
                           onClientUploadComplete={res => {
-                            if (res?.[0]?.url) {
-                              field.onChange(res[0].url);
+                            const uploaded = res?.[0];
+                            if (uploaded?.url) {
+                              field.onChange(uploaded.url);
                               setFileUploaded(true);
-                              toast({
-                                title: 'Archivo subido!',
-                                description:
-                                  'El archivo se ha cargado correctamente',
-                              });
+
+                              const sd = uploaded.serverData;
+                              const confidence =
+                                typeof sd?.ocrConfidence === 'number'
+                                  ? sd.ocrConfidence
+                                  : 0;
+                              if (confidence >= 40) {
+                                const ocr: DocumentOCRResult = {
+                                  confidence,
+                                  ...(typeof sd?.ocrDocumentNumber ===
+                                    'string' && {
+                                    documentNumber: sd.ocrDocumentNumber,
+                                  }),
+                                  ...(typeof sd?.ocrEntity === 'string' && {
+                                    entity: sd.ocrEntity,
+                                  }),
+                                  ...(typeof sd?.ocrIssueDate === 'string' && {
+                                    issueDate: sd.ocrIssueDate,
+                                  }),
+                                  ...(typeof sd?.ocrExpiryDate === 'string' && {
+                                    expiryDate: sd.ocrExpiryDate,
+                                  }),
+                                  ...(typeof sd?.ocrDocumentType ===
+                                    'string' && {
+                                    documentType: sd.ocrDocumentType,
+                                  }),
+                                  ...(typeof sd?.ocrVehiclePlate ===
+                                    'string' && {
+                                    vehiclePlate: sd.ocrVehiclePlate,
+                                  }),
+                                };
+                                setOcrResult(ocr);
+                                if (ocr.documentNumber)
+                                  form.setValue(
+                                    'documentNumber',
+                                    ocr.documentNumber
+                                  );
+                                if (ocr.entity)
+                                  form.setValue('entity', ocr.entity);
+                                if (ocr.expiryDate) {
+                                  const parsed = new Date(ocr.expiryDate);
+                                  if (!isNaN(parsed.getTime()))
+                                    form.setValue('expiryDate', parsed);
+                                }
+                                toast({
+                                  title: 'Datos detectados',
+                                  description: `OCR completado con ${confidence}% de confianza — revisá los campos`,
+                                });
+                              } else {
+                                toast({
+                                  title: 'Archivo subido',
+                                  description:
+                                    'El archivo se ha cargado correctamente',
+                                });
+                              }
                             }
                           }}
                           onUploadError={error => {
@@ -263,6 +317,38 @@ export function FormAddDocument({
                 </FormItem>
               )}
             />
+
+            {/* Banner OCR */}
+            {ocrResult && ocrResult.confidence > 0 && (
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm">
+                <div className="mb-1 flex items-center gap-1.5 font-medium text-blue-700">
+                  <Sparkles className="h-4 w-4" />
+                  Datos detectados automáticamente ({ocrResult.confidence}%
+                  confianza)
+                </div>
+                <div className="text-blue-600 space-y-0.5">
+                  {ocrResult.documentNumber && (
+                    <p>Número: {ocrResult.documentNumber}</p>
+                  )}
+                  {ocrResult.entity && <p>Entidad: {ocrResult.entity}</p>}
+                  {ocrResult.expiryDate && (
+                    <p>
+                      Vencimiento:{' '}
+                      {new Date(ocrResult.expiryDate).toLocaleDateString(
+                        'es-CO'
+                      )}
+                    </p>
+                  )}
+                  {ocrResult.vehiclePlate && (
+                    <p>Placa detectada: {ocrResult.vehiclePlate}</p>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-blue-500">
+                  Los campos fueron pre-rellenados — revisá y corregí si es
+                  necesario
+                </p>
+              </div>
+            )}
 
             {/* Fecha de Vencimiento */}
             <FormField
@@ -315,6 +401,7 @@ export function FormAddDocument({
                   setIsOpen(false);
                   form.reset();
                   setFileUploaded(false);
+                  setOcrResult(null);
                 }}
                 disabled={isLoading}
               >

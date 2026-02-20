@@ -1,6 +1,12 @@
 'use client';
 
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -83,6 +89,9 @@ export function Navbar() {
             <Menu />
           </SheetTrigger>
           <SheetContent side="left">
+            <SheetHeader>
+              <SheetTitle className="sr-only">Menú de Navegación</SheetTitle>
+            </SheetHeader>
             <SidebarRoutes />
           </SheetContent>
         </Sheet>
