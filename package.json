@@ -22,6 +22,7 @@
     "seed": "tsx prisma/seed.ts",
     "seed:kb": "tsx prisma/seed.kb.ts",
     "seed:mt": "tsx prisma/seed-multitenancy.ts",
+    "seed:demo": "tsx prisma/seed-staging-demo.ts",
     "seed:financial": "tsx prisma/seed-financial-demo.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
