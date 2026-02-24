@@ -15,7 +15,9 @@ import { PrismaClient } from '@prisma/client';
 
 const SEED_MARKER = 'DEMO_SEED_V1';
 const DATE_START = new Date('2025-08-01');
-const DATE_END = new Date('2026-01-31');
+// DATE_END siempre incluye el mes actual para que "Gasto del Mes" tenga datos
+const _now = new Date();
+const DATE_END = new Date(_now.getFullYear(), _now.getMonth() + 1, 0);
 const BATCH_SIZE = 25;
 
 const TENANT_ID = 'org_38zCXuXqy5Urw5CuaisTHu3jLTq'; // Transportes Demo SAS
@@ -1401,7 +1403,844 @@ async function seedWorkOrderExpenses(
 }
 
 // ============================================================
-// MAIN (expanded in Batch 3)
+// BATCH 4 — Invoices + PartPriceHistory + FinancialAlerts
+// ============================================================
+
+async function seedInvoices(
+  ctx: SeedContext,
+  workOrderIds: string[],
+  partsMap: Map<string, string>
+): Promise<string[]> {
+  console.log('\n[seedInvoices] Checking idempotency...');
+  if (await checkAlreadySeeded(ctx.tenant.id, 'Invoice', 20)) {
+    const existing = await prisma.invoice.findMany({
+      where: { tenantId: ctx.tenant.id, notes: { contains: SEED_MARKER } },
+      select: { id: true },
+    });
+    return existing.map(i => i.id);
+  }
+
+  console.log('[seedInvoices] Seeding invoices...');
+  if (ctx.providers.length === 0) {
+    console.warn('[seedInvoices] No providers found — skipping');
+    return [];
+  }
+
+  const partKeys = Array.from(partsMap.keys());
+  const createdIds: string[] = [];
+
+  // Use first 25 WO IDs (all seeded WOs have COMPLETED among them)
+  const targetIds = workOrderIds.slice(0, 25);
+
+  for (let idx = 0; idx < targetIds.length; idx++) {
+    const woIdStr = targetIds[idx];
+    if (!woIdStr) continue;
+
+    const provider = ctx.providers[idx % ctx.providers.length]!;
+    const invoiceDate = generateDateInRange(DATE_START, DATE_END);
+    const dueDate = new Date(invoiceDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const invoiceYear = invoiceDate.getFullYear();
+
+    // Fetch WorkOrderItems for this WO — needed to link InvoiceItems so the
+    // financial dashboard can resolve InvoiceItem→WorkOrderItem→MantItem→Category
+    const woItems = await prisma.workOrderItem.findMany({
+      where: { workOrderId: parseInt(woIdStr, 10) },
+      select: { id: true, masterPartId: true },
+    });
+
+    // 2 items per invoice — pick 2 consecutive parts
+    const p1Key = partKeys[idx % partKeys.length];
+    const p2Key = partKeys[(idx + 1) % partKeys.length];
+    const itemDefs = [
+      {
+        key: p1Key,
+        qty: 1 + (idx % 3),
+        unitPrice: 50000 + ((idx * 7777) % 200000),
+      },
+      {
+        key: p2Key,
+        qty: 1 + ((idx + 1) % 2),
+        unitPrice: 30000 + ((idx * 5555) % 120000),
+      },
+    ].filter(d => d.key !== undefined && partsMap.has(d.key!));
+
+    let subtotal = 0;
+    const itemsCreate = itemDefs.map((d, iIdx) => {
+      const lineSubtotal = d.unitPrice * d.qty;
+      const taxAmount = Math.round(lineSubtotal * 0.19);
+      subtotal += lineSubtotal;
+      const masterPartId = partsMap.get(d.key!)!;
+      // Link to WorkOrderItem: match by masterPartId, else round-robin
+      const matchedWoItem =
+        woItems.find(w => w.masterPartId === masterPartId) ??
+        woItems[iIdx % Math.max(woItems.length, 1)];
+      return {
+        tenantId: ctx.tenant.id,
+        masterPartId,
+        workOrderItemId: matchedWoItem?.id ?? null,
+        description: d.key!,
+        quantity: d.qty,
+        unitPrice: d.unitPrice,
+        subtotal: lineSubtotal,
+        taxRate: 19,
+        taxAmount,
+        total: lineSubtotal + taxAmount,
+      };
+    });
+
+    const taxAmount = Math.round(subtotal * 0.19);
+    const totalAmount = subtotal + taxAmount;
+
+    const inv = await prisma.invoice.create({
+      data: {
+        tenantId: ctx.tenant.id,
+        invoiceNumber: `FAC-${invoiceYear}-${String(idx + 1).padStart(5, '0')}`,
+        invoiceDate,
+        dueDate,
+        supplierId: provider.id,
+        workOrderId: parseInt(woIdStr, 10),
+        subtotal,
+        taxAmount,
+        totalAmount,
+        status: 'PAID',
+        ocrStatus: 'COMPLETED',
+        registeredBy: ctx.adminUser.id,
+        approvedBy: ctx.adminUser.id,
+        approvedAt: invoiceDate,
+        notes: `${SEED_MARKER} Factura demo OT #${woIdStr}`,
+        items: { create: itemsCreate },
+      },
+    });
+
+    await prisma.invoicePayment.create({
+      data: {
+        tenantId: ctx.tenant.id,
+        invoiceId: inv.id,
+        amount: totalAmount,
+        paymentDate: new Date(dueDate.getTime() - 5 * 24 * 60 * 60 * 1000),
+        paymentMethod:
+          idx % 3 === 0
+            ? 'EFECTIVO'
+            : idx % 3 === 1
+              ? 'TRANSFERENCIA'
+              : 'CHEQUE',
+        referenceNumber: idx % 3 !== 0 ? `TRF-${Date.now()}-${idx}` : null,
+        registeredBy: ctx.adminUser.id,
+      },
+    });
+
+    createdIds.push(inv.id);
+  }
+
+  console.log(
+    `[seedInvoices] Created ${createdIds.length} invoices with items and payments.`
+  );
+  return createdIds;
+}
+
+async function seedPartPriceHistory(
+  ctx: SeedContext,
+  partsMap: Map<string, string>,
+  invoiceIds: string[]
+): Promise<void> {
+  console.log('\n[seedPartPriceHistory] Checking idempotency...');
+  const count = await prisma.partPriceHistory.count({
+    where: { tenantId: ctx.tenant.id },
+  });
+  if (count >= 30) {
+    console.log(`[seedPartPriceHistory] Found ${count} records — SKIPPING`);
+    return;
+  }
+
+  if (ctx.providers.length === 0) {
+    console.warn('[seedPartPriceHistory] No providers — skipping');
+    return;
+  }
+
+  const partKeys = Array.from(partsMap.keys());
+  let totalCreated = 0;
+
+  for (let pIdx = 0; pIdx < partKeys.length; pIdx++) {
+    const key = partKeys[pIdx]!;
+    const masterPartId = partsMap.get(key)!;
+    const provider = ctx.providers[pIdx % ctx.providers.length]!;
+
+    // First 2 parts get >20% price increase to trigger the financial watchdog
+    const basePrice = 40000 + ((pIdx * 13337) % 150000);
+    const finalMultiplier = pIdx < 2 ? 1.24 : 1.04;
+
+    const entriesCount = 3 + (pIdx % 4); // 3–6 entries per part
+    const lastInvoiceId = invoiceIds[pIdx % Math.max(invoiceIds.length, 1)];
+
+    for (let eIdx = 0; eIdx < entriesCount; eIdx++) {
+      const progress = entriesCount > 1 ? eIdx / (entriesCount - 1) : 0;
+      const price = Math.round(
+        basePrice * (1 + (finalMultiplier - 1) * progress)
+      );
+
+      // Spread evenly across the 6-month period
+      const periodMs = DATE_END.getTime() - DATE_START.getTime();
+      const recordedAt = new Date(
+        DATE_START.getTime() + (eIdx / entriesCount) * periodMs
+      );
+
+      await prisma.partPriceHistory.create({
+        data: {
+          tenantId: ctx.tenant.id,
+          masterPartId,
+          supplierId: provider.id,
+          price,
+          quantity: 1,
+          recordedAt,
+          invoiceId: eIdx === entriesCount - 1 ? (lastInvoiceId ?? null) : null,
+          approvedBy: ctx.adminUser.id,
+          purchasedBy: ctx.adminUser.id,
+        },
+      });
+      totalCreated++;
+    }
+  }
+
+  console.log(
+    `[seedPartPriceHistory] Created ${totalCreated} price history records.`
+  );
+}
+
+async function seedFinancialAlerts(
+  ctx: SeedContext,
+  partsMap: Map<string, string>
+): Promise<void> {
+  console.log('\n[seedFinancialAlerts] Checking idempotency...');
+  const count = await prisma.financialAlert.count({
+    where: { tenantId: ctx.tenant.id },
+  });
+  if (count >= 3) {
+    console.log(`[seedFinancialAlerts] Found ${count} records — SKIPPING`);
+    return;
+  }
+
+  const partKeys = Array.from(partsMap.keys());
+
+  type AlertDef = {
+    type: 'PRICE_DEVIATION' | 'BUDGET_OVERRUN';
+    severity: 'HIGH' | 'CRITICAL' | 'FINANCIAL';
+    masterPartId: string | null;
+    message: string;
+    details: Record<string, number>;
+  };
+
+  const alertDefs: AlertDef[] = [
+    {
+      type: 'PRICE_DEVIATION',
+      severity: 'CRITICAL',
+      masterPartId: partsMap.get(partKeys[0] ?? '') ?? null,
+      message:
+        'Precio de Filtro de aceite supera referencia en 24% — revisar proveedor',
+      details: { expected: 45000, actual: 55800, deviation: 24 },
+    },
+    {
+      type: 'PRICE_DEVIATION',
+      severity: 'HIGH',
+      masterPartId: partsMap.get(partKeys[1] ?? '') ?? null,
+      message: 'Precio de Pastillas de freno supera referencia en 22%',
+      details: { expected: 120000, actual: 146400, deviation: 22 },
+    },
+    {
+      type: 'BUDGET_OVERRUN',
+      severity: 'HIGH',
+      masterPartId: null,
+      message: 'Costo de OT supera presupuesto aprobado en 18%',
+      details: { approved: 800000, actual: 944000, deviation: 18 },
+    },
+    {
+      type: 'PRICE_DEVIATION',
+      severity: 'FINANCIAL',
+      masterPartId: partsMap.get(partKeys[2] ?? '') ?? null,
+      message: 'Variación de precio en Llantas — revisar proveedor alternativo',
+      details: { expected: 280000, actual: 310000, deviation: 10.7 },
+    },
+    {
+      type: 'BUDGET_OVERRUN',
+      severity: 'HIGH',
+      masterPartId: null,
+      message: 'Gastos de mantenimiento del mes exceden presupuesto mensual',
+      details: { budget: 2000000, actual: 2450000, deviation: 22.5 },
+    },
+  ];
+
+  for (const def of alertDefs) {
+    await prisma.financialAlert.create({
+      data: {
+        tenantId: ctx.tenant.id,
+        type: def.type,
+        severity: def.severity,
+        status: 'PENDING',
+        masterPartId: def.masterPartId,
+        message: def.message,
+        details: def.details,
+      },
+    });
+  }
+
+  console.log(
+    `[seedFinancialAlerts] Created ${alertDefs.length} financial alerts.`
+  );
+}
+
+// ============================================================
+// BATCH 5 — Documents + MaintenanceAlerts
+// ============================================================
+
+async function seedDocuments(ctx: SeedContext): Promise<void> {
+  console.log('\n[seedDocuments] Checking idempotency...');
+  const count = await prisma.document.count({
+    where: { tenantId: ctx.tenant.id },
+  });
+  if (count >= 20) {
+    console.log(`[seedDocuments] Found ${count} records — SKIPPING`);
+    return;
+  }
+
+  const docTypes = await prisma.documentTypeConfig.findMany({
+    where: {
+      OR: [{ tenantId: ctx.tenant.id }, { isGlobal: true }],
+      status: 'ACTIVE',
+    },
+    select: { id: true, code: true },
+    orderBy: { sortOrder: 'asc' },
+    take: 5,
+  });
+
+  if (docTypes.length === 0) {
+    console.warn('[seedDocuments] No document types configured — skipping');
+    return;
+  }
+
+  const now = new Date();
+  let totalCreated = 0;
+
+  for (const vehicle of ctx.vehicles) {
+    for (let dtIdx = 0; dtIdx < docTypes.length; dtIdx++) {
+      const docType = docTypes[dtIdx]!;
+
+      // Distribution: 2 EXPIRED, 2 EXPIRING_SOON, rest ACTIVE
+      let status: 'ACTIVE' | 'EXPIRED' | 'EXPIRING_SOON';
+      let expiryDate: Date;
+
+      if (dtIdx < 2) {
+        status = 'EXPIRED';
+        expiryDate = new Date(
+          now.getTime() - (30 + dtIdx * 20) * 24 * 60 * 60 * 1000
+        );
+      } else if (dtIdx < 4) {
+        status = 'EXPIRING_SOON';
+        expiryDate = new Date(
+          now.getTime() + (10 + dtIdx * 5) * 24 * 60 * 60 * 1000
+        );
+      } else {
+        status = 'ACTIVE';
+        expiryDate = new Date(
+          now.getTime() + (90 + dtIdx * 30) * 24 * 60 * 60 * 1000
+        );
+      }
+
+      const plate = vehicle.licensePlate.replace(/[^a-zA-Z0-9]/g, '');
+      await prisma.document.create({
+        data: {
+          tenantId: ctx.tenant.id,
+          vehicleId: vehicle.id,
+          documentTypeId: docType.id,
+          fileName: `${docType.code.toLowerCase()}-${plate}.pdf`,
+          fileUrl: `https://placeholder.fleet-care.com/docs/${vehicle.id}/${docType.code}.pdf`,
+          documentNumber: `DOC-${vehicle.id}-${docType.id}-2025`,
+          entity: dtIdx % 2 === 0 ? 'SURA' : 'Seguros del Estado',
+          expiryDate,
+          status,
+        },
+      });
+      totalCreated++;
+    }
+  }
+
+  console.log(
+    `[seedDocuments] Created ${totalCreated} documents across ${ctx.vehicles.length} vehicles.`
+  );
+}
+
+async function seedMaintenanceAlerts(ctx: SeedContext): Promise<void> {
+  console.log('\n[seedMaintenanceAlerts] Checking idempotency...');
+  if (await checkAlreadySeeded(ctx.tenant.id, 'MaintenanceAlert', 8)) return;
+
+  // Fetch VehicleProgramItems through the join chain
+  const programItems = await prisma.vehicleProgramItem.findMany({
+    where: { package: { program: { tenantId: ctx.tenant.id } } },
+    select: {
+      id: true,
+      scheduledKm: true,
+      package: {
+        select: { program: { select: { vehicleId: true } } },
+      },
+    },
+    take: 12,
+  });
+
+  if (programItems.length === 0) {
+    console.warn(
+      '[seedMaintenanceAlerts] No VehicleProgramItems found — skipping'
+    );
+    return;
+  }
+
+  const statuses = [
+    'PENDING',
+    'PENDING',
+    'PENDING',
+    'PENDING',
+    'ACKNOWLEDGED',
+    'ACKNOWLEDGED',
+    'SNOOZED',
+    'SNOOZED',
+    'IN_PROGRESS',
+    'IN_PROGRESS',
+    'CANCELLED',
+    'CANCELLED',
+  ] as const;
+
+  const categories = [
+    'CRITICAL_SAFETY',
+    'MAJOR_COMPONENT',
+    'ROUTINE',
+    'MINOR',
+  ] as const;
+
+  let created = 0;
+
+  for (let idx = 0; idx < programItems.length; idx++) {
+    const item = programItems[idx]!;
+    const status = statuses[idx % statuses.length]!;
+    const category = categories[idx % categories.length]!;
+
+    const scheduledKm = item.scheduledKm ?? 10000 + idx * 5000;
+    const currentKm = scheduledKm - (200 + idx * 400);
+    const kmToMaintenance = scheduledKm - currentKm;
+    const alertLevel =
+      kmToMaintenance <= 0
+        ? 'CRITICAL'
+        : kmToMaintenance < 500
+          ? 'HIGH'
+          : kmToMaintenance < 1000
+            ? 'MEDIUM'
+            : 'LOW';
+    const priorityScore = Math.min(
+      100,
+      Math.max(0, 100 - Math.floor(kmToMaintenance / 100))
+    );
+    const priority =
+      priorityScore > 70 ? 'HIGH' : priorityScore > 40 ? 'MEDIUM' : 'LOW';
+
+    try {
+      await prisma.maintenanceAlert.create({
+        data: {
+          tenantId: ctx.tenant.id,
+          vehicleId: item.package.program.vehicleId,
+          programItemId: item.id,
+          type:
+            kmToMaintenance <= 0
+              ? 'OVERDUE'
+              : kmToMaintenance < 1000
+                ? 'PREVENTIVE'
+                : 'EARLY_WARNING',
+          category,
+          itemName: `Mantenimiento programado — item #${item.id}`,
+          packageName: `Paquete ${scheduledKm.toLocaleString()} km`,
+          scheduledKm,
+          currentKmAtCreation: currentKm,
+          currentKm,
+          kmToMaintenance,
+          alertThresholdKm: 1000,
+          priority: priority as 'HIGH' | 'MEDIUM' | 'LOW',
+          alertLevel: alertLevel as 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL',
+          priorityScore,
+          status,
+          notes: `${SEED_MARKER} Alerta demo`,
+          acknowledgedBy:
+            status === 'ACKNOWLEDGED' ? ctx.adminUser.id : undefined,
+          acknowledgedAt:
+            status === 'ACKNOWLEDGED'
+              ? generateDateInRange(DATE_START, DATE_END)
+              : undefined,
+          snoozedUntil:
+            status === 'SNOOZED'
+              ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+              : undefined,
+          snoozeReason: status === 'SNOOZED' ? 'Repuesto en pedido' : undefined,
+          snoozedBy: status === 'SNOOZED' ? ctx.adminUser.id : undefined,
+        },
+      });
+      created++;
+    } catch {
+      // @@unique([programItemId, status]) — skip duplicate combinations
+      console.warn(
+        `[seedMaintenanceAlerts] Skipped item ${item.id}+${status} — unique constraint`
+      );
+    }
+  }
+
+  console.log(`[seedMaintenanceAlerts] Created ${created} maintenance alerts.`);
+}
+
+// ============================================================
+// BATCH 6 — Inventory + PurchaseOrders + InternalTickets
+// ============================================================
+
+/**
+ * Upserts InventoryItems for the first 10 parts in partsMap.
+ * Returns a map of masterPartId → inventoryItemId.
+ */
+async function seedInventoryItems(
+  ctx: SeedContext,
+  partsMap: Map<string, string>
+): Promise<Map<string, string>> {
+  console.log('\n[seedInventoryItems] Upserting inventory items...');
+
+  const invItemMap = new Map<string, string>();
+  const partKeys = Array.from(partsMap.keys()).slice(0, 10);
+
+  for (let idx = 0; idx < partKeys.length; idx++) {
+    const key = partKeys[idx]!;
+    const masterPartId = partsMap.get(key)!;
+
+    const existing = await prisma.inventoryItem.findUnique({
+      where: {
+        tenantId_masterPartId_warehouse: {
+          tenantId: ctx.tenant.id,
+          masterPartId,
+          warehouse: 'PRINCIPAL',
+        },
+      },
+      select: { id: true },
+    });
+
+    if (existing) {
+      invItemMap.set(masterPartId, existing.id);
+      continue;
+    }
+
+    const averageCost = 40000 + idx * 15000;
+    const quantity = 5 + idx * 2;
+
+    const item = await prisma.inventoryItem.create({
+      data: {
+        tenantId: ctx.tenant.id,
+        masterPartId,
+        warehouse: 'PRINCIPAL',
+        quantity,
+        minStock: 2,
+        maxStock: 20,
+        averageCost,
+        totalValue: averageCost * quantity,
+        status: 'ACTIVE',
+      },
+    });
+    invItemMap.set(masterPartId, item.id);
+  }
+
+  console.log(`[seedInventoryItems] ${invItemMap.size} inventory items ready.`);
+  return invItemMap;
+}
+
+async function seedInventoryMovements(
+  ctx: SeedContext,
+  invItemMap: Map<string, string>
+): Promise<void> {
+  console.log('\n[seedInventoryMovements] Checking idempotency...');
+  if (await checkAlreadySeeded(ctx.tenant.id, 'InventoryMovement', 30)) return;
+
+  const itemIds = Array.from(invItemMap.values());
+  if (itemIds.length === 0) {
+    console.warn('[seedInventoryMovements] No inventory items — skipping');
+    return;
+  }
+
+  let totalCreated = 0;
+
+  for (let idx = 0; idx < itemIds.length; idx++) {
+    const inventoryItemId = itemIds[idx]!;
+    const unitCost = 45000 + idx * 5000;
+
+    type MovDef = {
+      type: 'PURCHASE' | 'CONSUMPTION' | 'COUNT_ADJUSTMENT';
+      ref: 'INVOICE' | 'INTERNAL_TICKET' | 'PHYSICAL_COUNT';
+      qty: number;
+      isIn: boolean;
+    };
+
+    const movDefs: MovDef[] = [
+      { type: 'PURCHASE', ref: 'INVOICE', qty: 10 + idx, isIn: true },
+      {
+        type: 'CONSUMPTION',
+        ref: 'INTERNAL_TICKET',
+        qty: 2 + (idx % 3),
+        isIn: false,
+      },
+      {
+        type: 'CONSUMPTION',
+        ref: 'INTERNAL_TICKET',
+        qty: 1 + (idx % 2),
+        isIn: false,
+      },
+      {
+        type: 'COUNT_ADJUSTMENT',
+        ref: 'PHYSICAL_COUNT',
+        qty: 1,
+        isIn: true,
+      },
+    ];
+
+    let runningStock = 0;
+
+    for (const mov of movDefs) {
+      const prevStock = runningStock;
+      const newStock = mov.isIn
+        ? prevStock + mov.qty
+        : Math.max(0, prevStock - mov.qty);
+
+      await prisma.inventoryMovement.create({
+        data: {
+          tenantId: ctx.tenant.id,
+          inventoryItemId,
+          movementType: mov.type,
+          quantity: mov.qty,
+          unitCost,
+          totalCost: mov.qty * unitCost,
+          previousStock: prevStock,
+          newStock,
+          previousAvgCost: unitCost,
+          newAvgCost: unitCost,
+          referenceType: mov.ref,
+          referenceId: `SEED-${idx}-${mov.type}`,
+          performedBy: ctx.adminUser.id,
+          performedAt: generateDateInRange(DATE_START, DATE_END),
+        },
+      });
+
+      runningStock = newStock;
+      totalCreated++;
+    }
+  }
+
+  console.log(
+    `[seedInventoryMovements] Created ${totalCreated} inventory movements.`
+  );
+}
+
+async function seedPurchaseOrders(
+  ctx: SeedContext,
+  partsMap: Map<string, string>,
+  workOrderIds: string[]
+): Promise<void> {
+  console.log('\n[seedPurchaseOrders] Checking idempotency...');
+  const poCount = await prisma.purchaseOrder.count({
+    where: { tenantId: ctx.tenant.id, notes: { contains: SEED_MARKER } },
+  });
+  if (poCount >= 6) {
+    console.log(`[seedPurchaseOrders] Found ${poCount} records — SKIPPING`);
+    return;
+  }
+
+  if (workOrderIds.length === 0 || ctx.providers.length === 0) {
+    console.warn('[seedPurchaseOrders] No work orders or providers — skipping');
+    return;
+  }
+
+  const partKeys = Array.from(partsMap.keys());
+  const statuses = [
+    'COMPLETED',
+    'COMPLETED',
+    'COMPLETED',
+    'COMPLETED',
+    'APPROVED',
+    'APPROVED',
+    'DRAFT',
+    'DRAFT',
+  ] as const;
+
+  let created = 0;
+
+  for (let idx = 0; idx < statuses.length; idx++) {
+    const status = statuses[idx]!;
+    const woIdStr = workOrderIds[idx % workOrderIds.length]!;
+    const woId = parseInt(woIdStr, 10);
+    const provider = ctx.providers[idx % ctx.providers.length]!;
+
+    // 2–3 items per PO
+    const itemCount = 2 + (idx % 2);
+    let subtotal = 0;
+    const itemsCreate = [];
+
+    for (let iIdx = 0; iIdx < itemCount; iIdx++) {
+      const partKey = partKeys[(idx * 3 + iIdx) % partKeys.length]!;
+      const masterPartId = partsMap.get(partKey) ?? null;
+      const qty = 1 + iIdx;
+      const unitPrice = 60000 + ((idx * 11111 + iIdx * 7777) % 180000);
+      const total = qty * unitPrice;
+      subtotal += total;
+
+      itemsCreate.push({
+        tenantId: ctx.tenant.id,
+        masterPartId,
+        description: partKey,
+        quantity: qty,
+        unitPrice,
+        total,
+        status:
+          status === 'COMPLETED'
+            ? ('COMPLETED' as const)
+            : ('PENDING' as const),
+        receivedQty: status === 'COMPLETED' ? qty : 0,
+      });
+    }
+
+    const taxRate = 19;
+    const taxAmount = Math.round(subtotal * (taxRate / 100));
+    const total = subtotal + taxAmount;
+
+    await prisma.purchaseOrder.create({
+      data: {
+        tenantId: ctx.tenant.id,
+        workOrderId: woId,
+        orderNumber: `OC-2025-${String(idx + 1).padStart(6, '0')}`,
+        type: 'PARTS',
+        providerId: provider.id,
+        status,
+        requestedBy: ctx.adminUser.id,
+        approvedBy: status !== 'DRAFT' ? ctx.adminUser.id : null,
+        approvedAt:
+          status !== 'DRAFT' ? generateDateInRange(DATE_START, DATE_END) : null,
+        sentAt:
+          status === 'COMPLETED'
+            ? generateDateInRange(DATE_START, DATE_END)
+            : null,
+        subtotal,
+        taxRate,
+        taxAmount,
+        total,
+        notes: `${SEED_MARKER} OC demo`,
+        items: { create: itemsCreate },
+      },
+    });
+    created++;
+  }
+
+  console.log(`[seedPurchaseOrders] Created ${created} purchase orders.`);
+}
+
+async function seedInternalTickets(
+  ctx: SeedContext,
+  workOrderIds: string[],
+  invItemMap: Map<string, string>
+): Promise<void> {
+  console.log('\n[seedInternalTickets] Checking idempotency...');
+  const tktCount = await prisma.internalWorkTicket.count({
+    where: { tenantId: ctx.tenant.id, notes: { contains: SEED_MARKER } },
+  });
+  if (tktCount >= 5) {
+    console.log(`[seedInternalTickets] Found ${tktCount} records — SKIPPING`);
+    return;
+  }
+
+  if (ctx.technicians.length === 0) {
+    console.warn('[seedInternalTickets] No technicians — skipping');
+    return;
+  }
+
+  const invItemIds = Array.from(invItemMap.values());
+  const statuses = [
+    'APPROVED',
+    'APPROVED',
+    'APPROVED',
+    'APPROVED',
+    'SUBMITTED',
+    'SUBMITTED',
+  ] as const;
+
+  let created = 0;
+
+  for (let idx = 0; idx < statuses.length; idx++) {
+    const status = statuses[idx]!;
+    // Use WOs from the second half to avoid clashing with POs
+    const woIdStr =
+      workOrderIds[
+        (idx + Math.floor(workOrderIds.length / 2)) % workOrderIds.length
+      ]!;
+    const woId = parseInt(woIdStr, 10);
+    const technician = ctx.technicians[idx % ctx.technicians.length]!;
+    const hourlyRate = Number(technician.hourlyRate ?? 50000);
+
+    const hours = 2 + (idx % 4);
+    const laborCost = hours * hourlyRate;
+
+    const inventoryItemId = invItemIds[idx % Math.max(invItemIds.length, 1)];
+    const unitCost = 40000 + idx * 10000;
+    const partQty = 1 + (idx % 2);
+    const partsCost = inventoryItemId ? unitCost * partQty : 0;
+    const totalCost = laborCost + partsCost;
+
+    const ticket = await prisma.internalWorkTicket.create({
+      data: {
+        tenantId: ctx.tenant.id,
+        workOrderId: woId,
+        ticketNumber: `TKT-2025-${String(idx + 1).padStart(4, '0')}`,
+        ticketDate: generateDateInRange(DATE_START, DATE_END),
+        technicianId: technician.id,
+        totalLaborHours: hours,
+        totalLaborCost: laborCost,
+        totalPartsCost: partsCost,
+        totalCost,
+        status,
+        approvedBy: status === 'APPROVED' ? ctx.adminUser.id : null,
+        approvedAt:
+          status === 'APPROVED'
+            ? generateDateInRange(DATE_START, DATE_END)
+            : null,
+        description: `Trabajo interno demo #${idx + 1}`,
+        notes: `${SEED_MARKER} Ticket interno demo`,
+        laborEntries: {
+          create: [
+            {
+              tenantId: ctx.tenant.id,
+              description: `Mano de obra — trabajo demo ${idx + 1}`,
+              hours,
+              hourlyRate,
+              laborCost,
+              technicianId: technician.id,
+            },
+          ],
+        },
+      },
+    });
+
+    if (inventoryItemId) {
+      await prisma.ticketPartEntry.create({
+        data: {
+          tenantId: ctx.tenant.id,
+          ticketId: ticket.id,
+          inventoryItemId,
+          quantity: partQty,
+          unitCost,
+          totalCost: unitCost * partQty,
+        },
+      });
+    }
+
+    created++;
+  }
+
+  console.log(`[seedInternalTickets] Created ${created} internal tickets.`);
+}
+
+// ============================================================
+// MAIN (Batch 7 — full pipeline)
 // ============================================================
 
 async function main(): Promise<void> {
@@ -1444,7 +2283,27 @@ async function main(): Promise<void> {
   // --- Task 4.4: Work order expenses (COMPLETED WOs only) ---
   await seedWorkOrderExpenses(ctx, workOrderIds);
 
-  console.log('\nDone (Batch 3 — tasks 4.1 through 4.4 implemented).');
+  // --- Batch 4: Invoices + PartPriceHistory + FinancialAlerts ---
+  const invoiceIds = await seedInvoices(ctx, workOrderIds, partsMap);
+  console.log(`\n[main] ${invoiceIds.length} invoice(s) ready.`);
+
+  await seedPartPriceHistory(ctx, partsMap, invoiceIds);
+  await seedFinancialAlerts(ctx, partsMap);
+
+  // --- Batch 5: Documents + MaintenanceAlerts ---
+  await seedDocuments(ctx);
+  await seedMaintenanceAlerts(ctx);
+
+  // --- Batch 6: Inventory + PurchaseOrders + InternalTickets ---
+  const invItemMap = await seedInventoryItems(ctx, partsMap);
+  await seedInventoryMovements(ctx, invItemMap);
+  await seedPurchaseOrders(ctx, partsMap, workOrderIds);
+  await seedInternalTickets(ctx, workOrderIds, invItemMap);
+
+  console.log('\n==============================================');
+  console.log('  ✅ SEED COMPLETO');
+  console.log('     Todos los módulos tienen datos de demo.');
+  console.log('==============================================\n');
 }
 
 main()
@@ -1456,7 +2315,6 @@ main()
     void prisma.$disconnect();
   });
 
-// Re-export helpers for use in later batch files
 export {
   SEED_MARKER,
   DATE_START,
@@ -1474,5 +2332,14 @@ export {
   seedWorkOrders,
   seedWorkOrderItems,
   seedWorkOrderExpenses,
+  seedInvoices,
+  seedPartPriceHistory,
+  seedFinancialAlerts,
+  seedDocuments,
+  seedMaintenanceAlerts,
+  seedInventoryItems,
+  seedInventoryMovements,
+  seedPurchaseOrders,
+  seedInternalTickets,
 };
 export type { SeedContext, VehicleProgramContext };

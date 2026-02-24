@@ -58,12 +58,27 @@ const CATEGORY_COLORS: Record<string, string> = {
   MOTOR: '#ef4444',
   FRENOS: '#8b5cf6',
   LUBRICANTES: '#3b82f6',
-  FILTROS: '#3b82f6',
+  ACEITES: '#3b82f6',
+  FILTROS: '#60a5fa',
   LLANTAS: '#f97316',
+  NEUMATICOS: '#f97316',
   SUSPENSION: '#10b981',
   ELECTRICO: '#f59e0b',
+  TRANSMISION: '#a855f7',
+  CARROCERIA: '#ec4899',
   OTROS: '#6b7280',
 };
+
+/** Normaliza el nombre de categoría para el lookup de colores:
+ *  elimina tildes, pasa a mayúsculas.
+ *  Ej: "Neumáticos" → "NEUMATICOS", "Motor" → "MOTOR"
+ */
+function normalizeCategoryKey(name: string): string {
+  return name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase();
+}
 
 export async function GET() {
   try {
@@ -372,7 +387,8 @@ export async function GET() {
         name,
         value,
         percentage: 0,
-        color: (CATEGORY_COLORS[name] || CATEGORY_COLORS['OTROS']) as string,
+        color: (CATEGORY_COLORS[normalizeCategoryKey(name)] ||
+          CATEGORY_COLORS['OTROS']) as string,
       }))
       .sort((a, b) => b.value - a.value);
 
