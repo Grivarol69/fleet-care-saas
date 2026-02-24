@@ -45,6 +45,14 @@ export async function POST(
     const body = expenseSchema.parse(json);
     const workOrderId = parseInt(params.id);
 
+    // 0. Verify the WorkOrder belongs to this tenant
+    const workOrder = await prisma.workOrder.findUnique({
+      where: { id: workOrderId, tenantId: user.tenantId },
+    });
+    if (!workOrder) {
+      return new NextResponse('Not Found', { status: 404 });
+    }
+
     // 1. Create the Expense
     const expense = await prisma.workOrderExpense.create({
       data: {
@@ -101,6 +109,14 @@ export async function GET(
     }
 
     const workOrderId = parseInt(params.id);
+
+    // Verify the WorkOrder belongs to this tenant before exposing its expenses
+    const workOrder = await prisma.workOrder.findUnique({
+      where: { id: workOrderId, tenantId: user.tenantId },
+    });
+    if (!workOrder) {
+      return new NextResponse('Not Found', { status: 404 });
+    }
 
     const expenses = await prisma.workOrderExpense.findMany({
       where: { workOrderId },
