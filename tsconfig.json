@@ -56,6 +56,7 @@
     "prisma/seed-stress.ts",
     "prisma/seed-users.ts",
     "prisma/seed-test.ts",
+    "prisma/seed-staging-demo.ts",
     "playwright.config.ts",
     "e2e/**/*"
   ]
