@@ -556,7 +556,7 @@ model WorkOrderItem {
   id          Int @id @default(autoincrement())
   workOrderId Int
   mantItemId  Int
-  tenantId    String?
+  tenantId    String
 
   // Detalles del item/repuesto
   description String
@@ -598,7 +598,7 @@ model WorkOrderItem {
 
   workOrder          WorkOrder          @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
   mantItem           MantItem           @relation(fields: [mantItemId], references: [id])
-  tenant             Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant             Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   invoiceItems       InvoiceItem[] // ✅ Items de factura vinculados
   ticketLaborEntries TicketLaborEntry[]
   ticketPartEntries  TicketPartEntry[]
@@ -614,7 +614,7 @@ model WorkOrderItem {
 model WorkOrderExpense {
   id            String      @id @default(cuid())
   workOrderId   Int
-  tenantId      String?
+  tenantId      String
   expenseType   ExpenseType
   description   String
   amount        Decimal     @db.Decimal(10, 2)
@@ -635,7 +635,7 @@ model WorkOrderExpense {
   updatedAt     DateTime    @updatedAt
 
   workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
-  tenant    Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([workOrderId])
   @@index([expenseType])
@@ -649,7 +649,7 @@ model WorkOrderExpense {
 model WorkOrderApproval {
   id            String         @id @default(cuid())
   workOrderId   Int
-  tenantId      String?
+  tenantId      String
   approverLevel Int // 1=supervisor, 2=manager, 3=admin
   approvedBy    String // User ID
   approvedAt    DateTime       @default(now())
@@ -660,7 +660,7 @@ model WorkOrderApproval {
   updatedAt     DateTime       @updatedAt
 
   workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
-  tenant    Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([workOrderId])
   @@index([approverLevel])
@@ -672,7 +672,7 @@ model WorkOrderApproval {
 model ExpenseAuditLog {
   id            String      @id @default(cuid())
   workOrderId   Int
-  tenantId      String?
+  tenantId      String
   action        AuditAction // CREATED, APPROVED, MODIFIED, PAID
   previousValue Json?
   newValue      Json
@@ -683,7 +683,7 @@ model ExpenseAuditLog {
   createdAt     DateTime    @default(now())
 
   workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
-  tenant    Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([workOrderId])
   @@index([performedBy])
@@ -839,7 +839,7 @@ model Invoice {
 model InvoiceItem {
   id        String  @id @default(cuid())
   invoiceId String
-  tenantId  String?
+  tenantId  String
   invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   // Vinculación con catálogo (CLAVE para analytics)
@@ -863,7 +863,7 @@ model InvoiceItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([invoiceId])
   @@index([masterPartId])
@@ -987,7 +987,7 @@ model PurchaseOrder {
 model PurchaseOrderItem {
   id              String        @id @default(cuid())
   purchaseOrderId String
-  tenantId        String?
+  tenantId        String
   purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
 
   // Vinculo con WorkOrderItem (trazabilidad)
@@ -1019,7 +1019,7 @@ model PurchaseOrderItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([purchaseOrderId])
   @@index([workOrderItemId])
@@ -1169,7 +1169,7 @@ model OdometerLog {
   id          Int                 @id @default(autoincrement())
   vehicleId   Int
   driverId    Int?
-  tenantId    String?
+  tenantId    String
   kilometers  Int?
   hours       Int?
   measureType OdometerMeasureType @default(KILOMETERS)
@@ -1178,7 +1178,7 @@ model OdometerLog {
 
   vehicle Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
   driver  Driver?  @relation(fields: [driverId], references: [id])
-  tenant  Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([vehicleId])
   @@index([driverId])
@@ -1855,7 +1855,7 @@ model TicketLaborEntry {
   id              String   @id @default(cuid())
   ticketId        String
   workOrderItemId Int?
-  tenantId        String?
+  tenantId        String
   description     String
   hours           Decimal  @db.Decimal(5, 2)
   hourlyRate      Decimal  @db.Decimal(10, 2)
@@ -1868,7 +1868,7 @@ model TicketLaborEntry {
   ticket        InternalWorkTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   workOrderItem WorkOrderItem?     @relation(fields: [workOrderItemId], references: [id])
   technician    Technician?        @relation(fields: [technicianId], references: [id])
-  tenant        Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([ticketId])
   @@index([workOrderItemId])
@@ -1881,7 +1881,7 @@ model TicketPartEntry {
   ticketId            String
   workOrderItemId     Int?
   inventoryItemId     String
-  tenantId            String?
+  tenantId            String
   quantity            Decimal  @db.Decimal(10, 2)
   unitCost            Decimal  @db.Decimal(10, 2)
   totalCost           Decimal  @db.Decimal(10, 2)
@@ -1892,7 +1892,7 @@ model TicketPartEntry {
   ticket        InternalWorkTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   workOrderItem WorkOrderItem?     @relation(fields: [workOrderItemId], references: [id])
   inventoryItem InventoryItem      @relation(fields: [inventoryItemId], references: [id])
-  tenant        Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([ticketId])
   @@index([workOrderItemId])
