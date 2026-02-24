@@ -70,6 +70,7 @@ export async function POST(request: Request) {
           // crear entradas de labor
           laborEntries: {
             create: (laborEntries || []).map((entry: any) => ({
+              tenantId: user.tenantId,
               description: entry.description,
               hours: entry.hours,
               hourlyRate: entry.hourlyRate,
@@ -142,6 +143,7 @@ export async function POST(request: Request) {
         // C. Crear TicketPartEntry referenciando el movimiento
         await tx.ticketPartEntry.create({
           data: {
+            tenantId: user.tenantId,
             ticketId: ticket.id,
             inventoryItemId: inventoryItem.id,
             quantity: qty,

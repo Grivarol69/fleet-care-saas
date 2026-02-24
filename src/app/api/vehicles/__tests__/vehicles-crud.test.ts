@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
-import { GET as LIST_VEHICLES, POST as CREATE_VEHICLE } from '../vehicles/route';
+import {
+  GET as LIST_VEHICLES,
+  POST as CREATE_VEHICLE,
+} from '../vehicles/route';
 import {
   GET as GET_VEHICLE,
   PATCH as PATCH_VEHICLE,
@@ -76,10 +79,13 @@ describe('Vehicle CRUD Integration Tests', () => {
         mileage: 5000,
       };
 
-      const request = new NextRequest('http://localhost/api/vehicles/vehicles', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
+      const request = new NextRequest(
+        'http://localhost/api/vehicles/vehicles',
+        {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        }
+      );
 
       const response = await CREATE_VEHICLE(request);
       const data = await response.json();
@@ -116,10 +122,13 @@ describe('Vehicle CRUD Integration Tests', () => {
         mileage: 10000,
       };
 
-      const request = new NextRequest('http://localhost/api/vehicles/vehicles', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
+      const request = new NextRequest(
+        'http://localhost/api/vehicles/vehicles',
+        {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        }
+      );
 
       const response = await CREATE_VEHICLE(request);
       const data = await response.json();
@@ -153,10 +162,13 @@ describe('Vehicle CRUD Integration Tests', () => {
         mileage: 3000,
       };
 
-      const request = new NextRequest('http://localhost/api/vehicles/vehicles', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
+      const request = new NextRequest(
+        'http://localhost/api/vehicles/vehicles',
+        {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        }
+      );
 
       const response = await CREATE_VEHICLE(request);
       const data = await response.json();
@@ -167,7 +179,11 @@ describe('Vehicle CRUD Integration Tests', () => {
     });
 
     it('DRIVER cannot create vehicles (403)', async () => {
-      mockAuthAsUser({ id: driverUser.id, tenantId: tenant1.id, role: 'DRIVER' });
+      mockAuthAsUser({
+        id: driverUser.id,
+        tenantId: tenant1.id,
+        role: 'DRIVER',
+      });
 
       const { brand, line, type } = await createTestVehicle(tenant1.id);
 
@@ -181,10 +197,13 @@ describe('Vehicle CRUD Integration Tests', () => {
         mileage: 0,
       };
 
-      const request = new NextRequest('http://localhost/api/vehicles/vehicles', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
+      const request = new NextRequest(
+        'http://localhost/api/vehicles/vehicles',
+        {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        }
+      );
 
       const response = await CREATE_VEHICLE(request);
       const data = await response.json();
@@ -280,7 +299,10 @@ describe('Vehicle CRUD Integration Tests', () => {
 
       const request = new NextRequest(
         `http://localhost/api/vehicles/vehicles/${vehicle2.id}`,
-        { method: 'PATCH', body: JSON.stringify({ licensePlate: 'EXISTING-001' }) }
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ licensePlate: 'EXISTING-001' }),
+        }
       );
 
       const response = await PATCH_VEHICLE(request, {
@@ -325,7 +347,9 @@ describe('Vehicle CRUD Integration Tests', () => {
     it('odometer log updates vehicle mileage', async () => {
       mockAuthAsUser({ id: user1.id, tenantId: tenant1.id, role: user1.role });
 
-      const { vehicle } = await createTestVehicle(tenant1.id, { mileage: 50000 });
+      const { vehicle } = await createTestVehicle(tenant1.id, {
+        mileage: 50000,
+      });
 
       const driver = await prisma.driver.create({
         data: {
@@ -344,10 +368,13 @@ describe('Vehicle CRUD Integration Tests', () => {
         recordedAt: new Date().toISOString(),
       };
 
-      const request = new NextRequest('http://localhost/api/vehicles/odometer', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
+      const request = new NextRequest(
+        'http://localhost/api/vehicles/odometer',
+        {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        }
+      );
 
       const response = await CREATE_ODOMETER(request);
       const data = await response.json();
@@ -365,10 +392,13 @@ describe('Vehicle CRUD Integration Tests', () => {
     it('validates new reading >= previous reading', async () => {
       mockAuthAsUser({ id: user1.id, tenantId: tenant1.id, role: user1.role });
 
-      const { vehicle } = await createTestVehicle(tenant1.id, { mileage: 50000 });
+      const { vehicle } = await createTestVehicle(tenant1.id, {
+        mileage: 50000,
+      });
 
       await prisma.odometerLog.create({
         data: {
+          tenantId: tenant1.id,
           vehicleId: vehicle.id,
           kilometers: 50000,
           measureType: 'KILOMETERS',
@@ -383,10 +413,13 @@ describe('Vehicle CRUD Integration Tests', () => {
         recordedAt: new Date().toISOString(),
       };
 
-      const request = new NextRequest('http://localhost/api/vehicles/odometer', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
+      const request = new NextRequest(
+        'http://localhost/api/vehicles/odometer',
+        {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        }
+      );
 
       const response = await CREATE_ODOMETER(request);
       const text = await response.text();
@@ -407,10 +440,13 @@ describe('Vehicle CRUD Integration Tests', () => {
         recordedAt: new Date().toISOString(),
       };
 
-      const request = new NextRequest('http://localhost/api/vehicles/odometer', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
+      const request = new NextRequest(
+        'http://localhost/api/vehicles/odometer',
+        {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        }
+      );
 
       const response = await CREATE_ODOMETER(request);
       const text = await response.text();

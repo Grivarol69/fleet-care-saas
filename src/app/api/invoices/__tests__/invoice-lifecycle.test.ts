@@ -87,9 +87,7 @@ describe('Invoice Lifecycle', () => {
   });
 
   it('creates standalone invoice (no workOrderId)', async () => {
-    const res = await postInvoice(
-      baseInvoiceBody({ workOrderId: undefined })
-    );
+    const res = await postInvoice(baseInvoiceBody({ workOrderId: undefined }));
     const data = await res.json();
 
     expect(res.status).toBe(201);
@@ -111,15 +109,21 @@ describe('Invoice Lifecycle', () => {
     const res = await postInvoice({
       invoiceDate: new Date().toISOString(),
       supplierId: provider.id,
-      items: [{ description: 'X', quantity: 1, unitPrice: 100, subtotal: 100, total: 100 }],
+      items: [
+        {
+          description: 'X',
+          quantity: 1,
+          unitPrice: 100,
+          subtotal: 100,
+          total: 100,
+        },
+      ],
     });
     expect(res.status).toBe(400);
   });
 
   it('rejects empty items array (400)', async () => {
-    const res = await postInvoice(
-      baseInvoiceBody({ items: [] })
-    );
+    const res = await postInvoice(baseInvoiceBody({ items: [] }));
     expect(res.status).toBe(400);
     const error = await res.json();
     expect(error.error).toContain('al menos un item');
@@ -144,6 +148,7 @@ describe('Invoice Lifecycle', () => {
     const mi = await createTestMantItem(tenant.id, { type: 'PART' });
     const woItem = await prisma.workOrderItem.create({
       data: {
+        tenantId: tenant.id,
         workOrderId,
         mantItemId: mi.mantItem.id,
         description: 'Brake Pad',
@@ -191,6 +196,7 @@ describe('Invoice Lifecycle', () => {
     const mi = await createTestMantItem(tenant.id);
     const woItem = await prisma.workOrderItem.create({
       data: {
+        tenantId: tenant.id,
         workOrderId,
         mantItemId: mi.mantItem.id,
         description: 'Oil Filter',
@@ -260,7 +266,9 @@ describe('Invoice Lifecycle', () => {
     expect(res.status).toBe(201);
 
     // Check referencePrice updated
-    const updatedPart = await prisma.masterPart.findUnique({ where: { id: masterPart.id } });
+    const updatedPart = await prisma.masterPart.findUnique({
+      where: { id: masterPart.id },
+    });
     expect(Number(updatedPart?.referencePrice)).toBe(60000);
 
     // Check price history created

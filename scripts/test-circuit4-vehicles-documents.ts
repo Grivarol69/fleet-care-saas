@@ -609,6 +609,7 @@ async function test_4_6_odometer() {
   // Registrar lectura
   const log1 = await prisma.odometerLog.create({
     data: {
+      tenantId: TENANT_ID,
       vehicleId: cleanup.vehicleId,
       kilometers: 10500,
       measureType: 'KILOMETERS',
@@ -643,6 +644,7 @@ async function test_4_6_odometer() {
   // Segunda lectura mayor
   const log2 = await prisma.odometerLog.create({
     data: {
+      tenantId: TENANT_ID,
       vehicleId: cleanup.vehicleId,
       kilometers: 11000,
       measureType: 'KILOMETERS',
@@ -675,6 +677,7 @@ async function test_4_6_odometer() {
   if (driver) {
     const logWithDriver = await prisma.odometerLog.create({
       data: {
+        tenantId: TENANT_ID,
         vehicleId: cleanup.vehicleId,
         driverId: driver.id,
         kilometers: 11500,

@@ -328,6 +328,7 @@ export async function POST(request: NextRequest) {
         const itemCost = alertCosts[index] ?? 0;
         return prisma.workOrderItem.create({
           data: {
+            tenantId: user.tenantId,
             workOrderId: workOrder.id,
             mantItemId: alert.programItem.mantItemId,
             description: alert.itemName,

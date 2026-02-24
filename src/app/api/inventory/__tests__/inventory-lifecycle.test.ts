@@ -264,6 +264,7 @@ describe('Inventory Lifecycle', () => {
 
       const woItem = await prisma.workOrderItem.create({
         data: {
+          tenantId: tenant.id,
           workOrderId: wo.id,
           mantItemId: mi.mantItem.id,
           description: 'Test consume',
@@ -298,11 +299,15 @@ describe('Inventory Lifecycle', () => {
       expect(data.items).toHaveLength(1);
 
       // Verify stock decreased
-      const updatedInv = await prisma.inventoryItem.findUnique({ where: { id: inv.id } });
+      const updatedInv = await prisma.inventoryItem.findUnique({
+        where: { id: inv.id },
+      });
       expect(Number(updatedInv?.quantity)).toBe(40);
 
       // Verify WO item updated
-      const updatedWoItem = await prisma.workOrderItem.findUnique({ where: { id: woItem.id } });
+      const updatedWoItem = await prisma.workOrderItem.findUnique({
+        where: { id: woItem.id },
+      });
       expect(updatedWoItem?.itemSource).toBe('INTERNAL_STOCK');
       expect(updatedWoItem?.closureType).toBe('INTERNAL_TICKET');
     });
@@ -318,6 +323,7 @@ describe('Inventory Lifecycle', () => {
 
       const woItem = await prisma.workOrderItem.create({
         data: {
+          tenantId: tenant.id,
           workOrderId: wo.id,
           mantItemId: mi.mantItem.id,
           description: 'Test consume fail',

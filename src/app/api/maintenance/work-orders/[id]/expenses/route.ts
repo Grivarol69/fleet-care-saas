@@ -56,6 +56,7 @@ export async function POST(
     // 1. Create the Expense
     const expense = await prisma.workOrderExpense.create({
       data: {
+        tenantId: user.tenantId,
         workOrderId,
         description: body.description,
         expenseType: body.expenseType,
