@@ -11,8 +11,9 @@ import {
 
 const prisma = new PrismaClient();
 
-// Configuration
-const USER_EMAIL = 'grivarol69@gmail.com';
+// Configuration — override with SEED_USER_EMAIL env var
+const USER_EMAIL =
+  process.env['SEED_USER_EMAIL'] ?? 'grivarol69driver@gmail.com';
 
 async function main() {
   console.log('🌱 Starting Financial Dashboard Seed...');
