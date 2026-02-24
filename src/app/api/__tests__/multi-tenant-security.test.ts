@@ -49,8 +49,16 @@ describe('Multi-Tenant Security', () => {
     vehicleA = await createTestVehicle(tenantA.id);
     vehicleB = await createTestVehicle(tenantB.id);
 
-    workOrderA = await createTestWorkOrder(tenantA.id, vehicleA.vehicle.id, userA.id);
-    workOrderB = await createTestWorkOrder(tenantB.id, vehicleB.vehicle.id, userB.id);
+    workOrderA = await createTestWorkOrder(
+      tenantA.id,
+      vehicleA.vehicle.id,
+      userA.id
+    );
+    workOrderB = await createTestWorkOrder(
+      tenantB.id,
+      vehicleB.vehicle.id,
+      userB.id
+    );
 
     await createTestProvider(tenantA.id, { name: 'Provider A' });
     await createTestProvider(tenantB.id, { name: 'Provider B' });
@@ -111,8 +119,12 @@ describe('Multi-Tenant Security', () => {
   describe('Purchase Order Isolation', () => {
     it('Tenant A cannot see Tenant B purchase orders', async () => {
       // Create PO for each tenant (directly in DB)
-      const provA = await prisma.provider.findFirst({ where: { tenantId: tenantA.id } });
-      const provB = await prisma.provider.findFirst({ where: { tenantId: tenantB.id } });
+      const provA = await prisma.provider.findFirst({
+        where: { tenantId: tenantA.id },
+      });
+      const provB = await prisma.provider.findFirst({
+        where: { tenantId: tenantB.id },
+      });
 
       await prisma.purchaseOrder.create({
         data: {
@@ -162,8 +174,12 @@ describe('Multi-Tenant Security', () => {
 
   describe('Invoice Isolation', () => {
     it('Tenant A cannot see Tenant B invoices', async () => {
-      const provA = await prisma.provider.findFirst({ where: { tenantId: tenantA.id } });
-      const provB = await prisma.provider.findFirst({ where: { tenantId: tenantB.id } });
+      const provA = await prisma.provider.findFirst({
+        where: { tenantId: tenantA.id },
+      });
+      const provB = await prisma.provider.findFirst({
+        where: { tenantId: tenantB.id },
+      });
 
       await prisma.invoice.create({
         data: {
@@ -214,14 +230,22 @@ describe('Multi-Tenant Security', () => {
         vehicleA.vehicle.id,
         userA.id
       );
-      await createTestAlert(tenantA.id, vehicleA.vehicle.id, progA.programItem.id);
+      await createTestAlert(
+        tenantA.id,
+        vehicleA.vehicle.id,
+        progA.programItem.id
+      );
 
       const progB = await createTestMaintenanceProgram(
         tenantB.id,
         vehicleB.vehicle.id,
         userB.id
       );
-      await createTestAlert(tenantB.id, vehicleB.vehicle.id, progB.programItem.id);
+      await createTestAlert(
+        tenantB.id,
+        vehicleB.vehicle.id,
+        progB.programItem.id
+      );
 
       // Query directly as there's no dedicated alerts API in scope
       const alertsA = await prisma.maintenanceAlert.findMany({
@@ -281,6 +305,7 @@ describe('Multi-Tenant Security', () => {
       const mi = await createTestMantItem(tenantA.id);
       const woItemA = await prisma.workOrderItem.create({
         data: {
+          tenantId: tenantA.id,
           workOrderId: workOrderA.id,
           mantItemId: mi.mantItem.id,
           description: 'Cross-tenant test',
@@ -293,7 +318,8 @@ describe('Multi-Tenant Security', () => {
         },
       });
 
-      const { POST: CONSUME } = await import('@/app/api/inventory/consume/route');
+      const { POST: CONSUME } =
+        await import('@/app/api/inventory/consume/route');
 
       const res = await CONSUME(
         new NextRequest('http://localhost:3000/api/inventory/consume', {

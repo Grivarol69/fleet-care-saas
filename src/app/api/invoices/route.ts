@@ -223,6 +223,7 @@ export async function POST(request: NextRequest) {
         items.map((item: InvoiceItemInput) =>
           tx.invoiceItem.create({
             data: {
+              tenantId: user.tenantId,
               invoiceId: newInvoice.id,
               description: item.description,
               quantity: item.quantity,

@@ -68,6 +68,7 @@ export async function POST(
       for (const item of pkg.packageItems) {
         await tx.workOrderItem.create({
           data: {
+            tenantId: user.tenantId,
             workOrderId,
             mantItemId: item.mantItemId,
             description: item.mantItem.name,

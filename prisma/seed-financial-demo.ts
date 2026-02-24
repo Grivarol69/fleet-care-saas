@@ -267,6 +267,7 @@ async function main() {
 
       const woItem = await prisma.workOrderItem.create({
         data: {
+          tenantId: tenant.id,
           workOrderId: wo.id,
           mantItemId: mantItem.id,
           description: mantItem.name,
@@ -302,6 +303,7 @@ async function main() {
 
       await prisma.invoiceItem.create({
         data: {
+          tenantId: tenant.id,
           invoiceId: invoice.id,
           workOrderItemId: woItem.id,
           description: woItem.description,

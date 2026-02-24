@@ -75,6 +75,7 @@ export async function POST(req: Request) {
         // 2.1 Create InvoiceItem
         await tx.invoiceItem.create({
           data: {
+            tenantId: user.tenantId,
             invoiceId: invoice.id,
             masterPartId: item.masterPartId,
             description: item.description,

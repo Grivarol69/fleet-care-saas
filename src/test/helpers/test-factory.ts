@@ -37,7 +37,13 @@ export async function createTestUser(
   tenantId: string,
   overrides: Partial<{
     email: string;
-    role: 'OWNER' | 'MANAGER' | 'TECHNICIAN' | 'PURCHASER' | 'DRIVER' | 'SUPER_ADMIN';
+    role:
+      | 'OWNER'
+      | 'MANAGER'
+      | 'TECHNICIAN'
+      | 'PURCHASER'
+      | 'DRIVER'
+      | 'SUPER_ADMIN';
     firstName: string;
     lastName: string;
   }> = {}
@@ -383,10 +389,15 @@ export async function createTestWorkOrderWithItems(
     quantity: number;
   }> = {}
 ) {
-  const workOrder = await createTestWorkOrder(tenantId, vehicleId, requestedBy, {
-    ...(overrides.title ? { title: overrides.title } : {}),
-    ...(overrides.mantType ? { mantType: overrides.mantType } : {}),
-  });
+  const workOrder = await createTestWorkOrder(
+    tenantId,
+    vehicleId,
+    requestedBy,
+    {
+      ...(overrides.title ? { title: overrides.title } : {}),
+      ...(overrides.mantType ? { mantType: overrides.mantType } : {}),
+    }
+  );
 
   const count = overrides.itemCount ?? 1;
   const items = [];
@@ -396,6 +407,7 @@ export async function createTestWorkOrderWithItems(
     const quantity = overrides.quantity ?? 1;
     const item = await prisma.workOrderItem.create({
       data: {
+        tenantId: workOrder.tenantId,
         workOrderId: workOrder.id,
         mantItemId,
         description: `Test Item ${i + 1}`,

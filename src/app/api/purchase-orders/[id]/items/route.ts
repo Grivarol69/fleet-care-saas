@@ -111,6 +111,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const result = await prisma.$transaction(async tx => {
       const newItem = await tx.purchaseOrderItem.create({
         data: {
+          tenantId: user.tenantId,
           purchaseOrderId: id,
           workOrderItemId: workOrderItemId || null,
           mantItemId: mantItemId || null,

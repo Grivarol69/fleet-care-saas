@@ -98,6 +98,7 @@ describe('Work Order Integration (PATCH)', () => {
         requestedBy: userId,
         workOrderItems: {
           create: {
+            tenantId,
             mantItemId,
             description: 'Test Item',
             unitPrice: 100,

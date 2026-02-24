@@ -131,6 +131,7 @@ async function runTest() {
   // Crear OdometerLog
   await prisma.odometerLog.create({
     data: {
+      tenantId: TENANT_ID,
       vehicleId: vehicle.id,
       kilometers: newMileage,
       measureType: 'KILOMETERS',
