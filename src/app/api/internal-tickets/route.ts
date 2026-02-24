@@ -8,6 +8,60 @@ import {
 } from '@prisma/client';
 import { canExecuteWorkOrders } from '@/lib/permissions';
 
+// GET: Listar tickets internos filtrados por workOrderId
+export async function GET(request: Request) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) return new NextResponse('Unauthorized', { status: 401 });
+
+    const { searchParams } = new URL(request.url);
+    const workOrderId = searchParams.get('workOrderId');
+
+    const tickets = await prisma.internalWorkTicket.findMany({
+      where: {
+        tenantId: user.tenantId,
+        ...(workOrderId ? { workOrderId: parseInt(workOrderId, 10) } : {}),
+      },
+      include: {
+        technician: { select: { id: true, name: true, specialty: true } },
+        laborEntries: {
+          select: {
+            id: true,
+            description: true,
+            hours: true,
+            hourlyRate: true,
+            laborCost: true,
+          },
+        },
+        partEntries: {
+          include: {
+            inventoryItem: {
+              include: {
+                masterPart: {
+                  select: { id: true, code: true, description: true },
+                },
+              },
+            },
+          },
+        },
+        workOrder: {
+          select: {
+            id: true,
+            title: true,
+            vehicle: { select: { licensePlate: true, mileage: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return NextResponse.json(tickets);
+  } catch (error) {
+    console.error('Error fetching internal tickets:', error);
+    return new NextResponse('Internal Error', { status: 500 });
+  }
+}
+
 // POST: Crear nuevo Internal Work Ticket
 export async function POST(request: Request) {
   try {
