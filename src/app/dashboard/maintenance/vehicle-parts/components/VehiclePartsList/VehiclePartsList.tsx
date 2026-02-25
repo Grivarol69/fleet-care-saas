@@ -106,7 +106,7 @@ export function VehiclePartsList() {
     Promise.all([
       axios.get('/api/vehicles/brands'),
       axios.get('/api/vehicles/lines'),
-      axios.get('/api/maintenance/mant-items'),
+      axios.get('/api/maintenance/mant-items?type=PART'),
       axios.get('/api/inventory/parts'),
     ])
       .then(([brandsRes, linesRes, itemsRes, partsRes]) => {

@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     // Búsqueda para autocompletado
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search');
+    const typeFilter = searchParams.get('type');
 
     // Devolver items GLOBALES + del tenant
     const mantItems = await prisma.mantItem.findMany({
@@ -22,6 +23,10 @@ export async function GET(request: NextRequest) {
           { isGlobal: true }, // Items globales (Knowledge Base)
           { tenantId: user.tenantId }, // Items custom del tenant
         ],
+        ...(typeFilter &&
+          ['ACTION', 'PART', 'SERVICE'].includes(typeFilter) && {
+            type: typeFilter as 'ACTION' | 'PART' | 'SERVICE',
+          }),
         ...(search && {
           AND: [
             {
