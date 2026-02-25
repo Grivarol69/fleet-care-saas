@@ -524,10 +524,11 @@ model WorkOrder {
   plannedAmount Decimal? @db.Decimal(10, 2)
   realAmount    Decimal? @db.Decimal(10, 2)
 
-  startDate DateTime?
-  endDate   DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  startDate         DateTime?
+  endDate           DateTime?
+  completionMileage Float?    // Kilometraje al momento de cierre de la OT
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   tenant                 Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   vehicle                Vehicle                 @relation(fields: [vehicleId], references: [id])

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -68,12 +68,26 @@ type GeneralInfoTabProps = {
   onUpdate: (updates: Partial<WorkOrder>) => Promise<void>;
 };
 
-const statusConfig = {
-  PENDING: { label: 'Abierta', variant: 'secondary' as const },
-  IN_PROGRESS: { label: 'En Trabajo', variant: 'default' as const },
-  PENDING_INVOICE: { label: 'Por Cerrar', variant: 'outline' as const },
-  COMPLETED: { label: 'Cerrada', variant: 'default' as const },
-  CANCELLED: { label: 'Cancelada', variant: 'outline' as const },
+type CurrentUser = {
+  role: string;
+  isSuperAdmin: boolean;
+};
+
+const statusConfig: Record<
+  string,
+  {
+    label: string;
+    variant: 'secondary' | 'default' | 'outline' | 'destructive';
+  }
+> = {
+  PENDING: { label: 'Abierta', variant: 'secondary' },
+  PENDING_APPROVAL: { label: 'En Aprobación', variant: 'outline' },
+  APPROVED: { label: 'Aprobada', variant: 'outline' },
+  IN_PROGRESS: { label: 'En Trabajo', variant: 'default' },
+  PENDING_INVOICE: { label: 'Por Cerrar', variant: 'outline' },
+  COMPLETED: { label: 'Cerrada', variant: 'default' },
+  REJECTED: { label: 'Rechazada', variant: 'destructive' },
+  CANCELLED: { label: 'Cancelada', variant: 'outline' },
 };
 
 const priorityConfig = {
@@ -89,26 +103,76 @@ const mantTypeConfig = {
   PREDICTIVE: { label: 'Predictivo' },
 };
 
+/**
+ * Determines whether the user can approve/reject/send-to-approval WOs.
+ * MANAGER, OWNER, SUPER_ADMIN → true.
+ */
+function isManagerOrAbove(user: CurrentUser): boolean {
+  return user.isSuperAdmin || user.role === 'OWNER' || user.role === 'MANAGER';
+}
+
+/**
+ * Determines whether the user can start/execute work.
+ * TECHNICIAN, MANAGER, OWNER, SUPER_ADMIN → true.
+ */
+function canExecute(user: CurrentUser): boolean {
+  return (
+    user.isSuperAdmin ||
+    user.role === 'OWNER' ||
+    user.role === 'MANAGER' ||
+    user.role === 'TECHNICIAN'
+  );
+}
+
 export function GeneralInfoTab({ workOrder, onUpdate }: GeneralInfoTabProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<string | null>(null);
+  const [completionMileageInput, setCompletionMileageInput] = useState(
+    workOrder.completionMileage?.toString() || ''
+  );
   const [formData, setFormData] = useState({
-    status: workOrder.status,
     priority: workOrder.priority,
     description: workOrder.description || '',
     actualCost: workOrder.actualCost?.toString() || '',
-    completionMileage: workOrder.completionMileage?.toString() || '',
   });
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 
-  const statusInfo =
-    statusConfig[workOrder.status as keyof typeof statusConfig];
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then((data: CurrentUser) => setCurrentUser(data))
+      .catch(() => {});
+  }, []);
+
+  const statusInfo = statusConfig[workOrder.status] ?? {
+    label: workOrder.status,
+    variant: 'outline' as const,
+  };
   const priorityInfo =
     priorityConfig[workOrder.priority as keyof typeof priorityConfig];
   const mantTypeInfo =
     mantTypeConfig[workOrder.mantType as keyof typeof mantTypeConfig];
 
+  /** Perform a status transition, optionally including completionMileage */
+  const handleTransition = async (toStatus: string) => {
+    setIsTransitioning(true);
+    try {
+      const updates: Record<string, string | number | null> = {
+        status: toStatus,
+      };
+      if (toStatus === 'COMPLETED' && completionMileageInput) {
+        updates.completionMileage = parseInt(completionMileageInput, 10);
+      }
+      await onUpdate(updates);
+      setPendingStatus(null);
+    } finally {
+      setIsTransitioning(false);
+    }
+  };
+
   const handleSave = async () => {
     const updates: Record<string, string | number | null> = {
-      status: formData.status,
       priority: formData.priority,
       description: formData.description || null,
     };
@@ -117,12 +181,116 @@ export function GeneralInfoTab({ workOrder, onUpdate }: GeneralInfoTabProps) {
       updates.actualCost = parseFloat(formData.actualCost);
     }
 
-    if (formData.completionMileage) {
-      updates.completionMileage = parseInt(formData.completionMileage);
-    }
-
     await onUpdate(updates);
     setIsEditing(false);
+  };
+
+  /** Render contextual action buttons based on status + user role */
+  const renderActionButtons = () => {
+    if (!currentUser) return null;
+
+    const status = workOrder.status;
+
+    // PENDING → TECHNICIAN or MANAGER/OWNER can start
+    if (status === 'PENDING') {
+      return (
+        <div className="flex gap-2 flex-wrap">
+          {canExecute(currentUser) && (
+            <Button
+              size="sm"
+              disabled={isTransitioning}
+              onClick={() => handleTransition('IN_PROGRESS')}
+            >
+              {isTransitioning ? 'Procesando...' : 'Iniciar trabajo'}
+            </Button>
+          )}
+          {isManagerOrAbove(currentUser) && (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={isTransitioning}
+              onClick={() => handleTransition('PENDING_APPROVAL')}
+            >
+              {isTransitioning ? 'Procesando...' : 'Enviar a aprobación'}
+            </Button>
+          )}
+        </div>
+      );
+    }
+
+    // PENDING_APPROVAL → MANAGER/OWNER can approve or reject
+    if (status === 'PENDING_APPROVAL' && isManagerOrAbove(currentUser)) {
+      return (
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            size="sm"
+            disabled={isTransitioning}
+            onClick={() => handleTransition('APPROVED')}
+          >
+            {isTransitioning ? 'Procesando...' : 'Aprobar'}
+          </Button>
+          <Button
+            size="sm"
+            variant="destructive"
+            disabled={isTransitioning}
+            onClick={() => handleTransition('REJECTED')}
+          >
+            {isTransitioning ? 'Procesando...' : 'Rechazar'}
+          </Button>
+        </div>
+      );
+    }
+
+    // APPROVED → TECHNICIAN or MANAGER/OWNER can start work
+    if (status === 'APPROVED' && canExecute(currentUser)) {
+      return (
+        <Button
+          size="sm"
+          disabled={isTransitioning}
+          onClick={() => handleTransition('IN_PROGRESS')}
+        >
+          {isTransitioning ? 'Procesando...' : 'Iniciar trabajo'}
+        </Button>
+      );
+    }
+
+    // PENDING_INVOICE → MANAGER/OWNER can close the WO
+    if (status === 'PENDING_INVOICE' && isManagerOrAbove(currentUser)) {
+      return (
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-2 items-end flex-wrap">
+            <div className="flex flex-col gap-1">
+              <Label className="text-sm">Kilometraje al cierre</Label>
+              <Input
+                type="number"
+                value={completionMileageInput}
+                onChange={e => setCompletionMileageInput(e.target.value)}
+                placeholder={workOrder.vehicle.mileage.toString()}
+                className="w-40"
+              />
+            </div>
+            <Button
+              size="sm"
+              disabled={isTransitioning}
+              onClick={() => {
+                setPendingStatus('COMPLETED');
+                handleTransition('COMPLETED');
+              }}
+            >
+              {isTransitioning ? 'Cerrando...' : 'Cerrar OT'}
+            </Button>
+          </div>
+          {pendingStatus === 'COMPLETED' && (
+            <p className="text-xs text-muted-foreground">
+              Se calculará el costo real automáticamente.
+            </p>
+          )}
+        </div>
+      );
+    }
+
+    // No action available for this role/status combination
+    return null;
   };
 
   return (
@@ -132,11 +300,14 @@ export function GeneralInfoTab({ workOrder, onUpdate }: GeneralInfoTabProps) {
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle>Estado de la Orden</CardTitle>
-            {!isEditing && workOrder.status !== 'COMPLETED' && (
-              <Button variant="outline" onClick={() => setIsEditing(true)}>
-                Editar
-              </Button>
-            )}
+            {!isEditing &&
+              workOrder.status !== 'COMPLETED' &&
+              workOrder.status !== 'CANCELLED' &&
+              workOrder.status !== 'REJECTED' && (
+                <Button variant="outline" onClick={() => setIsEditing(true)}>
+                  Editar
+                </Button>
+              )}
             {isEditing && (
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setIsEditing(false)}>
@@ -151,29 +322,9 @@ export function GeneralInfoTab({ workOrder, onUpdate }: GeneralInfoTabProps) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Estado Actual</Label>
-              {isEditing ? (
-                <Select
-                  value={formData.status}
-                  onValueChange={value =>
-                    setFormData({ ...formData, status: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="PENDING">Abierta</SelectItem>
-                    <SelectItem value="IN_PROGRESS">En Trabajo</SelectItem>
-                    <SelectItem value="PENDING_INVOICE">Por Cerrar</SelectItem>
-                    <SelectItem value="COMPLETED">Cerrada</SelectItem>
-                    <SelectItem value="CANCELLED">Cancelada</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : (
-                <div className="mt-2">
-                  <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
-                </div>
-              )}
+              <div className="mt-2">
+                <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+              </div>
             </div>
 
             <div>
@@ -202,6 +353,9 @@ export function GeneralInfoTab({ workOrder, onUpdate }: GeneralInfoTabProps) {
               )}
             </div>
           </div>
+
+          {/* Contextual action buttons */}
+          {!isEditing && <div>{renderActionButtons()}</div>}
 
           <div>
             <Label>Descripción</Label>
@@ -266,18 +420,14 @@ export function GeneralInfoTab({ workOrder, onUpdate }: GeneralInfoTabProps) {
               </p>
             </div>
 
+            {/* completionMileage: show editable input when WO is COMPLETED + editing mode */}
             {isEditing && workOrder.status === 'COMPLETED' && (
               <div>
                 <Label>Kilometraje Completado</Label>
                 <Input
                   type="number"
-                  value={formData.completionMileage}
-                  onChange={e =>
-                    setFormData({
-                      ...formData,
-                      completionMileage: e.target.value,
-                    })
-                  }
+                  value={completionMileageInput}
+                  onChange={e => setCompletionMileageInput(e.target.value)}
                   placeholder={workOrder.vehicle.mileage.toString()}
                 />
               </div>
