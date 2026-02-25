@@ -345,6 +345,7 @@ export function PurchaseOrdersTab({ workOrderId }: PurchaseOrdersTabProps) {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-28">N° Parte</TableHead>
                       <TableHead>Descripción</TableHead>
                       <TableHead className="text-right">Cant.</TableHead>
                       <TableHead className="text-right">Precio</TableHead>
@@ -355,6 +356,11 @@ export function PurchaseOrdersTab({ workOrderId }: PurchaseOrdersTabProps) {
                   <TableBody>
                     {po.items.map(item => (
                       <TableRow key={item.id}>
+                        <TableCell className="font-mono text-xs">
+                          {item.masterPart?.code ?? (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
                         <TableCell>{item.description}</TableCell>
                         <TableCell className="text-right">
                           {Number(item.quantity)}
