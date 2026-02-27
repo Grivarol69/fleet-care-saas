@@ -43,15 +43,15 @@ import { PackageList } from './components/PackageList';
 
 // Schema para MantTemplate
 const formSchema = z.object({
-  id: z.number(),
+  id: z.string().min(1),
   name: z.string().min(2, {
     message: 'El nombre debe tener al menos 2 caracteres',
   }),
   description: z.string().optional(),
-  vehicleBrandId: z.number().min(1, {
+  vehicleBrandId: z.string().min(1).min(1, {
     message: 'Debe seleccionar una marca de vehículo',
   }),
-  vehicleLineId: z.number().min(1, {
+  vehicleLineId: z.string().min(1).min(1, {
     message: 'Debe seleccionar una línea de vehículo',
   }),
 });
@@ -121,7 +121,7 @@ export function FormEditMantTemplate({
 
   // Filter lines by selected brand
   useEffect(() => {
-    if (selectedBrandId && selectedBrandId > 0) {
+    if (selectedBrandId && selectedBrandId !== '') {
       const filtered = vehicleLines.filter(
         line => line.brandId === selectedBrandId
       );
@@ -132,12 +132,12 @@ export function FormEditMantTemplate({
       const isCurrentLineValid = filtered.some(
         line => line.id === currentLineId
       );
-      if (currentLineId > 0 && !isCurrentLineValid) {
-        form.setValue('vehicleLineId', 0);
+      if (currentLineId && currentLineId !== '' && !isCurrentLineValid) {
+        form.setValue('vehicleLineId', '');
       }
     } else {
       setFilteredLines([]);
-      form.setValue('vehicleLineId', 0);
+      form.setValue('vehicleLineId', '');
     }
   }, [selectedBrandId, vehicleLines, form]);
 
@@ -258,8 +258,8 @@ export function FormEditMantTemplate({
                       <FormItem>
                         <FormLabel>Marca de Vehículo</FormLabel>
                         <Select
-                          onValueChange={value => field.onChange(Number(value))}
-                          value={field.value > 0 ? field.value.toString() : ''}
+                          onValueChange={field.onChange}
+                          value={field.value || ''}
                           disabled={isLoading}
                         >
                           <FormControl>
@@ -291,19 +291,19 @@ export function FormEditMantTemplate({
                       <FormItem>
                         <FormLabel>Línea de Vehículo</FormLabel>
                         <Select
-                          onValueChange={value => field.onChange(Number(value))}
-                          value={field.value > 0 ? field.value.toString() : ''}
+                          onValueChange={field.onChange}
+                          value={field.value || ''}
                           disabled={
                             isLoading ||
                             !selectedBrandId ||
-                            selectedBrandId === 0
+                            selectedBrandId === ''
                           }
                         >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue
                                 placeholder={
-                                  !selectedBrandId || selectedBrandId === 0
+                                  !selectedBrandId || selectedBrandId === ''
                                     ? 'Primero seleccione una marca'
                                     : 'Seleccione una línea'
                                 }
@@ -312,7 +312,7 @@ export function FormEditMantTemplate({
                           </FormControl>
                           <SelectContent>
                             {filteredLines.length === 0 &&
-                            selectedBrandId > 0 ? (
+                            selectedBrandId !== '' ? (
                               <SelectItem value="no-lines" disabled>
                                 No hay líneas disponibles para esta marca
                               </SelectItem>

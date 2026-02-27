@@ -27,7 +27,7 @@ import { DocumentProps } from '../SharedTypes/SharedTypes';
 // Tipo actualizado según el schema de Prisma
 // interface DocumentProps {
 //   id: string;
-//   vehicleId: number;
+//   vehicleId: string;
 //   type: "SOAT" | "TECNOMECANICA" | "INSURANCE" | "REGISTRATION" | "OTHER";
 //   fileName: string;
 //   fileUrl: string;

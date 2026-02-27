@@ -7,7 +7,7 @@ import { VehicleAlertRow } from './VehicleAlertRow';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface VehicleGroup {
-  vehicleId: number;
+  vehicleId: string;
   vehiclePlate: string;
   vehiclePhoto: string;
   brandName: string;

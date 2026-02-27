@@ -66,7 +66,7 @@ export function DriverList() {
     setData(prevData => [...prevData, newDriver]);
   }, []);
 
-  const handleDeleteDriver = async (id: number) => {
+  const handleDeleteDriver = async (id: string) => {
     if (!confirm('¿Estás seguro de que deseas eliminar este conductor?')) {
       return;
     }

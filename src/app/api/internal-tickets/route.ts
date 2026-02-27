@@ -8,6 +8,60 @@ import {
 } from '@prisma/client';
 import { canExecuteWorkOrders } from '@/lib/permissions';
 
+// GET: Listar tickets internos filtrados por workOrderId
+export async function GET(request: Request) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) return new NextResponse('Unauthorized', { status: 401 });
+
+    const { searchParams } = new URL(request.url);
+    const workOrderId = searchParams.get('workOrderId');
+
+    const tickets = await prisma.internalWorkTicket.findMany({
+      where: {
+        tenantId: user.tenantId,
+        ...(workOrderId ? { workOrderId: workOrderId } : {}),
+      },
+      include: {
+        technician: { select: { id: true, name: true, specialty: true } },
+        laborEntries: {
+          select: {
+            id: true,
+            description: true,
+            hours: true,
+            hourlyRate: true,
+            laborCost: true,
+          },
+        },
+        partEntries: {
+          include: {
+            inventoryItem: {
+              include: {
+                masterPart: {
+                  select: { id: true, code: true, description: true },
+                },
+              },
+            },
+          },
+        },
+        workOrder: {
+          select: {
+            id: true,
+            title: true,
+            vehicle: { select: { licensePlate: true, mileage: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return NextResponse.json(tickets);
+  } catch (error) {
+    console.error('Error fetching internal tickets:', error);
+    return new NextResponse('Internal Error', { status: 500 });
+  }
+}
+
 // POST: Crear nuevo Internal Work Ticket
 export async function POST(request: Request) {
   try {
@@ -70,6 +124,7 @@ export async function POST(request: Request) {
           // crear entradas de labor
           laborEntries: {
             create: (laborEntries || []).map((entry: any) => ({
+              tenantId: user.tenantId,
               description: entry.description,
               hours: entry.hours,
               hourlyRate: entry.hourlyRate,
@@ -142,6 +197,7 @@ export async function POST(request: Request) {
         // C. Crear TicketPartEntry referenciando el movimiento
         await tx.ticketPartEntry.create({
           data: {
+            tenantId: user.tenantId,
             ticketId: ticket.id,
             inventoryItemId: inventoryItem.id,
             quantity: qty,

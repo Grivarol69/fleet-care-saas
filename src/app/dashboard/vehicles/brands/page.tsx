@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrandList } from './components/BrandList';
 
 export default function CategoriesPage() {

@@ -47,7 +47,7 @@ import { useToast } from '@/components/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
 
 interface PurchaseOrdersTabProps {
-  workOrderId: number;
+  workOrderId: string;
 }
 
 interface PurchaseOrderItem {
@@ -66,7 +66,7 @@ interface PurchaseOrder {
   orderNumber: string;
   type: 'SERVICES' | 'PARTS';
   status: string;
-  provider: { id: number; name: string; email?: string | null };
+  provider: { id: string; name: string; email?: string | null };
   subtotal: number;
   total: number;
   items: PurchaseOrderItem[];
@@ -345,6 +345,7 @@ export function PurchaseOrdersTab({ workOrderId }: PurchaseOrdersTabProps) {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-28">N° Parte</TableHead>
                       <TableHead>Descripción</TableHead>
                       <TableHead className="text-right">Cant.</TableHead>
                       <TableHead className="text-right">Precio</TableHead>
@@ -355,6 +356,11 @@ export function PurchaseOrdersTab({ workOrderId }: PurchaseOrdersTabProps) {
                   <TableBody>
                     {po.items.map(item => (
                       <TableRow key={item.id}>
+                        <TableCell className="font-mono text-xs">
+                          {item.masterPart?.code ?? (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
                         <TableCell>{item.description}</TableCell>
                         <TableCell className="text-right">
                           {Number(item.quantity)}

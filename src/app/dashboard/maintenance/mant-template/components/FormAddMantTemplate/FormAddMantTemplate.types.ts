@@ -5,31 +5,31 @@ export interface FormAddMantTemplateProps {
 }
 
 export interface MantTemplateResponse {
-  id: number;
+  id: string;
   tenantId: string;
   name: string;
   description?: string | null;
-  vehicleBrandId: number;
-  vehicleLineId: number;
+  vehicleBrandId: string;
+  vehicleLineId: string;
   status: 'ACTIVE' | 'INACTIVE';
   createdAt: string;
   updatedAt: string;
   brand: {
-    id: number;
+    id: string;
     name: string;
   };
   line: {
-    id: number;
+    id: string;
     name: string;
   };
   planTasks: {
-    id: number;
+    id: string;
     planId: number;
-    mantItemId: number;
+    mantItemId: string;
     triggerKm: number;
     createdAt: string;
     mantItem: {
-      id: number;
+      id: string;
       name: string;
       mantType: 'PREVENTIVE' | 'PREDICTIVE' | 'CORRECTIVE' | 'EMERGENCY';
       estimatedTime: number;
@@ -38,7 +38,7 @@ export interface MantTemplateResponse {
 }
 
 export interface VehicleBrand {
-  id: number;
+  id: string;
   tenantId: string;
   name: string;
   createdAt: string;
@@ -46,10 +46,10 @@ export interface VehicleBrand {
 }
 
 export interface VehicleLine {
-  id: number;
+  id: string;
   tenantId: string;
   name: string;
-  brandId: number;
+  brandId: string;
   createdAt: string;
   updatedAt: string;
   brand?: {

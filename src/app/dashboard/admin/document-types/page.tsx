@@ -1,4 +1,3 @@
-import React from 'react';
 import { DocumentTypeList } from './components/DocumentTypeList';
 
 export default function DocumentTypesPage() {

@@ -19,8 +19,8 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
     }
 
     const { id } = await params;
-    const itemId = parseInt(id);
-    if (isNaN(itemId)) {
+    const itemId = id;
+    if (!itemId) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
@@ -71,8 +71,8 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
     }
 
     const { id } = await params;
-    const itemId = parseInt(id);
-    if (isNaN(itemId)) {
+    const itemId = id;
+    if (!itemId) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 

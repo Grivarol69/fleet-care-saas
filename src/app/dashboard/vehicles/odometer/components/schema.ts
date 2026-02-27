@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 export const odometerFormSchema = z
   .object({
-    vehicleId: z.number().min(1, 'Debe seleccionar un vehículo'),
-    driverId: z.number().optional(),
+    vehicleId: z.string().min(1).min(1, 'Debe seleccionar un vehículo'),
+    driverId: z.string().optional(),
     measureType: z.enum(['KILOMETERS', 'HOURS'], {
       required_error: 'Debe seleccionar el tipo de medida',
     }),

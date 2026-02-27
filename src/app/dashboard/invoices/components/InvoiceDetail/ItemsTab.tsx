@@ -14,13 +14,13 @@ import { Badge } from '@/components/ui/badge';
 import { Package, Link as LinkIcon } from 'lucide-react';
 
 type Invoice = {
-  id: number;
+  id: string;
   subtotal: number;
   taxAmount: number;
   totalAmount: number;
   currency: string;
   items: Array<{
-    id: number;
+    id: string;
     description: string;
     quantity: number;
     unitPrice: number;
@@ -29,16 +29,16 @@ type Invoice = {
     taxAmount: number;
     total: number;
     workOrderItem: {
-      id: number;
+      id: string;
       description: string;
       mantItem: {
-        id: number;
+        id: string;
         name: string;
         type: string;
       } | null;
     } | null;
     masterPart: {
-      id: number;
+      id: string;
       name: string;
       partNumber: string;
     } | null;

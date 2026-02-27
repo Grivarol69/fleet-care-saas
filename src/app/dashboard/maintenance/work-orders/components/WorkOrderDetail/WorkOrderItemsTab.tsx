@@ -47,7 +47,7 @@ import { useToast } from '@/components/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 type MantItemResult = {
-  id: number;
+  id: string;
   name: string;
   description: string | null;
   type: 'ACTION' | 'PART' | 'SERVICE';
@@ -64,7 +64,7 @@ type MantItemResult = {
 
 type WorkOrderItemFormatted = {
   workOrderItemId: number;
-  mantItemId: number;
+  mantItemId: string;
   mantItemName: string;
   mantItemType: string;
   categoryName: string;
@@ -81,12 +81,12 @@ type WorkOrderItemFormatted = {
 };
 
 type WorkOrder = {
-  id: number;
+  id: string;
   vehicle: {
-    id: number;
+    id: string;
   };
   workOrderItems: Array<{
-    id: number;
+    id: string;
     description: string;
     supplier: string | null;
     unitPrice: number;
@@ -94,7 +94,7 @@ type WorkOrder = {
     totalCost: number;
     status: string;
     mantItem: {
-      id: number;
+      id: string;
       name: string;
       type?: string;
     };

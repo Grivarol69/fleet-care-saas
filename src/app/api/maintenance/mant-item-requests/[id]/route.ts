@@ -18,8 +18,8 @@ export async function GET(
     }
 
     const { id } = await params;
-    const requestId = parseInt(id, 10);
-    if (isNaN(requestId)) {
+    const requestId = id;
+    if (!requestId) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
@@ -67,8 +67,8 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const requestId = parseInt(id, 10);
-    if (isNaN(requestId)) {
+    const requestId = id;
+    if (!requestId) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 

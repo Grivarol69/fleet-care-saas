@@ -10,7 +10,7 @@ import {
 import { canExecuteWorkOrders } from '@/lib/permissions';
 
 interface ConsumeItem {
-  workOrderItemId: number;
+  workOrderItemId: string;
   inventoryItemId: string;
   masterPartId?: string;
   quantity: number;
@@ -19,7 +19,7 @@ interface ConsumeItem {
 /**
  * POST /api/inventory/consume
  * Descuenta múltiples items del inventario vinculados a una OT.
- * Body: { workOrderId: number, items: ConsumeItem[] }
+ * Body: { workOrderId: string, items: ConsumeItem[] }
  */
 export async function POST(request: NextRequest) {
   try {
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { workOrderId, items } = body as {
-      workOrderId: number;
+      workOrderId: string;
       items: ConsumeItem[];
     };
 
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     // Procesar todos los items en una transacción
     const result = await prisma.$transaction(async tx => {
       const processedItems: Array<{
-        workOrderItemId: number;
+        workOrderItemId: string;
         inventoryItemId: string;
         quantity: number;
         unitCost: number;

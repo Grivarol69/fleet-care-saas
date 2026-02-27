@@ -73,7 +73,7 @@ export const dataAdminSidebar: SidebarItem[] = [
     ],
     subItems: [
       {
-        label: 'Listado Vehículos',
+        label: 'Vehículos',
         href: '/dashboard/vehicles/fleet',
         roles: [
           UserRole.SUPER_ADMIN,
@@ -95,11 +95,6 @@ export const dataAdminSidebar: SidebarItem[] = [
       {
         label: 'Tipos',
         href: '/dashboard/vehicles/types',
-        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
-      },
-      {
-        label: 'Vehículos de la Empresa',
-        href: '/dashboard/vehicles/vehicles',
         roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
       },
       {

@@ -9,7 +9,7 @@ import { ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import Image from 'next/image';
 
 interface VehicleGroup {
-  vehicleId: number;
+  vehicleId: string;
   vehiclePlate: string;
   vehiclePhoto: string;
   brandName: string;
@@ -30,11 +30,11 @@ export function AlertsTable({
   onSelectionChange,
   onCreateWorkOrder,
 }: Props) {
-  const [expandedVehicleId, setExpandedVehicleId] = useState<number | null>(
+  const [expandedVehicleId, setExpandedVehicleId] = useState<string | null>(
     null
   );
 
-  const handleToggleVehicle = (vehicleId: number) => {
+  const handleToggleVehicle = (vehicleId: string) => {
     setExpandedVehicleId(expandedVehicleId === vehicleId ? null : vehicleId);
   };
 

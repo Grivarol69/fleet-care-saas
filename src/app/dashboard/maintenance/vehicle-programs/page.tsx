@@ -1,4 +1,3 @@
-import React from 'react';
 import { VehicleProgramsList } from './components/VehicleProgramsList';
 
 export default function VehicleProgramsPage() {

@@ -16,9 +16,9 @@ export async function GET(
     }
 
     const { id } = await params;
-    const categoryId = parseInt(id);
+    const categoryId = id;
 
-    if (isNaN(categoryId)) {
+    if (!categoryId) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
@@ -56,9 +56,9 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const categoryId = parseInt(id);
+    const categoryId = id;
 
-    if (isNaN(categoryId)) {
+    if (!categoryId) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
@@ -137,9 +137,9 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const categoryId = parseInt(id);
+    const categoryId = id;
 
-    if (isNaN(categoryId)) {
+    if (!categoryId) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 

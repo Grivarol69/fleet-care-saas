@@ -11,12 +11,12 @@ export class PurchaseOrderService {
    */
   static async createFromWorkItems(
     tenantId: string,
-    workOrderId: number,
-    providerId: number,
+    workOrderId: string,
+    providerId: string,
     type: PurchaseOrderType,
     items: Array<{
-      workOrderItemId: number;
-      mantItemId: number;
+      workOrderItemId: string;
+      mantItemId: string;
       masterPartId?: string;
       description: string;
       quantity: number;
@@ -59,6 +59,7 @@ export class PurchaseOrderService {
       items.map(async item => {
         await prisma.purchaseOrderItem.create({
           data: {
+            tenantId,
             purchaseOrderId: purchaseOrder.id,
             mantItemId: item.mantItemId,
             masterPartId: item.masterPartId ?? null, // Ensure null if undefined

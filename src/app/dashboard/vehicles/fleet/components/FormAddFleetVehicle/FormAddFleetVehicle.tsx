@@ -39,9 +39,9 @@ const formSchema = z.object({
   photo: z.string().min(1, 'La imagen es requerida'),
   licensePlate: z.string().min(3, 'La placa debe tener al menos 3 caracteres'),
   typePlate: z.enum(['PARTICULAR', 'PUBLICO']),
-  brandId: z.number().min(1, 'Seleccione una marca'),
-  lineId: z.number().min(1, 'Seleccione una línea'),
-  typeId: z.number().min(1, 'Seleccione un tipo'),
+  brandId: z.string().min(1).min(1, 'Seleccione una marca'),
+  lineId: z.string().min(1).min(1, 'Seleccione una línea'),
+  typeId: z.string().min(1).min(1, 'Seleccione un tipo'),
   mileage: z.number().min(0, 'El kilometraje debe ser positivo'),
   cylinder: z.number().optional(),
   bodyWork: z.string().optional(),
@@ -58,17 +58,17 @@ const formSchema = z.object({
 });
 
 type VehicleBrand = {
-  id: number;
+  id: string;
   name: string;
 };
 
 type VehicleLine = {
-  id: number;
+  id: string;
   name: string;
 };
 
 type VehicleType = {
-  id: number;
+  id: string;
   name: string;
 };
 
@@ -98,9 +98,9 @@ export function FormAddFleetVehicle({
       photo: '',
       licensePlate: '',
       typePlate: 'PARTICULAR',
-      brandId: 0,
-      lineId: 0,
-      typeId: 0,
+      brandId: '',
+      lineId: '',
+      typeId: '',
       mileage: 0,
       cylinder: 0,
       bodyWork: '',
@@ -259,8 +259,8 @@ export function FormAddFleetVehicle({
                     <FormItem>
                       <FormLabel>Marca *</FormLabel>
                       <Select
-                        onValueChange={value => field.onChange(Number(value))}
-                        value={field.value > 0 ? field.value.toString() : ''}
+                        onValueChange={field.onChange}
+                        value={field.value || ''}
                       >
                         <FormControl>
                           <SelectTrigger disabled={isLoading}>
@@ -291,8 +291,8 @@ export function FormAddFleetVehicle({
                     <FormItem>
                       <FormLabel>Línea *</FormLabel>
                       <Select
-                        onValueChange={value => field.onChange(Number(value))}
-                        value={field.value > 0 ? field.value.toString() : ''}
+                        onValueChange={field.onChange}
+                        value={field.value || ''}
                       >
                         <FormControl>
                           <SelectTrigger disabled={isLoading}>
@@ -323,8 +323,8 @@ export function FormAddFleetVehicle({
                     <FormItem>
                       <FormLabel>Tipo *</FormLabel>
                       <Select
-                        onValueChange={value => field.onChange(Number(value))}
-                        value={field.value > 0 ? field.value.toString() : ''}
+                        onValueChange={field.onChange}
+                        value={field.value || ''}
                       >
                         <FormControl>
                           <SelectTrigger disabled={isLoading}>
@@ -359,7 +359,7 @@ export function FormAddFleetVehicle({
                           type="number"
                           placeholder="0"
                           {...field}
-                          onChange={e => field.onChange(Number(e.target.value))}
+                          onChange={e => field.onChange(e.target.value)}
                           disabled={isLoading}
                         />
                       </FormControl>
@@ -399,7 +399,7 @@ export function FormAddFleetVehicle({
                           type="number"
                           placeholder="2024"
                           {...field}
-                          onChange={e => field.onChange(Number(e.target.value))}
+                          onChange={e => field.onChange(e.target.value)}
                           disabled={isLoading}
                         />
                       </FormControl>

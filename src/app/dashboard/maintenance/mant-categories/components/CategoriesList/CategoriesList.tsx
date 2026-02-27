@@ -78,7 +78,7 @@ export function CategoriesList() {
     setIsEditDialogOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     try {
       await axios.delete(`/api/maintenance/mant-categories/${id}`);
       setData(data.filter(category => category.id !== id));

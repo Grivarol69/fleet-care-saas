@@ -12,7 +12,7 @@ interface InvoiceItemInput {
   taxRate?: number;
   taxAmount?: number;
   total: number;
-  workOrderItemId?: number | null;
+  workOrderItemId?: string | null;
   masterPartId?: string | null;
 }
 
@@ -33,7 +33,9 @@ export async function GET(request: NextRequest) {
       where: {
         tenantId: user.tenantId,
         ...(status && { status: status as InvoiceStatus }),
-        ...(workOrderId && { workOrderId: parseInt(workOrderId) }),
+        ...(workOrderId && {
+          workOrderId: workOrderId,
+        }),
       },
       include: {
         supplier: {
@@ -223,6 +225,7 @@ export async function POST(request: NextRequest) {
         items.map((item: InvoiceItemInput) =>
           tx.invoiceItem.create({
             data: {
+              tenantId: user.tenantId,
               invoiceId: newInvoice.id,
               description: item.description,
               quantity: item.quantity,

@@ -36,15 +36,17 @@ import {
   Loader2,
   AlertCircle,
   Plus,
+  Eye,
 } from 'lucide-react';
 import { useToast } from '@/components/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
 import axios from 'axios';
 import { AddItemDialog } from './AddItemDialog';
+import { InternalTicketSummaryModal } from './InternalTicketSummaryModal';
 
 type ServiceItem = {
   workOrderItemId: number;
-  mantItemId: number;
+  mantItemId: string;
   mantItemName: string;
   mantItemType: 'ACTION' | 'SERVICE';
   categoryName: string;
@@ -59,18 +61,18 @@ type ServiceItem = {
 };
 
 type Provider = {
-  id: number;
+  id: string;
   name: string;
 };
 
 type Technician = {
-  id: number;
+  id: string;
   name: string;
   hourlyRate?: number;
 };
 
 type ServicesTabProps = {
-  workOrderId: number;
+  workOrderId: string;
   onRefresh: () => void;
 };
 
@@ -113,6 +115,11 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
   const [selectedProviderId, setSelectedProviderId] = useState<string>('');
   const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Ticket summary modal
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [summaryTicket, setSummaryTicket] = useState<any>(null);
 
   // Fetch service items (ACTION + SERVICE types)
   const fetchItems = useCallback(async () => {
@@ -234,7 +241,7 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
       await axios.post('/api/purchase-orders', {
         workOrderId,
         type: 'SERVICES',
-        providerId: parseInt(selectedProviderId),
+        providerId: selectedProviderId,
         items: ocItems,
         notes: `OC de Servicios generada desde OT #${workOrderId}`,
       });
@@ -298,9 +305,7 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
 
     setIsSubmitting(true);
     try {
-      const technician = technicians.find(
-        t => t.id === parseInt(selectedTechnicianId)
-      );
+      const technician = technicians.find(t => t.id === selectedTechnicianId);
       const hourlyRate = technician?.hourlyRate || 50000; // Default hourly rate
 
       const laborEntries = internalItems.map(item => ({
@@ -312,7 +317,7 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
 
       await axios.post('/api/internal-tickets', {
         workOrderId,
-        technicianId: parseInt(selectedTechnicianId),
+        technicianId: selectedTechnicianId,
         description: `Ticket interno para servicios OT #${workOrderId}`,
         laborEntries,
         partEntries: [], // Services don't have parts
@@ -330,6 +335,16 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
           )
         )
       );
+
+      // Fetch the newly created ticket for the summary modal
+      const ticketsRes = await axios.get(
+        `/api/internal-tickets?workOrderId=${workOrderId}`
+      );
+      const created = (ticketsRes.data as any[])[0];
+      if (created) {
+        setSummaryTicket(created);
+        setShowSummaryModal(true);
+      }
 
       toast({
         title: 'Ticket Creado',
@@ -529,13 +544,35 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
                           )}
                         </TableCell>
                         <TableCell>
-                          <Badge
-                            variant={
-                              statusConfig[item.status]?.variant || 'outline'
-                            }
-                          >
-                            {statusConfig[item.status]?.label || item.status}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant={
+                                statusConfig[item.status]?.variant || 'outline'
+                              }
+                            >
+                              {statusConfig[item.status]?.label || item.status}
+                            </Badge>
+                            {item.closureType === 'INTERNAL_TICKET' && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                title="Ver ticket interno"
+                                onClick={async () => {
+                                  const res = await axios.get(
+                                    `/api/internal-tickets?workOrderId=${workOrderId}`
+                                  );
+                                  const ticket = (res.data as any[])[0];
+                                  if (ticket) {
+                                    setSummaryTicket(ticket);
+                                    setShowSummaryModal(true);
+                                  }
+                                }}
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -719,6 +756,13 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
           fetchItems();
           onRefresh();
         }}
+      />
+
+      {/* Internal Ticket Summary Modal */}
+      <InternalTicketSummaryModal
+        open={showSummaryModal}
+        onClose={() => setShowSummaryModal(false)}
+        ticket={summaryTicket}
       />
     </div>
   );

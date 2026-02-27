@@ -1,7 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
-import { safeParseInt } from '@/lib/validation';
 import { canManageVehicles, canDeleteVehicles } from '@/lib/permissions';
 
 // GET a single vehicle by ID
@@ -17,8 +16,8 @@ export async function GET(
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
-    const vehicleId = safeParseInt(id);
-    if (vehicleId === null) {
+    const vehicleId = id;
+    if (!vehicleId) {
       return NextResponse.json(
         { error: 'ID de vehículo inválido' },
         { status: 400 }
@@ -34,6 +33,7 @@ export async function GET(
         brand: true,
         line: true,
         type: true,
+        documents: true,
       },
     });
 
@@ -74,8 +74,8 @@ export async function DELETE(
       );
     }
 
-    const vehicleId = safeParseInt(id);
-    if (vehicleId === null) {
+    const vehicleId = id;
+    if (!vehicleId) {
       return NextResponse.json(
         { error: 'ID de vehículo inválido' },
         { status: 400 }
@@ -140,8 +140,8 @@ export async function PATCH(
       );
     }
 
-    const vehicleId = safeParseInt(id);
-    if (vehicleId === null) {
+    const vehicleId = id;
+    if (!vehicleId) {
       return NextResponse.json(
         { error: 'ID de vehículo inválido' },
         { status: 400 }

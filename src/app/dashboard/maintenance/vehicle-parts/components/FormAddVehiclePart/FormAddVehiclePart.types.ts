@@ -1,7 +1,7 @@
 import { VehiclePartEntry } from '../VehiclePartsList/VehiclePartsList.types';
 
 export type SelectOption = {
-  id: number;
+  id: string;
   name: string;
 };
 
@@ -12,15 +12,15 @@ export type MasterPartOption = {
 };
 
 export type MantItemOption = {
-  id: number;
+  id: string;
   name: string;
   type: string;
 };
 
 export type LineOption = {
-  id: number;
+  id: string;
   name: string;
-  brandId: number;
+  brandId: string;
 };
 
 export interface FormAddVehiclePartProps {

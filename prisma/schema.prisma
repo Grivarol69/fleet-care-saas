@@ -60,6 +60,15 @@ model Tenant {
   purchaseOrders            PurchaseOrder[]
   mantItemRequests          MantItemRequest[]
   mantItemVehicleParts      MantItemVehiclePart[]
+  odometerLogs              OdometerLog[]
+  workOrderItems            WorkOrderItem[]
+  workOrderExpenses         WorkOrderExpense[]
+  workOrderApprovals        WorkOrderApproval[]
+  expenseAuditLogs          ExpenseAuditLog[]
+  invoiceItems              InvoiceItem[]
+  purchaseOrderItems        PurchaseOrderItem[]
+  ticketLaborEntries        TicketLaborEntry[]
+  ticketPartEntries         TicketPartEntry[]
 
   @@index([slug])
   @@index([subscriptionStatus])
@@ -147,7 +156,7 @@ model Payment {
 // ========================================
 
 model VehicleBrand {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(uuid())
   tenantId  String? // Nullable: NULL = global, populated = tenant-specific
   isGlobal  Boolean  @default(false) // Global Knowledge Base flag
   name      String
@@ -167,11 +176,11 @@ model VehicleBrand {
 }
 
 model VehicleLine {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(uuid())
   tenantId  String? // Nullable: NULL = global, populated = tenant-specific
   isGlobal  Boolean  @default(false) // Global Knowledge Base flag
   name      String
-  brandId   Int
+  brandId   String
   status    Status   @default(ACTIVE) // Soft delete support
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -189,7 +198,7 @@ model VehicleLine {
 }
 
 model VehicleType {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(uuid())
   tenantId  String? // Nullable: NULL = global, populated = tenant-specific
   isGlobal  Boolean  @default(false) // Global Knowledge Base flag
   name      String
@@ -206,12 +215,12 @@ model VehicleType {
 }
 
 model Vehicle {
-  id             Int              @id @default(autoincrement())
+  id             String           @id @default(uuid())
   tenantId       String
   licensePlate   String
-  brandId        Int
-  lineId         Int
-  typeId         Int
+  brandId        String
+  lineId         String
+  typeId         String
   year           Int
   color          String
   mileage        Int              @default(0)
@@ -263,7 +272,7 @@ model Vehicle {
 // ========================================
 
 model MantCategory {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(uuid())
   tenantId    String? // Nullable: NULL = global, populated = tenant-specific
   isGlobal    Boolean  @default(false) // Global Knowledge Base flag
   name        String
@@ -280,13 +289,13 @@ model MantCategory {
 }
 
 model MantItem {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(uuid())
   tenantId    String? // Nullable: NULL = global, populated = tenant-specific
   isGlobal    Boolean  @default(false) // Global Knowledge Base flag
   name        String
   description String?
   mantType    MantType
-  categoryId  Int
+  categoryId  String
   status      Status   @default(ACTIVE)
 
   // NUEVO: Discriminación de tipo y vinculación con MasterPart
@@ -317,14 +326,14 @@ model MantItem {
 
 // Solicitudes de nuevos MantItems (TECHNICIAN/PURCHASER → OWNER/MANAGER aprueba)
 model MantItemRequest {
-  id        Int    @id @default(autoincrement())
+  id        String @id @default(uuid())
   tenantId  String
 
   // Datos del item solicitado
   suggestedName String
   description   String?
   mantType      MantType
-  categoryId    Int
+  categoryId    String
   type          ItemType @default(ACTION)
   justification String?  @db.Text // Por qué se necesita
 
@@ -339,7 +348,7 @@ model MantItemRequest {
   rejectionReason String? @db.Text
 
   // Referencia al item creado si fue aprobado
-  createdMantItemId Int?
+  createdMantItemId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -358,18 +367,18 @@ model MantItemRequest {
 // ========================================
 
 model MantItemVehiclePart {
-  id               Int      @id @default(autoincrement())
+  id               String   @id @default(uuid())
   tenantId         String?
   isGlobal         Boolean  @default(false)
 
   // Item de mantenimiento (ej: "Cambio de filtro de aire")
-  mantItemId       Int
+  mantItemId       String
   mantItem         MantItem @relation(fields: [mantItemId], references: [id])
 
   // Contexto vehículo (todo por FK, cero strings libres)
-  vehicleBrandId   Int
+  vehicleBrandId   String
   vehicleBrand     VehicleBrand @relation(fields: [vehicleBrandId], references: [id])
-  vehicleLineId    Int
+  vehicleLineId    String
   vehicleLine      VehicleLine @relation(fields: [vehicleLineId], references: [id])
   yearFrom         Int? // Año desde (ej: 2020)
   yearTo           Int? // Año hasta (ej: 2024, null = vigente)
@@ -402,13 +411,13 @@ model MantItemVehiclePart {
 // ========================================
 
 model MaintenanceTemplate {
-  id             Int      @id @default(autoincrement())
+  id             String   @id @default(uuid())
   tenantId       String? // Nullable: NULL = global, populated = tenant-specific
   isGlobal       Boolean  @default(false) // Global Knowledge Base flag
   name           String // "Toyota Hilux Standard", "Ford Ranger Heavy Duty"
   description    String?
-  vehicleBrandId Int // Requerido: específico para una marca
-  vehicleLineId  Int // Requerido: específico para una línea
+  vehicleBrandId String // Requerido: específico para una marca
+  vehicleLineId  String // Requerido: específico para una línea
   version        String   @default("1.0") // Para tracking de versiones
   isDefault      Boolean  @default(false) // Template por defecto para esta marca/línea
   status         Status   @default(ACTIVE)
@@ -428,8 +437,8 @@ model MaintenanceTemplate {
 }
 
 model MaintenancePackage {
-  id            Int      @id @default(autoincrement())
-  templateId    Int
+  id            String   @id @default(uuid())
+  templateId    String
   name          String // "Mantenimiento 5,000 km", "Mantenimiento 15,000 km"
   triggerKm     Int? // Nullable para Mantenimiento Correctivo
   description   String?
@@ -451,9 +460,9 @@ model MaintenancePackage {
 }
 
 model PackageItem {
-  id         Int      @id @default(autoincrement())
-  packageId  Int
-  mantItemId Int
+  id         String   @id @default(uuid())
+  packageId  String
+  mantItemId String
   triggerKm  Int // Km en que se ejecuta este item específico
   priority   Priority @default(MEDIUM) // Prioridad específica del item en este paquete
 
@@ -486,17 +495,17 @@ model PackageItem {
 // ========================================
 
 model WorkOrder {
-  id              Int             @id @default(autoincrement())
+  id              String          @id @default(uuid())
   tenantId        String
-  vehicleId       Int
+  vehicleId       String
   title           String
   description     String?
   mantType        MantType
   priority        Priority
   status          WorkOrderStatus @default(PENDING)
   workType        WorkType        @default(EXTERNAL) // EXTERNAL | INTERNAL | MIXED
-  technicianId    Int?
-  providerId      Int?
+  technicianId    String?
+  providerId      String?
   creationMileage Int
 
   // CONEXIÓN CON PAQUETES DE MANTENIMIENTO
@@ -515,10 +524,11 @@ model WorkOrder {
   plannedAmount Decimal? @db.Decimal(10, 2)
   realAmount    Decimal? @db.Decimal(10, 2)
 
-  startDate DateTime?
-  endDate   DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  startDate         DateTime?
+  endDate           DateTime?
+  completionMileage Float?    // Kilometraje al momento de cierre de la OT
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   tenant                 Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   vehicle                Vehicle                 @relation(fields: [vehicleId], references: [id])
@@ -544,9 +554,10 @@ model WorkOrder {
 }
 
 model WorkOrderItem {
-  id          Int @id @default(autoincrement())
-  workOrderId Int
-  mantItemId  Int
+  id          String @id @default(uuid())
+  workOrderId String
+  mantItemId  String
+  tenantId    String
 
   // Detalles del item/repuesto
   description String
@@ -588,6 +599,7 @@ model WorkOrderItem {
 
   workOrder          WorkOrder          @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
   mantItem           MantItem           @relation(fields: [mantItemId], references: [id])
+  tenant             Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   invoiceItems       InvoiceItem[] // ✅ Items de factura vinculados
   ticketLaborEntries TicketLaborEntry[]
   ticketPartEntries  TicketPartEntry[]
@@ -597,31 +609,34 @@ model WorkOrderItem {
   @@index([mantItemId])
   @@index([supplier])
   @@index([purchasedBy])
+  @@index([tenantId])
 }
 
 model WorkOrderExpense {
   id            String      @id @default(cuid())
-  workOrderId   Int
+  workOrderId   String
+  tenantId      String
   expenseType   ExpenseType
   description   String
   amount        Decimal     @db.Decimal(10, 2)
-  
+
   // Proveedor (Opcional: puede ser externo sin registrar o registrado)
   vendor        String?     // Nombre texto libre (fallback)
-  providerId    Int?
+  providerId    String?
   provider      Provider?   @relation(fields: [providerId], references: [id])
-  
+
   invoiceNumber String?
   receiptUrl    String? // URL del recibo escaneado
   expenseDate   DateTime    @default(now())
   recordedBy    String // User ID quien registró
-  
+
   status        ApprovalStatus @default(PENDING) // ✅ Nuevo campo para aprobación
-  
+
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
   workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([workOrderId])
   @@index([expenseType])
@@ -629,11 +644,13 @@ model WorkOrderExpense {
   @@index([providerId])
   @@index([recordedBy])
   @@index([status])
+  @@index([tenantId])
 }
 
 model WorkOrderApproval {
   id            String         @id @default(cuid())
-  workOrderId   Int
+  workOrderId   String
+  tenantId      String
   approverLevel Int // 1=supervisor, 2=manager, 3=admin
   approvedBy    String // User ID
   approvedAt    DateTime       @default(now())
@@ -644,16 +661,19 @@ model WorkOrderApproval {
   updatedAt     DateTime       @updatedAt
 
   workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([workOrderId])
   @@index([approverLevel])
   @@index([approvedBy])
   @@index([status])
+  @@index([tenantId])
 }
 
 model ExpenseAuditLog {
   id            String      @id @default(cuid())
-  workOrderId   Int
+  workOrderId   String
+  tenantId      String
   action        AuditAction // CREATED, APPROVED, MODIFIED, PAID
   previousValue Json?
   newValue      Json
@@ -664,10 +684,12 @@ model ExpenseAuditLog {
   createdAt     DateTime    @default(now())
 
   workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([workOrderId])
   @@index([performedBy])
   @@index([performedAt])
+  @@index([tenantId])
 }
 
 // ========================================
@@ -724,7 +746,7 @@ model MasterPart {
 // 2. Tabla intermedia: MantItem ↔ MasterPart (many-to-many)
 model MantItemPart {
   id           String     @id @default(cuid())
-  mantItemId   Int
+  mantItemId   String
   mantItem     MantItem   @relation(fields: [mantItemId], references: [id], onDelete: Cascade)
   masterPartId String
   masterPart   MasterPart @relation(fields: [masterPartId], references: [id], onDelete: Restrict)
@@ -756,11 +778,11 @@ model Invoice {
   dueDate       DateTime? // Fecha vencimiento pago
 
   // Proveedor (reutilizamos Provider existente, lo renombraremos a Supplier)
-  supplierId Int
+  supplierId String
   supplier   Provider @relation(fields: [supplierId], references: [id], onDelete: Restrict)
 
   // Vinculación con trabajo (opcional si factura es de WO)
-  workOrderId Int?
+  workOrderId String?
   workOrder   WorkOrder? @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
 
   // Vinculación con orden de compra (opcional)
@@ -818,6 +840,7 @@ model Invoice {
 model InvoiceItem {
   id        String  @id @default(cuid())
   invoiceId String
+  tenantId  String
   invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   // Vinculación con catálogo (CLAVE para analytics)
@@ -825,7 +848,7 @@ model InvoiceItem {
   masterPart   MasterPart? @relation(fields: [masterPartId], references: [id], onDelete: SetNull)
 
   // Vinculación con trabajo realizado (traza: alerta → WO → factura)
-  workOrderItemId Int?
+  workOrderItemId String?
   workOrderItem   WorkOrderItem? @relation(fields: [workOrderItemId], references: [id], onDelete: SetNull)
 
   // Datos de factura (lo que dice el documento físico)
@@ -841,9 +864,12 @@ model InvoiceItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
   @@index([invoiceId])
   @@index([masterPartId])
   @@index([workOrderItemId])
+  @@index([tenantId])
 }
 
 // 5. Histórico de precios por artículo + proveedor (GOLD MINE para analytics)
@@ -856,7 +882,7 @@ model PartPriceHistory {
   masterPart   MasterPart @relation(fields: [masterPartId], references: [id], onDelete: Cascade)
 
   // Proveedor
-  supplierId Int
+  supplierId String
   supplier   Provider @relation(fields: [supplierId], references: [id], onDelete: Restrict)
 
   // Precio y contexto
@@ -918,7 +944,7 @@ model PurchaseOrder {
   tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // Relacion con OT
-  workOrderId Int
+  workOrderId String
   workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
 
   // Numero y tipo
@@ -926,7 +952,7 @@ model PurchaseOrder {
   type        PurchaseOrderType // SERVICES | PARTS
 
   // Proveedor
-  providerId Int
+  providerId String
   provider   Provider @relation(fields: [providerId], references: [id], onDelete: Restrict)
 
   // Estado con flujo de aprobacion
@@ -962,14 +988,15 @@ model PurchaseOrder {
 model PurchaseOrderItem {
   id              String        @id @default(cuid())
   purchaseOrderId String
+  tenantId        String
   purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
 
   // Vinculo con WorkOrderItem (trazabilidad)
-  workOrderItemId Int?
+  workOrderItemId String?
   workOrderItem   WorkOrderItem? @relation(fields: [workOrderItemId], references: [id], onDelete: SetNull)
 
   // Item de mantenimiento
-  mantItemId Int?
+  mantItemId String?
   mantItem   MantItem? @relation(fields: [mantItemId], references: [id], onDelete: SetNull)
 
   // Repuesto (si aplica)
@@ -993,11 +1020,14 @@ model PurchaseOrderItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
   @@index([purchaseOrderId])
   @@index([workOrderItemId])
   @@index([mantItemId])
   @@index([masterPartId])
   @@index([status])
+  @@index([tenantId])
 }
 
 // 7. Compatibilidad de artículos por vehículo (FASE 3 - para sugerir alternativas)
@@ -1035,7 +1065,7 @@ model PartCompatibility {
 // ========================================
 
 model Technician {
-  id        Int                  @id @default(autoincrement())
+  id        String               @id @default(uuid())
   tenantId  String
   name      String
   email     String?
@@ -1062,7 +1092,7 @@ model Technician {
 }
 
 model Provider {
-  id        Int                @id @default(autoincrement())
+  id        String             @id @default(uuid())
   tenantId  String
   name      String
   email     String?
@@ -1087,7 +1117,7 @@ model Provider {
 }
 
 model Driver {
-  id            Int       @id @default(autoincrement())
+  id            String    @id @default(uuid())
   tenantId      String
   name          String
   email         String?
@@ -1107,10 +1137,10 @@ model Driver {
 }
 
 model VehicleDriver {
-  id         Int       @id @default(autoincrement())
+  id         String    @id @default(uuid())
   tenantId   String // Multi-tenant support
-  vehicleId  Int
-  driverId   Int
+  vehicleId  String
+  driverId   String
   status     Status    @default(ACTIVE) // ACTIVE/INACTIVE
   isPrimary  Boolean   @default(false) // Conductor principal del vehículo
   startDate  DateTime  @default(now()) // Fecha inicio de asignación
@@ -1137,28 +1167,31 @@ model VehicleDriver {
 // ========================================
 
 model OdometerLog {
-  id          Int                 @id @default(autoincrement())
-  vehicleId   Int
-  driverId    Int?
+  id          String              @id @default(uuid())
+  vehicleId   String
+  driverId    String?
+  tenantId    String
   kilometers  Int?
   hours       Int?
   measureType OdometerMeasureType @default(KILOMETERS)
   recordedAt  DateTime            @default(now())
   createdAt   DateTime            @default(now())
 
-  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-  driver  Driver? @relation(fields: [driverId], references: [id])
+  vehicle Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  driver  Driver?  @relation(fields: [driverId], references: [id])
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([vehicleId])
   @@index([driverId])
   @@index([recordedAt])
+  @@index([tenantId])
 }
 
 model MaintenanceAlert {
-  id            Int    @id @default(autoincrement())
+  id            String @id @default(uuid())
   tenantId      String
-  vehicleId     Int
-  programItemId Int // VehicleProgramItem específico (granular)
+  vehicleId     String
+  programItemId String // VehicleProgramItem específico (granular)
 
   // TIPO Y CLASIFICACIÓN
   type     AlertType     @default(PREVENTIVE)
@@ -1203,7 +1236,7 @@ model MaintenanceAlert {
   snoozedBy    String?
 
   // CONEXIÓN CON WORKORDER
-  workOrderId        Int?
+  workOrderId        String?
   workOrderCreatedAt DateTime?
   workOrderCreatedBy String?
 
@@ -1249,13 +1282,13 @@ model MaintenanceAlert {
 // ========================================
 
 model FinancialAlert {
-  id            Int      @id @default(autoincrement())
+  id            String   @id @default(uuid())
   tenantId      String
-  
+
   // Relaciones Opciónales
   invoiceId     String?
   invoice       Invoice? @relation(fields: [invoiceId], references: [id])
-  workOrderId   Int?
+  workOrderId   String?
   workOrder     WorkOrder? @relation(fields: [workOrderId], references: [id])
   masterPartId  String?
   masterPart    MasterPart? @relation(fields: [masterPartId], references: [id])
@@ -1288,8 +1321,8 @@ model FinancialAlert {
 model Document {
   id             String @id @default(uuid())
   tenantId       String
-  vehicleId      Int
-  documentTypeId Int
+  vehicleId      String
+  documentTypeId String
 
   // Metadata del ARCHIVO físico
   fileName String // Nombre del archivo subido (ej: "soat-toyota-abc123.pdf")
@@ -1317,7 +1350,7 @@ model Document {
 }
 
 model DocumentTypeConfig {
-  id                 Int      @id @default(autoincrement())
+  id                 String   @id @default(uuid())
   tenantId           String? // NULL = global, populated = tenant-specific
   isGlobal           Boolean  @default(false)
   countryCode        String // ISO alpha-2: CO, MX, ES, AR, US
@@ -1348,9 +1381,9 @@ model DocumentTypeConfig {
 // ========================================
 
 model VehicleMantProgram {
-  id          Int     @id @default(autoincrement())
+  id          String  @id @default(uuid())
   tenantId    String
-  vehicleId   Int
+  vehicleId   String
   name        String // "Programa Toyota Hilux ABC-123"
   description String? // Descripción del programa
 
@@ -1384,9 +1417,9 @@ model VehicleMantProgram {
 }
 
 model VehicleProgramPackage {
-  id          Int     @id @default(autoincrement())
+  id          String  @id @default(uuid())
   tenantId    String
-  programId   Int
+  programId   String
   name        String // "Mantenimiento 15,000 km" | "Items Correctivos"
   description String?
 
@@ -1409,9 +1442,9 @@ model VehicleProgramPackage {
   endDate     DateTime?
 
   // ASIGNACIONES
-  technicianId Int?
-  providerId   Int?
-  workOrderId  Int? // WorkOrder asociada
+  technicianId String?
+  providerId   String?
+  workOrderId  String? // WorkOrder asociada
   notes        String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -1433,10 +1466,10 @@ model VehicleProgramPackage {
 }
 
 model VehicleProgramItem {
-  id         Int    @id @default(autoincrement())
+  id         String @id @default(uuid())
   tenantId   String
-  packageId  Int // NUNCA NULL - siempre tiene package padre
-  mantItemId Int // Referencia al MantItem base
+  packageId  String // NUNCA NULL - siempre tiene package padre
+  mantItemId String // Referencia al MantItem base
 
   // TIPO Y CONFIGURACIÓN
   mantType MantType // PREVENTIVE, CORRECTIVE, PREDICTIVE
@@ -1461,8 +1494,8 @@ model VehicleProgramItem {
   localNotes String? @db.Text // "En Colombia usar Shell Helix o Mobil 1"
 
   // ASIGNACIONES Y ESTADO
-  technicianId Int?
-  providerId   Int?
+  technicianId String?
+  providerId   String?
   status       WorkOrderStatus @default(PENDING)
   urgency      Boolean         @default(false) // Para correctivos urgentes
   notes        String?
@@ -1788,10 +1821,10 @@ model InventoryMovement {
 model InternalWorkTicket {
   id           String   @id @default(cuid())
   tenantId     String
-  workOrderId  Int
+  workOrderId  String
   ticketNumber String // "TKT-2026-0001"
   ticketDate   DateTime @default(now())
-  technicianId Int
+  technicianId String
 
   totalLaborHours Decimal @db.Decimal(5, 2)
   totalLaborCost  Decimal @db.Decimal(10, 2)
@@ -1822,12 +1855,13 @@ model InternalWorkTicket {
 model TicketLaborEntry {
   id              String   @id @default(cuid())
   ticketId        String
-  workOrderItemId Int?
+  workOrderItemId String?
+  tenantId        String
   description     String
   hours           Decimal  @db.Decimal(5, 2)
   hourlyRate      Decimal  @db.Decimal(10, 2)
   laborCost       Decimal  @db.Decimal(10, 2)
-  technicianId    Int?
+  technicianId    String?
   notes           String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -1835,17 +1869,20 @@ model TicketLaborEntry {
   ticket        InternalWorkTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   workOrderItem WorkOrderItem?     @relation(fields: [workOrderItemId], references: [id])
   technician    Technician?        @relation(fields: [technicianId], references: [id])
+  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([ticketId])
   @@index([workOrderItemId])
   @@index([technicianId])
+  @@index([tenantId])
 }
 
 model TicketPartEntry {
   id                  String   @id @default(cuid())
   ticketId            String
-  workOrderItemId     Int?
+  workOrderItemId     String?
   inventoryItemId     String
+  tenantId            String
   quantity            Decimal  @db.Decimal(10, 2)
   unitCost            Decimal  @db.Decimal(10, 2)
   totalCost           Decimal  @db.Decimal(10, 2)
@@ -1856,10 +1893,12 @@ model TicketPartEntry {
   ticket        InternalWorkTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   workOrderItem WorkOrderItem?     @relation(fields: [workOrderItemId], references: [id])
   inventoryItem InventoryItem      @relation(fields: [inventoryItemId], references: [id])
+  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([ticketId])
   @@index([workOrderItemId])
   @@index([inventoryItemId])
+  @@index([tenantId])
 }
 
 // ========================================

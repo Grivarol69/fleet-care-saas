@@ -8,7 +8,7 @@ import { canManagePurchases } from '@/lib/permissions';
 // Schema validation
 const purchaseSchema = z.object({
   invoiceNumber: z.string().min(1),
-  supplierId: z.number(),
+  supplierId: z.string(),
   invoiceDate: z.string(), // ISO Date
   items: z.array(
     z.object({
@@ -75,6 +75,7 @@ export async function POST(req: Request) {
         // 2.1 Create InvoiceItem
         await tx.invoiceItem.create({
           data: {
+            tenantId: user.tenantId,
             invoiceId: invoice.id,
             masterPartId: item.masterPartId,
             description: item.description,

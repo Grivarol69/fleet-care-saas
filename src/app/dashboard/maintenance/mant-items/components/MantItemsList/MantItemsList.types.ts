@@ -1,16 +1,16 @@
 export type MantItemsListProps = {
-  id: number;
+  id: string;
   name: string;
   description?: string | null;
   mantType: 'PREVENTIVE' | 'PREDICTIVE' | 'CORRECTIVE' | 'EMERGENCY';
-  categoryId: number;
+  categoryId: string;
   type: 'ACTION' | 'PART' | 'SERVICE';
   status: 'ACTIVE' | 'INACTIVE';
   isGlobal?: boolean;
   createdAt: string;
   updatedAt: string;
   category: {
-    id: number;
+    id: string;
     name: string;
   };
 };

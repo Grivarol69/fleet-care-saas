@@ -5,12 +5,12 @@ import { z } from 'zod';
 import { canCreateWorkOrders } from '@/lib/permissions';
 
 const importSchema = z.object({
-  packageId: z.number(),
+  packageId: z.string(),
 });
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -25,7 +25,12 @@ export async function POST(
       );
     }
 
-    const workOrderId = parseInt(params.id);
+    const { id } = await params;
+    const workOrderId = id;
+    if (!workOrderId) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
+
     const json = await req.json();
     const body = importSchema.parse(json);
 
@@ -68,6 +73,7 @@ export async function POST(
       for (const item of pkg.packageItems) {
         await tx.workOrderItem.create({
           data: {
+            tenantId: user.tenantId,
             workOrderId,
             mantItemId: item.mantItemId,
             description: item.mantItem.name,

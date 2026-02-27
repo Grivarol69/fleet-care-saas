@@ -6,7 +6,7 @@ import { canManageMaintenancePrograms } from '@/lib/permissions';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -21,7 +21,7 @@ export async function PUT(
       );
     }
 
-    const id = parseInt(params.id);
+    const { id } = await params;
     const body = await request.json();
     const {
       triggerKm,
@@ -80,7 +80,7 @@ export async function PUT(
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -95,7 +95,7 @@ export async function DELETE(
       );
     }
 
-    const id = parseInt(params.id);
+    const { id } = await params;
 
     // Verificar que el package item existe
     const existingItem = await prisma.packageItem.findUnique({
@@ -108,21 +108,6 @@ export async function DELETE(
         { status: 404 }
       );
     }
-
-    // TODO: Verificar si tiene work orders activas (cuando implementemos work orders)
-    // const activeWorkOrders = await prisma.workOrder.findFirst({
-    //     where: {
-    //         packageItemId: id,
-    //         status: { in: ['PENDING', 'IN_PROGRESS'] }
-    //     }
-    // });
-    //
-    // if (activeWorkOrders) {
-    //     return NextResponse.json(
-    //         { error: "No se puede eliminar: el item tiene órdenes de trabajo activas" },
-    //         { status: 409 }
-    //     );
-    // }
 
     await prisma.packageItem.delete({
       where: { id },
@@ -137,10 +122,10 @@ export async function DELETE(
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(params.id);
+    const { id } = await params;
 
     const packageItem = await prisma.packageItem.findUnique({
       where: { id },

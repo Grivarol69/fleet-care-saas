@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 
     const packages = await prisma.maintenancePackage.findMany({
       where: {
-        templateId: parseInt(templateId),
+        templateId: templateId,
         // Asegurar que el template pertenece al tenant o es global
         template: {
           OR: [{ tenantId: user.tenantId }, { isGlobal: true }],

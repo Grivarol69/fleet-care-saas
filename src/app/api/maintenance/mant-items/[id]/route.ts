@@ -15,9 +15,9 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const mantItemId = parseInt(id);
+    const mantItemId = id;
 
-    if (isNaN(mantItemId)) {
+    if (!mantItemId) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
@@ -69,9 +69,9 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const mantItemId = parseInt(id);
+    const mantItemId = id;
 
-    if (isNaN(mantItemId)) {
+    if (!mantItemId) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
@@ -96,7 +96,7 @@ export async function PATCH(
       );
     }
 
-    if (!categoryId || categoryId <= 0) {
+    if (!categoryId) {
       return NextResponse.json(
         { error: 'Categoría inválida' },
         { status: 400 }

@@ -42,7 +42,11 @@ describe('Dashboard API Integration Tests', () => {
       const vd1 = await createTestVehicle(tenant.id, { status: 'ACTIVE' });
       const vd2 = await createTestVehicle(tenant.id, { status: 'ACTIVE' });
 
-      const prog1 = await createTestMaintenanceProgram(tenant.id, vd1.vehicle.id, user.id);
+      const prog1 = await createTestMaintenanceProgram(
+        tenant.id,
+        vd1.vehicle.id,
+        user.id
+      );
       await createTestAlert(tenant.id, vd1.vehicle.id, prog1.programItem.id, {
         status: 'PENDING',
       });
@@ -117,8 +121,16 @@ describe('Dashboard API Integration Tests', () => {
       const vd1 = await createTestVehicle(tenant.id, { status: 'ACTIVE' });
       const vd2 = await createTestVehicle(tenant.id, { status: 'ACTIVE' });
 
-      const prog1 = await createTestMaintenanceProgram(tenant.id, vd1.vehicle.id, user.id);
-      const prog2 = await createTestMaintenanceProgram(tenant.id, vd2.vehicle.id, user.id);
+      const prog1 = await createTestMaintenanceProgram(
+        tenant.id,
+        vd1.vehicle.id,
+        user.id
+      );
+      const prog2 = await createTestMaintenanceProgram(
+        tenant.id,
+        vd2.vehicle.id,
+        user.id
+      );
 
       await createTestAlert(tenant.id, vd1.vehicle.id, prog1.programItem.id, {
         status: 'PENDING',
@@ -143,8 +155,16 @@ describe('Dashboard API Integration Tests', () => {
       const vd = await createTestVehicle(tenant.id, { status: 'ACTIVE' });
 
       await createTestWorkOrder(tenant.id, vd.vehicle.id, user.id); // PENDING
-      const woInProgress = await createTestWorkOrder(tenant.id, vd.vehicle.id, user.id);
-      const woCompleted = await createTestWorkOrder(tenant.id, vd.vehicle.id, user.id);
+      const woInProgress = await createTestWorkOrder(
+        tenant.id,
+        vd.vehicle.id,
+        user.id
+      );
+      const woCompleted = await createTestWorkOrder(
+        tenant.id,
+        vd.vehicle.id,
+        user.id
+      );
 
       await prisma.workOrder.update({
         where: { id: woInProgress.id },
@@ -193,7 +213,9 @@ describe('Dashboard API Integration Tests', () => {
       const userA = await createTestUser(tenantA.id, { role: 'OWNER' });
       await createTestUser(tenantB.id, { role: 'OWNER' });
 
-      const vehicleA = await createTestVehicle(tenantA.id, { status: 'ACTIVE' });
+      const vehicleA = await createTestVehicle(tenantA.id, {
+        status: 'ACTIVE',
+      });
       await createTestVehicle(tenantB.id, { status: 'ACTIVE' });
 
       mockAuthAsUser({ id: userA.id, tenantId: tenantA.id, role: userA.role });
@@ -229,6 +251,7 @@ describe('Dashboard API Integration Tests', () => {
       threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
       await prisma.odometerLog.create({
         data: {
+          tenantId: tenant.id,
           vehicleId: vd1.vehicle.id,
           kilometers: 50000,
           measureType: 'KILOMETERS',
@@ -242,6 +265,7 @@ describe('Dashboard API Integration Tests', () => {
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       await prisma.odometerLog.create({
         data: {
+          tenantId: tenant.id,
           vehicleId: vd2.vehicle.id,
           kilometers: 60000,
           measureType: 'KILOMETERS',
@@ -255,6 +279,7 @@ describe('Dashboard API Integration Tests', () => {
       fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
       await prisma.odometerLog.create({
         data: {
+          tenantId: tenant.id,
           vehicleId: vd3.vehicle.id,
           kilometers: 70000,
           measureType: 'KILOMETERS',
@@ -282,14 +307,22 @@ describe('Dashboard API Integration Tests', () => {
       mockAuthAsUser({ id: user.id, tenantId: tenant.id, role: user.role });
 
       const vd1 = await createTestVehicle(tenant.id, { status: 'ACTIVE' });
-      const prog1 = await createTestMaintenanceProgram(tenant.id, vd1.vehicle.id, user.id);
+      const prog1 = await createTestMaintenanceProgram(
+        tenant.id,
+        vd1.vehicle.id,
+        user.id
+      );
       await createTestAlert(tenant.id, vd1.vehicle.id, prog1.programItem.id, {
         priority: 'URGENT',
         status: 'PENDING',
       });
 
       const vd2 = await createTestVehicle(tenant.id, { status: 'ACTIVE' });
-      const prog2 = await createTestMaintenanceProgram(tenant.id, vd2.vehicle.id, user.id);
+      const prog2 = await createTestMaintenanceProgram(
+        tenant.id,
+        vd2.vehicle.id,
+        user.id
+      );
       await createTestAlert(tenant.id, vd2.vehicle.id, prog2.programItem.id, {
         priority: 'HIGH',
         status: 'PENDING',

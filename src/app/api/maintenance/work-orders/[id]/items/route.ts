@@ -14,10 +14,27 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    }
+
     const { id } = await params;
-    const workOrderId = parseInt(id);
+    const workOrderId = id;
+    if (!workOrderId) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
+
     const { searchParams } = new URL(request.url);
     const typeParam = searchParams.get('type');
+
+    // Verify parent WorkOrder belongs to tenant
+    const workOrder = await prisma.workOrder.findUnique({
+      where: { id: workOrderId, tenantId: user.tenantId },
+    });
+    if (!workOrder) {
+      return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+    }
 
     // Support multiple types: "SERVICE,ACTION" or single "PART"
     let typeFilter: ItemType[] | undefined;
@@ -34,6 +51,7 @@ export async function GET(
     const items = await prisma.workOrderItem.findMany({
       where: {
         workOrderId,
+        tenantId: user.tenantId,
         ...(typeFilter ? { mantItem: { type: { in: typeFilter } } } : {}),
       },
       include: {
@@ -93,7 +111,11 @@ export async function POST(
     }
 
     const { id } = await params;
-    const workOrderId = parseInt(id);
+    const workOrderId = id;
+    if (!workOrderId) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
+
     const body = await request.json();
     const {
       mantItemId,
@@ -162,6 +184,7 @@ export async function POST(
     // 5. Create Work Order Item
     const newItem = await prisma.workOrderItem.create({
       data: {
+        tenantId: user.tenantId,
         workOrderId,
         mantItemId,
         masterPartId: masterPartId || null, // Ensure null if undefined/empty

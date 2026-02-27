@@ -1,0 +1,1 @@
+export { PartsList } from './PartsList';

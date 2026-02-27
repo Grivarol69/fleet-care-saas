@@ -37,8 +37,8 @@ import { useEffect, useState } from 'react';
 import { Loader2, CheckCircle2, Package } from 'lucide-react';
 
 const formSchema = z.object({
-  vehicleId: z.number().min(1, 'Seleccione un vehículo'),
-  templateId: z.number().min(1, 'Seleccione un template'),
+  vehicleId: z.string().min(1).min(1, 'Seleccione un vehículo'),
+  templateId: z.string().min(1).min(1, 'Seleccione un template'),
   assignmentKm: z
     .number()
     .min(1, 'El kilometraje debe ser mayor a 0')
@@ -49,26 +49,26 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 interface Vehicle {
-  id: number;
+  id: string;
   licensePlate: string;
-  brand: { id: number; name: string };
-  line: { id: number; name: string };
+  brand: { id: string; name: string };
+  line: { id: string; name: string };
   mileage: number;
 }
 
 interface MaintenanceTemplate {
-  id: number;
+  id: string;
   name: string;
   description: string | null;
   version: string;
-  brand: { id: number; name: string };
-  line: { id: number; name: string };
+  brand: { id: string; name: string };
+  line: { id: string; name: string };
   packages: Array<{
-    id: number;
+    id: string;
     name: string;
     triggerKm: number;
     estimatedCost: number | null;
-    packageItems: Array<{ id: number }>;
+    packageItems: Array<{ id: string }>;
   }>;
   updatedAt: string;
 }
@@ -96,8 +96,8 @@ export function FormAssignProgram({
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      vehicleId: 0,
-      templateId: 0,
+      vehicleId: '',
+      templateId: '',
       assignmentKm: 0,
       generatedBy: 'current-user-id', // TODO: Get from auth context
     },

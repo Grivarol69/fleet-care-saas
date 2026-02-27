@@ -43,8 +43,8 @@ export class InventoryService {
    */
   static async consumeStockForWorkOrder(
     tenantId: string,
-    workOrderId: number,
-    _workOrderItemId: number,
+    workOrderId: string,
+    _workOrderItemId: string,
     userId: string,
     masterPartId: string,
     quantity: number

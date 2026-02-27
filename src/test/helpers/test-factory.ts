@@ -37,7 +37,13 @@ export async function createTestUser(
   tenantId: string,
   overrides: Partial<{
     email: string;
-    role: 'OWNER' | 'MANAGER' | 'TECHNICIAN' | 'PURCHASER' | 'DRIVER' | 'SUPER_ADMIN';
+    role:
+      | 'OWNER'
+      | 'MANAGER'
+      | 'TECHNICIAN'
+      | 'PURCHASER'
+      | 'DRIVER'
+      | 'SUPER_ADMIN';
     firstName: string;
     lastName: string;
   }> = {}
@@ -128,12 +134,12 @@ export async function createTestMantItem(
 
 export async function createTestMaintenanceProgram(
   tenantId: string,
-  vehicleId: number,
+  vehicleId: string,
   userId: string,
   overrides: Partial<{
     programName: string;
     packageName: string;
-    mantItemId: number;
+    mantItemId: string;
     scheduledKm: number;
     estimatedCost: number;
     assignmentKm: number;
@@ -184,8 +190,8 @@ export async function createTestMaintenanceProgram(
 
 export async function createTestAlert(
   tenantId: string,
-  vehicleId: number,
-  programItemId: number,
+  vehicleId: string,
+  programItemId: string,
   overrides: Partial<{
     itemName: string;
     packageName: string;
@@ -342,7 +348,7 @@ export async function createTestInventoryItem(
 
 export async function createTestWorkOrder(
   tenantId: string,
-  vehicleId: number,
+  vehicleId: string,
   requestedBy: string,
   overrides: Partial<{
     title: string;
@@ -372,9 +378,9 @@ export async function createTestWorkOrder(
 
 export async function createTestWorkOrderWithItems(
   tenantId: string,
-  vehicleId: number,
+  vehicleId: string,
   requestedBy: string,
-  mantItemId: number,
+  mantItemId: string,
   overrides: Partial<{
     title: string;
     mantType: 'PREVENTIVE' | 'CORRECTIVE';
@@ -383,10 +389,15 @@ export async function createTestWorkOrderWithItems(
     quantity: number;
   }> = {}
 ) {
-  const workOrder = await createTestWorkOrder(tenantId, vehicleId, requestedBy, {
-    ...(overrides.title ? { title: overrides.title } : {}),
-    ...(overrides.mantType ? { mantType: overrides.mantType } : {}),
-  });
+  const workOrder = await createTestWorkOrder(
+    tenantId,
+    vehicleId,
+    requestedBy,
+    {
+      ...(overrides.title ? { title: overrides.title } : {}),
+      ...(overrides.mantType ? { mantType: overrides.mantType } : {}),
+    }
+  );
 
   const count = overrides.itemCount ?? 1;
   const items = [];
@@ -396,6 +407,7 @@ export async function createTestWorkOrderWithItems(
     const quantity = overrides.quantity ?? 1;
     const item = await prisma.workOrderItem.create({
       data: {
+        tenantId: workOrder.tenantId,
         workOrderId: workOrder.id,
         mantItemId,
         description: `Test Item ${i + 1}`,

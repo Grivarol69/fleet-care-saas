@@ -1,6 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { Loader2, Search, Box, Sparkles, Check } from 'lucide-react';
+import {
+  Loader2,
+  Search,
+  Box,
+  Sparkles,
+  Check,
+  AlertTriangle,
+} from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -43,8 +50,8 @@ const formSchema = z.object({
 });
 
 type AddItemDialogProps = {
-  workOrderId: number;
-  vehicleId?: number; // Optional as services might not need it, but Parts do
+  workOrderId: string;
+  vehicleId?: string; // Optional as services might not need it, but Parts do
   type: 'SERVICE' | 'PART';
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -52,7 +59,7 @@ type AddItemDialogProps = {
 };
 
 type MantItem = {
-  id: number;
+  id: string;
   name: string;
   type: string;
   parts?: {
@@ -93,10 +100,23 @@ export function AddItemDialog({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<MantItem | null>(null);
   const [stock, setStock] = useState<InventoryStock | null>(null);
-  const [providers, setProviders] = useState<{ id: number; name: string }[]>(
+  const [providers, setProviders] = useState<{ id: string; name: string }[]>(
     []
   );
   const [suggestions, setSuggestions] = useState<PartSuggestion[]>([]);
+
+  // Catalog fallback — used when KB suggestions and direct parts are both empty
+  const [catalogSearch, setCatalogSearch] = useState('');
+  const [catalogParts, setCatalogParts] = useState<
+    {
+      id: string;
+      code: string;
+      description: string;
+      referencePrice: number | null;
+    }[]
+  >([]);
+  const [isCatalogLoading, setIsCatalogLoading] = useState(false);
+  const [showCatalogFallback, setShowCatalogFallback] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -158,6 +178,9 @@ export function AddItemDialog({
           form.setValue('unitPrice', 0);
           setSuggestions([]);
           form.setValue('masterPartId', '');
+          setShowCatalogFallback(false);
+          setCatalogSearch('');
+          setCatalogParts([]);
 
           if (type === 'PART') {
             // 1. Fetch Suggestions (Smart Part Suggestion)
@@ -194,7 +217,9 @@ export function AddItemDialog({
                     );
                     checkStock(item.parts[0].masterPart.id);
                   } else {
+                    // No KB suggestions and no direct parts — show catalog fallback
                     setStock({ quantity: 0, inventoryItemId: 0 });
+                    setShowCatalogFallback(true);
                   }
                 }
               } catch (err) {
@@ -236,6 +261,43 @@ export function AddItemDialog({
       console.error('Error checking stock', error);
       setStock(null);
     }
+  };
+
+  // Debounced catalog search
+  const searchCatalog = useCallback(async (query: string) => {
+    if (query.length < 2) {
+      setCatalogParts([]);
+      return;
+    }
+    setIsCatalogLoading(true);
+    try {
+      const res = await axios.get(
+        `/api/inventory/parts?search=${encodeURIComponent(query)}`
+      );
+      setCatalogParts(res.data ?? []);
+    } catch {
+      setCatalogParts([]);
+    } finally {
+      setIsCatalogLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!showCatalogFallback) return;
+    const t = setTimeout(() => searchCatalog(catalogSearch), 300);
+    return () => clearTimeout(t);
+  }, [catalogSearch, showCatalogFallback, searchCatalog]);
+
+  const applyCatalogPart = (part: {
+    id: string;
+    code: string;
+    description: string;
+    referencePrice: number | null;
+  }) => {
+    form.setValue('masterPartId', part.id);
+    form.setValue('description', part.description);
+    form.setValue('unitPrice', Number(part.referencePrice ?? 0));
+    checkStock(part.id);
   };
 
   const applySuggestion = (suggestion: PartSuggestion) => {
@@ -365,6 +427,73 @@ export function AddItemDialog({
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Catalog fallback — shown when no KB suggestions available */}
+            {showCatalogFallback && suggestions.length === 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium text-amber-600">
+                  <AlertTriangle className="h-4 w-4" />
+                  Sin coincidencia en ficha técnica — Buscar en catálogo
+                  completo
+                </div>
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    className="pl-9"
+                    placeholder="Escribí código o descripción del repuesto..."
+                    value={catalogSearch}
+                    onChange={e => setCatalogSearch(e.target.value)}
+                  />
+                </div>
+                {isCatalogLoading && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground py-1">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Buscando...
+                  </div>
+                )}
+                {catalogParts.length > 0 && (
+                  <div className="grid gap-1 max-h-48 overflow-y-auto">
+                    {catalogParts.map(part => (
+                      <div
+                        key={part.id}
+                        className={`flex items-center justify-between p-2 rounded border text-sm cursor-pointer hover:bg-muted ${form.watch('masterPartId') === part.id ? 'border-amber-500 bg-amber-50' : ''}`}
+                        onClick={() => applyCatalogPart(part)}
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-medium font-mono text-xs">
+                            {part.code}
+                          </span>
+                          <span>{part.description}</span>
+                          {part.referencePrice && (
+                            <span className="text-xs text-muted-foreground">
+                              Ref: $
+                              {Number(part.referencePrice).toLocaleString(
+                                'es-CO'
+                              )}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] text-amber-600 border border-amber-300 rounded px-1">
+                            No verificado
+                          </span>
+                          {form.watch('masterPartId') === part.id && (
+                            <Check className="h-4 w-4 text-amber-600 ml-1" />
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {catalogSearch.length >= 2 &&
+                  !isCatalogLoading &&
+                  catalogParts.length === 0 && (
+                    <p className="text-xs text-muted-foreground py-1">
+                      Sin resultados para &quot;{catalogSearch}&quot;
+                    </p>
+                  )}
               </div>
             )}
 

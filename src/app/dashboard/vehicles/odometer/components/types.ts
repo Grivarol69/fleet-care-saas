@@ -1,5 +1,5 @@
 export interface Vehicle {
-  id: number;
+  id: string;
   licensePlate: string;
   brand: {
     name: string;
@@ -15,7 +15,7 @@ export interface Vehicle {
 }
 
 export interface Driver {
-  id: number;
+  id: string;
   name: string;
   email?: string;
   phone?: string;
@@ -24,8 +24,8 @@ export interface Driver {
 }
 
 export interface OdometerFormData {
-  vehicleId: number;
-  driverId?: number;
+  vehicleId: string;
+  driverId?: string;
   kilometers?: number;
   hours?: number;
   measureType: 'KILOMETERS' | 'HOURS';
@@ -33,9 +33,9 @@ export interface OdometerFormData {
 }
 
 export interface OdometerLog {
-  id: number;
-  vehicleId: number;
-  driverId?: number;
+  id: string;
+  vehicleId: string;
+  driverId?: string;
   kilometers?: number;
   hours?: number;
   measureType: 'KILOMETERS' | 'HOURS';

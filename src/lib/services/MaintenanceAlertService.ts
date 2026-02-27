@@ -20,7 +20,7 @@ export class MaintenanceAlertService {
    * Verifica y genera alertas para un vehículo cuando se actualiza el odómetro
    */
   static async checkAndGenerateAlerts(
-    vehicleId: number,
+    vehicleId: string,
     currentKm: number,
     tenantId: string
   ): Promise<void> {
@@ -91,8 +91,8 @@ export class MaintenanceAlertService {
    * Crea o actualiza una alerta de mantenimiento
    */
   private static async createOrUpdateAlert(
-    vehicleId: number,
-    programItemId: number,
+    vehicleId: string,
+    programItemId: string,
     itemName: string,
     packageName: string,
     scheduledKm: number,
@@ -359,8 +359,8 @@ export class MaintenanceAlertService {
    * Cierra una alerta cuando se completa el mantenimiento
    */
   static async closeAlert(
-    alertId: number,
-    workOrderId: number,
+    alertId: string,
+    workOrderId: string,
     actualCost?: number
   ): Promise<void> {
     const alert = await prisma.maintenanceAlert.findUnique({

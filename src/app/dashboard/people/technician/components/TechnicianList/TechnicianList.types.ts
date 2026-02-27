@@ -1,5 +1,5 @@
 export type TechnicianListProps = {
-  id: number;
+  id: string;
   name: string;
   email: string | null;
   phone: string | null;

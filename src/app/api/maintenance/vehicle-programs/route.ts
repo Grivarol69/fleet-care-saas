@@ -16,7 +16,7 @@ export async function GET(req: Request) {
 
     const whereClause = {
       tenantId: user.tenantId,
-      ...(vehicleId && { vehicleId: parseInt(vehicleId) }),
+      ...(vehicleId && { vehicleId: vehicleId }),
     };
 
     const programs = await prisma.vehicleMantProgram.findMany({

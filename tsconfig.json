@@ -11,9 +11,8 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "incremental": true,
-
     // Configuraciones estrictas adicionales
     "noImplicitAny": true,
     "noImplicitReturns": true,
@@ -27,7 +26,6 @@
     "allowUnusedLabels": false,
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true,
-
     "plugins": [
       {
         "name": "next"
@@ -38,7 +36,13 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
   "exclude": [
     "node_modules",
     ".next",
@@ -47,6 +51,13 @@
     "prisma/seed-extended.ts",
     "prisma/seed.ts",
     "prisma/seed-test-ot.ts",
-    "prisma/seed-multitenancy.ts"
+    "prisma/seed-multitenancy.ts",
+    "prisma/seed-financial-demo.ts",
+    "prisma/seed-stress.ts",
+    "prisma/seed-users.ts",
+    "prisma/seed-test.ts",
+    "prisma/seed-staging-demo.ts",
+    "playwright.config.ts",
+    "e2e/**/*"
   ]
 }

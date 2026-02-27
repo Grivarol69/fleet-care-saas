@@ -13,9 +13,7 @@ export async function GET() {
 
     const odometerLogs = await prisma.odometerLog.findMany({
       where: {
-        vehicle: {
-          tenantId: user.tenantId,
-        },
+        tenantId: user.tenantId,
       },
       include: {
         vehicle: {
@@ -119,6 +117,7 @@ export async function POST(request: NextRequest) {
     // Create odometer log
     const odometerLog = await prisma.odometerLog.create({
       data: {
+        tenantId: user.tenantId,
         vehicleId,
         driverId: driverId || null,
         kilometers: measureType === 'KILOMETERS' ? kilometers : null,
@@ -167,7 +166,7 @@ export async function POST(request: NextRequest) {
  * cuando se actualiza el odómetro del vehículo
  */
 async function checkMaintenanceAlerts(
-  vehicleId: number,
+  vehicleId: string,
   kilometers: number,
   tenantId: string
 ) {

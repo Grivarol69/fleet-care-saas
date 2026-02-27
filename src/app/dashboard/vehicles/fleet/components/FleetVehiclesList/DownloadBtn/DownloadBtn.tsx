@@ -1,10 +1,9 @@
-import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowDownNarrowWide } from 'lucide-react';
 import * as ExcelJS from 'exceljs';
 
 interface FleetVehicle {
-  id: number;
+  id: string;
   licensePlate: string;
   typePlate: 'PARTICULAR' | 'PUBLICO';
   year: number;
