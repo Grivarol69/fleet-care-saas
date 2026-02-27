@@ -1,7 +1,7 @@
 export type LineListProps = {
-  id: number;
+  id: string;
   name: string;
-  brandId: number;
+  brandId: string;
   brandName?: string;
   isGlobal?: boolean;
 };

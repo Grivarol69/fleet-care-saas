@@ -43,15 +43,15 @@ export function FormAddVehiclePart({
   isSuperAdmin,
 }: FormAddVehiclePartProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedBrandId, setSelectedBrandId] = useState<number | null>(null);
+  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      mantItemId: 0,
-      vehicleBrandId: 0,
-      vehicleLineId: 0,
+      mantItemId: '',
+      vehicleBrandId: '',
+      vehicleLineId: '',
       yearFrom: null,
       yearTo: null,
       masterPartId: '',
@@ -136,7 +136,7 @@ export function FormAddVehiclePart({
                   <FormLabel>Item de Mantenimiento</FormLabel>
                   <Select
                     disabled={isLoading}
-                    onValueChange={v => field.onChange(parseInt(v))}
+                    onValueChange={field.onChange}
                     value={field.value ? String(field.value) : ''}
                   >
                     <FormControl>
@@ -167,10 +167,10 @@ export function FormAddVehiclePart({
                   <Select
                     disabled={isLoading}
                     onValueChange={v => {
-                      const brandId = parseInt(v);
+                      const brandId = v;
                       field.onChange(brandId);
                       setSelectedBrandId(brandId);
-                      form.setValue('vehicleLineId', 0);
+                      form.setValue('vehicleLineId', '');
                     }}
                     value={field.value ? String(field.value) : ''}
                   >
@@ -201,7 +201,7 @@ export function FormAddVehiclePart({
                   <FormLabel>Linea</FormLabel>
                   <Select
                     disabled={isLoading || !selectedBrandId}
-                    onValueChange={v => field.onChange(parseInt(v))}
+                    onValueChange={field.onChange}
                     value={field.value ? String(field.value) : ''}
                   >
                     <FormControl>

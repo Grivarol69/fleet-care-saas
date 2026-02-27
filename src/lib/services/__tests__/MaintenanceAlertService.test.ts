@@ -17,7 +17,7 @@ vi.mock('@/lib/prisma', () => ({
 }));
 
 describe('MaintenanceAlertService', () => {
-  const mockVehicleId = 123;
+  const mockVehicleId = 'vehicle-test-uuid-0123';
   const mockTenantId = 'cf68b103-12fd-4208-a352-42379ef3b6e1';
 
   beforeEach(() => {
@@ -31,14 +31,17 @@ describe('MaintenanceAlertService', () => {
       const scheduledKm = 15000; // 1500 diff -> < 2000 (EARLY_WARNING)
 
       const mockProgram = {
-        id: 1,
+        id: 'program-test-uuid-0001',
         packages: [
           {
             name: 'Mantenimiento 15K',
             items: [
               {
-                id: 10,
-                mantItem: { id: 5, name: 'Cambio Aceite' },
+                id: 'item-test-uuid-0010',
+                mantItem: {
+                  id: 'mant-item-test-uuid-0005',
+                  name: 'Cambio Aceite',
+                },
                 scheduledKm: scheduledKm,
                 estimatedCost: 100,
                 estimatedTime: 1.5,
@@ -69,7 +72,7 @@ describe('MaintenanceAlertService', () => {
       expect(createCall.data).toMatchObject({
         vehicleId: mockVehicleId,
         tenantId: mockTenantId,
-        programItemId: 10,
+        programItemId: 'item-test-uuid-0010',
         type: 'EARLY_WARNING', // 1500km left > 1000km (Medium) but < 2000km
         itemName: 'Cambio Aceite',
         kmToMaintenance: 1500,
@@ -83,14 +86,17 @@ describe('MaintenanceAlertService', () => {
       const scheduledKm = 15000; // -500 diff -> Overdue
 
       const mockProgram = {
-        id: 1,
+        id: 'program-test-uuid-0001',
         packages: [
           {
             name: 'Mantenimiento 15K',
             items: [
               {
-                id: 10,
-                mantItem: { id: 5, name: 'Frenos Delanteros' }, // Safety Critical
+                id: 'item-test-uuid-0010',
+                mantItem: {
+                  id: 'mant-item-test-uuid-0005',
+                  name: 'Frenos Delanteros',
+                }, // Safety Critical
                 scheduledKm: scheduledKm,
                 status: 'PENDING',
               },
@@ -130,14 +136,17 @@ describe('MaintenanceAlertService', () => {
       const scheduledKm = 15000;
 
       const mockProgram = {
-        id: 1,
+        id: 'program-test-uuid-0001',
         packages: [
           {
             name: 'Mantenimiento 15K',
             items: [
               {
-                id: 10,
-                mantItem: { id: 5, name: 'Cambio Aceite' },
+                id: 'item-test-uuid-0010',
+                mantItem: {
+                  id: 'mant-item-test-uuid-0005',
+                  name: 'Cambio Aceite',
+                },
                 scheduledKm: scheduledKm,
                 status: 'PENDING',
               },
@@ -147,8 +156,8 @@ describe('MaintenanceAlertService', () => {
       };
 
       const mockExistingAlert = {
-        id: 999,
-        programItemId: 10,
+        id: 'alert-test-uuid-0999',
+        programItemId: 'item-test-uuid-0010',
         status: 'PENDING',
       };
 
@@ -172,7 +181,7 @@ describe('MaintenanceAlertService', () => {
 
       const updateCall = (prisma.maintenanceAlert.update as any).mock
         .calls[0][0];
-      expect(updateCall.where.id).toBe(999);
+      expect(updateCall.where.id).toBe('alert-test-uuid-0999');
       expect(updateCall.data.currentKm).toBe(currentKm);
     });
 
@@ -182,14 +191,17 @@ describe('MaintenanceAlertService', () => {
       const scheduledKm = 15000; // 5000 diff -> Too far (> 2000)
 
       const mockProgram = {
-        id: 1,
+        id: 'program-test-uuid-0001',
         packages: [
           {
             name: 'Mantenimiento 15K',
             items: [
               {
-                id: 10,
-                mantItem: { id: 5, name: 'Cambio Aceite' },
+                id: 'item-test-uuid-0010',
+                mantItem: {
+                  id: 'mant-item-test-uuid-0005',
+                  name: 'Cambio Aceite',
+                },
                 scheduledKm: scheduledKm,
                 status: 'PENDING',
               },

@@ -38,7 +38,7 @@ import { FormEditMantItemProps } from './FormEditMantItem.types';
 export type { FormEditMantItemProps };
 
 type MantCategory = {
-  id: number;
+  id: string;
   name: string;
 };
 
@@ -266,8 +266,8 @@ export function FormEditMantItem({
                 <FormItem>
                   <FormLabel>Categoría</FormLabel>
                   <Select
-                    onValueChange={value => field.onChange(Number(value))}
-                    value={field.value > 0 ? field.value.toString() : ''}
+                    onValueChange={field.onChange}
+                    value={field.value || ''}
                     disabled={isLoading || isLoadingCategories}
                   >
                     <FormControl>

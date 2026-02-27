@@ -75,7 +75,7 @@ export function TypeList() {
     setIsEditDialogOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     try {
       await axios.delete(`/api/vehicles/types/${id}`);
       setData(prevData => prevData.filter(type => type.id !== id));

@@ -36,10 +36,10 @@ export async function GET(request: NextRequest) {
 
     const where: Prisma.PurchaseOrderWhereInput = {
       tenantId: user.tenantId,
-      ...(workOrderId ? { workOrderId: parseInt(workOrderId) } : {}),
+      ...(workOrderId ? { workOrderId: workOrderId } : {}),
       ...(statusFilter ? { status: statusFilter } : {}),
       ...(type ? { type: type as PurchaseOrderType } : {}),
-      ...(providerId ? { providerId: parseInt(providerId) } : {}),
+      ...(providerId ? { providerId: providerId } : {}),
     };
 
     const purchaseOrders = await prisma.purchaseOrder.findMany({
@@ -191,8 +191,8 @@ export async function POST(request: NextRequest) {
           items: {
             create: items.map(
               (item: {
-                workOrderItemId?: number;
-                mantItemId?: number;
+                workOrderItemId?: string;
+                mantItemId?: string;
                 masterPartId?: string;
                 description: string;
                 quantity: number | string;
@@ -206,6 +206,7 @@ export async function POST(request: NextRequest) {
                 unitPrice: item.unitPrice,
                 total: Number(item.quantity) * Number(item.unitPrice),
                 status: 'PENDING',
+                tenantId: user.tenantId,
               })
             ),
           },

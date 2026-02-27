@@ -10,16 +10,21 @@ export async function GET(req: Request) {
     }
 
     const { searchParams } = new URL(req.url);
-    const vehicleId = searchParams.get('vehicleId');
+    const vehicleIdParam = searchParams.get('vehicleId');
     const category = searchParams.get('category'); // Optional filter
 
-    if (!vehicleId) {
+    if (!vehicleIdParam) {
       return new NextResponse('Missing vehicleId', { status: 400 });
+    }
+
+    const vehicleId = vehicleIdParam;
+    if (!vehicleId) {
+      return new NextResponse('Invalid vehicleId', { status: 400 });
     }
 
     // 1. Get Vehicle Specs
     const vehicle = await prisma.vehicle.findUnique({
-      where: { id: parseInt(vehicleId) },
+      where: { id: vehicleId },
       include: { brand: true, line: true },
     });
 

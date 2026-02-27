@@ -29,7 +29,7 @@ interface ProgramCardProps {
   program: VehicleProgramsListProps;
   onSelect: (program: VehicleProgramsListProps) => void;
   onEdit: (program: VehicleProgramsListProps) => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: string) => void;
 }
 
 function ProgramCard({
@@ -280,7 +280,7 @@ export function VehicleProgramsList() {
     console.log('Edit program:', program);
   };
 
-  const handleDeleteProgram = async (id: number) => {
+  const handleDeleteProgram = async (id: string) => {
     if (!confirm('¿Eliminar programa?')) return;
 
     try {

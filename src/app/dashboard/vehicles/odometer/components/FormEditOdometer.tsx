@@ -70,7 +70,7 @@ export function FormEditOdometer({
   const form = useForm<OdometerFormValues>({
     resolver: zodResolver(odometerFormSchema),
     defaultValues: {
-      vehicleId: 0,
+      vehicleId: '',
       driverId: undefined,
       measureType: 'KILOMETERS',
       measureValue: 0,
@@ -339,7 +339,7 @@ export function FormEditOdometer({
                       type="number"
                       step={measureType === 'HOURS' ? '0.1' : '1'}
                       {...field}
-                      onChange={e => field.onChange(Number(e.target.value))}
+                      onChange={e => field.onChange(e.target.value)}
                     />
                   </FormControl>
                   <FormMessage />

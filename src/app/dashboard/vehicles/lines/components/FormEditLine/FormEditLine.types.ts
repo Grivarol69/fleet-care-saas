@@ -2,15 +2,15 @@ export type FormEditLineProps = {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   line: {
-    id: number;
+    id: string;
     name: string;
-    brandId: number;
+    brandId: string;
     brandName?: string;
   };
   onEditLine: (line: {
-    id: number;
+    id: string;
     name: string;
-    brandId: number;
+    brandId: string;
     brandName?: string;
   }) => void;
 };

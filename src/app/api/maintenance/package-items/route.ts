@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 
     const packageItems = await prisma.packageItem.findMany({
       where: {
-        packageId: parseInt(packageId),
+        packageId: packageId,
       },
       include: {
         mantItem: {

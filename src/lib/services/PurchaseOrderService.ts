@@ -11,12 +11,12 @@ export class PurchaseOrderService {
    */
   static async createFromWorkItems(
     tenantId: string,
-    workOrderId: number,
-    providerId: number,
+    workOrderId: string,
+    providerId: string,
     type: PurchaseOrderType,
     items: Array<{
-      workOrderItemId: number;
-      mantItemId: number;
+      workOrderItemId: string;
+      mantItemId: string;
       masterPartId?: string;
       description: string;
       quantity: number;

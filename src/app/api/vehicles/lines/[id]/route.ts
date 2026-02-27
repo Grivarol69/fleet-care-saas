@@ -1,7 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
-import { safeParseInt } from '@/lib/validation';
 import { requireMasterDataMutationPermission } from '@/lib/permissions';
 
 // GET - Obtener línea específica por ID (incluye globales)
@@ -17,9 +16,9 @@ export async function GET(
     }
 
     const { id } = await params;
-    const lineId = safeParseInt(id);
+    const lineId = id;
 
-    if (lineId === null) {
+    if (!lineId) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
@@ -73,9 +72,9 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const lineId = safeParseInt(id);
+    const lineId = id;
 
-    if (lineId === null) {
+    if (!lineId) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
@@ -95,8 +94,8 @@ export async function PUT(
       );
     }
 
-    const parsedBrandId = safeParseInt(brandId);
-    if (parsedBrandId === null) {
+    const parsedBrandId = String(brandId);
+    if (!parsedBrandId) {
       return NextResponse.json(
         { error: 'ID de marca inválido' },
         { status: 400 }
@@ -201,9 +200,9 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const lineId = safeParseInt(id);
+    const lineId = id;
 
-    if (lineId === null) {
+    if (!lineId) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
@@ -242,9 +241,9 @@ export async function PATCH(
       );
     }
 
-    let parsedBrandId: number | undefined;
+    let parsedBrandId: string | undefined;
     if (brandId !== undefined) {
-      parsedBrandId = safeParseInt(brandId) ?? undefined;
+      parsedBrandId = String(brandId) ?? undefined;
       if (parsedBrandId === undefined) {
         return NextResponse.json(
           { error: 'ID de marca inválido' },
@@ -267,7 +266,7 @@ export async function PATCH(
       }
     }
 
-    const updateData: { name?: string; brandId?: number } = {};
+    const updateData: { name?: string; brandId?: string } = {};
     if (name !== undefined) updateData.name = name.trim();
     if (parsedBrandId !== undefined) updateData.brandId = parsedBrandId;
 
@@ -332,9 +331,9 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const lineId = safeParseInt(id);
+    const lineId = id;
 
-    if (lineId === null) {
+    if (!lineId) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 

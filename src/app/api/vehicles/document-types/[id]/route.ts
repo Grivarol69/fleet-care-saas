@@ -16,8 +16,8 @@ export async function GET(
     }
 
     const { id } = await params;
-    const docTypeId = parseInt(id, 10);
-    if (isNaN(docTypeId)) {
+    const docTypeId = id;
+    if (!docTypeId) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
@@ -79,8 +79,8 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const docTypeId = parseInt(id, 10);
-    if (isNaN(docTypeId)) {
+    const docTypeId = id;
+    if (!docTypeId) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
@@ -178,8 +178,8 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const docTypeId = parseInt(id, 10);
-    if (isNaN(docTypeId)) {
+    const docTypeId = id;
+    if (!docTypeId) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 

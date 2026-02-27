@@ -1,36 +1,29 @@
 import { z } from 'zod';
 
 /**
- * Safely parse a string to integer
- * Returns null if parsing fails or value is not a valid positive integer
+ * Safely parse a string ID
+ * Returns the id if it's a non-empty string, null otherwise
  */
-export function safeParseInt(value: string | undefined | null): number | null {
-  if (!value || typeof value !== 'string') {
+export function safeParseId(id: string | undefined | null): string | null {
+  if (!id || typeof id !== 'string') {
     return null;
   }
-
-  const trimmed = value.trim();
-  if (!/^\d+$/.test(trimmed)) {
+  const trimmed = id.trim();
+  if (trimmed.length === 0) {
     return null;
   }
-
-  const parsed = parseInt(trimmed, 10);
-  if (isNaN(parsed) || !isFinite(parsed) || parsed < 0) {
-    return null;
-  }
-
-  return parsed;
+  return trimmed;
 }
 
 /**
- * Parse and validate a positive integer ID from string
+ * Parse and validate a string ID from a route param
  * Throws an error with a message if invalid
  */
 export function parseIdParam(
   value: string | undefined | null,
   paramName: string = 'id'
-): number {
-  const parsed = safeParseInt(value);
+): string {
+  const parsed = safeParseId(value);
   if (parsed === null) {
     throw new Error(`${paramName} inválido`);
   }
@@ -38,12 +31,12 @@ export function parseIdParam(
 }
 
 /**
- * Zod schema for positive integer
+ * Zod schema for string ID
  */
-export const positiveIntSchema = z.coerce.number().int().positive();
+export const idSchema = z.string().min(1);
 
 /**
- * Zod schema for optional positive integer
+ * Zod schema for optional positive integer (for pagination and non-ID numeric fields)
  */
 export const optionalPositiveIntSchema = z.coerce
   .number()
@@ -66,8 +59,8 @@ export const paginationSchema = z.object({
 export function validateIdParam(
   value: string | undefined | null,
   paramName: string = 'id'
-): { valid: true; id: number } | { valid: false; error: string } {
-  const parsed = safeParseInt(value);
+): { valid: true; id: string } | { valid: false; error: string } {
+  const parsed = safeParseId(value);
   if (parsed === null) {
     return { valid: false, error: `${paramName} inválido` };
   }

@@ -46,7 +46,7 @@ import { InternalTicketSummaryModal } from './InternalTicketSummaryModal';
 
 type ServiceItem = {
   workOrderItemId: number;
-  mantItemId: number;
+  mantItemId: string;
   mantItemName: string;
   mantItemType: 'ACTION' | 'SERVICE';
   categoryName: string;
@@ -61,18 +61,18 @@ type ServiceItem = {
 };
 
 type Provider = {
-  id: number;
+  id: string;
   name: string;
 };
 
 type Technician = {
-  id: number;
+  id: string;
   name: string;
   hourlyRate?: number;
 };
 
 type ServicesTabProps = {
-  workOrderId: number;
+  workOrderId: string;
   onRefresh: () => void;
 };
 
@@ -241,7 +241,7 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
       await axios.post('/api/purchase-orders', {
         workOrderId,
         type: 'SERVICES',
-        providerId: parseInt(selectedProviderId),
+        providerId: selectedProviderId,
         items: ocItems,
         notes: `OC de Servicios generada desde OT #${workOrderId}`,
       });
@@ -305,9 +305,7 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
 
     setIsSubmitting(true);
     try {
-      const technician = technicians.find(
-        t => t.id === parseInt(selectedTechnicianId)
-      );
+      const technician = technicians.find(t => t.id === selectedTechnicianId);
       const hourlyRate = technician?.hourlyRate || 50000; // Default hourly rate
 
       const laborEntries = internalItems.map(item => ({
@@ -319,7 +317,7 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
 
       await axios.post('/api/internal-tickets', {
         workOrderId,
-        technicianId: parseInt(selectedTechnicianId),
+        technicianId: selectedTechnicianId,
         description: `Ticket interno para servicios OT #${workOrderId}`,
         laborEntries,
         partEntries: [], // Services don't have parts

@@ -19,7 +19,7 @@ import { es } from 'date-fns/locale';
 import { Calendar, User, DollarSign, Package } from 'lucide-react';
 
 type WorkOrder = {
-  id: number;
+  id: string;
   title: string;
   description: string | null;
   status: string;
@@ -35,26 +35,26 @@ type WorkOrder = {
   isPackageWork: boolean;
   packageName: string | null;
   vehicle: {
-    id: number;
+    id: string;
     licensePlate: string;
     brand: { name: string };
     line: { name: string };
     mileage: number;
   };
   technician: {
-    id: number;
+    id: string;
     name: string;
     email: string | null;
     phone: string | null;
   } | null;
   provider: {
-    id: number;
+    id: string;
     name: string;
     email: string | null;
     phone: string | null;
   } | null;
   maintenanceAlerts: Array<{
-    id: number;
+    id: string;
     itemName: string;
     status: string;
     priority: string;

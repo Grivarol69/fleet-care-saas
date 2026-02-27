@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 type Invoice = {
-  id: number;
+  id: string;
   invoiceNumber: string;
   invoiceDate: string;
   dueDate: string | null;
@@ -33,7 +33,7 @@ type Invoice = {
   notes: string | null;
   attachmentUrl: string | null;
   supplier: {
-    id: number;
+    id: string;
     name: string;
     nit: string | null;
     email: string | null;
@@ -41,11 +41,11 @@ type Invoice = {
     address: string | null;
   } | null;
   workOrder: {
-    id: number;
+    id: string;
     title: string;
     status: string;
     vehicle: {
-      id: number;
+      id: string;
       licensePlate: string;
       brand: { name: string };
       line: { name: string };
@@ -53,7 +53,7 @@ type Invoice = {
     };
   } | null;
   items: Array<{
-    id: number;
+    id: string;
     description: string;
     quantity: number;
     unitPrice: number;
@@ -62,22 +62,22 @@ type Invoice = {
     taxAmount: number;
     total: number;
     workOrderItem: {
-      id: number;
+      id: string;
       description: string;
       mantItem: {
-        id: number;
+        id: string;
         name: string;
         type: string;
       } | null;
     } | null;
     masterPart: {
-      id: number;
+      id: string;
       name: string;
       partNumber: string;
     } | null;
   }>;
   payments: Array<{
-    id: number;
+    id: string;
     amount: number;
     paymentDate: string;
     paymentMethod: string;

@@ -44,9 +44,7 @@ import {
 } from '../SharedTypes/SharedTypes';
 
 const formSchema = z.object({
-  documentTypeId: z.number({
-    required_error: 'Seleccione un tipo de documento',
-  }),
+  documentTypeId: z.string().min(1, 'Requerido'),
   documentNumber: z.string().min(1, 'El numero de documento es requerido'),
   entity: z.string().optional(),
   expiryDate: z.date().optional(),
@@ -147,7 +145,7 @@ export function FormEditDocument({
                 <FormItem>
                   <FormLabel>Tipo de Documento *</FormLabel>
                   <Select
-                    onValueChange={val => field.onChange(parseInt(val, 10))}
+                    onValueChange={field.onChange}
                     value={field.value?.toString()}
                     disabled={isLoading}
                   >

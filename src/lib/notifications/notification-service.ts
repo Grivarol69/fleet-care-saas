@@ -15,7 +15,7 @@ export interface NotificationRecipient {
   phone: string;
   name: string;
   type: 'DRIVER' | 'SUPERVISOR';
-  vehicleId?: number;
+  vehicleId?: string;
 }
 
 export interface AlertNotificationResult {
@@ -125,7 +125,7 @@ export class NotificationService {
    */
   async getNotificationRecipients(
     tenantId: string,
-    vehicleIds?: number[]
+    vehicleIds?: string[]
   ): Promise<NotificationRecipient[]> {
     try {
       const recipients: NotificationRecipient[] = [];
@@ -242,7 +242,7 @@ export class NotificationService {
           map[vehicle.licensePlate] = vehicle.id;
           return map;
         },
-        {} as Record<string, number>
+        {} as Record<string, string>
       );
 
       const actualVehicleIds = Object.values(vehicleIdMap);

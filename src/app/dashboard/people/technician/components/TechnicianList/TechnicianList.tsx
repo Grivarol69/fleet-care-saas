@@ -86,7 +86,7 @@ export function TechnicianList() {
     []
   );
 
-  const handleDeleteTechnician = async (id: number) => {
+  const handleDeleteTechnician = async (id: string) => {
     if (!confirm('¿Estás seguro de que deseas eliminar este técnico?')) {
       return;
     }

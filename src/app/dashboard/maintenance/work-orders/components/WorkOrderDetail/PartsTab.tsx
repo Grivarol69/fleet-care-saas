@@ -45,7 +45,7 @@ import { AddItemDialog } from './AddItemDialog';
 
 type PartItem = {
   workOrderItemId: number;
-  mantItemId: number;
+  mantItemId: string;
   mantItemName: string;
   mantItemType: 'PART';
   categoryName: string;
@@ -63,7 +63,7 @@ type PartItem = {
 };
 
 type Provider = {
-  id: number;
+  id: string;
   name: string;
 };
 
@@ -75,8 +75,8 @@ type InventoryStock = {
 };
 
 type PartsTabProps = {
-  workOrderId: number;
-  vehicleId: number;
+  workOrderId: string;
+  vehicleId: string;
   onRefresh: () => void;
 };
 

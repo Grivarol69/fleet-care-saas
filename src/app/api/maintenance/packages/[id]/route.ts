@@ -6,7 +6,7 @@ import { canManageMaintenancePrograms } from '@/lib/permissions';
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -14,7 +14,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const id = parseInt(params.id);
+    const { id } = await params;
 
     const package_ = await prisma.maintenancePackage.findFirst({
       where: {
@@ -65,7 +65,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -80,7 +80,7 @@ export async function PUT(
       );
     }
 
-    const id = parseInt(params.id);
+    const { id } = await params;
     const body = await request.json();
     const {
       name,
@@ -167,7 +167,7 @@ export async function PUT(
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -182,7 +182,7 @@ export async function DELETE(
       );
     }
 
-    const id = parseInt(params.id);
+    const { id } = await params;
 
     // Verificar que el paquete existe y pertenece al tenant
     const existingPackage = await prisma.maintenancePackage.findFirst({

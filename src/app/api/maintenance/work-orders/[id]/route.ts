@@ -42,6 +42,7 @@ const ALLOWED_TRANSITIONS: Record<
     CANCELLED: { allowedRoles: ['canApproveWorkOrder'] },
   },
   IN_PROGRESS: {
+    COMPLETED: { allowedRoles: ['canCloseWorkOrder'] },
     PENDING_INVOICE: { allowedRoles: ['canExecuteWorkOrders'] },
     PENDING_APPROVAL: { allowedRoles: ['canApproveWorkOrder'] },
     CANCELLED: { allowedRoles: ['canApproveWorkOrder'] },
@@ -71,8 +72,10 @@ export async function GET(
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
-    // const { id } = await params; (Removed, creating 'workOrderId' directly from existing 'id')
-    const workOrderId = parseInt(id);
+    const workOrderId = id;
+    if (!workOrderId) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
 
     const workOrder = await prisma.workOrder.findUnique({
       where: {
@@ -224,7 +227,11 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const workOrderId = parseInt(id);
+    const workOrderId = id;
+    if (!workOrderId) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
+
     const body = await request.json();
 
     // Validar que la WO existe y pertenece al tenant
@@ -523,7 +530,10 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const workOrderId = parseInt(id);
+    const workOrderId = id;
+    if (!workOrderId) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
 
     // Validar que existe
     const existingWO = await prisma.workOrder.findUnique({

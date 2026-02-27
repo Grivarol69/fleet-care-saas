@@ -1,7 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
-import { safeParseInt } from '@/lib/validation';
 import { canManageVehicles } from '@/lib/permissions';
 
 // GET - Obtener conductor específico por ID
@@ -17,8 +16,8 @@ export async function GET(
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
-    const driverId = safeParseInt(id);
-    if (driverId === null) {
+    const driverId = id;
+    if (!driverId) {
       return NextResponse.json(
         { error: 'ID de conductor inválido' },
         { status: 400 }
@@ -69,8 +68,8 @@ export async function PUT(
       );
     }
 
-    const driverId = safeParseInt(id);
-    if (driverId === null) {
+    const driverId = id;
+    if (!driverId) {
       return NextResponse.json(
         { error: 'ID de conductor inválido' },
         { status: 400 }
@@ -166,8 +165,8 @@ export async function DELETE(
       );
     }
 
-    const driverId = safeParseInt(id);
-    if (driverId === null) {
+    const driverId = id;
+    if (!driverId) {
       return NextResponse.json(
         { error: 'ID de conductor inválido' },
         { status: 400 }

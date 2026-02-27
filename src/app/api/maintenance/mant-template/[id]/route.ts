@@ -1,7 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
-import { safeParseInt } from '@/lib/validation';
 import { canManageMaintenancePrograms } from '@/lib/permissions';
 
 export async function GET(
@@ -15,9 +14,9 @@ export async function GET(
     }
 
     const { id } = await params;
-    const mantTemplateId = safeParseInt(id);
+    const mantTemplateId = id;
 
-    if (mantTemplateId === null) {
+    if (!mantTemplateId) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
@@ -106,9 +105,9 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const mantTemplateId = safeParseInt(id);
+    const mantTemplateId = id;
 
-    if (mantTemplateId === null) {
+    if (!mantTemplateId) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
@@ -123,14 +122,14 @@ export async function PATCH(
       );
     }
 
-    if (!vehicleBrandId || vehicleBrandId <= 0) {
+    if (!vehicleBrandId) {
       return NextResponse.json(
         { error: 'La marca del vehículo es requerida' },
         { status: 400 }
       );
     }
 
-    if (!vehicleLineId || vehicleLineId <= 0) {
+    if (!vehicleLineId) {
       return NextResponse.json(
         { error: 'La línea del vehículo es requerida' },
         { status: 400 }
@@ -285,9 +284,9 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const mantTemplateId = safeParseInt(id);
+    const mantTemplateId = id;
 
-    if (mantTemplateId === null) {
+    if (!mantTemplateId) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 

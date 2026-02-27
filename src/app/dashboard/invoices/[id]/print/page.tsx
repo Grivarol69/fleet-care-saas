@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 type Invoice = {
-  id: number;
+  id: string;
   invoiceNumber: string;
   invoiceDate: string;
   dueDate: string | null;
@@ -20,7 +20,7 @@ type Invoice = {
   currency: string;
   notes: string | null;
   supplier: {
-    id: number;
+    id: string;
     name: string;
     nit: string | null;
     email: string | null;
@@ -28,7 +28,7 @@ type Invoice = {
     address: string | null;
   } | null;
   workOrder: {
-    id: number;
+    id: string;
     title: string;
     vehicle: {
       licensePlate: string;
@@ -37,7 +37,7 @@ type Invoice = {
     };
   } | null;
   items: Array<{
-    id: number;
+    id: string;
     description: string;
     quantity: number;
     unitPrice: number;

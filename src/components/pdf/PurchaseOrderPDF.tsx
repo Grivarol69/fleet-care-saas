@@ -22,7 +22,7 @@ interface PurchaseOrderPDFProps {
     address?: string | null;
   };
   workOrder?: {
-    id: number;
+    id: string;
     title: string;
     vehicle?: {
       licensePlate: string;

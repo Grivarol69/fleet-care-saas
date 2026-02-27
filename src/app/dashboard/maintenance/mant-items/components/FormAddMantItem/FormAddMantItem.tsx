@@ -50,7 +50,7 @@ const formSchema = z.object({
   mantType: z.enum(['PREVENTIVE', 'PREDICTIVE', 'CORRECTIVE', 'EMERGENCY'], {
     required_error: 'Debe seleccionar un tipo de mantenimiento',
   }),
-  categoryId: z.number().min(1, {
+  categoryId: z.string().min(1).min(1, {
     message: 'Debe seleccionar una categoría',
   }),
   type: z.enum(['ACTION', 'PART', 'SERVICE']).default('ACTION'),
@@ -60,7 +60,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 interface MantCategory {
-  id: number;
+  id: string;
   tenantId: string;
   name: string;
   description: string | null;
@@ -69,29 +69,29 @@ interface MantCategory {
 }
 
 interface SimilarItem {
-  id: number;
+  id: string;
   name: string;
   description: string | null;
   type: string;
   mantType: string;
   isGlobal: boolean;
-  category: { id: number; name: string };
+  category: { id: string; name: string };
   score: number;
 }
 
 interface MantItemResponse {
-  id: number;
+  id: string;
   tenantId: string;
   name: string;
   description?: string | null;
   mantType: 'PREVENTIVE' | 'PREDICTIVE' | 'CORRECTIVE' | 'EMERGENCY';
-  categoryId: number;
+  categoryId: string;
   type: 'ACTION' | 'PART' | 'SERVICE';
   status: 'ACTIVE' | 'INACTIVE';
   createdAt: string;
   updatedAt: string;
   category: {
-    id: number;
+    id: string;
     name: string;
   };
 }
@@ -132,7 +132,7 @@ export function FormAddMantItem({
     defaultValues: {
       name: '',
       description: '',
-      categoryId: 0,
+      categoryId: '',
       type: 'ACTION',
       justification: '',
     },
@@ -568,8 +568,8 @@ export function FormAddMantItem({
                   <FormItem>
                     <FormLabel>Categoria</FormLabel>
                     <Select
-                      onValueChange={value => field.onChange(Number(value))}
-                      value={field.value > 0 ? field.value.toString() : ''}
+                      onValueChange={field.onChange}
+                      value={field.value || ''}
                       disabled={isLoading || isLoadingCategories}
                     >
                       <FormControl>

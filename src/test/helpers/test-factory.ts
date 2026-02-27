@@ -134,12 +134,12 @@ export async function createTestMantItem(
 
 export async function createTestMaintenanceProgram(
   tenantId: string,
-  vehicleId: number,
+  vehicleId: string,
   userId: string,
   overrides: Partial<{
     programName: string;
     packageName: string;
-    mantItemId: number;
+    mantItemId: string;
     scheduledKm: number;
     estimatedCost: number;
     assignmentKm: number;
@@ -190,8 +190,8 @@ export async function createTestMaintenanceProgram(
 
 export async function createTestAlert(
   tenantId: string,
-  vehicleId: number,
-  programItemId: number,
+  vehicleId: string,
+  programItemId: string,
   overrides: Partial<{
     itemName: string;
     packageName: string;
@@ -348,7 +348,7 @@ export async function createTestInventoryItem(
 
 export async function createTestWorkOrder(
   tenantId: string,
-  vehicleId: number,
+  vehicleId: string,
   requestedBy: string,
   overrides: Partial<{
     title: string;
@@ -378,9 +378,9 @@ export async function createTestWorkOrder(
 
 export async function createTestWorkOrderWithItems(
   tenantId: string,
-  vehicleId: number,
+  vehicleId: string,
   requestedBy: string,
-  mantItemId: number,
+  mantItemId: string,
   overrides: Partial<{
     title: string;
     mantType: 'PREVENTIVE' | 'CORRECTIVE';

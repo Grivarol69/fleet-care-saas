@@ -1,5 +1,5 @@
 export type DriverListProps = {
-  id: number;
+  id: string;
   name: string;
   email: string | null;
   phone: string | null;

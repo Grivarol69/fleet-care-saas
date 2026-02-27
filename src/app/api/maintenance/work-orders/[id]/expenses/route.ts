@@ -19,14 +19,14 @@ const expenseSchema = z.object({
   ]),
   amount: z.number().positive(),
   vendor: z.string().optional(),
-  providerId: z.number().optional(),
+  providerId: z.string().optional(),
   masterPartId: z.string().optional(), // If linked to a catalog part
   invoiceNumber: z.string().optional(),
 });
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -43,7 +43,11 @@ export async function POST(
 
     const json = await req.json();
     const body = expenseSchema.parse(json);
-    const workOrderId = parseInt(params.id);
+    const { id } = await params;
+    const workOrderId = id;
+    if (!workOrderId) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
 
     // 0. Verify the WorkOrder belongs to this tenant
     const workOrder = await prisma.workOrder.findUnique({
@@ -101,7 +105,7 @@ export async function POST(
 
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -109,7 +113,11 @@ export async function GET(
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const workOrderId = parseInt(params.id);
+    const { id } = await params;
+    const workOrderId = id;
+    if (!workOrderId) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
 
     // Verify the WorkOrder belongs to this tenant before exposing its expenses
     const workOrder = await prisma.workOrder.findUnique({

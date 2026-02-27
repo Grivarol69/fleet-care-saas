@@ -34,7 +34,7 @@ interface OdometerListProps {
   odometerLogs: OdometerLog[];
   onAdd: () => void;
   onEdit: (log: OdometerLog) => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: string) => void;
 }
 
 export function OdometerList({

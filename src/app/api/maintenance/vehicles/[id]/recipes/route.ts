@@ -8,7 +8,7 @@ import { getCurrentUser } from '@/lib/auth';
  */
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -16,7 +16,11 @@ export async function GET(
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const vehicleId = parseInt(params.id);
+    const { id } = await params;
+    const vehicleId = id;
+    if (!vehicleId) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
 
     // 1. Get Vehicle Info (Brand/Line)
     const vehicle = await prisma.vehicle.findUnique({

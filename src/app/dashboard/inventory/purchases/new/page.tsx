@@ -37,7 +37,7 @@ import axios from 'axios';
 import { useRouter } from 'next/navigation';
 
 // Types
-type Supplier = { id: number; name: string };
+type Supplier = { id: string; name: string };
 type MasterPart = {
   id: string;
   code: string;

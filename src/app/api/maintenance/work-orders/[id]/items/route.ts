@@ -20,7 +20,11 @@ export async function GET(
     }
 
     const { id } = await params;
-    const workOrderId = parseInt(id);
+    const workOrderId = id;
+    if (!workOrderId) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
+
     const { searchParams } = new URL(request.url);
     const typeParam = searchParams.get('type');
 
@@ -107,7 +111,11 @@ export async function POST(
     }
 
     const { id } = await params;
-    const workOrderId = parseInt(id);
+    const workOrderId = id;
+    if (!workOrderId) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
+
     const body = await request.json();
     const {
       mantItemId,

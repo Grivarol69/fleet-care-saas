@@ -6,7 +6,7 @@ export type VehicleExpense = {
   rank: number;
   licensePlate: string;
   vehicle: string;
-  vehicleId: number;
+  vehicleId: string;
   spent: number;
   percentage: number;
   trend: 'up' | 'down' | 'neutral';
@@ -162,9 +162,9 @@ export async function GET() {
       },
     });
 
-    // Agrupar por vehículo (mes actual)
+    // Agrupar por vehículo (mes actual) - using string keys
     const vehicleExpensesMap = new Map<
-      number,
+      string,
       {
         licensePlate: string;
         vehicle: string;
@@ -179,13 +179,14 @@ export async function GET() {
       if (!invoice.workOrder) return;
 
       const vehicleId = invoice.workOrder.vehicleId;
+      if (!vehicleId) return;
       const amount = Number(invoice.totalAmount);
       totalCurrentMonthSpent += amount;
 
       if (!vehicleExpensesMap.has(vehicleId)) {
         vehicleExpensesMap.set(vehicleId, {
-          licensePlate: invoice.workOrder.vehicle.licensePlate,
-          vehicle: `${invoice.workOrder.vehicle.brand.name} ${invoice.workOrder.vehicle.line.name}`,
+          licensePlate: invoice.workOrder.vehicle?.licensePlate || '',
+          vehicle: `${invoice.workOrder.vehicle?.brand?.name || ''} ${invoice.workOrder.vehicle?.line?.name || ''}`,
           spent: 0,
           invoiceCount: 0,
         });
@@ -196,14 +197,15 @@ export async function GET() {
       current.invoiceCount += 1;
     });
 
-    // Agrupar por vehículo (mes anterior) para tendencias
-    const previousVehicleExpensesMap = new Map<number, number>();
+    // Agrupar por vehículo (mes anterior) para tendencias - using string keys
+    const previousVehicleExpensesMap = new Map<string, number>();
     let totalPreviousMonthSpent = 0;
 
     previousMonthInvoices.forEach(invoice => {
       if (!invoice.workOrder) return;
 
       const vehicleId = invoice.workOrder.vehicleId;
+      if (!vehicleId) return;
       const amount = Number(invoice.totalAmount);
       totalPreviousMonthSpent += amount;
 
@@ -283,7 +285,7 @@ export async function GET() {
     // Obtener tipos de cada WorkOrder
     const workOrderIds = maintenanceTypeAgg
       .map(agg => agg.workOrderId)
-      .filter((id): id is number => id !== null);
+      .filter((id): id is string => id !== null);
 
     const workOrders = await prisma.workOrder.findMany({
       where: {

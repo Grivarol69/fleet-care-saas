@@ -18,7 +18,7 @@ import {
 import Image from 'next/image';
 
 interface VehicleGroup {
-  vehicleId: number;
+  vehicleId: string;
   vehiclePlate: string;
   vehiclePhoto: string;
   brandName: string;

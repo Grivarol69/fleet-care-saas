@@ -24,7 +24,7 @@ import { FormAddDocument } from '../fleet/components/FormEditFleetVehicle/compon
 
 // Types reuse
 interface Vehicle {
-  id: number;
+  id: string;
   licensePlate: string;
   brand: { name: string };
   line: { name: string };

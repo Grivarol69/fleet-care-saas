@@ -21,7 +21,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 type WorkOrder = {
-  id: number;
+  id: string;
   title: string;
   status: string;
   mantType: string;
@@ -32,21 +32,21 @@ type WorkOrder = {
   startDate: string | null;
   endDate: string | null;
   vehicle: {
-    id: number;
+    id: string;
     licensePlate: string;
     brand: { name: string };
     line: { name: string };
   };
   technician: {
-    id: number;
+    id: string;
     name: string;
   } | null;
   provider: {
-    id: number;
+    id: string;
     name: string;
   } | null;
   workOrderItems: Array<{
-    id: number;
+    id: string;
     description: string;
     totalCost: number;
     status: string;
@@ -56,8 +56,8 @@ type WorkOrder = {
 type WorkOrdersListProps = {
   workOrders: WorkOrder[];
   isLoading: boolean;
-  onViewDetail?: (id: number) => void;
-  onStartWork?: (id: number) => void;
+  onViewDetail?: (id: string) => void;
+  onStartWork?: (id: string) => void;
 };
 
 const statusConfig = {

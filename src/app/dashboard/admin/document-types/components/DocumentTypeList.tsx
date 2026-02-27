@@ -23,7 +23,7 @@ import { FormAddDocumentType } from './FormAddDocumentType';
 import { FormEditDocumentType } from './FormEditDocumentType';
 
 interface DocumentTypeConfig {
-  id: number;
+  id: string;
   tenantId: string | null;
   isGlobal: boolean;
   countryCode: string;
@@ -75,7 +75,7 @@ export function DocumentTypeList() {
     setIsEditDialogOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Desea desactivar este tipo de documento?')) return;
 
     try {

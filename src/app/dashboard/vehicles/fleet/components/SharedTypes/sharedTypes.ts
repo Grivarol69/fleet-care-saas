@@ -1,11 +1,11 @@
 // SharedTypes/sharedTypes.ts
 export interface FleetVehicle {
-  id: number;
+  id: string;
   licensePlate: string;
   typePlate: 'PARTICULAR' | 'PUBLICO';
-  brandId: number;
-  lineId: number;
-  typeId: number;
+  brandId: string;
+  lineId: string;
+  typeId: string;
   year: number;
   color: string;
   mileage: number;

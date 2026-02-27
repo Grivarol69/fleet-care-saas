@@ -35,7 +35,7 @@ import { FormEditLineProps } from './FormEditLine.types';
 import { useEffect, useState } from 'react';
 
 type VehicleBrand = {
-  id: number;
+  id: string;
   name: string;
 };
 
@@ -139,7 +139,7 @@ export function FormEditLine({
                 <FormItem>
                   <FormLabel>Marca de Vehículo</FormLabel>
                   <Select
-                    onValueChange={value => field.onChange(Number(value))}
+                    onValueChange={field.onChange}
                     value={field.value?.toString() || ''}
                   >
                     <FormControl>

@@ -36,7 +36,7 @@ const formSchema = z.object({
 });
 
 interface DocumentTypeConfig {
-  id: number;
+  id: string;
   tenantId: string | null;
   isGlobal: boolean;
   countryCode: string;

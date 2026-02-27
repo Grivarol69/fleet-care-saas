@@ -1,13 +1,13 @@
 import { z } from 'zod';
 
 export const formSchema = z.object({
-  id: z.number(),
+  id: z.string().min(1),
   photo: z.string(),
   licensePlate: z.string(),
   typePlate: z.string(),
-  brandId: z.number().nullable(),
-  lineId: z.number().nullable(),
-  typeId: z.number().nullable(),
+  brandId: z.string().nullable(),
+  lineId: z.string().nullable(),
+  typeId: z.string().nullable(),
   mileage: z.number(),
   cylinder: z.number(),
   bodyWork: z.string(),

@@ -108,7 +108,7 @@ export function FleetVehiclesList() {
   }, []);
 
   const handleDelete = useCallback(
-    async (id: number) => {
+    async (id: string) => {
       if (!confirm('¿Estás seguro de que quieres eliminar este vehículo?')) {
         return;
       }

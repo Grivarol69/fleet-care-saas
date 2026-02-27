@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 
 export type FleetVehicleStatus = {
-  id: number;
+  id: string;
   licensePlate: string;
   photo: string | null;
   brandName: string;
@@ -100,8 +100,8 @@ export async function GET() {
       },
     });
 
-    // Crear mapa de alertas por vehículo
-    const alertsMap = new Map<number, { critical: number; warning: number }>();
+    // Crear mapa de alertas por vehículo - using string keys
+    const alertsMap = new Map<string, { critical: number; warning: number }>();
     alertsByVehicle.forEach(alert => {
       const current = alertsMap.get(alert.vehicleId) || {
         critical: 0,
@@ -116,9 +116,9 @@ export async function GET() {
       alertsMap.set(alert.vehicleId, current);
     });
 
-    // Crear mapa de último odómetro por vehículo
+    // Crear mapa de último odómetro por vehículo - using string keys
     const odometerMap = new Map<
-      number,
+      string,
       { recordedAt: Date; kilometers: number }
     >();
     lastOdometerByVehicle.forEach(log => {

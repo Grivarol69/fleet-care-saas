@@ -81,7 +81,7 @@ export function ProviderList() {
     []
   );
 
-  const handleDeleteProvider = async (id: number) => {
+  const handleDeleteProvider = async (id: string) => {
     if (!confirm('¿Estás seguro de que deseas eliminar este proveedor?')) {
       return;
     }

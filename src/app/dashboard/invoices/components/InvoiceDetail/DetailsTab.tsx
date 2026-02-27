@@ -17,7 +17,7 @@ import {
 import { useRouter } from 'next/navigation';
 
 type Invoice = {
-  id: number;
+  id: string;
   invoiceNumber: string;
   invoiceDate: string;
   dueDate: string | null;
@@ -29,7 +29,7 @@ type Invoice = {
   notes: string | null;
   attachmentUrl: string | null;
   supplier: {
-    id: number;
+    id: string;
     name: string;
     nit: string | null;
     email: string | null;
@@ -37,11 +37,11 @@ type Invoice = {
     address: string | null;
   } | null;
   workOrder: {
-    id: number;
+    id: string;
     title: string;
     status: string;
     vehicle: {
-      id: number;
+      id: string;
       licensePlate: string;
       brand: { name: string };
       line: { name: string };
@@ -49,11 +49,11 @@ type Invoice = {
     };
   } | null;
   items: Array<{
-    id: number;
+    id: string;
     total: number;
   }>;
   payments: Array<{
-    id: number;
+    id: string;
     amount: number;
     paymentDate: string;
     paymentMethod: string;

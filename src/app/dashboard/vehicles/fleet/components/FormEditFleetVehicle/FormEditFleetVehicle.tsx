@@ -38,13 +38,13 @@ import { Loader2, X } from 'lucide-react';
 
 // Schema corregido
 const formSchema = z.object({
-  id: z.number(),
+  id: z.string().min(1),
   photo: z.string().min(1, 'La imagen es requerida'),
   licensePlate: z.string().min(3, 'La placa debe tener al menos 3 caracteres'),
   typePlate: z.enum(['PARTICULAR', 'PUBLICO']),
-  brandId: z.number().min(1, 'Seleccione una marca'),
-  lineId: z.number().min(1, 'Seleccione una línea'),
-  typeId: z.number().min(1, 'Seleccione un tipo'),
+  brandId: z.string().min(1).min(1, 'Seleccione una marca'),
+  lineId: z.string().min(1).min(1, 'Seleccione una línea'),
+  typeId: z.string().min(1).min(1, 'Seleccione un tipo'),
   mileage: z.number().min(0, 'El kilometraje debe ser positivo'),
   cylinder: z.number().optional(),
   bodyWork: z.string().optional(),
@@ -61,28 +61,28 @@ const formSchema = z.object({
 });
 
 type VehicleBrand = {
-  id: number;
+  id: string;
   name: string;
 };
 
 type VehicleLine = {
-  id: number;
+  id: string;
   name: string;
 };
 
 type VehicleType = {
-  id: number;
+  id: string;
   name: string;
 };
 
 interface FleetVehicle {
-  id: number;
+  id: string;
   photo: string | null;
   licensePlate: string;
   typePlate: 'PARTICULAR' | 'PUBLICO';
-  brandId: number;
-  lineId: number;
-  typeId: number;
+  brandId: string;
+  lineId: string;
+  typeId: string;
   mileage: number;
   cylinder?: number | null;
   bodyWork?: string | null;

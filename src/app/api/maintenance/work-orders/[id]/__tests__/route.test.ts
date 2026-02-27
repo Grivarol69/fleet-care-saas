@@ -15,9 +15,9 @@ import { getCurrentUser } from '@/lib/auth';
 describe('Work Order Integration (PATCH)', () => {
   const tenantId = 'integration-patch-tenant-' + Date.now();
   const userId = 'owner-patch-' + Date.now();
-  let vehicleId: number;
-  let workOrderId: number;
-  let mantItemId: number;
+  let vehicleId: string;
+  let workOrderId: string;
+  let mantItemId: string;
 
   beforeEach(async () => {
     // Mock User
@@ -230,9 +230,9 @@ describe('Work Order PATCH — Role-Based Transition Guards', () => {
   const ownerId = 'owner-guard-' + Date.now();
   const technicianId = 'tech-guard-' + Date.now();
   const managerId = 'manager-guard-' + Date.now();
-  let vehicleId: number;
-  let workOrderId: number;
-  let mantItemId: number;
+  let vehicleId: string;
+  let workOrderId: string;
+  let mantItemId: string;
 
   // Helper: set the mocked user role
   const mockUser = (id: string, role: string) => {
@@ -578,10 +578,10 @@ describe('Work Order PATCH — Role-Based Transition Guards', () => {
 describe('Work Order Item PATCH — Auto PENDING_INVOICE trigger', () => {
   const tenantId = 'auto-pi-tenant-' + Date.now();
   const userId = 'tech-auto-pi-' + Date.now();
-  let vehicleId: number;
-  let workOrderId: number;
-  let mantItemId: number;
-  let workOrderItemId: number;
+  let vehicleId: string;
+  let workOrderId: string;
+  let mantItemId: string;
+  let workOrderItemId: string;
 
   beforeEach(async () => {
     vi.mocked(getCurrentUser).mockResolvedValue({

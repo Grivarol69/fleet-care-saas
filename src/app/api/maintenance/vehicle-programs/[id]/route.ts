@@ -6,7 +6,7 @@ import { canManageMaintenancePrograms } from '@/lib/permissions';
 // GET - Obtener programa específico por ID
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -14,7 +14,11 @@ export async function GET(
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const programId = parseInt(params.id);
+    const { id } = await params;
+    const programId = id;
+    if (!programId) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
 
     const program = await prisma.vehicleMantProgram.findUnique({
       where: {
@@ -58,7 +62,7 @@ export async function GET(
 // PUT - Actualizar programa de mantenimiento
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -73,7 +77,12 @@ export async function PUT(
       );
     }
 
-    const programId = parseInt(params.id);
+    const { id } = await params;
+    const programId = id;
+    if (!programId) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
+
     const body = await req.json();
 
     const {
@@ -143,7 +152,7 @@ export async function PUT(
 // DELETE - Eliminar programa de mantenimiento
 export async function DELETE(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -158,7 +167,11 @@ export async function DELETE(
       );
     }
 
-    const programId = parseInt(params.id);
+    const { id } = await params;
+    const programId = id;
+    if (!programId) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
 
     // Verificar que el programa existe
     const existingProgram = await prisma.vehicleMantProgram.findUnique({

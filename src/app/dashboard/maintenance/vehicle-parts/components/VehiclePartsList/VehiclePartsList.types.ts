@@ -1,5 +1,5 @@
 export type VehiclePartEntry = {
-  id: number;
+  id: string;
   isGlobal: boolean;
   yearFrom: number | null;
   yearTo: number | null;
@@ -7,16 +7,16 @@ export type VehiclePartEntry = {
   alternativePartNumbers: string | null;
   notes: string | null;
   mantItem: {
-    id: number;
+    id: string;
     name: string;
     type: 'ACTION' | 'PART' | 'SERVICE';
   };
   vehicleBrand: {
-    id: number;
+    id: string;
     name: string;
   };
   vehicleLine: {
-    id: number;
+    id: string;
     name: string;
   };
   masterPart: {

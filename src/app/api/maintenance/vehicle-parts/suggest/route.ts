@@ -17,10 +17,13 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = req.nextUrl;
-    const mantItemId = parseInt(searchParams.get('mantItemId') || '');
-    const vehicleId = parseInt(searchParams.get('vehicleId') || '');
+    const mantItemIdParam = searchParams.get('mantItemId') || '';
+    const vehicleIdParam = searchParams.get('vehicleId') || '';
 
-    if (isNaN(mantItemId) || isNaN(vehicleId)) {
+    const mantItemId = mantItemIdParam;
+    const vehicleId = vehicleIdParam;
+
+    if (mantItemId === null || vehicleId === null) {
       return NextResponse.json(
         { error: 'mantItemId y vehicleId son requeridos' },
         { status: 400 }

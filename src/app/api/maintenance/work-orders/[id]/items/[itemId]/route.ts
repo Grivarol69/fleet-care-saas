@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { safeParseInt } from '@/lib/validation';
 import { ItemSource, ItemClosureType, WorkOrderStatus } from '@prisma/client';
 import { z } from 'zod';
 import { canExecuteWorkOrders } from '@/lib/permissions';
@@ -44,8 +43,8 @@ export async function PATCH(
 
     const { id, itemId } = await params;
 
-    const workOrderId = safeParseInt(id);
-    const workOrderItemId = safeParseInt(itemId);
+    const workOrderId = id;
+    const workOrderItemId = itemId;
 
     if (workOrderId === null || workOrderItemId === null) {
       return NextResponse.json({ error: 'IDs inválidos' }, { status: 400 });
@@ -208,8 +207,8 @@ export async function GET(
 
     const { id, itemId } = await params;
 
-    const workOrderId = safeParseInt(id);
-    const workOrderItemId = safeParseInt(itemId);
+    const workOrderId = id;
+    const workOrderItemId = itemId;
 
     if (workOrderId === null || workOrderItemId === null) {
       return NextResponse.json({ error: 'IDs inválidos' }, { status: 400 });
