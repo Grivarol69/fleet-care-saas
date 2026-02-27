@@ -1,7 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
-import { safeParseInt } from '@/lib/validation';
 
 export async function GET() {
   try {
@@ -104,9 +103,9 @@ export async function POST(req: Request) {
       }
     }
 
-    const parsedBrandId = safeParseInt(String(brandId));
+    const parsedBrandId = String(brandId);
 
-    if (parsedBrandId === null) {
+    if (!parsedBrandId) {
       return NextResponse.json(
         { error: 'ID de marca inválido' },
         { status: 400 }

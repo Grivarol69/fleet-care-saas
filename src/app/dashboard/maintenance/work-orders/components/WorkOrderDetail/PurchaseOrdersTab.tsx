@@ -47,7 +47,7 @@ import { useToast } from '@/components/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
 
 interface PurchaseOrdersTabProps {
-  workOrderId: number;
+  workOrderId: string;
 }
 
 interface PurchaseOrderItem {
@@ -66,7 +66,7 @@ interface PurchaseOrder {
   orderNumber: string;
   type: 'SERVICES' | 'PARTS';
   status: string;
-  provider: { id: number; name: string; email?: string | null };
+  provider: { id: string; name: string; email?: string | null };
   subtotal: number;
   total: number;
   items: PurchaseOrderItem[];

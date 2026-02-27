@@ -69,7 +69,7 @@ export function PackageItemList({ packageId }: PackageItemListProps) {
     setIsEditDialogOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     try {
       await axios.delete(`/api/maintenance/package-items/${id}`);
       setData(prevData => prevData.filter(item => item.id !== id));

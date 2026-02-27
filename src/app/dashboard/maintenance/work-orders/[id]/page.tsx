@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 type WorkOrder = {
-  id: number;
+  id: string;
   title: string;
   description: string | null;
   status: string;
@@ -41,26 +41,26 @@ type WorkOrder = {
   isPackageWork: boolean;
   packageName: string | null;
   vehicle: {
-    id: number;
+    id: string;
     licensePlate: string;
     brand: { name: string };
     line: { name: string };
     mileage: number;
   };
   technician: {
-    id: number;
+    id: string;
     name: string;
     email: string | null;
     phone: string | null;
   } | null;
   provider: {
-    id: number;
+    id: string;
     name: string;
     email: string | null;
     phone: string | null;
   } | null;
   maintenanceAlerts: Array<{
-    id: number;
+    id: string;
     itemName: string;
     status: string;
     priority: string;
@@ -68,7 +68,7 @@ type WorkOrder = {
     estimatedCost?: number | null;
   }>;
   workOrderItems: Array<{
-    id: number;
+    id: string;
     description: string;
     supplier: string | null;
     unitPrice: number;
@@ -76,19 +76,19 @@ type WorkOrder = {
     totalCost: number;
     status: string;
     mantItem: {
-      id: number;
+      id: string;
       name: string;
       type: string;
     };
   }>;
   invoices: Array<{
-    id: number;
+    id: string;
     invoiceNumber: string;
     invoiceDate: string;
     totalAmount: number;
     status: string;
     supplier: {
-      id: number;
+      id: string;
       name: string;
     } | null;
   }>;
@@ -103,7 +103,7 @@ type WorkOrder = {
     invoiceNumber: string | null;
   }>;
   approvals: Array<{
-    id: number;
+    id: string;
     status: string;
     approvedBy: number | null;
     approvedAt: string | null;

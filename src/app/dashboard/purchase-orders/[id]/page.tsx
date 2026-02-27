@@ -58,7 +58,7 @@ interface PurchaseOrderItem {
   receivedQty: number;
   mantItem?: { name: string; type: string } | null;
   masterPart?: { code: string; description: string } | null;
-  workOrderItem?: { id: number; description: string } | null;
+  workOrderItem?: { id: string; description: string } | null;
 }
 
 interface PurchaseOrder {
@@ -78,17 +78,17 @@ interface PurchaseOrder {
   createdAt: string;
   updatedAt: string;
   provider: {
-    id: number;
+    id: string;
     name: string;
     email: string | null;
     phone: string | null;
   };
   workOrder: {
-    id: number;
+    id: string;
     title: string;
     status: string;
     vehicle: {
-      id: number;
+      id: string;
       licensePlate: string;
       brand: { name: string } | null;
       line: { name: string } | null;

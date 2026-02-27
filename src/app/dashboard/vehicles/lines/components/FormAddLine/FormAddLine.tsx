@@ -37,21 +37,21 @@ const formSchema = z.object({
   name: z.string().min(2, {
     message: 'El nombre debe tener al menos 2 caracteres',
   }),
-  brandId: z.number().min(1, {
+  brandId: z.string().min(1).min(1, {
     message: 'Debe seleccionar una marca',
   }),
 });
 
 type VehicleBrand = {
-  id: number;
+  id: string;
   name: string;
 };
 
 // ✅ Tipo corregido según la respuesta de la API
 type VehicleLine = {
-  id: number;
+  id: string;
   name: string;
-  brandId: number;
+  brandId: string;
   brand: {
     name: string;
   };
@@ -76,7 +76,7 @@ export function FormAddLine({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
-      brandId: 0, // Se validará que sea > 0
+      brandId: '', // Se validará que sea > 0
     },
   });
 
@@ -185,8 +185,8 @@ export function FormAddLine({
                 <FormItem>
                   <FormLabel>Marca de Vehículo</FormLabel>
                   <Select
-                    onValueChange={value => field.onChange(Number(value))}
-                    value={field.value > 0 ? field.value.toString() : ''}
+                    onValueChange={field.onChange}
+                    value={field.value || ''}
                     disabled={isLoading || isLoadingBrands}
                   >
                     <FormControl>

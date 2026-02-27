@@ -8,7 +8,7 @@ export interface FormEditMantTemplateProps {
 }
 
 export interface VehicleBrand {
-  id: number;
+  id: string;
   tenantId: string;
   name: string;
   createdAt: string;
@@ -16,10 +16,10 @@ export interface VehicleBrand {
 }
 
 export interface VehicleLine {
-  id: number;
+  id: string;
   tenantId: string;
   name: string;
-  brandId: number;
+  brandId: string;
   createdAt: string;
   updatedAt: string;
   brand?: {

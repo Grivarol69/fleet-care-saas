@@ -16,10 +16,10 @@ describe('Work Order Integration (API Route)', () => {
   // Test Data IDs
   let tenantId: string;
   let userId: string;
-  let vehicleId: number;
-  let mantItemId: number;
-  let programItemId: number;
-  let alertId: number;
+  let vehicleId: string;
+  let mantItemId: string;
+  let programItemId: string;
+  let alertId: string;
 
   beforeEach(async () => {
     // 1. Setup Data for this test suite

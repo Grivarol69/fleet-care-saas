@@ -50,8 +50,8 @@ const formSchema = z.object({
 });
 
 type AddItemDialogProps = {
-  workOrderId: number;
-  vehicleId?: number; // Optional as services might not need it, but Parts do
+  workOrderId: string;
+  vehicleId?: string; // Optional as services might not need it, but Parts do
   type: 'SERVICE' | 'PART';
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -59,7 +59,7 @@ type AddItemDialogProps = {
 };
 
 type MantItem = {
-  id: number;
+  id: string;
   name: string;
   type: string;
   parts?: {
@@ -100,7 +100,7 @@ export function AddItemDialog({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<MantItem | null>(null);
   const [stock, setStock] = useState<InventoryStock | null>(null);
-  const [providers, setProviders] = useState<{ id: number; name: string }[]>(
+  const [providers, setProviders] = useState<{ id: string; name: string }[]>(
     []
   );
   const [suggestions, setSuggestions] = useState<PartSuggestion[]>([]);

@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     const tickets = await prisma.internalWorkTicket.findMany({
       where: {
         tenantId: user.tenantId,
-        ...(workOrderId ? { workOrderId: parseInt(workOrderId, 10) } : {}),
+        ...(workOrderId ? { workOrderId: workOrderId } : {}),
       },
       include: {
         technician: { select: { id: true, name: true, specialty: true } },

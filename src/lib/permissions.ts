@@ -251,6 +251,26 @@ export function canManageTenantData(user: User | null): boolean {
 }
 
 // ========================================
+// WORK ORDER LIFECYCLE PERMISSIONS
+// ========================================
+
+/**
+ * OWNER y MANAGER pueden aprobar/rechazar Work Orders.
+ * TECHNICIAN NO puede aprobar — solo ejecutar.
+ */
+export function canApproveWorkOrder(user: User | null): boolean {
+  return isSuperAdmin(user) || isOwner(user) || isManager(user);
+}
+
+/**
+ * OWNER y MANAGER pueden cerrar Work Orders (mover a COMPLETED).
+ * TECHNICIAN puede marcar trabajo terminado pero NO cerrar.
+ */
+export function canCloseWorkOrder(user: User | null): boolean {
+  return isSuperAdmin(user) || isOwner(user) || isManager(user);
+}
+
+// ========================================
 // CONSTANTES
 // ========================================
 

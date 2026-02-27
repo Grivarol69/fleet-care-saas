@@ -1,9 +1,9 @@
 // Types para VehicleProgramsList
 export interface VehicleProgramsListProps {
-  id: number;
+  id: string;
   name: string;
   description?: string;
-  vehicleId: number;
+  vehicleId: string;
   assignmentKm: number;
   nextMaintenanceKm?: number;
   nextMaintenanceDesc?: string;
@@ -16,17 +16,17 @@ export interface VehicleProgramsListProps {
 
   // Relaciones
   vehicle: {
-    id: number;
+    id: string;
     licensePlate: string;
     model: string;
     year: number;
     mileage: number;
     brand: {
-      id: number;
+      id: string;
       name: string;
     };
     line: {
-      id: number;
+      id: string;
       name: string;
     };
   };
@@ -35,7 +35,7 @@ export interface VehicleProgramsListProps {
 }
 
 export interface VehicleProgramPackage {
-  id: number;
+  id: string;
   name: string;
   description?: string;
   triggerKm?: number;
@@ -54,7 +54,7 @@ export interface VehicleProgramPackage {
 }
 
 export interface VehicleProgramItem {
-  id: number;
+  id: string;
   mantType: 'PREVENTIVE' | 'CORRECTIVE' | 'PREDICTIVE';
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   order: number;
@@ -76,7 +76,7 @@ export interface VehicleProgramItem {
 
   // Relaciones
   mantItem: {
-    id: number;
+    id: string;
     name: string;
     description?: string;
     mantType: 'PREVENTIVE' | 'CORRECTIVE' | 'PREDICTIVE';
@@ -85,19 +85,19 @@ export interface VehicleProgramItem {
   };
 
   technician?: {
-    id: number;
+    id: string;
     name: string;
   };
 
   provider?: {
-    id: number;
+    id: string;
     name: string;
   };
 }
 
 // Interfaces para formularios
 export interface VehicleOption {
-  id: number;
+  id: string;
   licensePlate: string;
   model: string;
   year: number;
@@ -111,13 +111,13 @@ export interface VehicleOption {
 }
 
 export interface TemplateOption {
-  id: number;
+  id: string;
   name: string;
   description?: string;
-  vehicleBrandId?: number;
-  vehicleLineId?: number;
+  vehicleBrandId?: string;
+  vehicleLineId?: string;
   packages: {
-    id: number;
+    id: string;
     name: string;
     triggerKm: number;
     packageType: string;

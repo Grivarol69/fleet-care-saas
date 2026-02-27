@@ -1,6 +1,6 @@
 'use server';
 
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
@@ -9,7 +9,19 @@ import { seedTenantData } from '@/actions/seed-tenant';
 
 export async function updateTenantProfile(formData: FormData) {
   const { orgId } = await auth();
-  if (!orgId) throw new Error('No organization found');
+  const user = await currentUser();
+  const email = user?.emailAddresses?.[0]?.emailAddress || '';
+
+  let tenantId = orgId;
+  if (!tenantId) {
+    const dbUser = await prisma.user.findFirst({
+      where: { email },
+      include: { tenant: true },
+    });
+    tenantId = dbUser?.tenantId || null;
+  }
+
+  if (!tenantId) throw new Error('No organization found');
 
   const name = formData.get('orgName') as string;
   const country = formData.get('country') as string;
@@ -26,7 +38,7 @@ export async function updateTenantProfile(formData: FormData) {
   const currency = currencyMap[country] || 'USD';
 
   await prisma.tenant.update({
-    where: { id: orgId },
+    where: { id: tenantId },
     data: {
       name,
       country,
@@ -40,11 +52,23 @@ export async function updateTenantProfile(formData: FormData) {
 
 export async function completeOnboarding() {
   const { orgId } = await auth();
-  if (!orgId) throw new Error('No organization found');
+  const user = await currentUser();
+  const email = user?.emailAddresses?.[0]?.emailAddress || '';
+
+  let tenantId = orgId;
+  if (!tenantId) {
+    const dbUser = await prisma.user.findFirst({
+      where: { email },
+      include: { tenant: true },
+    });
+    tenantId = dbUser?.tenantId || null;
+  }
+
+  if (!tenantId) throw new Error('No organization found');
 
   // Fetch tenant to get country for seeding context
   const tenant = await prisma.tenant.findUnique({
-    where: { id: orgId },
+    where: { id: tenantId },
   });
 
   if (!tenant) throw new Error('Tenant not found');
@@ -53,7 +77,7 @@ export async function completeOnboarding() {
   // const vehicleTypes = formData.getAll("vehicleTypes");
 
   await prisma.tenant.update({
-    where: { id: orgId },
+    where: { id: tenantId },
     data: {
       onboardingStatus: 'COMPLETED',
     },
@@ -62,7 +86,7 @@ export async function completeOnboarding() {
   // Validar país antes de sembrar
   if (tenant.country) {
     // Ejecutar sembrado (bloqueante por ahora, mover a background job si crece)
-    await seedTenantData(orgId, tenant.country);
+    await seedTenantData(tenantId, tenant.country);
   }
 
   redirect('/dashboard');

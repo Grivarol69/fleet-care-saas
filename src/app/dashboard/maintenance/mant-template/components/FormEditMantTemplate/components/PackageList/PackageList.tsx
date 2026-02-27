@@ -82,7 +82,7 @@ export function PackageList({ templateId }: PackageListProps) {
     setIsEditDialogOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('¿Está seguro de eliminar este paquete?')) return;
 
     try {

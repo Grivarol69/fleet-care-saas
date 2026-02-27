@@ -22,7 +22,7 @@ import { formatDistanceToNow, format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 type Invoice = {
-  id: number;
+  id: string;
   invoiceNumber: string;
   invoiceDate: string;
   dueDate: string | null;
@@ -34,25 +34,25 @@ type Invoice = {
   notes: string | null;
   attachmentUrl: string | null;
   supplier: {
-    id: number;
+    id: string;
     name: string;
   } | null;
   workOrder: {
-    id: number;
+    id: string;
     title: string;
     vehicle: {
       licensePlate: string;
     };
   } | null;
   items: Array<{
-    id: number;
+    id: string;
     description: string;
     quantity: number;
     unitPrice: number;
     total: number;
   }>;
   payments: Array<{
-    id: number;
+    id: string;
     amount: number;
     paymentDate: string;
   }>;
@@ -61,7 +61,7 @@ type Invoice = {
 type InvoicesListProps = {
   invoices: Invoice[];
   isLoading: boolean;
-  onViewDetail?: (id: number) => void;
+  onViewDetail?: (id: string) => void;
 };
 
 const statusConfig = {
@@ -79,7 +79,7 @@ export function InvoicesList({
 }: InvoicesListProps) {
   const router = useRouter();
 
-  const handlePrint = (id: number) => {
+  const handlePrint = (id: string) => {
     router.push(`/dashboard/invoices/${id}/print`);
   };
 

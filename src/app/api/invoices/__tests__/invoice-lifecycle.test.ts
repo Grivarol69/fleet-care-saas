@@ -23,7 +23,7 @@ describe('Invoice Lifecycle', () => {
   let tenant: Awaited<ReturnType<typeof createTestTenant>>;
   let user: Awaited<ReturnType<typeof createTestUser>>;
   let provider: Awaited<ReturnType<typeof createTestProvider>>;
-  let workOrderId: number;
+  let workOrderId: string;
 
   beforeEach(async () => {
     tenant = await createTestTenant();

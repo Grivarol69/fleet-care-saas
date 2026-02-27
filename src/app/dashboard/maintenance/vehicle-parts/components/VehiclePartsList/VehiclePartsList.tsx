@@ -106,19 +106,19 @@ export function VehiclePartsList() {
     Promise.all([
       axios.get('/api/vehicles/brands'),
       axios.get('/api/vehicles/lines'),
-      axios.get('/api/maintenance/mant-items'),
+      axios.get('/api/maintenance/mant-items?type=PART'),
       axios.get('/api/inventory/parts'),
     ])
       .then(([brandsRes, linesRes, itemsRes, partsRes]) => {
         setBrands(
-          brandsRes.data.map((b: { id: number; name: string }) => ({
+          brandsRes.data.map((b: { id: string; name: string }) => ({
             id: b.id,
             name: b.name,
           }))
         );
         setLines(
           linesRes.data.map(
-            (l: { id: number; name: string; brandId: number }) => ({
+            (l: { id: string; name: string; brandId: string }) => ({
               id: l.id,
               name: l.name,
               brandId: l.brandId,
@@ -127,7 +127,7 @@ export function VehiclePartsList() {
         );
         setMantItems(
           itemsRes.data.map(
-            (i: { id: number; name: string; type: string }) => ({
+            (i: { id: string; name: string; type: string }) => ({
               id: i.id,
               name: i.name,
               type: i.type,
@@ -166,7 +166,7 @@ export function VehiclePartsList() {
   // Filter lines by selected brand for the filter dropdown
   const filterLines = useMemo(() => {
     if (filterBrandId === 'all') return lines;
-    return lines.filter(l => l.brandId === parseInt(filterBrandId));
+    return lines.filter(l => l.brandId === filterBrandId);
   }, [filterBrandId, lines]);
 
   const columns: ColumnDef<VehiclePartEntry>[] = [

@@ -1,7 +1,7 @@
 export interface PackageItem {
-  id: number;
-  packageId: number;
-  mantItemId: number;
+  id: string;
+  packageId: string;
+  mantItemId: string;
   mantItem: MantItem;
   triggerKm: number;
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
@@ -14,13 +14,13 @@ export interface PackageItem {
 }
 
 export interface MantItem {
-  id: number;
+  id: string;
   name: string;
   description?: string;
   mantType: 'PREVENTIVE' | 'CORRECTIVE' | 'PREDICTIVE' | 'EMERGENCY';
-  categoryId: number;
+  categoryId: string;
   category: {
-    id: number;
+    id: string;
     name: string;
   };
   estimatedTime: number;
@@ -29,5 +29,5 @@ export interface MantItem {
 }
 
 export interface PackageItemListProps {
-  packageId: number;
+  packageId: string;
 }

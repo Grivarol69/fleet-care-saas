@@ -90,7 +90,7 @@ interface TemplateCardProps {
   template: MantTemplatesListProps;
   onSelect: (template: MantTemplatesListProps) => void;
   onEdit: (template: MantTemplatesListProps) => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: string) => void;
 }
 
 function TemplateCard({
@@ -201,7 +201,7 @@ export function MantTemplatesList() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBrandFilter, setSelectedBrandFilter] = useState<string>('all');
   const [vehicleBrands, setVehicleBrands] = useState<
-    { id: number; name: string }[]
+    { id: string; name: string }[]
   >([]);
 
   // Estados de modales
@@ -246,7 +246,7 @@ export function MantTemplatesList() {
 
   // Fetch packages cuando se selecciona un template
   const fetchPackages = useCallback(
-    async (templateId: number) => {
+    async (templateId: string) => {
       if (!templateId) return;
       try {
         const response = await axios.get(
@@ -267,7 +267,7 @@ export function MantTemplatesList() {
 
   // Fetch package items cuando se selecciona un package
   const fetchPackageItems = useCallback(
-    async (packageId: number) => {
+    async (packageId: string) => {
       if (!packageId) return;
       try {
         const response = await axios.get(
@@ -312,7 +312,7 @@ export function MantTemplatesList() {
     setIsEditTemplateOpen(true);
   };
 
-  const handleDeleteTemplate = async (id: number) => {
+  const handleDeleteTemplate = async (id: string) => {
     if (!confirm('¿Está seguro de eliminar este template?')) return;
     try {
       await axios.delete(`/api/maintenance/mant-template/${id}`);
@@ -342,7 +342,7 @@ export function MantTemplatesList() {
     setIsEditPackageOpen(true);
   };
 
-  const handleDeletePackage = async (id: number) => {
+  const handleDeletePackage = async (id: string) => {
     if (!confirm('¿Está seguro de eliminar este paquete?')) return;
     try {
       await axios.delete(`/api/maintenance/packages/${id}`);
@@ -370,7 +370,7 @@ export function MantTemplatesList() {
     setIsEditPackageItemOpen(true);
   };
 
-  const handleDeletePackageItem = async (id: number) => {
+  const handleDeletePackageItem = async (id: string) => {
     if (!confirm('¿Está seguro de eliminar este item?')) return;
     try {
       await axios.delete(`/api/maintenance/package-items/${id}`);

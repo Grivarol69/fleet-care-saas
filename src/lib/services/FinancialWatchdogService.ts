@@ -20,7 +20,7 @@ export class FinancialWatchdogService {
     masterPartId: string,
     unitPrice: number,
     invoiceId?: string,
-    workOrderId?: number,
+    workOrderId?: string,
     description?: string // For context in message
   ) {
     // 1. Get Master Part Reference Price
@@ -77,7 +77,7 @@ export class FinancialWatchdogService {
    */
   static async checkBudgetOverrun(
     tenantId: string,
-    workOrderId: number,
+    workOrderId: string,
     newExpenseAmount: number
   ) {
     const workOrder = await prisma.workOrder.findUnique({
@@ -147,7 +147,7 @@ export class FinancialWatchdogService {
     tenantId: string,
     masterPartId: string,
     newPrice: number,
-    supplierId: number,
+    supplierId: string,
     quantity: number = 1,
     metadata?: {
       invoiceId?: string;

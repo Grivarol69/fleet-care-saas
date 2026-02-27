@@ -3,13 +3,12 @@ import { Prisma } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { z } from 'zod';
-import { safeParseInt } from '@/lib/validation';
 import { canExecuteWorkOrders } from '@/lib/permissions';
 
 // Schema for PATCH body validation
 const updateAlertSchema = z
   .object({
-    alertId: z.number().int().positive(),
+    alertId: z.string(),
     status: z
       .enum([
         'PENDING',
@@ -54,8 +53,8 @@ export async function GET(request: NextRequest) {
 
     // Safe parse vehicleId
     if (vehicleIdParam) {
-      const vehicleId = safeParseInt(vehicleIdParam);
-      if (vehicleId === null) {
+      const vehicleId = vehicleIdParam;
+      if (!vehicleId) {
         return NextResponse.json(
           { error: 'vehicleId inválido' },
           { status: 400 }

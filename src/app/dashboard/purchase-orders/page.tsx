@@ -59,9 +59,9 @@ interface PurchaseOrder {
   orderNumber: string;
   type: 'SERVICES' | 'PARTS';
   status: string;
-  provider: { id: number; name: string };
+  provider: { id: string; name: string };
   workOrder: {
-    id: number;
+    id: string;
     title: string;
     vehicle: {
       licensePlate: string;

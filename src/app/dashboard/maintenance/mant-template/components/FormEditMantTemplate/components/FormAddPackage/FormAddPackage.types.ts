@@ -1,7 +1,7 @@
 export interface FormAddPackageProps {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  templateId: number;
+  templateId: string;
   onAddPackage: () => void;
 }
 

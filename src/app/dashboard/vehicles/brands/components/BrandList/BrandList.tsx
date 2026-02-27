@@ -77,7 +77,7 @@ export function BrandList() {
     setIsEditDialogOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     try {
       await axios.delete(`/api/vehicles/brands/${id}`);
       setData(data.filter(brand => brand.id !== id));

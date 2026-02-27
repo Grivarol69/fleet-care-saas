@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { canManageMaintenancePrograms } from '@/lib/permissions';
 
 const cloneSchema = z.object({
-  templateId: z.number(),
+  templateId: z.string(),
 });
 
 export async function POST(req: Request) {

@@ -1,7 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
-import { safeParseInt } from '@/lib/validation';
 import { requireMasterDataMutationPermission } from '@/lib/permissions';
 
 // GET - Obtener tipo específico por ID (incluye globales)
@@ -17,9 +16,9 @@ export async function GET(
     }
 
     const { id } = await params;
-    const typeId = safeParseInt(id);
+    const typeId = id;
 
-    if (typeId === null) {
+    if (!typeId) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
@@ -60,9 +59,9 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const typeId = safeParseInt(id);
+    const typeId = id;
 
-    if (typeId === null) {
+    if (!typeId) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
@@ -141,9 +140,9 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const typeId = safeParseInt(id);
+    const typeId = id;
 
-    if (typeId === null) {
+    if (!typeId) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 

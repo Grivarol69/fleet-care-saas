@@ -13,10 +13,10 @@ vi.mock('@/lib/auth', () => ({
 describe('E2E Simulation: Alert to Completion', () => {
   const tenantId = 'e2e-tenant-' + Date.now();
   const userId = 'e2e-owner-' + Date.now();
-  let vehicleId: number;
-  let alertId: number;
-  let mantItemId: number;
-  let workOrderId: number;
+  let vehicleId: string;
+  let alertId: string;
+  let mantItemId: string;
+  let workOrderId: string;
 
   beforeEach(async () => {
     // Mock User
@@ -272,7 +272,7 @@ describe('E2E Simulation: Alert to Completion', () => {
     await prisma.vehicleProgramItem.findFirst({
       where: {
         tenantId,
-        packageId: { not: 0 } /* hack to find it if we don't have ID */,
+        packageId: { not: '' } /* hack to find it if we don't have ID */,
       },
     });
     // Actually we can query by ID if we captured it, but we didn't capture the programItem.id in a higher scope var.

@@ -1,7 +1,61 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import { ItemClosureType } from '@prisma/client';
+import { ItemClosureType, WorkOrderStatus } from '@prisma/client';
+import {
+  canExecuteWorkOrders,
+  canApproveWorkOrder,
+  canCloseWorkOrder,
+} from '@/lib/permissions';
+
+// ========================================
+// ALLOWED TRANSITIONS — WO Lifecycle FSM
+// Format: 'FROM_STATUS' → array of { to, roles }
+// Roles are checked via permission helpers; stored here as labels for
+// documentation and role-guard dispatch.
+// ========================================
+type RoleGuard =
+  | 'canExecuteWorkOrders'
+  | 'canApproveWorkOrder'
+  | 'canCloseWorkOrder';
+
+interface TransitionRule {
+  allowedRoles: RoleGuard[];
+}
+
+const ALLOWED_TRANSITIONS: Record<
+  WorkOrderStatus,
+  Partial<Record<WorkOrderStatus, TransitionRule>>
+> = {
+  PENDING: {
+    IN_PROGRESS: { allowedRoles: ['canExecuteWorkOrders'] },
+    PENDING_APPROVAL: { allowedRoles: ['canApproveWorkOrder'] },
+    CANCELLED: { allowedRoles: ['canApproveWorkOrder'] },
+  },
+  PENDING_APPROVAL: {
+    APPROVED: { allowedRoles: ['canApproveWorkOrder'] },
+    REJECTED: { allowedRoles: ['canApproveWorkOrder'] },
+    CANCELLED: { allowedRoles: ['canApproveWorkOrder'] },
+  },
+  APPROVED: {
+    IN_PROGRESS: { allowedRoles: ['canExecuteWorkOrders'] },
+    CANCELLED: { allowedRoles: ['canApproveWorkOrder'] },
+  },
+  IN_PROGRESS: {
+    COMPLETED: { allowedRoles: ['canCloseWorkOrder'] },
+    PENDING_INVOICE: { allowedRoles: ['canExecuteWorkOrders'] },
+    PENDING_APPROVAL: { allowedRoles: ['canApproveWorkOrder'] },
+    CANCELLED: { allowedRoles: ['canApproveWorkOrder'] },
+  },
+  PENDING_INVOICE: {
+    COMPLETED: { allowedRoles: ['canCloseWorkOrder'] },
+    CANCELLED: { allowedRoles: ['canApproveWorkOrder'] },
+  },
+  // Terminal states — no transitions out
+  COMPLETED: {},
+  REJECTED: {},
+  CANCELLED: {},
+};
 
 /**
  * GET - Obtener detalle de una WorkOrder específica
@@ -18,8 +72,10 @@ export async function GET(
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
-    // const { id } = await params; (Removed, creating 'workOrderId' directly from existing 'id')
-    const workOrderId = parseInt(id);
+    const workOrderId = id;
+    if (!workOrderId) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
 
     const workOrder = await prisma.workOrder.findUnique({
       where: {
@@ -138,6 +194,26 @@ Stack: ${error instanceof Error ? error.stack : 'N/A'}
 }
 
 /**
+ * Helper: resolve a role-guard label to the actual permission function result.
+ */
+function checkRoleGuard(
+  guard: RoleGuard,
+  user: Awaited<ReturnType<typeof getCurrentUser>>
+): boolean {
+  if (!user) return false;
+  switch (guard) {
+    case 'canExecuteWorkOrders':
+      return canExecuteWorkOrders(user);
+    case 'canApproveWorkOrder':
+      return canApproveWorkOrder(user);
+    case 'canCloseWorkOrder':
+      return canCloseWorkOrder(user);
+    default:
+      return false;
+  }
+}
+
+/**
  * PATCH - Actualizar estado y campos de una WorkOrder
  */
 export async function PATCH(
@@ -151,12 +227,17 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const workOrderId = parseInt(id);
+    const workOrderId = id;
+    if (!workOrderId) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
+
     const body = await request.json();
 
     // Validar que la WO existe y pertenece al tenant
     const existingWO = await prisma.workOrder.findUnique({
       where: { id: workOrderId, tenantId: user.tenantId },
+      include: { maintenanceAlerts: true },
     });
 
     if (!existingWO) {
@@ -166,15 +247,59 @@ export async function PATCH(
       );
     }
 
-    const { status, actualCost, completedAt, technicianId, providerId } = body;
+    const {
+      status,
+      actualCost,
+      completedAt,
+      completionMileage,
+      technicianId,
+      providerId,
+    } = body;
 
     // Preparar datos para actualizar
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateData: Record<string, any> = {};
 
     if (status) {
-      // FASE 6.7: Validar que no haya items pendientes de cierre antes de marcar COMPLETED
-      if (status === 'COMPLETED') {
+      const fromStatus = existingWO.status as WorkOrderStatus;
+      const toStatus = status as WorkOrderStatus;
+
+      // ──────────────────────────────────────────────────────────────
+      // TASK 2.2: Transition Guard
+      // 1. Check the transition is defined in ALLOWED_TRANSITIONS
+      // 2. Check the user's role satisfies at least one allowed guard
+      // ──────────────────────────────────────────────────────────────
+      const allowedTargets = ALLOWED_TRANSITIONS[fromStatus];
+      const transitionRule = allowedTargets?.[toStatus];
+
+      if (!transitionRule) {
+        return NextResponse.json(
+          {
+            error: `Transición inválida: no se puede pasar de ${fromStatus} a ${toStatus}`,
+          },
+          { status: 400 }
+        );
+      }
+
+      // Check at least one role guard passes for this user
+      const hasRolePermission = transitionRule.allowedRoles.some(guard =>
+        checkRoleGuard(guard, user)
+      );
+
+      if (!hasRolePermission) {
+        return NextResponse.json(
+          {
+            error: `No tienes permisos para mover una OT de ${fromStatus} a ${toStatus}`,
+          },
+          { status: 403 }
+        );
+      }
+
+      // ──────────────────────────────────────────────────────────────
+      // Status-specific side effects
+      // ──────────────────────────────────────────────────────────────
+      if (toStatus === 'COMPLETED') {
+        // FASE 6.7: Validar que no haya items pendientes de cierre
         const pendingItems = await prisma.workOrderItem.count({
           where: {
             workOrderId,
@@ -192,52 +317,151 @@ export async function PATCH(
           );
         }
 
-        updateData.status = status;
-        updateData.endDate = completedAt ? new Date(completedAt) : new Date();
+        // TASK 2.4: Auto-compute actualCost inside a transaction
+        const result = await prisma.$transaction(async tx => {
+          // Sum WorkOrderItem costs
+          const itemsAgg = await tx.workOrderItem.aggregate({
+            where: { workOrderId, status: { not: 'CANCELLED' } },
+            _sum: { totalCost: true },
+          });
 
-        // Actualizar WorkOrderItems a COMPLETED (solo status, closureType ya está definido)
-        await prisma.workOrderItem.updateMany({
-          where: { workOrderId, status: { not: 'CANCELLED' } },
-          data: { status: 'COMPLETED' },
+          // Sum approved WorkOrderExpense amounts
+          const expensesAgg = await tx.workOrderExpense.aggregate({
+            where: { workOrderId, status: 'APPROVED' },
+            _sum: { amount: true },
+          });
+
+          const itemsCost = Number(itemsAgg._sum.totalCost ?? 0);
+          const expensesCost = Number(expensesAgg._sum.amount ?? 0);
+          const computedActualCost = itemsCost + expensesCost;
+
+          const closedAt = completedAt ? new Date(completedAt) : new Date();
+
+          // Update WorkOrderItems to COMPLETED
+          await tx.workOrderItem.updateMany({
+            where: { workOrderId, status: { not: 'CANCELLED' } },
+            data: { status: 'COMPLETED' },
+          });
+
+          // FASE 6.2: Close MaintenanceAlerts linked to this WO
+          await tx.maintenanceAlert.updateMany({
+            where: { workOrderId },
+            data: {
+              status: 'COMPLETED',
+              closedAt: closedAt,
+            },
+          });
+
+          // Close VehicleProgramItems linked via alerts
+          const alerts = await tx.maintenanceAlert.findMany({
+            where: { workOrderId },
+            select: { programItemId: true },
+          });
+
+          if (alerts.length > 0) {
+            const programItemIds = alerts.map(a => a.programItemId);
+            await tx.vehicleProgramItem.updateMany({
+              where: { id: { in: programItemIds } },
+              data: {
+                status: 'COMPLETED',
+                executedDate: closedAt,
+              },
+            });
+          }
+
+          // Update WorkOrder status + computed actualCost
+          const wo = await tx.workOrder.update({
+            where: { id: workOrderId },
+            data: {
+              status: 'COMPLETED',
+              endDate: closedAt,
+              actualCost: computedActualCost,
+              ...(completionMileage !== undefined
+                ? { completionMileage: Number(completionMileage) }
+                : {}),
+              ...(technicianId !== undefined ? { technicianId } : {}),
+              ...(providerId !== undefined ? { providerId } : {}),
+            },
+            include: {
+              vehicle: { select: { id: true, licensePlate: true } },
+              maintenanceAlerts: true,
+              workOrderItems: true,
+            },
+          });
+
+          return wo;
         });
 
-        // FASE 6.2: Cerrar MaintenanceAlerts vinculadas
-        await prisma.maintenanceAlert.updateMany({
-          where: { workOrderId },
-          data: {
-            status: 'COMPLETED',
-            closedAt: new Date(),
+        const serializedWorkOrder = JSON.parse(
+          JSON.stringify(result, (_key, value) =>
+            typeof value === 'bigint' ? value.toString() : value
+          )
+        );
+        return NextResponse.json(serializedWorkOrder);
+      } else if (toStatus === 'REJECTED') {
+        // TASK 2.3: REJECTED — revert linked MaintenanceAlerts from CLOSED → PENDING
+        // (mirrors the CANCELLED logic in DELETE handler)
+        await prisma.$transaction(async tx => {
+          await tx.workOrder.update({
+            where: { id: workOrderId },
+            data: { status: 'REJECTED' },
+          });
+
+          const alertIds = existingWO.maintenanceAlerts.map(a => a.id);
+          if (alertIds.length > 0) {
+            await tx.maintenanceAlert.updateMany({
+              where: { id: { in: alertIds } },
+              data: {
+                status: 'PENDING',
+                workOrderId: null,
+                workOrderCreatedAt: null,
+                workOrderCreatedBy: null,
+              },
+            });
+
+            const programItemIds = existingWO.maintenanceAlerts.map(
+              a => a.programItemId
+            );
+            await tx.vehicleProgramItem.updateMany({
+              where: { id: { in: programItemIds } },
+              data: { status: 'PENDING' },
+            });
+          }
+        });
+
+        // Fetch updated WO to return
+        const updatedWO = await prisma.workOrder.findUnique({
+          where: { id: workOrderId },
+          include: {
+            vehicle: { select: { id: true, licensePlate: true } },
+            maintenanceAlerts: true,
+            workOrderItems: true,
           },
         });
 
-        // Cerrar VehicleProgramItems vinculadas
-        const alerts = await prisma.maintenanceAlert.findMany({
-          where: { workOrderId },
-          select: { programItemId: true },
-        });
-
-        if (alerts.length > 0) {
-          const programItemIds = alerts.map(a => a.programItemId);
-          await prisma.vehicleProgramItem.updateMany({
-            where: { id: { in: programItemIds } },
-            data: {
-              status: 'COMPLETED',
-              executedDate: new Date(),
-            },
-          });
-        }
+        const serializedWorkOrder = JSON.parse(
+          JSON.stringify(updatedWO, (_key, value) =>
+            typeof value === 'bigint' ? value.toString() : value
+          )
+        );
+        return NextResponse.json(serializedWorkOrder);
       } else {
-        updateData.status = status;
+        // All other valid transitions
+        updateData.status = toStatus;
       }
 
-      // Si se inicia la WO
-      if (status === 'IN_PROGRESS' && !existingWO.startDate) {
+      // If WO is being started, record startDate
+      if (toStatus === 'IN_PROGRESS' && !existingWO.startDate) {
         updateData.startDate = new Date();
       }
     }
 
     if (actualCost !== undefined) {
       updateData.actualCost = actualCost;
+    }
+
+    if (completionMileage !== undefined) {
+      updateData.completionMileage = Number(completionMileage);
     }
 
     if (technicianId !== undefined) {
@@ -306,7 +530,10 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const workOrderId = parseInt(id);
+    const workOrderId = id;
+    if (!workOrderId) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
 
     // Validar que existe
     const existingWO = await prisma.workOrder.findUnique({

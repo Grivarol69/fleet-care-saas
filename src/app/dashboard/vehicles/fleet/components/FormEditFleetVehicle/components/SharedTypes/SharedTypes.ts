@@ -2,7 +2,7 @@ import { DocumentStatus } from '@prisma/client';
 
 // Document type config from the API
 export interface DocumentTypeConfigProps {
-  id: number;
+  id: string;
   code: string;
   name: string;
   description: string | null;
@@ -16,8 +16,8 @@ export interface DocumentTypeConfigProps {
 // Este tipo debe coincidir con lo que devuelve la API (/api/vehicles/documents)
 export interface DocumentProps {
   id: string;
-  vehicleId: number;
-  documentTypeId: number;
+  vehicleId: string;
+  documentTypeId: string;
   documentType: DocumentTypeConfigProps;
   fileName: string;
   fileUrl: string;

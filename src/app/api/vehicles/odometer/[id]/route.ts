@@ -14,9 +14,9 @@ export async function GET(
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const id = parseInt(params.id);
+    const id = params.id;
 
-    if (isNaN(id)) {
+    if (!id) {
       return new NextResponse('Invalid ID', { status: 400 });
     }
 
@@ -70,9 +70,9 @@ export async function PUT(
       );
     }
 
-    const id = parseInt(params.id);
+    const id = params.id;
 
-    if (isNaN(id)) {
+    if (!id) {
       return new NextResponse('Invalid ID', { status: 400 });
     }
 
@@ -206,9 +206,9 @@ export async function DELETE(
       );
     }
 
-    const id = parseInt(params.id);
+    const id = params.id;
 
-    if (isNaN(id)) {
+    if (!id) {
       return new NextResponse('Invalid ID', { status: 400 });
     }
 

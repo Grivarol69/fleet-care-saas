@@ -55,7 +55,7 @@ import { UploadButton } from '@/lib/uploadthing';
 interface InvoiceItem {
   id: string;
   workOrderItemId?: number;
-  mantItemId?: number;
+  mantItemId?: string;
   description: string;
   details?: string;
   category?: string;
@@ -84,9 +84,9 @@ interface PendingPO {
   type: string;
   status: string;
   total: number;
-  provider: { id: number; name: string };
+  provider: { id: string; name: string };
   workOrder: {
-    id: number;
+    id: string;
     title: string;
     vehicle: { licensePlate: string; brand: { name: string } };
   };
@@ -97,7 +97,7 @@ interface PendingPO {
     unitPrice: number;
     total: number;
     workOrderItemId?: number;
-    mantItemId?: number;
+    mantItemId?: string;
     masterPart?: { code: string; description: string };
   }>;
 }
@@ -110,13 +110,13 @@ function NewInvoiceContent() {
   const purchaseOrderIdParam = searchParams.get('purchaseOrderId');
 
   interface Provider {
-    id: number;
+    id: string;
     name: string;
     [key: string]: unknown;
   }
 
   interface WorkOrder {
-    id: number;
+    id: string;
     title: string;
     items?: InvoiceItem[];
     estimatedCost?: number;
@@ -251,9 +251,9 @@ function NewInvoiceContent() {
           );
 
           interface WOItemResponse {
-            id: number;
+            id: string;
             description: string;
-            mantItemId?: number;
+            mantItemId?: string;
             category?: { name: string };
             cost?: number;
             quantity?: number;
@@ -349,7 +349,7 @@ function NewInvoiceContent() {
 
   // Agregar item desde MantItem
   interface MantItemType {
-    id: number;
+    id: string;
     name: string;
     description?: string;
     category?: { name: string };

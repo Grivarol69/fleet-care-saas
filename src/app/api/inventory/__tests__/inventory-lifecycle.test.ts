@@ -101,7 +101,7 @@ describe('Inventory Lifecycle', () => {
       const movement = await InventoryService.consumeStockForWorkOrder(
         tenant.id,
         wo.id,
-        1, // woItemId (unused in service)
+        '1', // woItemId (unused in service)
         user.id,
         masterPart.id,
         10
@@ -132,7 +132,7 @@ describe('Inventory Lifecycle', () => {
         InventoryService.consumeStockForWorkOrder(
           tenant.id,
           wo.id,
-          1,
+          '1',
           user.id,
           masterPart.id,
           10

@@ -65,7 +65,7 @@ export default function OdometerPage() {
     setIsEditModalOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('¿Estás seguro de eliminar este registro de odómetro?')) {
       return;
     }

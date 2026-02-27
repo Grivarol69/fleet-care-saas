@@ -150,7 +150,10 @@ export default function MaintenanceAlertsPage() {
         </div>
       ) : (
         <ImprovedAlertsTable
-          vehicles={filteredAlerts}
+          vehicles={filteredAlerts.map(v => ({
+            ...v,
+            vehicleId: String(v.vehicleId),
+          }))}
           selectedAlertIds={selectedAlertIds}
           onSelectionChange={setSelectedAlertIds}
           onCreateWorkOrder={() => setIsModalOpen(true)}

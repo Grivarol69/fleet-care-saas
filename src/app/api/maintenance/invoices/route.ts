@@ -5,7 +5,7 @@ import { Prisma, InvoiceStatus } from '@prisma/client';
 
 type InvoiceItemInput = {
   masterPartId?: string | null;
-  workOrderItemId?: number | null;
+  workOrderItemId?: string | null;
   description: string;
   quantity: number;
   unitPrice: number;
@@ -36,7 +36,8 @@ export async function GET(request: NextRequest) {
     };
 
     if (workOrderId) {
-      where.workOrderId = parseInt(workOrderId);
+      const parsed = workOrderId;
+      if (parsed) where.workOrderId = parsed;
     }
 
     if (
@@ -47,7 +48,8 @@ export async function GET(request: NextRequest) {
     }
 
     if (supplierId) {
-      where.supplierId = parseInt(supplierId);
+      const parsed = supplierId;
+      if (parsed) where.supplierId = parsed;
     }
 
     const invoices = await prisma.invoice.findMany({

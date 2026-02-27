@@ -1,5 +1,5 @@
 export interface MaintenancePackage {
-  id: number;
+  id: string;
   name: string;
   description?: string;
   triggerKm: number;
@@ -7,7 +7,7 @@ export interface MaintenancePackage {
   estimatedTime?: number;
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   packageType: 'PREVENTIVE' | 'CORRECTIVE' | 'PREDICTIVE';
-  templateId: number;
+  templateId: string;
   status: 'ACTIVE' | 'INACTIVE';
   packageItems?: PackageItem[];
   createdAt: string;
@@ -15,9 +15,9 @@ export interface MaintenancePackage {
 }
 
 export interface PackageItem {
-  id: number;
-  packageId: number;
-  mantItemId: number;
+  id: string;
+  packageId: string;
+  mantItemId: string;
   mantItem: MantItem;
   triggerKm: number;
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
@@ -30,13 +30,13 @@ export interface PackageItem {
 }
 
 export interface MantItem {
-  id: number;
+  id: string;
   name: string;
   description?: string;
   mantType: 'PREVENTIVE' | 'CORRECTIVE' | 'PREDICTIVE' | 'EMERGENCY';
-  categoryId: number;
+  categoryId: string;
   category: {
-    id: number;
+    id: string;
     name: string;
   };
   estimatedTime: number;

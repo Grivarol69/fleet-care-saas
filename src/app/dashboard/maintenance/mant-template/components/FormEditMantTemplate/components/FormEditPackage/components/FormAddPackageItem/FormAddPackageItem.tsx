@@ -36,7 +36,7 @@ import { FormAddPackageItemProps, MantItem } from './FormAddPackageItem.types';
 
 // Schema para Package Item
 const formSchema = z.object({
-  mantItemId: z.number().min(1, {
+  mantItemId: z.string().min(1).min(1, {
     message: 'Debe seleccionar un item de mantenimiento',
   }),
   triggerKm: z.number().min(1, {
@@ -63,7 +63,7 @@ export function FormAddPackageItem({
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      mantItemId: 0,
+      mantItemId: '',
       triggerKm: 5000,
       priority: 'MEDIUM',
       estimatedCost: 0,
@@ -104,7 +104,7 @@ export function FormAddPackageItem({
   // Auto-rellenar datos del MantItem seleccionado
   const selectedMantItemId = form.watch('mantItemId');
   useEffect(() => {
-    if (selectedMantItemId > 0) {
+    if (selectedMantItemId && selectedMantItemId !== '') {
       const selectedItem = mantItems.find(
         item => item.id === selectedMantItemId
       );
@@ -217,8 +217,8 @@ export function FormAddPackageItem({
                   <FormItem className="md:col-span-2">
                     <FormLabel>Item de Mantenimiento *</FormLabel>
                     <Select
-                      onValueChange={value => field.onChange(Number(value))}
-                      value={field.value > 0 ? field.value.toString() : ''}
+                      onValueChange={field.onChange}
+                      value={field.value || ''}
                       disabled={isLoading || isLoadingItems}
                     >
                       <FormControl>

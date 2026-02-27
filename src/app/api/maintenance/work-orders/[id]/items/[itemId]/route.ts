@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { safeParseInt } from '@/lib/validation';
 import { ItemSource, ItemClosureType, WorkOrderStatus } from '@prisma/client';
 import { z } from 'zod';
 import { canExecuteWorkOrders } from '@/lib/permissions';
@@ -44,8 +43,8 @@ export async function PATCH(
 
     const { id, itemId } = await params;
 
-    const workOrderId = safeParseInt(id);
-    const workOrderItemId = safeParseInt(itemId);
+    const workOrderId = id;
+    const workOrderItemId = itemId;
 
     if (workOrderId === null || workOrderItemId === null) {
       return NextResponse.json({ error: 'IDs inválidos' }, { status: 400 });
@@ -135,6 +134,36 @@ export async function PATCH(
       },
     });
 
+    // TASK 2.5: Auto-trigger PENDING_INVOICE when all items are closed
+    // If a closureType was updated, check whether any items in this WO
+    // still have closureType === PENDING. If none remain, auto-advance
+    // the WO status to PENDING_INVOICE (only if currently IN_PROGRESS).
+    let woPendingInvoiceTriggered = false;
+    if (updates.closureType !== undefined) {
+      const currentWO = await prisma.workOrder.findUnique({
+        where: { id: workOrderId },
+        select: { status: true },
+      });
+
+      if (currentWO?.status === 'IN_PROGRESS') {
+        const pendingCount = await prisma.workOrderItem.count({
+          where: {
+            workOrderId,
+            closureType: ItemClosureType.PENDING,
+            status: { not: 'CANCELLED' },
+          },
+        });
+
+        if (pendingCount === 0) {
+          await prisma.workOrder.update({
+            where: { id: workOrderId },
+            data: { status: 'PENDING_INVOICE' },
+          });
+          woPendingInvoiceTriggered = true;
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       item: {
@@ -149,6 +178,9 @@ export async function PATCH(
         unitPrice: Number(updatedItem.unitPrice),
         totalCost: Number(updatedItem.totalCost),
       },
+      ...(woPendingInvoiceTriggered
+        ? { workOrderStatusChanged: 'PENDING_INVOICE' }
+        : {}),
     });
   } catch (error) {
     console.error('[WORK_ORDER_ITEM_PATCH]', error);
@@ -175,8 +207,8 @@ export async function GET(
 
     const { id, itemId } = await params;
 
-    const workOrderId = safeParseInt(id);
-    const workOrderItemId = safeParseInt(itemId);
+    const workOrderId = id;
+    const workOrderItemId = itemId;
 
     if (workOrderId === null || workOrderItemId === null) {
       return NextResponse.json({ error: 'IDs inválidos' }, { status: 400 });

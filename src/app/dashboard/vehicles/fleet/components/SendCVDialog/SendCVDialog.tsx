@@ -33,7 +33,7 @@ const formSchema = z.object({
 interface SendCVDialogProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  vehicleId: number;
+  vehicleId: string;
   vehiclePlate: string;
 }
 

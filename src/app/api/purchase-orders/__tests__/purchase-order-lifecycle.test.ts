@@ -22,7 +22,9 @@ vi.mock('@/lib/auth', () => ({
 vi.mock('resend', () => ({
   Resend: vi.fn().mockImplementation(() => ({
     emails: {
-      send: vi.fn().mockResolvedValue({ data: { id: 'mock-email-id' }, error: null }),
+      send: vi
+        .fn()
+        .mockResolvedValue({ data: { id: 'mock-email-id' }, error: null }),
     },
   })),
 }));
@@ -44,8 +46,8 @@ describe('Purchase Order Lifecycle', () => {
   let ownerUser: Awaited<ReturnType<typeof createTestUser>>;
   let purchaserUser: Awaited<ReturnType<typeof createTestUser>>;
   let technicianUser: Awaited<ReturnType<typeof createTestUser>>;
-  let workOrderId: number;
-  let providerId: number;
+  let workOrderId: string;
+  let providerId: string;
 
   beforeEach(async () => {
     tenant = await createTestTenant();
@@ -54,13 +56,23 @@ describe('Purchase Order Lifecycle', () => {
     technicianUser = await createTestUser(tenant.id, { role: 'TECHNICIAN' });
 
     const vd = await createTestVehicle(tenant.id);
-    const wo = await createTestWorkOrder(tenant.id, vd.vehicle.id, ownerUser.id);
+    const wo = await createTestWorkOrder(
+      tenant.id,
+      vd.vehicle.id,
+      ownerUser.id
+    );
     workOrderId = wo.id;
 
-    const provider = await createTestProvider(tenant.id, { email: 'provider@test.com' });
+    const provider = await createTestProvider(tenant.id, {
+      email: 'provider@test.com',
+    });
     providerId = provider.id;
 
-    mockAuthAsUser({ id: ownerUser.id, tenantId: tenant.id, role: ownerUser.role });
+    mockAuthAsUser({
+      id: ownerUser.id,
+      tenantId: tenant.id,
+      role: ownerUser.role,
+    });
   });
 
   afterEach(async () => {
@@ -69,7 +81,9 @@ describe('Purchase Order Lifecycle', () => {
   });
 
   // Helper: create PO
-  async function createPO(items?: Array<{ description: string; quantity: number; unitPrice: number }>) {
+  async function createPO(
+    items?: Array<{ description: string; quantity: number; unitPrice: number }>
+  ) {
     const res = await POST(
       new NextRequest('http://localhost:3000/api/purchase-orders', {
         method: 'POST',
@@ -77,7 +91,9 @@ describe('Purchase Order Lifecycle', () => {
           workOrderId,
           type: 'SERVICES',
           providerId,
-          items: items ?? [{ description: 'Test Service', quantity: 1, unitPrice: 50000 }],
+          items: items ?? [
+            { description: 'Test Service', quantity: 1, unitPrice: 50000 },
+          ],
         }),
       })
     );
@@ -86,18 +102,24 @@ describe('Purchase Order Lifecycle', () => {
 
   // Helper: patch PO action
   async function patchPO(poId: string, action: string, notes?: string) {
-    const req = new NextRequest(`http://localhost:3000/api/purchase-orders/${poId}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ action, ...(notes ? { notes } : {}) }),
-    });
+    const req = new NextRequest(
+      `http://localhost:3000/api/purchase-orders/${poId}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ action, ...(notes ? { notes } : {}) }),
+      }
+    );
     return PATCH(req, { params: Promise.resolve({ id: poId }) });
   }
 
   // Helper: delete PO
   async function deletePO(poId: string) {
-    const req = new NextRequest(`http://localhost:3000/api/purchase-orders/${poId}`, {
-      method: 'DELETE',
-    });
+    const req = new NextRequest(
+      `http://localhost:3000/api/purchase-orders/${poId}`,
+      {
+        method: 'DELETE',
+      }
+    );
     return DELETE(req, { params: Promise.resolve({ id: poId }) });
   }
 
@@ -219,7 +241,11 @@ describe('Purchase Order Lifecycle', () => {
   });
 
   it('TECHNICIAN cannot create PO (403)', async () => {
-    mockAuthAsUser({ id: technicianUser.id, tenantId: tenant.id, role: technicianUser.role });
+    mockAuthAsUser({
+      id: technicianUser.id,
+      tenantId: tenant.id,
+      role: technicianUser.role,
+    });
 
     const { res } = await createPO();
     expect(res.status).toBe(403);
@@ -227,7 +253,11 @@ describe('Purchase Order Lifecycle', () => {
 
   it('PURCHASER can submit but not approve', async () => {
     // Create PO as PURCHASER
-    mockAuthAsUser({ id: purchaserUser.id, tenantId: tenant.id, role: purchaserUser.role });
+    mockAuthAsUser({
+      id: purchaserUser.id,
+      tenantId: tenant.id,
+      role: purchaserUser.role,
+    });
 
     const { res: createRes, data: po } = await createPO();
     expect(createRes.status).toBe(201);
@@ -243,8 +273,14 @@ describe('Purchase Order Lifecycle', () => {
 
   it('DELETE only works on DRAFT', async () => {
     // Create and submit PO
-    const { data: po1 } = await createPO();
-    await patchPO(po1.id, 'submit');
+    mockAuthAsUser({
+      id: ownerUser.id,
+      tenantId: tenant.id,
+      role: ownerUser.role,
+    }); // Ensure we are owner
+    const { res: createRes, data: po1 } = await createPO();
+    console.log('CREATE RES:', createRes.status, po1);
+    await patchPO(po1?.id, 'submit');
 
     // Delete submitted PO should fail
     const delRes1 = await deletePO(po1.id);
@@ -258,7 +294,9 @@ describe('Purchase Order Lifecycle', () => {
     expect(delRes2.status).toBe(200);
 
     // Verify deleted
-    const deleted = await prisma.purchaseOrder.findUnique({ where: { id: po2.id } });
+    const deleted = await prisma.purchaseOrder.findUnique({
+      where: { id: po2.id },
+    });
     expect(deleted).toBeNull();
   });
 
@@ -282,7 +320,9 @@ describe('Purchase Order Lifecycle', () => {
 
     // Filter: comma-separated
     const getRes2 = await GET(
-      new NextRequest('http://localhost:3000/api/purchase-orders?status=PENDING_APPROVAL,APPROVED')
+      new NextRequest(
+        'http://localhost:3000/api/purchase-orders?status=PENDING_APPROVAL,APPROVED'
+      )
     );
     const data2 = await getRes2.json();
     expect(data2).toHaveLength(2);

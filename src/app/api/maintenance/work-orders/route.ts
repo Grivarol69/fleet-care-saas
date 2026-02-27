@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     };
 
     if (vehicleId) {
-      where.vehicleId = parseInt(vehicleId);
+      where.vehicleId = vehicleId;
     }
 
     if (status) {
@@ -148,8 +148,8 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Sanitize IDs
-    const technicianId = rawTechId ? Number(rawTechId) : null;
-    const providerId = rawProvId ? Number(rawProvId) : null;
+    const technicianId = rawTechId ? String(rawTechId) : null;
+    const providerId = rawProvId ? String(rawProvId) : null;
 
     // Validaciones
     // Si NO es Correctivo, requerimos alertIds
@@ -314,7 +314,7 @@ export async function POST(request: NextRequest) {
     // 6. Actualizar VehicleProgramItems
     const programItemIds = alerts
       .map(a => a.programItemId)
-      .filter((id): id is number => !!id);
+      .filter((id): id is string => !!id);
     if (programItemIds.length > 0) {
       await prisma.vehicleProgramItem.updateMany({
         where: { id: { in: programItemIds } },

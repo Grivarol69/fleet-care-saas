@@ -14,25 +14,25 @@ import {
 } from 'lucide-react';
 
 type WorkOrder = {
-  id: number;
+  id: string;
   status: string;
   createdAt: string;
   startDate: string | null;
   endDate: string | null;
   approvals: Array<{
-    id: number;
+    id: string;
     status: string;
     approvedBy: number | null;
     approvedAt: string | null;
     comments: string | null;
   }>;
   maintenanceAlerts: Array<{
-    id: number;
+    id: string;
     itemName: string;
     status: string;
   }>;
   invoices: Array<{
-    id: number;
+    id: string;
     invoiceNumber: string;
     invoiceDate: string;
     totalAmount: number;

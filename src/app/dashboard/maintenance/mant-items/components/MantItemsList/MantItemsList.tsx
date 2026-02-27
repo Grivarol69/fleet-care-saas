@@ -77,7 +77,7 @@ export function MantItemsList() {
     setIsEditDialogOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     try {
       await axios.delete(`/api/maintenance/mant-items/${id}`);
       setData(prevData => prevData.filter(mantItem => mantItem.id !== id));

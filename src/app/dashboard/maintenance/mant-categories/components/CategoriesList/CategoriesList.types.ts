@@ -1,5 +1,5 @@
 export type CategoriesListProps = {
-  id: number;
+  id: string;
   name: string;
   isGlobal?: boolean;
 };

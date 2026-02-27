@@ -1,5 +1,5 @@
 export type TypeListProps = {
-  id: number;
+  id: string;
   name: string;
   isGlobal?: boolean;
 };

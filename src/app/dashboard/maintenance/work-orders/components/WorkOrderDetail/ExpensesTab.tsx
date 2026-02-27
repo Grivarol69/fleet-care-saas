@@ -36,9 +36,9 @@ import { useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 type WorkOrder = {
-  id: number;
+  id: string;
   vehicle: {
-    id: number;
+    id: string;
     brand: { name: string };
     line: { name: string };
   };
@@ -53,13 +53,13 @@ type WorkOrder = {
     invoiceNumber: string | null;
   }>;
   invoices: Array<{
-    id: number;
+    id: string;
     invoiceNumber: string;
     invoiceDate: string;
     totalAmount: number;
     status: string;
     supplier: {
-      id: number;
+      id: string;
       name: string;
     } | null;
   }>;

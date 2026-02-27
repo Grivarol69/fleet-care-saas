@@ -1,7 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
-import { safeParseInt } from '@/lib/validation';
 import { canManageProviders } from '@/lib/permissions';
 
 // GET - Obtener proveedor específico por ID
@@ -17,8 +16,8 @@ export async function GET(
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
-    const providerId = safeParseInt(id);
-    if (providerId === null) {
+    const providerId = id;
+    if (!providerId) {
       return NextResponse.json(
         { error: 'ID de proveedor inválido' },
         { status: 400 }
@@ -69,8 +68,8 @@ export async function PUT(
       );
     }
 
-    const providerId = safeParseInt(id);
-    if (providerId === null) {
+    const providerId = id;
+    if (!providerId) {
       return NextResponse.json(
         { error: 'ID de proveedor inválido' },
         { status: 400 }
@@ -163,8 +162,8 @@ export async function DELETE(
       );
     }
 
-    const providerId = safeParseInt(id);
-    if (providerId === null) {
+    const providerId = id;
+    if (!providerId) {
       return NextResponse.json(
         { error: 'ID de proveedor inválido' },
         { status: 400 }

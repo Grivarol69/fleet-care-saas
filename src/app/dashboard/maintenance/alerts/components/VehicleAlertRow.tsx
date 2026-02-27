@@ -15,7 +15,7 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface VehicleGroup {
-  vehicleId: number;
+  vehicleId: string;
   vehiclePlate: string;
   vehiclePhoto: string;
   brandName: string;
