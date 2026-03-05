@@ -28,11 +28,21 @@ export async function getKBCounts(): Promise<KBCounts> {
   const user = await getCurrentUser();
   if (!user) {
     console.warn('[KBCounts] Unauthenticated request rejected');
-    return { brands: 0, lines: 0, types: 0, categories: 0, items: 0, parts: 0, itemParts: 0, templates: [] };
+    return {
+      brands: 0,
+      lines: 0,
+      types: 0,
+      categories: 0,
+      items: 0,
+      parts: 0,
+      itemParts: 0,
+      templates: [],
+    };
   }
 
   try {
-    const globalQuery = { isGlobal: true, tenantId: null };
+    const globalQuery = { isGlobal: true as const, tenantId: null };
+    const globalPartsQuery = { tenantId: null };
 
     const [
       brandsCount,
@@ -59,7 +69,7 @@ export async function getKBCounts(): Promise<KBCounts> {
         where: globalQuery,
       }),
       prisma.masterPart.count({
-        where: globalQuery,
+        where: globalPartsQuery,
       }),
       prisma.mantItemVehiclePart.count({
         where: globalQuery,
@@ -96,7 +106,9 @@ export async function getKBCounts(): Promise<KBCounts> {
       }
     }
 
-    const templates = Array.from(templateMap.values()).filter(t => t.templateCount > 0);
+    const templates = Array.from(templateMap.values()).filter(
+      t => t.templateCount > 0
+    );
 
     console.log('[KBCounts] Counts:', {
       brands: brandsCount,

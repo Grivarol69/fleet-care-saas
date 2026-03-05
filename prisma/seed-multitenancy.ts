@@ -10,10 +10,8 @@ const prisma = new PrismaClient({ adapter });
 // IDs CONFIRMADOS
 // ========================================
 const PLATFORM_TENANT_ID = '00000000-0000-0000-0000-000000000000';
-const TENANT_1_ID = 'org_38zCXuXqy5Urw5CuaisTHu3jLTq'; // Transportes Demo SAS
-const TENANT_2_ID = 'org_39SGMg0wtIdphVg1AK7ZIslCxDc'; // HFD SA
 
-const ALL_TENANT_IDS = [PLATFORM_TENANT_ID, TENANT_1_ID, TENANT_2_ID];
+const ALL_TENANT_IDS = [PLATFORM_TENANT_ID];
 
 // ========================================
 // HELPER: Create maintenance program for a vehicle from a template
@@ -211,7 +209,8 @@ async function main() {
       data: { name: 'Dongfeng', isGlobal: true, tenantId: null },
     }),
   ]);
-  const [toyota, ford, chevrolet, nissan, mitsubishi, renault, dongfeng] = brands;
+  const [toyota, ford, chevrolet, nissan, mitsubishi, renault, dongfeng] =
+    brands;
 
   // --- LINES ---
   console.log('   Creando lines...');
@@ -355,7 +354,25 @@ async function main() {
       },
     }),
   ]);
-  const [hilux, landCruiser, , ranger, , , dmax, colorado, , , frontier, , l200, , duster, oroch, rich6ev] = lines;
+  const [
+    hilux,
+    landCruiser,
+    ,
+    ranger,
+    ,
+    ,
+    dmax,
+    colorado,
+    ,
+    ,
+    frontier,
+    ,
+    l200,
+    ,
+    duster,
+    oroch,
+    rich6ev,
+  ] = lines;
 
   // --- TYPES ---
   console.log('   Creando types...');
@@ -1120,7 +1137,7 @@ async function main() {
     pRenHabitaculo,
     pRenCorrea,
     pDfReductor,
-    pEvCoolant
+    pEvCoolant,
   ] = parts;
   console.log(`   ${parts.length} master parts creados`);
 
@@ -1912,8 +1929,20 @@ async function main() {
       estimatedTime: 2.0,
       priority: 'MEDIUM',
       items: [
-        { mantItemId: iCambioAceite.id, triggerKm: 10000, estimatedTime: 0.5, order: 1, priority: 'MEDIUM' },
-        { mantItemId: iFiltroAceite.id, triggerKm: 10000, estimatedTime: 0.2, order: 2, priority: 'MEDIUM' },
+        {
+          mantItemId: iCambioAceite.id,
+          triggerKm: 10000,
+          estimatedTime: 0.5,
+          order: 1,
+          priority: 'MEDIUM',
+        },
+        {
+          mantItemId: iFiltroAceite.id,
+          triggerKm: 10000,
+          estimatedTime: 0.2,
+          order: 2,
+          priority: 'MEDIUM',
+        },
       ],
     },
     {
@@ -1923,10 +1952,34 @@ async function main() {
       estimatedTime: 2.5,
       priority: 'MEDIUM',
       items: [
-        { mantItemId: iCambioAceite.id, triggerKm: 20000, estimatedTime: 0.5, order: 1, priority: 'MEDIUM' },
-        { mantItemId: iFiltroAceite.id, triggerKm: 20000, estimatedTime: 0.2, order: 2, priority: 'MEDIUM' },
-        { mantItemId: iFiltroAire.id, triggerKm: 20000, estimatedTime: 0.2, order: 3, priority: 'MEDIUM' },
-        { mantItemId: iFiltroHabitaculo.id, triggerKm: 20000, estimatedTime: 0.3, order: 4, priority: 'MEDIUM' },
+        {
+          mantItemId: iCambioAceite.id,
+          triggerKm: 20000,
+          estimatedTime: 0.5,
+          order: 1,
+          priority: 'MEDIUM',
+        },
+        {
+          mantItemId: iFiltroAceite.id,
+          triggerKm: 20000,
+          estimatedTime: 0.2,
+          order: 2,
+          priority: 'MEDIUM',
+        },
+        {
+          mantItemId: iFiltroAire.id,
+          triggerKm: 20000,
+          estimatedTime: 0.2,
+          order: 3,
+          priority: 'MEDIUM',
+        },
+        {
+          mantItemId: iFiltroHabitaculo.id,
+          triggerKm: 20000,
+          estimatedTime: 0.3,
+          order: 4,
+          priority: 'MEDIUM',
+        },
       ],
     },
     {
@@ -1936,11 +1989,41 @@ async function main() {
       estimatedTime: 6.0,
       priority: 'HIGH',
       items: [
-        { mantItemId: iCambioAceite.id, triggerKm: 60000, estimatedTime: 0.5, order: 1, priority: 'MEDIUM' },
-        { mantItemId: iFiltroAceite.id, triggerKm: 60000, estimatedTime: 0.2, order: 2, priority: 'MEDIUM' },
-        { mantItemId: iFiltroAire.id, triggerKm: 60000, estimatedTime: 0.2, order: 3, priority: 'MEDIUM' },
-        { mantItemId: iFiltroHabitaculo.id, triggerKm: 60000, estimatedTime: 0.3, order: 4, priority: 'MEDIUM' },
-        { mantItemId: iCorreaAccesorios.id, triggerKm: 60000, estimatedTime: 1.0, order: 5, priority: 'HIGH' },
+        {
+          mantItemId: iCambioAceite.id,
+          triggerKm: 60000,
+          estimatedTime: 0.5,
+          order: 1,
+          priority: 'MEDIUM',
+        },
+        {
+          mantItemId: iFiltroAceite.id,
+          triggerKm: 60000,
+          estimatedTime: 0.2,
+          order: 2,
+          priority: 'MEDIUM',
+        },
+        {
+          mantItemId: iFiltroAire.id,
+          triggerKm: 60000,
+          estimatedTime: 0.2,
+          order: 3,
+          priority: 'MEDIUM',
+        },
+        {
+          mantItemId: iFiltroHabitaculo.id,
+          triggerKm: 60000,
+          estimatedTime: 0.3,
+          order: 4,
+          priority: 'MEDIUM',
+        },
+        {
+          mantItemId: iCorreaAccesorios.id,
+          triggerKm: 60000,
+          estimatedTime: 1.0,
+          order: 5,
+          priority: 'HIGH',
+        },
       ],
     },
   ]);
@@ -1966,8 +2049,20 @@ async function main() {
       estimatedTime: 1.5,
       priority: 'MEDIUM',
       items: [
-        { mantItemId: iInspAltaTension.id, triggerKm: 10000, estimatedTime: 0.8, order: 1, priority: 'HIGH' },
-        { mantItemId: iRotNeumaticos.id, triggerKm: 10000, estimatedTime: 0.7, order: 2, priority: 'MEDIUM' },
+        {
+          mantItemId: iInspAltaTension.id,
+          triggerKm: 10000,
+          estimatedTime: 0.8,
+          order: 1,
+          priority: 'HIGH',
+        },
+        {
+          mantItemId: iRotNeumaticos.id,
+          triggerKm: 10000,
+          estimatedTime: 0.7,
+          order: 2,
+          priority: 'MEDIUM',
+        },
       ],
     },
     {
@@ -1977,9 +2072,27 @@ async function main() {
       estimatedTime: 2.0,
       priority: 'MEDIUM',
       items: [
-        { mantItemId: iInspAltaTension.id, triggerKm: 20000, estimatedTime: 0.8, order: 1, priority: 'HIGH' },
-        { mantItemId: iRotNeumaticos.id, triggerKm: 20000, estimatedTime: 0.7, order: 2, priority: 'MEDIUM' },
-        { mantItemId: iFiltroHabitaculo.id, triggerKm: 20000, estimatedTime: 0.3, order: 3, priority: 'MEDIUM' },
+        {
+          mantItemId: iInspAltaTension.id,
+          triggerKm: 20000,
+          estimatedTime: 0.8,
+          order: 1,
+          priority: 'HIGH',
+        },
+        {
+          mantItemId: iRotNeumaticos.id,
+          triggerKm: 20000,
+          estimatedTime: 0.7,
+          order: 2,
+          priority: 'MEDIUM',
+        },
+        {
+          mantItemId: iFiltroHabitaculo.id,
+          triggerKm: 20000,
+          estimatedTime: 0.3,
+          order: 3,
+          priority: 'MEDIUM',
+        },
       ],
     },
     {
@@ -1989,10 +2102,34 @@ async function main() {
       estimatedTime: 3.0,
       priority: 'HIGH',
       items: [
-        { mantItemId: iInspAltaTension.id, triggerKm: 40000, estimatedTime: 0.8, order: 1, priority: 'HIGH' },
-        { mantItemId: iRotNeumaticos.id, triggerKm: 40000, estimatedTime: 0.7, order: 2, priority: 'MEDIUM' },
-        { mantItemId: iFiltroHabitaculo.id, triggerKm: 40000, estimatedTime: 0.3, order: 3, priority: 'MEDIUM' },
-        { mantItemId: iLiquidoFreno.id, triggerKm: 40000, estimatedTime: 1.0, order: 4, priority: 'HIGH' },
+        {
+          mantItemId: iInspAltaTension.id,
+          triggerKm: 40000,
+          estimatedTime: 0.8,
+          order: 1,
+          priority: 'HIGH',
+        },
+        {
+          mantItemId: iRotNeumaticos.id,
+          triggerKm: 40000,
+          estimatedTime: 0.7,
+          order: 2,
+          priority: 'MEDIUM',
+        },
+        {
+          mantItemId: iFiltroHabitaculo.id,
+          triggerKm: 40000,
+          estimatedTime: 0.3,
+          order: 3,
+          priority: 'MEDIUM',
+        },
+        {
+          mantItemId: iLiquidoFreno.id,
+          triggerKm: 40000,
+          estimatedTime: 1.0,
+          order: 4,
+          priority: 'HIGH',
+        },
       ],
     },
     {
@@ -2002,12 +2139,48 @@ async function main() {
       estimatedTime: 4.5,
       priority: 'HIGH',
       items: [
-        { mantItemId: iInspAltaTension.id, triggerKm: 60000, estimatedTime: 0.8, order: 1, priority: 'HIGH' },
-        { mantItemId: iRotNeumaticos.id, triggerKm: 60000, estimatedTime: 0.7, order: 2, priority: 'MEDIUM' },
-        { mantItemId: iFiltroHabitaculo.id, triggerKm: 60000, estimatedTime: 0.3, order: 3, priority: 'MEDIUM' },
-        { mantItemId: iLiquidoFreno.id, triggerKm: 60000, estimatedTime: 1.0, order: 4, priority: 'HIGH' },
-        { mantItemId: iAceiteReductorEV.id, triggerKm: 60000, estimatedTime: 1.0, order: 5, priority: 'HIGH' },
-        { mantItemId: iFlushRefriEV.id, triggerKm: 60000, estimatedTime: 1.5, order: 6, priority: 'HIGH' },
+        {
+          mantItemId: iInspAltaTension.id,
+          triggerKm: 60000,
+          estimatedTime: 0.8,
+          order: 1,
+          priority: 'HIGH',
+        },
+        {
+          mantItemId: iRotNeumaticos.id,
+          triggerKm: 60000,
+          estimatedTime: 0.7,
+          order: 2,
+          priority: 'MEDIUM',
+        },
+        {
+          mantItemId: iFiltroHabitaculo.id,
+          triggerKm: 60000,
+          estimatedTime: 0.3,
+          order: 3,
+          priority: 'MEDIUM',
+        },
+        {
+          mantItemId: iLiquidoFreno.id,
+          triggerKm: 60000,
+          estimatedTime: 1.0,
+          order: 4,
+          priority: 'HIGH',
+        },
+        {
+          mantItemId: iAceiteReductorEV.id,
+          triggerKm: 60000,
+          estimatedTime: 1.0,
+          order: 5,
+          priority: 'HIGH',
+        },
+        {
+          mantItemId: iFlushRefriEV.id,
+          triggerKm: 60000,
+          estimatedTime: 1.5,
+          order: 6,
+          priority: 'HIGH',
+        },
       ],
     },
   ]);
@@ -2315,7 +2488,7 @@ async function main() {
       lineId: rich6ev.id,
       masterPartId: pEvCoolant.id,
       qty: 2, // 2 Gallons
-    }
+    },
   ];
 
   await Promise.all(
@@ -2371,6 +2544,10 @@ async function main() {
   // ========================================
   // STEP 4: TENANT 1 - Transportes Demo SAS
   // ========================================
+  // ========================================
+  // STEP 4: CREATE DEMO TENANT 1
+  // ========================================
+  /*
   console.log('4. TENANT 1 - Transportes Demo SAS...\n');
 
   const tenant1 = await prisma.tenant.create({
@@ -2712,6 +2889,7 @@ async function main() {
 
   console.log(`\n   Tenant 1 "${tenant1.name}" COMPLETO.\n`);
 
+  /*
   // ========================================
   // STEP 5: TENANT 2 - HFD SA
   // ========================================
@@ -3023,6 +3201,7 @@ async function main() {
   console.log(`   ${t2InventoryData.length} items de inventario creados`);
 
   console.log(`\n   Tenant 2 "${tenant2.name}" COMPLETO.\n`);
+  */
 
   // Suppress unused variable warnings
   void ALL_TENANT_IDS;
@@ -3048,29 +3227,31 @@ async function main() {
   console.log('  - Fleet Care Platform');
   console.log('  - SUPER_ADMIN: grivarol69@gmail.com');
 
-  console.log('\nTENANT 1 - Transportes Demo SAS:');
+  /*
+  console.log('TENANT 1 - Transportes Demo SAS:');
   console.log('  - OWNER: grivarol69@gmail.com (Guillermo Rivarola)');
   console.log('  - MANAGER: guillerivar69@gmail.com (Andres Montaño)');
   console.log('  - MANAGER: grivarol1969@gmail.com (Brayan Saavedra)');
   console.log('  - DRIVER: dyaponter@gmail.com (Diana Aponte)');
-  console.log('  - 4 vehiculos (ABC-123, DEF-456, GHI-789, JKL-012)');
+  console.log('  - 4 vehiculos (ABC, DEF, GHI, JKL)');
   console.log('  - 3 proveedores, 2 tecnicos, 3 conductores');
-  console.log('  - 3 programas mantenimiento (GHI-789 con 20K PENDING)');
-  console.log(`  - ${t1InventoryData.length} items inventario`);
+  console.log('  - 3 programas mantenimiento');
+  console.log('  - 6 items inventario');
 
-  console.log('\nTENANT 2 - HFD SA:');
+  console.log('TENANT 2 - HFD SA:');
   console.log('  - OWNER: grivarol69@gmail.com (Guillermo Rivarola)');
   console.log('  - MANAGER: grivarol69driver@gmail.com (Yeison Montaño)');
   console.log('  - TECHNICIAN: grivarol1975@gmail.com (Josue Caro)');
-  console.log('  - 4 vehiculos (XYZ-111, XYZ-222, XYZ-333, XYZ-444)');
+  console.log('  - 4 vehiculos (XYZ1, XYZ2, XYZ3, XYZ4)');
   console.log('  - 3 proveedores, 2 tecnicos, 2 conductores');
-  console.log('  - 3 programas mantenimiento (XYZ-111 con 10K PENDING)');
-  console.log(`  - ${t2InventoryData.length} items inventario`);
+  console.log('  - 3 programas mantenimiento');
+  console.log('  - 6 items inventario');
 
-  console.log('\nAISLAMIENTO:');
-  console.log('  - Tenant 1 ve ABC-*/DEF-*/GHI-*/JKL-*, NO ve XYZ-*');
-  console.log('  - Tenant 2 ve XYZ-*, NO ve ABC-*/DEF-*/GHI-*/JKL-*');
-  console.log('  - Ambos ven KB global (marcas, lineas, items, templates)\n');
+  console.log('AISLAMIENTO:');
+  console.log('  - Tenant 1 ve ABC, DEF, GHI, JKL, NO ve XYZ');
+  console.log('  - Tenant 2 ve XYZ, NO ve ABC, DEF, GHI, JKL');
+  console.log('  - Ambos ven KB global (marcas, lineas, items, templates)');
+  */
 }
 
 main()

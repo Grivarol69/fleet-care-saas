@@ -9,13 +9,11 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Devolver líneas GLOBALES + del tenant (solo activas)
+    // Devolver solo líneas del tenant (isGlobal: false)
+    // Las globales se copian al tenant durante el onboarding (copy-kb-to-tenant)
     const lines = await prisma.vehicleLine.findMany({
       where: {
-        OR: [
-          { isGlobal: true }, // Líneas globales (Knowledge Base)
-          { tenantId: user.tenantId }, // Líneas custom del tenant
-        ],
+        tenantId: user.tenantId,
         status: 'ACTIVE',
       },
       orderBy: {

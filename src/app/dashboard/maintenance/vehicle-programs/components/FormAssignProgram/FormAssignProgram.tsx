@@ -230,8 +230,8 @@ export function FormAssignProgram({
                   <FormItem>
                     <FormLabel>Vehículo *</FormLabel>
                     <Select
-                      onValueChange={value => field.onChange(parseInt(value))}
-                      value={field.value ? field.value.toString() : ''}
+                      onValueChange={value => field.onChange(value)}
+                      value={field.value ?? ''}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -267,8 +267,9 @@ export function FormAssignProgram({
                     <FormItem>
                       <FormLabel>Template de Mantenimiento *</FormLabel>
                       <Select
-                        onValueChange={value => field.onChange(parseInt(value))}
-                        value={field.value ? field.value.toString() : ''}
+                        key={watchVehicleId}
+                        onValueChange={value => field.onChange(value)}
+                        value={field.value ?? ''}
                       >
                         <FormControl>
                           <SelectTrigger>

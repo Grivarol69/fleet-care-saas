@@ -15,8 +15,7 @@ export async function GET(request: Request) {
     const status = searchParams.get('status');
     const masterPartId = searchParams.get('masterPartId');
 
-    const whereClause: any = {
-      };
+    const whereClause: any = {};
 
     if (status) {
       whereClause.status = status;
@@ -95,6 +94,7 @@ export async function POST(request: Request) {
       // 1. Crear el Item de Inventario
       const newItem = await tx.inventoryItem.create({
         data: {
+          tenantId: user.tenantId,
           masterPartId,
           warehouse: warehouse || 'PRINCIPAL',
           location,
@@ -110,6 +110,7 @@ export async function POST(request: Request) {
       // 2. Registrar el Movimiento (INITIAL_STOCK o ADJUSTMENT_IN)
       await tx.inventoryMovement.create({
         data: {
+          tenantId: user.tenantId,
           inventoryItemId: newItem.id,
           movementType: 'ADJUSTMENT_IN', // Stock inicial se considera un ajuste de entrada
           quantity,

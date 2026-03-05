@@ -54,6 +54,7 @@ export async function POST(req: Request) {
       // 1. Create Invoice
       const invoice = await tx.invoice.create({
         data: {
+          tenantId: user.tenantId,
           invoiceNumber: body.invoiceNumber,
           supplierId: body.supplierId,
           invoiceDate: new Date(body.invoiceDate),
@@ -73,6 +74,7 @@ export async function POST(req: Request) {
         // 2.1 Create InvoiceItem
         await tx.invoiceItem.create({
           data: {
+            tenantId: user.tenantId,
             invoiceId: invoice.id,
             masterPartId: item.masterPartId,
             description: item.description,
@@ -88,10 +90,10 @@ export async function POST(req: Request) {
         // 2.2 Update Inventory (Stock Ingress)
         // Find existing inventory item or create
         let invItem = await tx.inventoryItem.findFirst({
-      where: {
-              masterPartId: item.masterPartId,
-              warehouse: 'PRINCIPAL', // Default warehouse
-            },
+          where: {
+            masterPartId: item.masterPartId,
+            warehouse: 'PRINCIPAL', // Default warehouse
+          },
         });
 
         let previousStock = 0;
@@ -121,6 +123,7 @@ export async function POST(req: Request) {
           // Create new
           invItem = await tx.inventoryItem.create({
             data: {
+              tenantId: user.tenantId,
               masterPartId: item.masterPartId,
               warehouse: 'PRINCIPAL',
               quantity: item.quantity,
@@ -133,6 +136,7 @@ export async function POST(req: Request) {
         // 2.3 Create Movement
         await tx.inventoryMovement.create({
           data: {
+            tenantId: user.tenantId,
             inventoryItemId: invItem.id,
             movementType: 'PURCHASE',
             quantity: item.quantity,
@@ -153,6 +157,7 @@ export async function POST(req: Request) {
         // 2.4 Update Price History (for Analytics)
         await tx.partPriceHistory.create({
           data: {
+            tenantId: user.tenantId,
             masterPartId: item.masterPartId,
             supplierId: body.supplierId,
             price: item.unitPrice,
@@ -172,6 +177,7 @@ export async function POST(req: Request) {
             // 10% tolerance
             await tx.financialAlert.create({
               data: {
+                tenantId: user.tenantId,
                 invoiceId: invoice.id,
                 masterPartId: item.masterPartId,
                 type: AlertType.PRICE_DEVIATION,

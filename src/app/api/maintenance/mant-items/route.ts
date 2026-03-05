@@ -15,13 +15,10 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const typeFilter = searchParams.get('type');
 
-    // Devolver items GLOBALES + del tenant
+    // Devolver solo items del tenant (las globales se copian en onboarding)
     const mantItems = await prisma.mantItem.findMany({
       where: {
-        OR: [
-          { isGlobal: true }, // Items globales (Knowledge Base)
-          { tenantId: user.tenantId }, // Items custom del tenant
-        ],
+        tenantId: user.tenantId,
         ...(typeFilter &&
           ['ACTION', 'PART', 'SERVICE'].includes(typeFilter) && {
             type: typeFilter as 'ACTION' | 'PART' | 'SERVICE',

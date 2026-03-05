@@ -9,13 +9,10 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Devolver tipos GLOBALES + del tenant (solo activos)
+    // Devolver solo tipos del tenant (los globales se copian en onboarding)
     const types = await prisma.vehicleType.findMany({
       where: {
-        OR: [
-          { isGlobal: true }, // Tipos globales (Knowledge Base)
-          { tenantId: user.tenantId }, // Tipos custom del tenant
-        ],
+        tenantId: user.tenantId,
         status: 'ACTIVE',
       },
       orderBy: {

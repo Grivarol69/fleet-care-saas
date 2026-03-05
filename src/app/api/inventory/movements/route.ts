@@ -139,6 +139,7 @@ export async function POST(request: Request) {
       // 4. Registrar Movimiento
       const movement = await tx.inventoryMovement.create({
         data: {
+          tenantId: user.tenantId,
           inventoryItemId,
           movementType: movementType as MovementType,
           quantity: qty,

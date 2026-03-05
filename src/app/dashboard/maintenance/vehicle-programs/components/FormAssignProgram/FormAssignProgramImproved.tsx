@@ -362,8 +362,8 @@ export function FormAssignProgramImproved({
                   <FormItem>
                     <FormLabel>Vehículo *</FormLabel>
                     <Select
-                      onValueChange={value => field.onChange(parseInt(value))}
-                      value={field.value ? field.value.toString() : ''}
+                      onValueChange={value => field.onChange(value)}
+                      value={field.value ?? ''}
                     >
                       <FormControl>
                         <SelectTrigger>

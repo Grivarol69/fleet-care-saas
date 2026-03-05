@@ -703,7 +703,7 @@ model MasterPart {
   tenantId String? // NULL = compartido globalmente, FK = específico del tenant
 
   // Identificación
-  code        String  @unique // "BOSCH-123", "SHELL-5W40-SYNT"
+  code        String // "BOSCH-123", "SHELL-5W40-SYNT"
   description String // "Filtro aceite motor BOSCH"
   category    String // "FILTROS", "ACEITES", "LUBRICANTES"
   subcategory String? // "FILTROS_ACEITE", "FILTROS_AIRE"
@@ -744,6 +744,7 @@ model MasterPart {
   workOrderItems       WorkOrderItem[]
   purchaseOrderItems   PurchaseOrderItem[]
 
+  @@unique([tenantId, code])
   @@index([category])
   @@index([tenantId])
   @@index([code])

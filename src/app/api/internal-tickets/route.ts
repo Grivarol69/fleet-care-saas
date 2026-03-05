@@ -11,7 +11,8 @@ import { canExecuteWorkOrders } from '@/lib/permissions';
 export async function GET(request: Request) {
   try {
     const { user, tenantPrisma } = await requireCurrentUser();
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!user)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { searchParams } = new URL(request.url);
     const workOrderId = searchParams.get('workOrderId');
@@ -108,6 +109,7 @@ export async function POST(request: Request) {
       // 2. Crear el Ticket Cabecera
       const ticket = await tx.internalWorkTicket.create({
         data: {
+          tenantId: user.tenantId,
           workOrderId,
           ticketNumber,
           ticketDate: ticketDate ? new Date(ticketDate) : new Date(),
@@ -175,6 +177,7 @@ export async function POST(request: Request) {
         // B. Registrar Movimiento de Inventario
         const movement = await tx.inventoryMovement.create({
           data: {
+            tenantId: user.tenantId,
             inventoryItemId: inventoryItem.id,
             movementType: MovementType.CONSUMPTION,
             quantity: qty,
@@ -193,6 +196,7 @@ export async function POST(request: Request) {
         // C. Crear TicketPartEntry referenciando el movimiento
         await tx.ticketPartEntry.create({
           data: {
+            tenantId: user.tenantId,
             ticketId: ticket.id,
             inventoryItemId: inventoryItem.id,
             quantity: qty,

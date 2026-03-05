@@ -9,13 +9,10 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Devolver categorías GLOBALES + del tenant
+    // Devolver solo categorías del tenant (las globales se copian en onboarding)
     const categories = await prisma.mantCategory.findMany({
       where: {
-        OR: [
-          { isGlobal: true }, // Categorías globales (Knowledge Base)
-          { tenantId: user.tenantId }, // Categorías custom del tenant
-        ],
+        tenantId: user.tenantId,
       },
       orderBy: {
         name: 'asc',

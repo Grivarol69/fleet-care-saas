@@ -10,13 +10,10 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Devolver templates GLOBALES + del tenant
+    // Devolver solo templates del tenant (los globales se copian en onboarding)
     const mantTemplates = await prisma.maintenanceTemplate.findMany({
       where: {
-        OR: [
-          { isGlobal: true }, // Templates globales (Knowledge Base)
-          { tenantId: user.tenantId }, // Templates custom del tenant
-        ],
+        tenantId: user.tenantId,
         status: 'ACTIVE',
       },
       include: {
@@ -132,11 +129,11 @@ export async function POST(req: Request) {
       targetTenant = user.tenantId;
     }
 
-    // Verificar que la marca existe (global o del tenant)
+    // Verificar que la marca existe en el tenant
     const brand = await prisma.vehicleBrand.findFirst({
       where: {
         id: vehicleBrandId,
-        OR: [{ isGlobal: true }, { tenantId: targetTenant }],
+        tenantId: targetTenant,
       },
     });
 
@@ -147,12 +144,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // Verificar que la línea existe (global o del tenant) y pertenece a la marca
+    // Verificar que la línea existe en el tenant y pertenece a la marca
     const line = await prisma.vehicleLine.findFirst({
       where: {
         id: vehicleLineId,
         brandId: vehicleBrandId,
-        OR: [{ isGlobal: true }, { tenantId: targetTenant }],
+        tenantId: targetTenant,
       },
     });
 

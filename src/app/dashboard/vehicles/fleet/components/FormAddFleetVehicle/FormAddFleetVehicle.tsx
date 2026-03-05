@@ -359,7 +359,7 @@ export function FormAddFleetVehicle({
                           type="number"
                           placeholder="0"
                           {...field}
-                          onChange={e => field.onChange(e.target.value)}
+                          onChange={e => field.onChange(Number(e.target.value))}
                           disabled={isLoading}
                         />
                       </FormControl>

@@ -10,13 +10,11 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Devolver marcas GLOBALES + del tenant (solo activas)
+    // Devolver solo marcas del tenant (isGlobal: false)
+    // Las globales se copian al tenant durante el onboarding (copy-kb-to-tenant)
     const brands = await prisma.vehicleBrand.findMany({
       where: {
-        OR: [
-          { isGlobal: true }, // Marcas globales (Knowledge Base)
-          { tenantId: user.tenantId }, // Marcas custom del tenant
-        ],
+        tenantId: user.tenantId,
         status: 'ACTIVE',
       },
       orderBy: {

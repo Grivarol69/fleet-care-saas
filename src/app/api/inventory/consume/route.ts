@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
 
     // Verificar que la OT existe y pertenece al tenant
     const workOrder = await tenantPrisma.workOrder.findUnique({
-      where: { id: workOrderId, },
+      where: { id: workOrderId },
     });
 
     if (!workOrder) {
@@ -133,6 +133,7 @@ export async function POST(request: NextRequest) {
         // 5. Crear InventoryMovement
         const movement = await tx.inventoryMovement.create({
           data: {
+            tenantId: user.tenantId,
             inventoryItemId: item.inventoryItemId,
             movementType: MovementType.CONSUMPTION,
             quantity: requestedQty,

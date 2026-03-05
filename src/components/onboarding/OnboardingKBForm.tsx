@@ -1,6 +1,12 @@
 'use client';
 
-import { useActionState, useState, useEffect, useRef } from 'react';
+import {
+  useActionState,
+  useState,
+  useEffect,
+  useRef,
+  startTransition,
+} from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { copyKnowledgeBaseToTenant } from '@/actions/copy-kb-to-tenant';
 import { getKBCounts, type TemplateOption } from '@/actions/get-kb-counts';
@@ -107,7 +113,7 @@ export function OnboardingKBForm({
     formData.append('maintenanceItems', String(data.maintenanceItems));
     formData.append('lineIds', JSON.stringify(data.lineIds));
     formData.append('tenantId', tenantId);
-    formAction(formData);
+    startTransition(() => formAction(formData));
   };
 
   const handleSkip = async () => {
@@ -123,7 +129,10 @@ export function OnboardingKBForm({
   const toggleLine = (lineId: string) => {
     const current = selectedLineIds || [];
     if (current.includes(lineId)) {
-      setValue('lineIds', current.filter((id) => id !== lineId));
+      setValue(
+        'lineIds',
+        current.filter(id => id !== lineId)
+      );
     } else {
       setValue('lineIds', [...current, lineId]);
     }
@@ -141,7 +150,13 @@ export function OnboardingKBForm({
   }
 
   const totalCounts = counts
-    ? counts.brands + counts.lines + counts.types + counts.categories + counts.items + counts.parts + counts.itemParts
+    ? counts.brands +
+      counts.lines +
+      counts.types +
+      counts.categories +
+      counts.items +
+      counts.parts +
+      counts.itemParts
     : 0;
 
   return (
@@ -169,7 +184,11 @@ export function OnboardingKBForm({
           </div>
         )}
 
-        <form id="kb-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form
+          id="kb-form"
+          onSubmit={handleSubmit(onSubmit)}
+          className="space-y-6"
+        >
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
               <Controller
@@ -183,12 +202,16 @@ export function OnboardingKBForm({
                   />
                 )}
               />
-              <Label htmlFor="vehicleMetadata" className="font-medium cursor-pointer">
+              <Label
+                htmlFor="vehicleMetadata"
+                className="font-medium cursor-pointer"
+              >
                 Marcas, Líneas y Tipos
               </Label>
               {counts && counts.brands > 0 && (
                 <span className="text-sm text-slate-500">
-                  (~{counts.brands} marcas, {counts.lines} líneas, {counts.types} tipos)
+                  (~{counts.brands} marcas, {counts.lines} líneas,{' '}
+                  {counts.types} tipos)
                 </span>
               )}
             </div>
@@ -205,12 +228,16 @@ export function OnboardingKBForm({
                   />
                 )}
               />
-              <Label htmlFor="maintenanceItems" className="font-medium cursor-pointer">
+              <Label
+                htmlFor="maintenanceItems"
+                className="font-medium cursor-pointer"
+              >
                 Items y Repuestos de Mantenimiento
               </Label>
               {counts && counts.categories > 0 && (
                 <span className="text-sm text-slate-500">
-                  (~{counts.categories} categorías, {counts.items} items, {counts.parts} repuestos sugeridos)
+                  (~{counts.categories} categorías, {counts.items} items,{' '}
+                  {counts.parts} repuestos sugeridos)
                 </span>
               )}
             </div>
@@ -222,10 +249,11 @@ export function OnboardingKBForm({
                 Planes de Mantenimiento por Línea
               </Label>
               <p className="text-xs text-slate-500">
-                Selecciona las líneas de vehículos para copiar sus planes de mantenimiento.
+                Selecciona las líneas de vehículos para copiar sus planes de
+                mantenimiento.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {counts.templates.map((template) => (
+                {counts.templates.map(template => (
                   <div
                     key={template.lineId}
                     className="flex items-center space-x-3 p-2 rounded-md hover:bg-slate-50 cursor-pointer"
@@ -233,16 +261,24 @@ export function OnboardingKBForm({
                   >
                     <Checkbox
                       id={`line-${template.lineId}`}
-                      checked={selectedLineIds?.includes(template.lineId) || false}
+                      checked={
+                        selectedLineIds?.includes(template.lineId) || false
+                      }
                       onCheckedChange={() => toggleLine(template.lineId)}
+                      onClick={e => e.stopPropagation()}
                     />
                     <Label
                       htmlFor={`line-${template.lineId}`}
                       className="cursor-pointer flex-1"
                     >
-                      <span className="font-medium">{template.brandName} {template.lineName}</span>
+                      <span className="font-medium">
+                        {template.brandName} {template.lineName}
+                      </span>
                       <span className="text-slate-500 text-sm ml-2">
-                        ({template.templateCount} plan{template.templateCount !== 1 ? 'es' : ''}, {template.packageCount} paquete{template.packageCount !== 1 ? 's' : ''})
+                        ({template.templateCount} plan
+                        {template.templateCount !== 1 ? 'es' : ''},{' '}
+                        {template.packageCount} paquete
+                        {template.packageCount !== 1 ? 's' : ''})
                       </span>
                     </Label>
                   </div>
@@ -267,11 +303,7 @@ export function OnboardingKBForm({
         >
           Continuar sin precargar
         </Button>
-        <Button
-          type="submit"
-          form="kb-form"
-          disabled={isPending || completing}
-        >
+        <Button type="submit" form="kb-form" disabled={isPending || completing}>
           {isPending || completing ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
