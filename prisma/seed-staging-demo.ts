@@ -84,7 +84,7 @@ async function checkAlreadySeeded(
   const alreadySeeded = count >= threshold;
   console.log(
     `[idempotency] ${model}: found ${count} records` +
-      (alreadySeeded ? ` — SKIPPING (>= threshold ${threshold})` : '')
+    (alreadySeeded ? ` — SKIPPING (>= threshold ${threshold})` : '')
   );
   return alreadySeeded;
 }
@@ -496,6 +496,8 @@ async function seedMasterParts(): Promise<Map<string, string>> {
           referencePrice: part.referencePrice,
           lastPriceUpdate: new Date(),
           isActive: true,
+          siigoTaxClassification: 'TAXED',
+          accountGroup: 101,
         },
         select: { id: true },
       });
@@ -533,40 +535,40 @@ interface SeedContext {
   };
   /** All ACTIVE vehicles for the tenant. */
   vehicles: {
-    id: number;
+    id: string;
     licensePlate: string;
     currentMileage: number;
   }[];
   /** All drivers for the tenant. */
   drivers: {
-    id: number;
+    id: string;
     name: string;
   }[];
   /** All technicians for the tenant. */
   technicians: {
-    id: number;
+    id: string;
     name: string;
     hourlyRate: import('@prisma/client').Prisma.Decimal | null;
   }[];
   /** All providers for the tenant. */
   providers: {
-    id: number;
+    id: string;
     name: string;
   }[];
   /** All MantCategories scoped to this tenant (own + globals with tenantId = null). */
   mantCategories: {
-    id: number;
+    id: string;
     name: string;
   }[];
   /** All MantItems scoped to this tenant (own + globals with tenantId = null). */
   mantItems: {
-    id: number;
+    id: string;
     name: string;
-    categoryId: number;
+    categoryId: string;
   }[];
   /** All MaintenanceTemplates available (isGlobal OR owned by tenant). */
   templates: {
-    id: number;
+    id: string;
     name: string;
   }[];
 }
@@ -585,7 +587,7 @@ async function resolveContext(tenantSlug: string): Promise<SeedContext> {
   if (!tenant) {
     throw new Error(
       `[resolveContext] Tenant with slug "${tenantSlug}" not found. ` +
-        'Run seed-multitenancy.ts first.'
+      'Run seed-multitenancy.ts first.'
     );
   }
 
@@ -602,7 +604,7 @@ async function resolveContext(tenantSlug: string): Promise<SeedContext> {
   if (!adminUser) {
     throw new Error(
       `[resolveContext] No OWNER or MANAGER user found for tenant "${tenant.name}". ` +
-        'Create at least one admin user before seeding.'
+      'Create at least one admin user before seeding.'
     );
   }
 
@@ -615,7 +617,7 @@ async function resolveContext(tenantSlug: string): Promise<SeedContext> {
   if (vehicleRows.length === 0) {
     throw new Error(
       `[resolveContext] No ACTIVE vehicles found for tenant "${tenant.name}". ` +
-        'Seed vehicles before running the demo seed.'
+      'Seed vehicles before running the demo seed.'
     );
   }
   const vehicles = vehicleRows.map(v => ({
@@ -674,10 +676,10 @@ async function resolveContext(tenantSlug: string): Promise<SeedContext> {
 
   console.log(
     `[resolveContext] Resolved context for tenant "${tenant.name}": ` +
-      `${vehicles.length} vehicles, ${drivers.length} drivers, ` +
-      `${technicians.length} technicians, ${providers.length} providers, ` +
-      `${mantCategories.length} mantCategories, ${mantItems.length} mantItems, ` +
-      `${templates.length} templates`
+    `${vehicles.length} vehicles, ${drivers.length} drivers, ` +
+    `${technicians.length} technicians, ${providers.length} providers, ` +
+    `${mantCategories.length} mantCategories, ${mantItems.length} mantItems, ` +
+    `${templates.length} templates`
   );
 
   return {
@@ -702,8 +704,8 @@ async function resolveContext(tenantSlug: string): Promise<SeedContext> {
  * Used by downstream tasks (work orders, alerts) to link to the right records.
  */
 interface VehicleProgramContext {
-  vehicleId: number;
-  programId: number;
+  vehicleId: string;
+  programId: string;
   packageIds: string[];
   programItemIds: string[];
 }
@@ -797,14 +799,15 @@ async function resolveOrCreateVehiclePrograms(
 
     // Pick 3–5 MantItems (deterministic: based on vehicle id mod length)
     const itemCount = availableItems.length;
-    const demoItemIds: number[] = [];
+    const demoItemIds: string[] = [];
     const usedIndexes = new Set<number>();
 
     if (itemCount > 0) {
       // Pick up to 5 distinct items using modulo-based deterministic selection
       const wantCount = Math.min(5, itemCount);
       for (let i = 0; i < wantCount; i++) {
-        let idx = (vehicle.id * 7 + i * 3) % itemCount;
+        let hash = vehicle.id.charCodeAt(0) + vehicle.id.charCodeAt(vehicle.id.length - 1);
+        let idx = (hash * 7 + i * 3) % itemCount;
         // Avoid duplicates — walk forward until a free slot is found
         let attempts = 0;
         while (usedIndexes.has(idx) && attempts < itemCount) {
@@ -816,7 +819,7 @@ async function resolveOrCreateVehiclePrograms(
           // availableItems is guaranteed non-empty here (itemCount > 0)
           const item = availableItems[idx];
           if (item !== undefined) {
-            demoItemIds.push(item.id);
+            demoItemIds.push(String(item.id));
           }
         }
       }
@@ -831,7 +834,7 @@ async function resolveOrCreateVehiclePrograms(
         data: {
           tenantId: ctx.tenant.id,
           packageId: demoPkg.id,
-          mantItemId,
+          mantItemId: String(mantItemId),
           mantType: 'PREVENTIVE',
           priority: 'MEDIUM',
           order,
@@ -853,7 +856,7 @@ async function resolveOrCreateVehiclePrograms(
 
   console.log(
     `[resolveOrCreateVehiclePrograms] Vehicle programs: ` +
-      `${foundExisting} found existing, ${createdNew} created new`
+    `${foundExisting} found existing, ${createdNew} created new`
   );
 
   return results;
@@ -927,7 +930,7 @@ async function seedOdometerLogs(ctx: SeedContext): Promise<void> {
       const useDriver = i % 2 === 0;
 
       // Pick driver or leave null (for technician-recorded logs)
-      let driverId: number | null = null;
+      let driverId: string | null = null;
       if (useDriver && ctx.drivers.length > 0) {
         const driverIdx = i % ctx.drivers.length;
         const driver = ctx.drivers[driverIdx];
@@ -1215,8 +1218,7 @@ async function seedWorkOrderItems(
     const woId = workOrderIds[woIdx];
     if (woId === undefined) continue;
 
-    const workOrderId = parseInt(woId, 10);
-    if (isNaN(workOrderId)) continue;
+    const workOrderId = woId;
 
     // 2–4 items per WO
     const itemCount = 2 + (woIdx % 3); // 2, 3, or 4
@@ -1318,7 +1320,7 @@ async function seedWorkOrderExpenses(
   const completedWOs = await prisma.workOrder.findMany({
     where: {
       id: {
-        in: workOrderIds.map(id => parseInt(id, 10)).filter(n => !isNaN(n)),
+        in: workOrderIds,
       },
       status: 'COMPLETED',
     },
@@ -1444,7 +1446,7 @@ async function seedInvoices(
     // Fetch WorkOrderItems for this WO — needed to link InvoiceItems so the
     // financial dashboard can resolve InvoiceItem→WorkOrderItem→MantItem→Category
     const woItems = await prisma.workOrderItem.findMany({
-      where: { workOrderId: parseInt(woIdStr, 10) },
+      where: { workOrderId: woIdStr },
       select: { id: true, masterPartId: true },
     });
 
@@ -1498,7 +1500,7 @@ async function seedInvoices(
         invoiceDate,
         dueDate,
         supplierId: provider.id,
-        workOrderId: parseInt(woIdStr, 10),
+        workOrderId: woIdStr,
         subtotal,
         taxAmount,
         totalAmount,
@@ -1508,6 +1510,10 @@ async function seedInvoices(
         approvedBy: ctx.adminUser.id,
         approvedAt: invoiceDate,
         notes: `${SEED_MARKER} Factura demo OT #${woIdStr}`,
+        // Campos de Siigo Fase 1
+        siigoSyncStatus: 'SYNCED',
+        paymentMeanSiigo: 1,
+        siigoId: `SIIGO-${invoiceYear}-${idx + 1}`,
         items: { create: itemsCreate },
       },
     });
@@ -2108,7 +2114,7 @@ async function seedPurchaseOrders(
     await prisma.purchaseOrder.create({
       data: {
         tenantId: ctx.tenant.id,
-        workOrderId: woId,
+        workOrderId: woIdStr,
         orderNumber: `OC-2025-${String(idx + 1).padStart(6, '0')}`,
         type: 'PARTS',
         providerId: provider.id,
@@ -2171,7 +2177,7 @@ async function seedInternalTickets(
     // Use WOs from the second half to avoid clashing with POs
     const woIdStr =
       workOrderIds[
-        (idx + Math.floor(workOrderIds.length / 2)) % workOrderIds.length
+      (idx + Math.floor(workOrderIds.length / 2)) % workOrderIds.length
       ]!;
     const woId = parseInt(woIdStr, 10);
     const technician = ctx.technicians[idx % ctx.technicians.length]!;
@@ -2189,7 +2195,7 @@ async function seedInternalTickets(
     const ticket = await prisma.internalWorkTicket.create({
       data: {
         tenantId: ctx.tenant.id,
-        workOrderId: woId,
+        workOrderId: woIdStr,
         ticketNumber: `TKT-2025-${String(idx + 1).padStart(4, '0')}`,
         ticketDate: generateDateInRange(DATE_START, DATE_END),
         technicianId: technician.id,

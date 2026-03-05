@@ -25,6 +25,7 @@ import { PATCH as PATCH_WORK_ORDER } from '@/app/api/maintenance/work-orders/[id
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn(),
+  requireCurrentUser: vi.fn(),
   isSuperAdmin: vi.fn().mockResolvedValue(false),
 }));
 

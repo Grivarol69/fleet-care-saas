@@ -1,7 +1,8 @@
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { canManageProviders } from '@/lib/permissions';
+
+export const maxDuration = 60;
 
 // GET - Obtener proveedor específico por ID
 export async function GET(
@@ -10,10 +11,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const providerId = id;
@@ -24,10 +24,9 @@ export async function GET(
       );
     }
 
-    const provider = await prisma.provider.findUnique({
+    const provider = await tenantPrisma.provider.findUnique({
       where: {
         id: providerId,
-        tenantId: user.tenantId,
       },
     });
 
@@ -55,10 +54,9 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManageProviders(user)) {
@@ -76,7 +74,10 @@ export async function PUT(
       );
     }
 
-    const { name, email, phone, address, specialty } = await req.json();
+    const {
+      name, email, phone, address, specialty,
+      nit, siigoIdType, siigoPersonType, stateCode, cityCode, fiscalResponsibilities, vatResponsible
+    } = await req.json();
 
     if (!name || name.trim() === '') {
       return NextResponse.json(
@@ -86,10 +87,9 @@ export async function PUT(
     }
 
     // Verificar que el proveedor existe
-    const existingProvider = await prisma.provider.findUnique({
+    const existingProvider = await tenantPrisma.provider.findUnique({
       where: {
         id: providerId,
-        tenantId: user.tenantId,
       },
     });
 
@@ -101,9 +101,8 @@ export async function PUT(
     }
 
     // Verificar duplicados
-    const duplicateProvider = await prisma.provider.findFirst({
+    const duplicateProvider = await tenantPrisma.provider.findFirst({
       where: {
-        tenantId: user.tenantId,
         name: name.trim(),
         id: {
           not: providerId,
@@ -118,10 +117,9 @@ export async function PUT(
       );
     }
 
-    const updatedProvider = await prisma.provider.update({
+    const updatedProvider = await tenantPrisma.provider.update({
       where: {
         id: providerId,
-        tenantId: user.tenantId,
       },
       data: {
         name: name.trim(),
@@ -129,7 +127,20 @@ export async function PUT(
         phone: phone?.trim() || null,
         address: address?.trim() || null,
         specialty: specialty?.trim() || null,
+        nit: nit?.trim() || null,
+        siigoIdType: siigoIdType || null,
+        siigoPersonType: siigoPersonType || null,
+        stateCode: stateCode?.trim() || null,
+        cityCode: cityCode?.trim() || null,
+        fiscalResponsibilities: Array.isArray(fiscalResponsibilities) ? fiscalResponsibilities : [],
+        vatResponsible: vatResponsible !== undefined ? vatResponsible : null,
       },
+    });
+
+    const { after } = await import('next/server');
+    after(async () => {
+      const { SiigoSyncService } = await import('@/lib/services/siigo');
+      await SiigoSyncService.syncProvider(providerId, user.tenantId);
     });
 
     return NextResponse.json(updatedProvider);
@@ -149,10 +160,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManageProviders(user)) {
@@ -170,10 +180,9 @@ export async function DELETE(
       );
     }
 
-    const existingProvider = await prisma.provider.findUnique({
+    const existingProvider = await tenantPrisma.provider.findUnique({
       where: {
         id: providerId,
-        tenantId: user.tenantId,
       },
     });
 
@@ -185,10 +194,9 @@ export async function DELETE(
     }
 
     // Soft delete - cambiar status a INACTIVE
-    await prisma.provider.update({
+    await tenantPrisma.provider.update({
       where: {
         id: providerId,
-        tenantId: user.tenantId,
       },
       data: {
         status: 'INACTIVE',

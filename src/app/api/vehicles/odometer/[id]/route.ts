@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { requireManagementRole } from '@/lib/permissions';
 
 // GET - Fetch specific odometer log
@@ -9,9 +8,9 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const id = params.id;
@@ -20,12 +19,11 @@ export async function GET(
       return new NextResponse('Invalid ID', { status: 400 });
     }
 
-    const odometerLog = await prisma.odometerLog.findFirst({
+    const odometerLog = await tenantPrisma.odometerLog.findFirst({
       where: {
         id: id,
         vehicle: {
-          tenantId: user.tenantId,
-        },
+          },
       },
       include: {
         vehicle: {
@@ -56,9 +54,9 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     try {
@@ -81,12 +79,11 @@ export async function PUT(
       body;
 
     // Verify odometer log exists and belongs to tenant
-    const existingLog = await prisma.odometerLog.findFirst({
+    const existingLog = await tenantPrisma.odometerLog.findFirst({
       where: {
         id: id,
         vehicle: {
-          tenantId: user.tenantId,
-        },
+          },
       },
     });
 
@@ -95,11 +92,10 @@ export async function PUT(
     }
 
     // Validate vehicle belongs to tenant
-    const vehicle = await prisma.vehicle.findFirst({
+    const vehicle = await tenantPrisma.vehicle.findFirst({
       where: {
         id: vehicleId,
-        tenantId: user.tenantId,
-      },
+        },
     });
 
     if (!vehicle) {
@@ -110,11 +106,10 @@ export async function PUT(
 
     // Validate driver belongs to tenant (if provided)
     if (driverId) {
-      const driver = await prisma.driver.findFirst({
+      const driver = await tenantPrisma.driver.findFirst({
         where: {
           id: driverId,
-          tenantId: user.tenantId,
-        },
+          },
       });
 
       if (!driver) {
@@ -133,7 +128,7 @@ export async function PUT(
     }
 
     // Update odometer log
-    const updatedLog = await prisma.odometerLog.update({
+    const updatedLog = await tenantPrisma.odometerLog.update({
       where: { id: id },
       data: {
         vehicleId,
@@ -157,7 +152,7 @@ export async function PUT(
 
     // Update vehicle mileage if this is the latest reading
     if (measureType === 'KILOMETERS' && kilometers) {
-      const latestReading = await prisma.odometerLog.findFirst({
+      const latestReading = await tenantPrisma.odometerLog.findFirst({
         where: {
           vehicleId: vehicleId,
           measureType: 'KILOMETERS',
@@ -168,7 +163,7 @@ export async function PUT(
       });
 
       if (latestReading && latestReading.id === id) {
-        await prisma.vehicle.update({
+        await tenantPrisma.vehicle.update({
           where: { id: vehicleId },
           data: {
             mileage: kilometers,
@@ -192,9 +187,9 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     try {
@@ -213,12 +208,11 @@ export async function DELETE(
     }
 
     // Verify odometer log exists and belongs to tenant
-    const existingLog = await prisma.odometerLog.findFirst({
+    const existingLog = await tenantPrisma.odometerLog.findFirst({
       where: {
         id: id,
         vehicle: {
-          tenantId: user.tenantId,
-        },
+          },
       },
     });
 
@@ -227,13 +221,13 @@ export async function DELETE(
     }
 
     // Delete the log
-    await prisma.odometerLog.delete({
+    await tenantPrisma.odometerLog.delete({
       where: { id: id },
     });
 
     // Update vehicle mileage to the latest reading
     if (existingLog.measureType === 'KILOMETERS' && existingLog.kilometers) {
-      const latestReading = await prisma.odometerLog.findFirst({
+      const latestReading = await tenantPrisma.odometerLog.findFirst({
         where: {
           vehicleId: existingLog.vehicleId,
           measureType: 'KILOMETERS',
@@ -244,7 +238,7 @@ export async function DELETE(
       });
 
       if (latestReading && latestReading.kilometers) {
-        await prisma.vehicle.update({
+        await tenantPrisma.vehicle.update({
           where: { id: existingLog.vehicleId },
           data: {
             mileage: latestReading.kilometers,
@@ -254,7 +248,7 @@ export async function DELETE(
         });
       } else {
         // No more readings, reset to 0
-        await prisma.vehicle.update({
+        await tenantPrisma.vehicle.update({
           where: { id: existingLog.vehicleId },
           data: {
             mileage: 0,

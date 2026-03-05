@@ -19,6 +19,7 @@ import {
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn(),
+  requireCurrentUser: vi.fn(),
   isSuperAdmin: vi.fn().mockResolvedValue(false),
 }));
 

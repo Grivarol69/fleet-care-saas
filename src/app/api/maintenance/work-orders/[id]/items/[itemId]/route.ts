@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { requireCurrentUser } from '@/lib/auth';
 import { ItemSource, ItemClosureType, WorkOrderStatus } from '@prisma/client';
 import { z } from 'zod';
 import { canExecuteWorkOrders } from '@/lib/permissions';
@@ -29,9 +28,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canExecuteWorkOrders(user)) {
@@ -63,7 +62,7 @@ export async function PATCH(
     const updates = validation.data;
 
     // Verificar que el item existe y pertenece al tenant
-    const existingItem = await prisma.workOrderItem.findUnique({
+    const existingItem = await tenantPrisma.workOrderItem.findUnique({
       where: { id: workOrderItemId },
       include: {
         workOrder: { select: { tenantId: true, id: true } },
@@ -121,7 +120,7 @@ export async function PATCH(
       updateData.totalCost = newPrice * newQty;
     }
 
-    const updatedItem = await prisma.workOrderItem.update({
+    const updatedItem = await tenantPrisma.workOrderItem.update({
       where: { id: workOrderItemId },
       data: updateData,
       include: {
@@ -140,13 +139,13 @@ export async function PATCH(
     // the WO status to PENDING_INVOICE (only if currently IN_PROGRESS).
     let woPendingInvoiceTriggered = false;
     if (updates.closureType !== undefined) {
-      const currentWO = await prisma.workOrder.findUnique({
+      const currentWO = await tenantPrisma.workOrder.findUnique({
         where: { id: workOrderId },
         select: { status: true },
       });
 
       if (currentWO?.status === 'IN_PROGRESS') {
-        const pendingCount = await prisma.workOrderItem.count({
+        const pendingCount = await tenantPrisma.workOrderItem.count({
           where: {
             workOrderId,
             closureType: ItemClosureType.PENDING,
@@ -155,7 +154,7 @@ export async function PATCH(
         });
 
         if (pendingCount === 0) {
-          await prisma.workOrder.update({
+          await tenantPrisma.workOrder.update({
             where: { id: workOrderId },
             data: { status: 'PENDING_INVOICE' },
           });
@@ -200,9 +199,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id, itemId } = await params;
@@ -214,7 +213,7 @@ export async function GET(
       return NextResponse.json({ error: 'IDs inválidos' }, { status: 400 });
     }
 
-    const item = await prisma.workOrderItem.findUnique({
+    const item = await tenantPrisma.workOrderItem.findUnique({
       where: { id: workOrderItemId },
       include: {
         workOrder: { select: { tenantId: true, id: true } },

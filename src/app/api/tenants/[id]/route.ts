@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { z } from 'zod';
 
 // Schema for tenant update validation
@@ -17,10 +16,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -33,7 +31,7 @@ export async function GET(
       );
     }
 
-    const tenant = await prisma.tenant.findUnique({
+    const tenant = await tenantPrisma.tenant.findUnique({
       where: { id },
       include: {
         _count: {
@@ -68,10 +66,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -108,7 +105,7 @@ export async function PUT(
 
     const { name, country, businessType, maxVehicles } = validation.data;
 
-    const tenant = await prisma.tenant.update({
+    const tenant = await tenantPrisma.tenant.update({
       where: { id },
       data: {
         ...(name && { name: name.trim() }),
@@ -137,10 +134,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -162,7 +158,7 @@ export async function DELETE(
     }
 
     // Verificar que no tenga usuarios o vehículos
-    const tenant = await prisma.tenant.findUnique({
+    const tenant = await tenantPrisma.tenant.findUnique({
       where: { id },
       include: {
         _count: {
@@ -191,7 +187,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.tenant.delete({
+    await tenantPrisma.tenant.delete({
       where: { id },
     });
 

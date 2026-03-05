@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
@@ -11,9 +11,9 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 export async function GET(req: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = req.nextUrl;
@@ -31,8 +31,8 @@ export async function GET(req: NextRequest) {
     }
 
     // Obtener datos del vehículo
-    const vehicle = await prisma.vehicle.findFirst({
-      where: { id: vehicleId, tenantId: user.tenantId },
+    const vehicle = await tenantPrisma.vehicle.findFirst({
+      where: { id: vehicleId, },
       select: { brandId: true, lineId: true, year: true },
     });
 

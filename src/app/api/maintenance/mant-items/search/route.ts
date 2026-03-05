@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { requireCurrentUser } from '@/lib/auth';
 import { Prisma } from '@prisma/client';
 
 /**
@@ -9,9 +8,9 @@ import { Prisma } from '@prisma/client';
  */
 export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -31,7 +30,7 @@ export async function GET(request: NextRequest) {
       where.type = type as 'ACTION' | 'PART' | 'SERVICE';
     }
 
-    const items = await prisma.mantItem.findMany({
+    const items = await tenantPrisma.mantItem.findMany({
       where,
       include: {
         category: {

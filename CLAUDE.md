@@ -1,5 +1,40 @@
 # CLAUDE.md
 
+---
+
+## ⚠️ REGLAS DE ESTILO DE CÓDIGO — OBLIGATORIAS PARA TODO AGENTE
+
+Estas reglas aplican a **todo código generado** en este proyecto, sin excepción.
+
+### ❌ PROHIBIDO — Patrones antiguos que NO deben usarse
+
+1. **NO usar `class` para servicios, repositorios o lógica de negocio**
+   - ❌ `export class SiigoSyncService { static async syncProvider(...) }`
+   - ✅ `export async function syncProvider(...)`
+   - ❌ `export class FinancialWatchdogService { ... }` ← ya existe, NO replicar este patrón
+   - Excepción permitida: solo si una librería externa lo requiere explícitamente (ej: `extends Error` mínimo)
+
+2. **NO usar jerarquía de clases de error (`extends Error`)**
+   - ❌ `class SiigoAuthError extends SiigoApiError {}`
+   - ✅ Discriminated union + `throwSiigoError(error: SiigoError): never`
+
+3. **NO usar `React.Component` ni class components en UI**
+   - Todo componente: function component con hooks
+
+4. **NO usar `enum` de TypeScript** (genera JS extra innecesario)
+   - ❌ `enum Status { ACTIVE, INACTIVE }`
+   - ✅ `const STATUS = { ACTIVE: 'ACTIVE', INACTIVE: 'INACTIVE' } as const`
+   - Excepción: enums de Prisma schema (`.prisma` file) — esos sí se usan
+
+### ✅ PATRONES APROBADOS
+
+- **Servicios**: funciones exportadas directamente o factory functions (closures)
+- **Errores**: `type SiigoError = { kind: 'auth' | 'rate_limit' | ...; message: string; ... }` + `throwSiigoError(): never`
+- **API clients con estado (ej: token cache)**: factory function → `createSiigoClient(tenantId, config)` retorna objeto plano con métodos
+- **Componentes**: function components, hooks, Server Components donde aplique
+
+---
+
 # Agent Teams Lite — Orchestrator Instructions
 
 Add this section to your existing `~/.claude/CLAUDE.md` or project-level `CLAUDE.md`.
@@ -47,6 +82,7 @@ You are the ORCHESTRATOR for Spec-Driven Development. You coordinate the SDD wor
 | `/sdd:continue [change-name]` | Create next artifact in dependency chain    |
 | `/sdd:ff [change-name]`       | Fast-forward: create all planning artifacts |
 | `/sdd:apply [change-name]`    | Implement tasks                             |
+| `/sdd:review [change-name]`   | Review implementation                       |
 | `/sdd:verify [change-name]`   | Validate implementation                     |
 | `/sdd:archive [change-name]`  | Sync specs + archive                        |
 
@@ -60,6 +96,7 @@ You are the ORCHESTRATOR for Spec-Driven Development. You coordinate the SDD wor
 | `/sdd:continue` | Next needed from: sdd-spec, sdd-design, sdd-tasks | Check dependency graph below            |
 | `/sdd:ff`       | sdd-propose → sdd-spec → sdd-design → sdd-tasks   | All four in sequence                    |
 | `/sdd:apply`    | sdd-apply                                         | `~/.claude/skills/sdd-apply/SKILL.md`   |
+| `/sdd:review`   | sdd-reviewer                                      | `~/.claude/skills/sdd-reviewer/SKILL.md`|
 | `/sdd:verify`   | sdd-verify                                        | `~/.claude/skills/sdd-verify/SKILL.md`  |
 | `/sdd:archive`  | sdd-archive                                       | `~/.claude/skills/sdd-archive/SKILL.md` |
 
@@ -72,6 +109,7 @@ You are the ORCHESTRATOR for Spec-Driven Development. You coordinate the SDD wor
 - `sdd-design/SKILL.md` — Technical design
 - `sdd-tasks/SKILL.md` — Task breakdown
 - `sdd-apply/SKILL.md` — Implement code
+- `sdd-reviewer/SKILL.md` — Review implementation
 - `sdd-verify/SKILL.md` — Validate implementation
 - `sdd-archive/SKILL.md` — Archive change
 
@@ -112,7 +150,7 @@ Task(
 ### Dependency Graph
 
 ```
-proposal → specs ──→ tasks → apply → verify → archive
+proposal → specs ──→ tasks → apply → review → verify → archive
               ↕
            design
 ```

@@ -1,5 +1,4 @@
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { canManageVehicles } from '@/lib/permissions';
 
@@ -10,10 +9,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const driverId = id;
@@ -24,11 +22,10 @@ export async function GET(
       );
     }
 
-    const driver = await prisma.driver.findUnique({
+    const driver = await tenantPrisma.driver.findUnique({
       where: {
         id: driverId,
-        tenantId: user.tenantId,
-      },
+        },
     });
 
     if (!driver) {
@@ -55,10 +52,9 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManageVehicles(user)) {
@@ -87,11 +83,10 @@ export async function PUT(
     }
 
     // Verificar que el conductor existe
-    const existingDriver = await prisma.driver.findUnique({
+    const existingDriver = await tenantPrisma.driver.findUnique({
       where: {
         id: driverId,
-        tenantId: user.tenantId,
-      },
+        },
     });
 
     if (!existingDriver) {
@@ -103,9 +98,8 @@ export async function PUT(
 
     // Verificar duplicado de licencia (si se proporciona y es diferente)
     if (licenseNumber && licenseNumber.trim() !== '') {
-      const duplicateDriverWithLicense = await prisma.driver.findFirst({
+      const duplicateDriverWithLicense = await tenantPrisma.driver.findFirst({
         where: {
-          tenantId: user.tenantId,
           licenseNumber: licenseNumber.trim(),
           id: {
             not: driverId,
@@ -121,11 +115,10 @@ export async function PUT(
       }
     }
 
-    const updatedDriver = await prisma.driver.update({
+    const updatedDriver = await tenantPrisma.driver.update({
       where: {
         id: driverId,
-        tenantId: user.tenantId,
-      },
+        },
       data: {
         name: name.trim(),
         email: email?.trim() || null,
@@ -152,10 +145,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManageVehicles(user)) {
@@ -173,11 +165,10 @@ export async function DELETE(
       );
     }
 
-    const existingDriver = await prisma.driver.findUnique({
+    const existingDriver = await tenantPrisma.driver.findUnique({
       where: {
         id: driverId,
-        tenantId: user.tenantId,
-      },
+        },
     });
 
     if (!existingDriver) {
@@ -188,11 +179,10 @@ export async function DELETE(
     }
 
     // Soft delete - cambiar status a INACTIVE
-    await prisma.driver.update({
+    await tenantPrisma.driver.update({
       where: {
         id: driverId,
-        tenantId: user.tenantId,
-      },
+        },
       data: {
         status: 'INACTIVE',
       },

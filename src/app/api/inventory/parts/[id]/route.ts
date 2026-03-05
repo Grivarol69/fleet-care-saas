@@ -1,8 +1,9 @@
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { canManagePurchases, isSuperAdmin } from '@/lib/permissions';
+
+export const maxDuration = 60;
 
 const updateMasterPartSchema = z.object({
   code: z.string().min(1).optional(),
@@ -12,6 +13,9 @@ const updateMasterPartSchema = z.object({
   unit: z.string().min(1).optional(),
   referencePrice: z.number().min(0).optional().nullable(),
   isActive: z.boolean().optional(),
+  accountGroup: z.number().int().optional().nullable(),
+  siigoTaxClassification: z.enum(['TAXED', 'EXEMPT', 'EXCLUDED']).optional().nullable(),
+  siigoUnit: z.number().int().optional().nullable(),
 });
 
 export async function GET(
@@ -19,21 +23,21 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
 
-    const part = await prisma.masterPart.findFirst({
+    const part = await tenantPrisma.masterPart.findFirst({
       where: {
         id,
-        OR: [{ tenantId: null }, { tenantId: user.tenantId }],
+        OR: [{ tenantId: null }, {}],
       },
       include: {
         inventoryItems: {
-          where: { tenantId: user.tenantId },
+          where: {},
         },
       },
     });
@@ -60,9 +64,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManagePurchases(user)) {
@@ -74,7 +78,7 @@ export async function PATCH(
 
     const { id } = await params;
 
-    const existing = await prisma.masterPart.findUnique({ where: { id } });
+    const existing = await tenantPrisma.masterPart.findUnique({ where: { id } });
 
     if (!existing) {
       return NextResponse.json(
@@ -113,11 +117,11 @@ export async function PATCH(
 
     // Check for code collision if code is being changed
     if (data.code && data.code !== existing.code) {
-      const codeConflict = await prisma.masterPart.findFirst({
+      const codeConflict = await tenantPrisma.masterPart.findFirst({
         where: {
           code: data.code,
           id: { not: id },
-          OR: [{ tenantId: null }, { tenantId: user.tenantId }],
+          OR: [{ tenantId: null }, {}],
         },
       });
 
@@ -129,7 +133,7 @@ export async function PATCH(
       }
     }
 
-    const updated = await prisma.masterPart.update({
+    const updated = await tenantPrisma.masterPart.update({
       where: { id },
       data: {
         ...(data.code !== undefined && { code: data.code }),
@@ -146,7 +150,16 @@ export async function PATCH(
           lastPriceUpdate: new Date(),
         }),
         ...(data.isActive !== undefined && { isActive: data.isActive }),
+        ...(data.accountGroup !== undefined && { accountGroup: data.accountGroup }),
+        ...(data.siigoTaxClassification !== undefined && { siigoTaxClassification: data.siigoTaxClassification }),
+        ...(data.siigoUnit !== undefined && { siigoUnit: data.siigoUnit }),
       },
+    });
+
+    const { after } = await import('next/server');
+    after(async () => {
+      const { SiigoSyncService } = await import('@/lib/services/siigo');
+      await SiigoSyncService.syncPart(id, user.tenantId);
     });
 
     return NextResponse.json(updated);
@@ -164,9 +177,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManagePurchases(user)) {
@@ -178,7 +191,7 @@ export async function DELETE(
 
     const { id } = await params;
 
-    const existing = await prisma.masterPart.findUnique({ where: { id } });
+    const existing = await tenantPrisma.masterPart.findUnique({ where: { id } });
 
     if (!existing) {
       return NextResponse.json(
@@ -202,7 +215,7 @@ export async function DELETE(
     }
 
     // Soft delete: set isActive = false
-    const deactivated = await prisma.masterPart.update({
+    const deactivated = await tenantPrisma.masterPart.update({
       where: { id },
       data: { isActive: false },
     });

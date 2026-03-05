@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { requireMasterDataMutationPermission } from '@/lib/permissions';
 
@@ -9,10 +9,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -49,10 +48,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -97,7 +95,7 @@ export async function PUT(
     }
 
     // Verificar duplicados en el mismo scope
-    const duplicateCategory = await prisma.mantCategory.findFirst({
+    const duplicateCategory = await tenantPrisma.mantCategory.findFirst({
       where: {
         tenantId: existingCategory.tenantId,
         name: name.trim(),
@@ -112,7 +110,7 @@ export async function PUT(
       );
     }
 
-    const updatedCategory = await prisma.mantCategory.update({
+    const updatedCategory = await tenantPrisma.mantCategory.update({
       where: { id: categoryId },
       data: { name: name.trim() },
     });
@@ -130,10 +128,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -167,7 +164,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.mantCategory.delete({
+    await tenantPrisma.mantCategory.delete({
       where: { id: categoryId },
     });
 

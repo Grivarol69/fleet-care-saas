@@ -13,6 +13,7 @@ import {
   Package,
   ShoppingCart,
   BookOpen,
+  Plug2,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -58,6 +59,12 @@ export const dataAdminSidebar: SidebarItem[] = [
         label: 'Sucursales',
         href: '/dashboard/empresa/sucursales',
         roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
+      },
+      {
+        label: 'Integraciones',
+        icon: Plug2,
+        href: '/dashboard/empresa/integraciones/siigo',
+        roles: [UserRole.OWNER, UserRole.MANAGER],
       },
     ],
   },

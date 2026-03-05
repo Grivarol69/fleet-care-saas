@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { FinancialWatchdogService } from '@/lib/services/FinancialWatchdogService';
 import { z } from 'zod';
 import { canExecuteWorkOrders } from '@/lib/permissions';
@@ -29,9 +28,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canExecuteWorkOrders(user)) {
@@ -50,17 +49,16 @@ export async function POST(
     }
 
     // 0. Verify the WorkOrder belongs to this tenant
-    const workOrder = await prisma.workOrder.findUnique({
-      where: { id: workOrderId, tenantId: user.tenantId },
+    const workOrder = await tenantPrisma.workOrder.findUnique({
+      where: { id: workOrderId, },
     });
     if (!workOrder) {
       return new NextResponse('Not Found', { status: 404 });
     }
 
     // 1. Create the Expense
-    const expense = await prisma.workOrderExpense.create({
+    const expense = await tenantPrisma.workOrderExpense.create({
       data: {
-        tenantId: user.tenantId,
         workOrderId,
         description: body.description,
         expenseType: body.expenseType,
@@ -108,9 +106,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -120,14 +118,14 @@ export async function GET(
     }
 
     // Verify the WorkOrder belongs to this tenant before exposing its expenses
-    const workOrder = await prisma.workOrder.findUnique({
-      where: { id: workOrderId, tenantId: user.tenantId },
+    const workOrder = await tenantPrisma.workOrder.findUnique({
+      where: { id: workOrderId, },
     });
     if (!workOrder) {
       return new NextResponse('Not Found', { status: 404 });
     }
 
-    const expenses = await prisma.workOrderExpense.findMany({
+    const expenses = await tenantPrisma.workOrderExpense.findMany({
       where: { workOrderId },
       include: {
         provider: true,

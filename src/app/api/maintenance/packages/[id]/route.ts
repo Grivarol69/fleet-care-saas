@@ -1,7 +1,6 @@
-import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { canManageMaintenancePrograms } from '@/lib/permissions';
 
 export async function GET(
@@ -9,19 +8,18 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
 
-    const package_ = await prisma.maintenancePackage.findFirst({
+    const package_ = await tenantPrisma.maintenancePackage.findFirst({
       where: {
         id,
         template: {
-          tenantId: user.tenantId,
-        },
+          },
       },
       include: {
         packageItems: {
@@ -68,7 +66,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -93,12 +91,11 @@ export async function PUT(
     } = body;
 
     // Verificar que el paquete existe y pertenece al tenant
-    const existingPackage = await prisma.maintenancePackage.findFirst({
+    const existingPackage = await tenantPrisma.maintenancePackage.findFirst({
       where: {
         id,
         template: {
-          tenantId: user.tenantId,
-        },
+          },
       },
     });
 
@@ -108,7 +105,7 @@ export async function PUT(
 
     // Si se está cambiando el triggerKm, verificar que no exista otro con el mismo km
     if (triggerKm && triggerKm !== existingPackage.triggerKm) {
-      const duplicatePackage = await prisma.maintenancePackage.findFirst({
+      const duplicatePackage = await tenantPrisma.maintenancePackage.findFirst({
         where: {
           templateId: existingPackage.templateId,
           triggerKm: triggerKm,
@@ -127,7 +124,7 @@ export async function PUT(
       }
     }
 
-    const updatedPackage = await prisma.maintenancePackage.update({
+    const updatedPackage = await tenantPrisma.maintenancePackage.update({
       where: { id },
       data: {
         name: name || existingPackage.name,
@@ -170,7 +167,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -185,12 +182,11 @@ export async function DELETE(
     const { id } = await params;
 
     // Verificar que el paquete existe y pertenece al tenant
-    const existingPackage = await prisma.maintenancePackage.findFirst({
+    const existingPackage = await tenantPrisma.maintenancePackage.findFirst({
       where: {
         id,
         template: {
-          tenantId: user.tenantId,
-        },
+          },
       },
     });
 
@@ -199,7 +195,7 @@ export async function DELETE(
     }
 
     // Verificar si hay VehicleProgramPackages que referencian este package por nombre
-    const vehicleProgramPackages = await prisma.vehicleProgramPackage.findFirst(
+    const vehicleProgramPackages = await tenantPrisma.vehicleProgramPackage.findFirst(
       {
         where: {
           name: existingPackage.name,
@@ -218,7 +214,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.maintenancePackage.delete({
+    await tenantPrisma.maintenancePackage.delete({
       where: { id },
     });
 

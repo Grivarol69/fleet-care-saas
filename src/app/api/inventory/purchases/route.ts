@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { z } from 'zod';
 import { AlertType, AlertLevel, AlertStatus } from '@prisma/client';
 import { canManagePurchases } from '@/lib/permissions';
@@ -23,9 +22,9 @@ const purchaseSchema = z.object({
 
 export async function POST(req: Request) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManagePurchases(user)) {
@@ -51,11 +50,10 @@ export async function POST(req: Request) {
     const totalAmount = subtotal + taxAmount;
 
     // Transaction: Invoice + Inventory Updates + Movements + Price History
-    const result = await prisma.$transaction(async tx => {
+    const result = await tenantPrisma.$transaction(async tx => {
       // 1. Create Invoice
       const invoice = await tx.invoice.create({
         data: {
-          tenantId: user.tenantId,
           invoiceNumber: body.invoiceNumber,
           supplierId: body.supplierId,
           invoiceDate: new Date(body.invoiceDate),
@@ -75,7 +73,6 @@ export async function POST(req: Request) {
         // 2.1 Create InvoiceItem
         await tx.invoiceItem.create({
           data: {
-            tenantId: user.tenantId,
             invoiceId: invoice.id,
             masterPartId: item.masterPartId,
             description: item.description,
@@ -90,14 +87,11 @@ export async function POST(req: Request) {
 
         // 2.2 Update Inventory (Stock Ingress)
         // Find existing inventory item or create
-        let invItem = await tx.inventoryItem.findUnique({
-          where: {
-            tenantId_masterPartId_warehouse: {
-              tenantId: user.tenantId,
+        let invItem = await tx.inventoryItem.findFirst({
+      where: {
               masterPartId: item.masterPartId,
               warehouse: 'PRINCIPAL', // Default warehouse
             },
-          },
         });
 
         let previousStock = 0;
@@ -127,7 +121,6 @@ export async function POST(req: Request) {
           // Create new
           invItem = await tx.inventoryItem.create({
             data: {
-              tenantId: user.tenantId,
               masterPartId: item.masterPartId,
               warehouse: 'PRINCIPAL',
               quantity: item.quantity,
@@ -140,7 +133,6 @@ export async function POST(req: Request) {
         // 2.3 Create Movement
         await tx.inventoryMovement.create({
           data: {
-            tenantId: user.tenantId,
             inventoryItemId: invItem.id,
             movementType: 'PURCHASE',
             quantity: item.quantity,
@@ -161,7 +153,6 @@ export async function POST(req: Request) {
         // 2.4 Update Price History (for Analytics)
         await tx.partPriceHistory.create({
           data: {
-            tenantId: user.tenantId,
             masterPartId: item.masterPartId,
             supplierId: body.supplierId,
             price: item.unitPrice,
@@ -181,7 +172,6 @@ export async function POST(req: Request) {
             // 10% tolerance
             await tx.financialAlert.create({
               data: {
-                tenantId: user.tenantId,
                 invoiceId: invoice.id,
                 masterPartId: item.masterPartId,
                 type: AlertType.PRICE_DEVIATION,

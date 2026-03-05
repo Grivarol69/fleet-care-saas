@@ -721,6 +721,13 @@ model MasterPart {
   alternativePart MasterPart?  @relation("Alternatives", fields: [alternativeFor], references: [id], onDelete: SetNull)
   alternatives    MasterPart[] @relation("Alternatives")
 
+  // ============ CAMPOS SIIGO (FASE contable) ============
+  siigoProductId         String?
+  accountGroup           Int?
+  siigoTaxClassification SiigoTaxClassification?
+  siigoUnit              Int?
+  siigoSyncedAt          DateTime?
+
   // Metadata
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -817,6 +824,14 @@ model Invoice {
   ocrConfidence  Decimal?  @db.Decimal(5, 2) // Promedio confianza 0-100
   ocrProcessedAt DateTime?
   needsReview    Boolean   @default(false) // true si confianza < 70%
+
+  // ============ CAMPOS SIIGO ============
+  siigoId          String?
+  siigoSyncStatus  SiigoSyncStatus?
+  siigoSyncedAt    DateTime?
+  siigoError       String?          @db.Text
+  paymentMeanSiigo Int?
+  siigoSyncedBy    String?
 
   // Metadata
   createdAt DateTime @default(now())
@@ -1100,8 +1115,20 @@ model Provider {
   address   String?
   specialty ProviderSpecialty?
   status    Status             @default(ACTIVE)
-  createdAt DateTime           @default(now())
-  updatedAt DateTime           @updatedAt
+
+  // ============ CAMPOS SIIGO / DIAN ============
+  nit                    String?
+  siigoIdType            SiigoIdType?
+  siigoPersonType        SiigoPersonType?
+  stateCode              String?
+  cityCode               String?
+  fiscalResponsibilities String[]
+  vatResponsible         Boolean?
+  siigoId                String?
+  siigoSyncedAt          DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   tenant                 Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   workOrders             WorkOrder[]
@@ -2003,4 +2030,34 @@ enum OnboardingStatus {
   PROFILE_COMPLETED
   FLEET_CONFIGURED
   COMPLETED
+}
+
+// ========================================
+// SIIGO INTEGRATION ENUMS
+// ========================================
+
+enum SiigoSyncStatus {
+  PENDING  // Encolado para sync, aún no intentado
+  SYNCING  // En vuelo (set justo antes de after())
+  SYNCED   // Enviado exitosamente a Siigo
+  FAILED   // Todos los reintentos agotados, error en siigoError
+  SKIPPED  // Faltan datos fiscales requeridos (ej: NIT nulo)
+}
+
+enum SiigoTaxClassification {
+  TAXED    // Gravado — aplica IVA
+  EXEMPT   // Exento — IVA explícitamente 0%
+  EXCLUDED // Excluido — fuera del ámbito de IVA
+}
+
+enum SiigoIdType {
+  NIT      // "31" — Empresa con NIT
+  CC       // "13" — Cédula ciudadanía
+  CE       // "22" — Cédula extranjería
+  PASSPORT // "41" — Pasaporte
+}
+
+enum SiigoPersonType {
+  PERSON  // Persona natural
+  COMPANY // Persona jurídica
 }

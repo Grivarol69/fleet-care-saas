@@ -39,7 +39,7 @@ export function MantItemsList() {
       .then(data => {
         if (data.isSuperAdmin) setIsSuperAdmin(true);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const fetchMantItems = useCallback(async () => {
@@ -124,13 +124,6 @@ export function MantItemsList() {
 
   const columns: ColumnDef<MantItemsListProps>[] = [
     {
-      accessorKey: 'id',
-      header: 'ID',
-      cell: ({ row }) => (
-        <div className="font-medium">#{row.getValue('id')}</div>
-      ),
-    },
-    {
       accessorKey: 'name',
       header: 'Nombre del Item',
       cell: ({ row }) => (
@@ -188,11 +181,10 @@ export function MantItemsList() {
         const isActive = status === 'ACTIVE';
         return (
           <span
-            className={`px-2 py-1 rounded-full text-xs ${
-              isActive
+            className={`px-2 py-1 rounded-full text-xs ${isActive
                 ? 'bg-green-100 text-green-800'
                 : 'bg-gray-100 text-gray-800'
-            }`}
+              }`}
           >
             {isActive ? 'Activo' : 'Inactivo'}
           </span>
@@ -204,11 +196,10 @@ export function MantItemsList() {
       header: 'Origen',
       cell: ({ row }) => (
         <span
-          className={`px-2 py-1 rounded-full text-xs ${
-            row.original.isGlobal
+          className={`px-2 py-1 rounded-full text-xs ${row.original.isGlobal
               ? 'bg-purple-100 text-purple-800'
               : 'bg-slate-100 text-slate-700'
-          }`}
+            }`}
         >
           {row.original.isGlobal ? 'Global' : 'Empresa'}
         </span>

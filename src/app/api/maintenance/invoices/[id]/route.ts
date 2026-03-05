@@ -1,22 +1,20 @@
-import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 
 /**
  * GET - Obtener detalle de una Invoice específica
  */
 export async function GET({ params }: { params: Promise<{ id: string }> }) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const { id } = await params;
-    const invoice = await prisma.invoice.findUnique({
+    const invoice = await tenantPrisma.invoice.findUnique({
       where: {
         id,
-        tenantId: user.tenantId,
-      },
+        },
       include: {
         supplier: {
           select: {
@@ -119,9 +117,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Validar permisos (solo OWNER/MANAGER pueden aprobar)
@@ -139,8 +137,8 @@ export async function PATCH(
     const { status, notes } = await request.json();
 
     // Validar que existe
-    const existingInvoice = await prisma.invoice.findUnique({
-      where: { id, tenantId: user.tenantId },
+    const existingInvoice = await tenantPrisma.invoice.findUnique({
+      where: { id, },
     });
 
     if (!existingInvoice) {
@@ -155,7 +153,7 @@ export async function PATCH(
       console.log('[INVOICE_APPROVE] Iniciando cierre granular por item...');
 
       // TRANSACCIÓN ATÓMICA CRÍTICA
-      await prisma.$transaction(async tx => {
+      await tenantPrisma.$transaction(async tx => {
         const now = new Date();
 
         // 1. Aprobar Invoice
@@ -269,7 +267,6 @@ export async function PATCH(
           if (invoiceItem.masterPartId) {
             await tx.partPriceHistory.create({
               data: {
-                tenantId: user.tenantId,
                 masterPartId: invoiceItem.masterPartId,
                 supplierId: invoice.supplierId,
                 price: invoiceItem.unitPrice,
@@ -332,7 +329,7 @@ export async function PATCH(
       });
 
       // Retornar con todas las relaciones actualizadas
-      const updatedInvoice = await prisma.invoice.findUnique({
+      const updatedInvoice = await tenantPrisma.invoice.findUnique({
         where: { id },
         include: {
           supplier: true,
@@ -365,7 +362,7 @@ export async function PATCH(
     }
 
     // Para otros cambios de estado (CANCELLED, PAID, etc.)
-    const invoice = await prisma.invoice.update({
+    const invoice = await tenantPrisma.invoice.update({
       where: { id },
       data: {
         status,

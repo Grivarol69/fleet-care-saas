@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { canManageMasterData } from '@/lib/permissions';
@@ -7,13 +7,13 @@ import { canManageMasterData } from '@/lib/permissions';
 // GET - List document types: global for tenant's country + custom for tenant
 export async function GET() {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get tenant country
-    const tenant = await prisma.tenant.findUnique({
+    const tenant = await tenantPrisma.tenant.findUnique({
       where: { id: user.tenantId },
       select: { country: true },
     });
@@ -30,7 +30,7 @@ export async function GET() {
         status: 'ACTIVE',
         OR: [
           { isGlobal: true, countryCode: tenant.country },
-          { tenantId: user.tenantId },
+          { },
         ],
       },
       orderBy: { sortOrder: 'asc' },
@@ -62,9 +62,9 @@ const createDocTypeSchema = z.object({
 // POST - Create a document type (global = SUPER_ADMIN only, custom = OWNER/MANAGER)
 export async function POST(req: Request) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManageMasterData(user)) {
@@ -103,7 +103,7 @@ export async function POST(req: Request) {
     }
 
     // Get tenant country for the countryCode
-    const tenant = await prisma.tenant.findUnique({
+    const tenant = await tenantPrisma.tenant.findUnique({
       where: { id: user.tenantId },
       select: { country: true },
     });
@@ -112,7 +112,7 @@ export async function POST(req: Request) {
       ? data.countryCode || tenant?.country || 'CO'
       : tenant?.country || 'CO';
 
-    const docType = await prisma.documentTypeConfig.create({
+    const docType = await tenantPrisma.documentTypeConfig.create({
       data: {
         tenantId: isGlobal ? null : user.tenantId,
         isGlobal,

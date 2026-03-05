@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { ApprovalStatus, UserRole } from '@prisma/client';
 import { z } from 'zod';
 import { canExecuteWorkOrders } from '@/lib/permissions';
@@ -14,9 +13,9 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canExecuteWorkOrders(user)) {
@@ -31,7 +30,7 @@ export async function PATCH(
     const body = updateExpenseSchema.parse(json);
 
     // 1. Fetch Expense to verify Tenant
-    const expense = await prisma.workOrderExpense.findUnique({
+    const expense = await tenantPrisma.workOrderExpense.findUnique({
       where: { id },
       include: { workOrder: true },
     });
@@ -58,7 +57,7 @@ export async function PATCH(
     }
 
     // 3. Update Status
-    const updated = await prisma.workOrderExpense.update({
+    const updated = await tenantPrisma.workOrderExpense.update({
       where: { id },
       data: {
         status: body.status,

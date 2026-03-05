@@ -1,25 +1,23 @@
-import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { canManageMaintenancePrograms } from '@/lib/permissions';
 
 // GET - Obtener programas de mantenimiento para un vehículo o todos
 export async function GET(req: Request) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(req.url);
     const vehicleId = searchParams.get('vehicleId');
 
     const whereClause = {
-      tenantId: user.tenantId,
       ...(vehicleId && { vehicleId: vehicleId }),
     };
 
-    const programs = await prisma.vehicleMantProgram.findMany({
+    const programs = await tenantPrisma.vehicleMantProgram.findMany({
       where: whereClause,
       include: {
         vehicle: {
@@ -103,9 +101,9 @@ function filterFuturePackages<T extends { triggerKm: number | null }>(
 // ========================================
 export async function POST(req: Request) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManageMaintenancePrograms(user)) {
@@ -126,7 +124,7 @@ export async function POST(req: Request) {
     } = body;
 
     // Validar que el vehículo no tenga ya un programa activo
-    const existingProgram = await prisma.vehicleMantProgram.findUnique({
+    const existingProgram = await tenantPrisma.vehicleMantProgram.findUnique({
       where: { vehicleId: vehicleId },
     });
 
@@ -138,7 +136,7 @@ export async function POST(req: Request) {
     }
 
     // Obtener el template con sus packages e items
-    const template = await prisma.maintenanceTemplate.findUnique({
+    const template = await tenantPrisma.maintenanceTemplate.findUnique({
       where: { id: templateId },
       include: {
         packages: {
@@ -160,8 +158,8 @@ export async function POST(req: Request) {
     }
 
     // Obtener datos del vehículo
-    const vehicle = await prisma.vehicle.findUnique({
-      where: { id: vehicleId, tenantId: user.tenantId },
+    const vehicle = await tenantPrisma.vehicle.findUnique({
+      where: { id: vehicleId, },
       include: {
         brand: true,
         line: true,
@@ -208,11 +206,10 @@ export async function POST(req: Request) {
     // Si es vehículo nuevo (vehicleType === "new"), se asignan TODOS los paquetes
 
     // Crear el programa de mantenimiento en una transacción
-    const result = await prisma.$transaction(async tx => {
+    const result = await tenantPrisma.$transaction(async tx => {
       // 1. Crear VehicleMantProgram
       const program = await tx.vehicleMantProgram.create({
         data: {
-          tenantId: user.tenantId,
           vehicleId: vehicleId,
           name: `Programa ${vehicle.brand.name} ${vehicle.line.name} ${vehicle.licensePlate}`,
           description:
@@ -235,7 +232,6 @@ export async function POST(req: Request) {
 
         const vehiclePackage = await tx.vehicleProgramPackage.create({
           data: {
-            tenantId: user.tenantId,
             programId: program.id,
             name: templatePackage.name,
             description: templatePackage.description,
@@ -253,7 +249,6 @@ export async function POST(req: Request) {
         for (const packageItem of templatePackage.packageItems) {
           await tx.vehicleProgramItem.create({
             data: {
-              tenantId: user.tenantId,
               packageId: vehiclePackage.id,
               mantItemId: packageItem.mantItemId,
               mantType: packageItem.mantItem.mantType,
@@ -280,7 +275,6 @@ export async function POST(req: Request) {
       // 4. Crear package para mantenimientos correctivos
       await tx.vehicleProgramPackage.create({
         data: {
-          tenantId: user.tenantId,
           programId: program.id,
           name: 'Items Mantenimiento Correctivo',
           description: 'Package automático para mantenimientos correctivos',
@@ -321,7 +315,6 @@ export async function POST(req: Request) {
             const historicalVehiclePackage =
               await tx.vehicleProgramPackage.create({
                 data: {
-                  tenantId: user.tenantId,
                   programId: program.id,
                   name: templatePackage.name,
                   description: templatePackage.description,
@@ -339,7 +332,6 @@ export async function POST(req: Request) {
             for (const packageItem of templatePackage.packageItems) {
               await tx.vehicleProgramItem.create({
                 data: {
-                  tenantId: user.tenantId,
                   packageId: historicalVehiclePackage.id,
                   mantItemId: packageItem.mantItemId,
                   mantType: packageItem.mantItem.mantType,
@@ -383,7 +375,6 @@ export async function POST(req: Request) {
         if (lastMaintenance.provider || lastMaintenance.cost) {
           await tx.workOrder.create({
             data: {
-              tenantId: user.tenantId,
               vehicleId: vehicleId,
               mantType: 'PREVENTIVE', // fixed: matches enum
               status: 'COMPLETED',
@@ -409,7 +400,7 @@ export async function POST(req: Request) {
     });
 
     // Obtener el programa completo creado
-    const createdProgram = await prisma.vehicleMantProgram.findUnique({
+    const createdProgram = await tenantPrisma.vehicleMantProgram.findUnique({
       where: { id: result.id },
       include: {
         vehicle: {

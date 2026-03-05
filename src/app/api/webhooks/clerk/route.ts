@@ -138,6 +138,7 @@ export async function POST(req: Request) {
             slug: slug || id.toLowerCase(), // Slug es opcional en Clerk, fallback al ID
             domain: slug ? `${slug}.localhost` : null, // Placeholder domain
             subscriptionStatus: 'TRIAL', // Default para nuevos
+            onboardingStatus: 'PENDING',
           },
           update: {
             name,

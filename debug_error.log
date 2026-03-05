@@ -1,0 +1,1367 @@
+
+[2026-02-27T18:43:16.643Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+Stack: Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:284:17)
+    at Object.get (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:330:16)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:42)
+    at createCorrectiveWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:71:23)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:109:33
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:43:16.786Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+Stack: Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:284:17)
+    at Object.get (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:330:16)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:42)
+    at postWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:53:12)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:62:23
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:43:21.682Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+Stack: Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:284:17)
+    at Object.get (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:330:16)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:42)
+    at createCorrectiveWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:71:23)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:120:32
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:43:22.012Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+Stack: Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:284:17)
+    at Object.get (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:330:16)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:42)
+    at postWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:53:12)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:95:23
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:43:26.664Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+Stack: Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:284:17)
+    at Object.get (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:330:16)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:42)
+    at createCorrectiveWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:71:23)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:140:32
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:43:28.191Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+Stack: Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:284:17)
+    at Object.get (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:330:16)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:42)
+    at postWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:53:12)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:129:23
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:43:31.787Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+Stack: Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:284:17)
+    at Object.get (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:330:16)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:42)
+    at createCorrectiveWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:71:23)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:151:32
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:43:34.437Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+Stack: Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:284:17)
+    at Object.get (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:330:16)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:42)
+    at postWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:53:12)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:161:23
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:43:37.212Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+Stack: Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:284:17)
+    at Object.get (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:330:16)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:42)
+    at createCorrectiveWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:71:23)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:173:32
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:43:40.439Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+Stack: Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:284:17)
+    at Object.get (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:330:16)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:42)
+    at postWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:53:12)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:178:23
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:43:42.462Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+Stack: Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:284:17)
+    at Object.get (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:330:16)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:42)
+    at createCorrectiveWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:71:23)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:202:32
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:43:45.901Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+Stack: Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:284:17)
+    at Object.get (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:330:16)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:42)
+    at postWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:53:12)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:192:23
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:43:45.917Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+Stack: Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:284:17)
+    at Object.get (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:330:16)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:42)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/e2e-flow.test.ts:182:27
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:43:48.187Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+Stack: Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:284:17)
+    at Object.get (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:330:16)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:42)
+    at createCorrectiveWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:71:23)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:254:32
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:43:49.847Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+Stack: Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:284:17)
+    at Object.get (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:330:16)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:42)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/work-order-api.test.ts:203:28
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:43:51.237Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+Stack: Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:284:17)
+    at Object.get (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:330:16)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:42)
+    at postWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:53:12)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:206:23
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:43:52.701Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+Stack: Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:284:17)
+    at Object.get (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:330:16)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:42)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/work-order-api.test.ts:250:28
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:43:53.329Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+Stack: Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:284:17)
+    at Object.get (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:330:16)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:42)
+    at createCorrectiveWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:71:23)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:280:32
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:43:57.889Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+Stack: Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:284:17)
+    at Object.get (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:330:16)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:42)
+    at postWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:53:12)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:234:23
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:43:58.192Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+Stack: Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:284:17)
+    at Object.get (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:330:16)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:42)
+    at createCorrectiveWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:71:23)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:296:27
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:44:02.983Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+Stack: Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:284:17)
+    at Object.get (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:330:16)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:42)
+    at postWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:53:12)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:253:23
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:44:03.107Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+Stack: Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:284:17)
+    at Object.get (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:330:16)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:42)
+    at createCorrectiveWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:71:23)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:301:32
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:44:08.160Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+Stack: Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:284:17)
+    at Object.get (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:330:16)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:42)
+    at postWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:53:12)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:267:23
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:44:14.103Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+Stack: Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:284:17)
+    at Object.get (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:330:16)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:42)
+    at postWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:53:12)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:318:23
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:44:19.424Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+Stack: Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:284:17)
+    at Object.get (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:330:16)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:42)
+    at postWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:53:12)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:352:23
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:44:19.513Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+Stack: Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:284:17)
+    at Object.get (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:330:16)
+    at POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:42)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/__tests__/multi-tenant-security.test.ts:277:25
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:44:25.078Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+Stack: Error: [vitest] No "requireCurrentUser" export is defined on the "@/lib/auth" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:284:17)
+    at Object.get (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/vitest@3.2.4_@types+node@20.19.33_jiti@1.21.7_jsdom@27.4.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/execute.B7h3T_Hc.js:330:16)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:42)
+    at postWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:53:12)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:371:23
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:45:42.030Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at requireCurrentUser (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/lib/auth.ts:145:11)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:36)
+    at createCorrectiveWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:75:17)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:113:27
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:45:42.479Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at requireCurrentUser (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/lib/auth.ts:145:11)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:36)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:66:17
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:45:46.756Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at requireCurrentUser (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/lib/auth.ts:145:11)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:36)
+    at createCorrectiveWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:75:17)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:124:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:45:47.725Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at requireCurrentUser (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/lib/auth.ts:145:11)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:36)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:99:17
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:45:51.540Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at requireCurrentUser (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/lib/auth.ts:145:11)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:36)
+    at createCorrectiveWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:75:17)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:144:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:45:53.980Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at requireCurrentUser (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/lib/auth.ts:145:11)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:36)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:133:17
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:45:56.359Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at requireCurrentUser (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/lib/auth.ts:145:11)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:36)
+    at createCorrectiveWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:75:17)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:155:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:46:00.205Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at requireCurrentUser (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/lib/auth.ts:145:11)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:36)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:165:17
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:46:01.024Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at requireCurrentUser (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/lib/auth.ts:145:11)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:36)
+    at createCorrectiveWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:75:17)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:177:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:46:05.454Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at requireCurrentUser (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/lib/auth.ts:145:11)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:36)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:182:17
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:46:05.724Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at requireCurrentUser (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/lib/auth.ts:145:11)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:36)
+    at createCorrectiveWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:75:17)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:206:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:46:10.199Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at requireCurrentUser (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/lib/auth.ts:145:11)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:36)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/work-order-api.test.ts:207:22
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:46:10.734Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at requireCurrentUser (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/lib/auth.ts:145:11)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:36)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:196:17
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:46:11.133Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at requireCurrentUser (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/lib/auth.ts:145:11)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:36)
+    at createCorrectiveWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:75:17)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:258:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:46:12.937Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at requireCurrentUser (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/lib/auth.ts:145:11)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:36)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/work-order-api.test.ts:254:22
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:46:16.000Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at requireCurrentUser (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/lib/auth.ts:145:11)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:36)
+    at createCorrectiveWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:75:17)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:284:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:46:16.066Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at requireCurrentUser (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/lib/auth.ts:145:11)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:36)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:210:17
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:46:17.042Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at requireCurrentUser (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/lib/auth.ts:145:11)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:36)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/e2e-flow.test.ts:187:21
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:46:20.667Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at requireCurrentUser (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/lib/auth.ts:145:11)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:36)
+    at createCorrectiveWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:75:17)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:300:21
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:46:22.401Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at requireCurrentUser (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/lib/auth.ts:145:11)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:36)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:238:17
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:46:25.279Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at requireCurrentUser (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/lib/auth.ts:145:11)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:36)
+    at createCorrectiveWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:75:17)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:305:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:46:27.757Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at requireCurrentUser (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/lib/auth.ts:145:11)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:36)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:257:17
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:46:32.962Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at requireCurrentUser (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/lib/auth.ts:145:11)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:36)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:271:17
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:46:38.972Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at requireCurrentUser (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/lib/auth.ts:145:11)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:36)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:322:17
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:46:44.193Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at requireCurrentUser (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/lib/auth.ts:145:11)
+    at POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:36)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/__tests__/multi-tenant-security.test.ts:281:19
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:46:44.244Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at requireCurrentUser (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/lib/auth.ts:145:11)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:36)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:356:17
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:46:49.494Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at requireCurrentUser (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/lib/auth.ts:145:11)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:36)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:375:17
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:47:43.122Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: Cannot destructure property 'user' of '(intermediate value)' as it is undefined.
+Stack: TypeError: Cannot destructure property 'user' of '(intermediate value)' as it is undefined.
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:13)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/work-order-api.test.ts:204:22
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:47:46.004Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: Cannot destructure property 'user' of '(intermediate value)' as it is undefined.
+Stack: TypeError: Cannot destructure property 'user' of '(intermediate value)' as it is undefined.
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:13)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/work-order-api.test.ts:251:22
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:47:49.931Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: Cannot destructure property 'user' of '(intermediate value)' as it is undefined.
+Stack: TypeError: Cannot destructure property 'user' of '(intermediate value)' as it is undefined.
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:13)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/e2e-flow.test.ts:184:21
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:48:13.676Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at Module.mockAuthAsUnauthenticated (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/test/helpers/auth-mock.ts:64:70)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:295:5
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:48:15.681Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at Module.mockAuthAsUnauthenticated (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/test/helpers/auth-mock.ts:64:70)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:266:5
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:49:23.627Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: Cannot destructure property 'user' of '(intermediate value)' as it is undefined.
+Stack: TypeError: Cannot destructure property 'user' of '(intermediate value)' as it is undefined.
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:13)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/work-order-api.test.ts:204:22
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:49:26.200Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: Cannot destructure property 'user' of '(intermediate value)' as it is undefined.
+Stack: TypeError: Cannot destructure property 'user' of '(intermediate value)' as it is undefined.
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:13)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/work-order-api.test.ts:251:22
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:49:30.127Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: Cannot destructure property 'user' of '(intermediate value)' as it is undefined.
+Stack: TypeError: Cannot destructure property 'user' of '(intermediate value)' as it is undefined.
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:13)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/e2e-flow.test.ts:184:21
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:49:54.589Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at Module.mockAuthAsUnauthenticated (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/test/helpers/auth-mock.ts:64:70)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:295:5
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:49:56.620Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at Module.mockAuthAsUnauthenticated (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/test/helpers/auth-mock.ts:64:70)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:266:5
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:51:19.547Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: Cannot destructure property 'user' of '(intermediate value)' as it is undefined.
+Stack: TypeError: Cannot destructure property 'user' of '(intermediate value)' as it is undefined.
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:13)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/e2e-flow.test.ts:184:21
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:51:19.649Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: Cannot destructure property 'user' of '(intermediate value)' as it is undefined.
+Stack: TypeError: Cannot destructure property 'user' of '(intermediate value)' as it is undefined.
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:13)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/work-order-api.test.ts:204:22
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:51:22.419Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: Cannot destructure property 'user' of '(intermediate value)' as it is undefined.
+Stack: TypeError: Cannot destructure property 'user' of '(intermediate value)' as it is undefined.
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:13)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/work-order-api.test.ts:251:22
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:52:17.659Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at Module.mockAuthAsUnauthenticated (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/test/helpers/auth-mock.ts:64:70)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:295:5
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:52:20.135Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at Module.mockAuthAsUnauthenticated (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/test/helpers/auth-mock.ts:64:70)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:266:5
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:53:54.223Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: Cannot destructure property 'user' of '(intermediate value)' as it is undefined.
+Stack: TypeError: Cannot destructure property 'user' of '(intermediate value)' as it is undefined.
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:13)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/work-order-api.test.ts:204:22
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:53:54.648Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: 
+Invalid `prisma.workOrder.create()` invocation:
+
+{
+  data: {
+    vehicleId: "301098cd-a1b0-4053-b05c-cfc8b1b54376",
+    title: "E2E Work Order",
+    description: "Full flow test",
+    mantType: "PREVENTIVE",
+    priority: "HIGH",
+    status: "PENDING",
+    workType: "INTERNAL",
+    technicianId: null,
+    providerId: null,
+    creationMileage: 50000,
+    estimatedCost: 200,
+    requestedBy: "e2e-owner-1772218432065",
+    startDate: new Date("2026-02-27T18:53:54.185Z"),
+    isPackageWork: false,
+    packageName: null,
++   tenant: {
++     create: TenantCreateWithoutWorkOrdersInput | TenantUncheckedCreateWithoutWorkOrdersInput,
++     connectOrCreate: TenantCreateOrConnectWithoutWorkOrdersInput,
++     connect: TenantWhereUniqueInput
++   }
+  }
+}
+
+Argument `tenant` is missing.
+Stack: PrismaClientValidationError: 
+Invalid `prisma.workOrder.create()` invocation:
+
+{
+  data: {
+    vehicleId: "301098cd-a1b0-4053-b05c-cfc8b1b54376",
+    title: "E2E Work Order",
+    description: "Full flow test",
+    mantType: "PREVENTIVE",
+    priority: "HIGH",
+    status: "PENDING",
+    workType: "INTERNAL",
+    technicianId: null,
+    providerId: null,
+    creationMileage: 50000,
+    estimatedCost: 200,
+    requestedBy: "e2e-owner-1772218432065",
+    startDate: new Date("2026-02-27T18:53:54.185Z"),
+    isPackageWork: false,
+    packageName: null,
++   tenant: {
++     create: TenantCreateWithoutWorkOrdersInput | TenantUncheckedCreateWithoutWorkOrdersInput,
++     connectOrCreate: TenantCreateOrConnectWithoutWorkOrdersInput,
++     connect: TenantWhereUniqueInput
++   }
+  }
+}
+
+Argument `tenant` is missing.
+    at throwValidationException (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/.pnpm/@prisma+client@6.19.2_prisma@6.19.2_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:45:9)
+    at ei.handleRequestError (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/.pnpm/@prisma+client@6.19.2_prisma@6.19.2_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/src/runtime/RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/.pnpm/@prisma+client@6.19.2_prisma@6.19.2_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/src/runtime/RequestHandler.ts:174:12)
+    at ei.request (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/.pnpm/@prisma+client@6.19.2_prisma@6.19.2_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/src/runtime/RequestHandler.ts:143:12)
+    at a (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/.pnpm/@prisma+client@6.19.2_prisma@6.19.2_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:833:24)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:261:23)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/e2e-flow.test.ts:186:21
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: {"vehicleId":"301098cd-a1b0-4053-b05c-cfc8b1b54376","alertIds":["71b585c8-843c-44ad-8ad9-ca9ba21b6970"],"title":"E2E Work Order","description":"Full flow test","priority":"HIGH","mantType":"PREVENTIVE","workType":"INTERNAL","scheduledDate":"2026-02-27T18:53:54.185Z"}
+----------------------------------------
+
+[2026-02-27T18:53:56.827Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: Cannot destructure property 'user' of '(intermediate value)' as it is undefined.
+Stack: TypeError: Cannot destructure property 'user' of '(intermediate value)' as it is undefined.
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:109:13)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/work-order-api.test.ts:251:22
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:54:51.680Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at Module.mockAuthAsUnauthenticated (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/test/helpers/auth-mock.ts:64:70)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:295:5
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:54:55.885Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at Module.mockAuthAsUnauthenticated (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/test/helpers/auth-mock.ts:64:70)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:266:5
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:56:43.762Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: 
+Invalid `prisma.workOrder.create()` invocation:
+
+{
+  data: {
+    vehicleId: "c659f4b0-1270-47c8-b467-1575c02c0f52",
+    title: "E2E Work Order",
+    description: "Full flow test",
+    mantType: "PREVENTIVE",
+    priority: "HIGH",
+    status: "PENDING",
+    workType: "INTERNAL",
+    technicianId: null,
+    providerId: null,
+    creationMileage: 50000,
+    estimatedCost: 200,
+    requestedBy: "e2e-owner-1772218601490",
+    startDate: new Date("2026-02-27T18:56:43.268Z"),
+    isPackageWork: false,
+    packageName: null,
++   tenant: {
++     create: TenantCreateWithoutWorkOrdersInput | TenantUncheckedCreateWithoutWorkOrdersInput,
++     connectOrCreate: TenantCreateOrConnectWithoutWorkOrdersInput,
++     connect: TenantWhereUniqueInput
++   }
+  }
+}
+
+Argument `tenant` is missing.
+Stack: PrismaClientValidationError: 
+Invalid `prisma.workOrder.create()` invocation:
+
+{
+  data: {
+    vehicleId: "c659f4b0-1270-47c8-b467-1575c02c0f52",
+    title: "E2E Work Order",
+    description: "Full flow test",
+    mantType: "PREVENTIVE",
+    priority: "HIGH",
+    status: "PENDING",
+    workType: "INTERNAL",
+    technicianId: null,
+    providerId: null,
+    creationMileage: 50000,
+    estimatedCost: 200,
+    requestedBy: "e2e-owner-1772218601490",
+    startDate: new Date("2026-02-27T18:56:43.268Z"),
+    isPackageWork: false,
+    packageName: null,
++   tenant: {
++     create: TenantCreateWithoutWorkOrdersInput | TenantUncheckedCreateWithoutWorkOrdersInput,
++     connectOrCreate: TenantCreateOrConnectWithoutWorkOrdersInput,
++     connect: TenantWhereUniqueInput
++   }
+  }
+}
+
+Argument `tenant` is missing.
+    at throwValidationException (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/.pnpm/@prisma+client@6.19.2_prisma@6.19.2_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:45:9)
+    at ei.handleRequestError (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/.pnpm/@prisma+client@6.19.2_prisma@6.19.2_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/src/runtime/RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/.pnpm/@prisma+client@6.19.2_prisma@6.19.2_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/src/runtime/RequestHandler.ts:174:12)
+    at ei.request (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/.pnpm/@prisma+client@6.19.2_prisma@6.19.2_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/src/runtime/RequestHandler.ts:143:12)
+    at a (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/.pnpm/@prisma+client@6.19.2_prisma@6.19.2_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:833:24)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:261:23)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/e2e-flow.test.ts:186:21
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: {"vehicleId":"c659f4b0-1270-47c8-b467-1575c02c0f52","alertIds":["db6a1482-0427-4d80-bfe3-7cf34ab8137d"],"title":"E2E Work Order","description":"Full flow test","priority":"HIGH","mantType":"PREVENTIVE","workType":"INTERNAL","scheduledDate":"2026-02-27T18:56:43.268Z"}
+----------------------------------------
+
+[2026-02-27T18:56:43.946Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: 
+Invalid `prisma.workOrder.create()` invocation:
+
+{
+  data: {
+    vehicleId: "c18706a5-1726-42e0-89f8-723de2d02dc8",
+    title: "Fixing Integration Test Issue",
+    description: "Automated test work order",
+    mantType: "PREVENTIVE",
+    priority: "HIGH",
+    status: "PENDING",
+    workType: "INTERNAL",
+    technicianId: null,
+    providerId: null,
+    creationMileage: 50000,
+    estimatedCost: 100000,
+    requestedBy: "82318b94-cb25-49c1-b5cc-e5bb7425d394",
+    startDate: new Date("2026-02-27T18:56:43.466Z"),
+    isPackageWork: false,
+    packageName: null,
++   tenant: {
++     create: TenantCreateWithoutWorkOrdersInput | TenantUncheckedCreateWithoutWorkOrdersInput,
++     connectOrCreate: TenantCreateOrConnectWithoutWorkOrdersInput,
++     connect: TenantWhereUniqueInput
++   }
+  }
+}
+
+Argument `tenant` is missing.
+Stack: PrismaClientValidationError: 
+Invalid `prisma.workOrder.create()` invocation:
+
+{
+  data: {
+    vehicleId: "c18706a5-1726-42e0-89f8-723de2d02dc8",
+    title: "Fixing Integration Test Issue",
+    description: "Automated test work order",
+    mantType: "PREVENTIVE",
+    priority: "HIGH",
+    status: "PENDING",
+    workType: "INTERNAL",
+    technicianId: null,
+    providerId: null,
+    creationMileage: 50000,
+    estimatedCost: 100000,
+    requestedBy: "82318b94-cb25-49c1-b5cc-e5bb7425d394",
+    startDate: new Date("2026-02-27T18:56:43.466Z"),
+    isPackageWork: false,
+    packageName: null,
++   tenant: {
++     create: TenantCreateWithoutWorkOrdersInput | TenantUncheckedCreateWithoutWorkOrdersInput,
++     connectOrCreate: TenantCreateOrConnectWithoutWorkOrdersInput,
++     connect: TenantWhereUniqueInput
++   }
+  }
+}
+
+Argument `tenant` is missing.
+    at throwValidationException (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/.pnpm/@prisma+client@6.19.2_prisma@6.19.2_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:45:9)
+    at ei.handleRequestError (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/.pnpm/@prisma+client@6.19.2_prisma@6.19.2_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/src/runtime/RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/.pnpm/@prisma+client@6.19.2_prisma@6.19.2_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/src/runtime/RequestHandler.ts:174:12)
+    at ei.request (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/.pnpm/@prisma+client@6.19.2_prisma@6.19.2_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/src/runtime/RequestHandler.ts:143:12)
+    at a (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/node_modules/.pnpm/@prisma+client@6.19.2_prisma@6.19.2_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:833:24)
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:261:23)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/work-order-api.test.ts:206:22
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: {"vehicleId":"c18706a5-1726-42e0-89f8-723de2d02dc8","alertIds":["59851321-4813-46b1-b7de-62b23aa16922"],"title":"Fixing Integration Test Issue","description":"Automated test work order","priority":"HIGH","mantType":"PREVENTIVE","workType":"INTERNAL","scheduledDate":"2026-02-27T18:56:43.466Z"}
+----------------------------------------
+
+[2026-02-27T18:57:41.225Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at Module.mockAuthAsUnauthenticated (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/test/helpers/auth-mock.ts:64:70)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:295:5
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:57:42.955Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at Module.mockAuthAsUnauthenticated (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/test/helpers/auth-mock.ts:64:70)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:266:5
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:59:24.231Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at Module.mockAuthAsUnauthenticated (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/test/helpers/auth-mock.ts:64:70)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:295:5
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T18:59:25.776Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at Module.mockAuthAsUnauthenticated (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/test/helpers/auth-mock.ts:64:70)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:266:5
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T19:01:48.731Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at Module.mockAuthAsUnauthenticated (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/test/helpers/auth-mock.ts:64:70)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:295:5
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T19:01:51.468Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at Module.mockAuthAsUnauthenticated (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/test/helpers/auth-mock.ts:64:70)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:266:5
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T19:06:30.499Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at Module.mockAuthAsUnauthenticated (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/test/helpers/auth-mock.ts:64:70)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:295:5
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T19:06:34.509Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: No autenticado
+Stack: Error: No autenticado
+    at Module.mockAuthAsUnauthenticated (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/test/helpers/auth-mock.ts:64:70)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:266:5
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T22:52:57.764Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: Cannot read properties of null (reading 'email')
+Stack: TypeError: Cannot read properties of null (reading 'email')
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:116:65)
+    at createCorrectiveWO (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:72:17)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/corrective-internal.test.ts:297:21
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------
+
+[2026-02-27T22:53:00.981Z] FATAL ERROR IN POST /api/maintenance/work-orders
+Error: Cannot read properties of null (reading 'email')
+Stack: TypeError: Cannot read properties of null (reading 'email')
+    at Module.POST (/home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/route.ts:116:65)
+    at /home/guille-rivar/Escritorio/Desarrollo Web/fleet-care-saas/src/app/api/maintenance/work-orders/__tests__/preventive-circuit.test.ts:268:17
+    at file:///home/guille-rivar/Escritorio/Desarrollo%20Web/fleet-care-saas/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+Payload: "Payload not read"
+----------------------------------------

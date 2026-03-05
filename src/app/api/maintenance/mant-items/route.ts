@@ -1,14 +1,13 @@
 import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { canCreateMantItems } from '@/lib/permissions';
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Búsqueda para autocompletado
@@ -60,10 +59,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(req: Request) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { name, description, mantType, categoryId, type, isGlobal } =
@@ -149,7 +147,7 @@ export async function POST(req: Request) {
     }
 
     // Verificar que no exista un item con el mismo nombre en el scope
-    const existingItem = await prisma.mantItem.findFirst({
+    const existingItem = await tenantPrisma.mantItem.findFirst({
       where: {
         tenantId: targetTenant,
         name: name.trim(),
@@ -160,7 +158,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'El ítem ya existe' }, { status: 409 });
     }
 
-    const mantItem = await prisma.mantItem.create({
+    const mantItem = await tenantPrisma.mantItem.create({
       data: {
         name: name.trim(),
         description: description?.trim() || null,

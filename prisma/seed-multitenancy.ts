@@ -20,9 +20,9 @@ const ALL_TENANT_IDS = [PLATFORM_TENANT_ID, TENANT_1_ID, TENANT_2_ID];
 // ========================================
 async function createProgramFromTemplate(
   tenantId: string,
-  vehicleId: number,
+  vehicleId: string,
   vehicleName: string,
-  templateId: number,
+  templateId: string,
   templateName: string,
   assignmentKm: number,
   currentMileage: number,
@@ -204,8 +204,14 @@ async function main() {
     prisma.vehicleBrand.create({
       data: { name: 'Mitsubishi', isGlobal: true, tenantId: null },
     }),
+    prisma.vehicleBrand.create({
+      data: { name: 'Renault', isGlobal: true, tenantId: null },
+    }),
+    prisma.vehicleBrand.create({
+      data: { name: 'Dongfeng', isGlobal: true, tenantId: null },
+    }),
   ]);
-  const [toyota, ford, chevrolet, nissan, mitsubishi] = brands;
+  const [toyota, ford, chevrolet, nissan, mitsubishi, renault, dongfeng] = brands;
 
   // --- LINES ---
   console.log('   Creando lines...');
@@ -255,10 +261,18 @@ async function main() {
         tenantId: null,
       },
     }),
-    // Chevrolet [6-8]
+    // Chevrolet [6-9]
     prisma.vehicleLine.create({
       data: {
         name: 'D-MAX',
+        brandId: chevrolet.id,
+        isGlobal: true,
+        tenantId: null,
+      },
+    }),
+    prisma.vehicleLine.create({
+      data: {
+        name: 'Colorado',
         brandId: chevrolet.id,
         isGlobal: true,
         tenantId: null,
@@ -280,7 +294,7 @@ async function main() {
         tenantId: null,
       },
     }),
-    // Nissan [9-10]
+    // Nissan [10-11]
     prisma.vehicleLine.create({
       data: {
         name: 'Frontier',
@@ -297,7 +311,7 @@ async function main() {
         tenantId: null,
       },
     }),
-    // Mitsubishi [11-12]
+    // Mitsubishi [12-13]
     prisma.vehicleLine.create({
       data: {
         name: 'L200',
@@ -314,8 +328,34 @@ async function main() {
         tenantId: null,
       },
     }),
+    // Renault [14-15]
+    prisma.vehicleLine.create({
+      data: {
+        name: 'Duster',
+        brandId: renault.id,
+        isGlobal: true,
+        tenantId: null,
+      },
+    }),
+    prisma.vehicleLine.create({
+      data: {
+        name: 'Oroch',
+        brandId: renault.id,
+        isGlobal: true,
+        tenantId: null,
+      },
+    }),
+    // Dongfeng [16]
+    prisma.vehicleLine.create({
+      data: {
+        name: 'Rich 6 EV',
+        brandId: dongfeng.id,
+        isGlobal: true,
+        tenantId: null,
+      },
+    }),
   ]);
-  const [hilux, landCruiser, , ranger, , , dmax, , , frontier, , l200] = lines;
+  const [hilux, landCruiser, , ranger, , , dmax, colorado, , , frontier, , l200, , duster, oroch, rich6ev] = lines;
 
   // --- TYPES ---
   console.log('   Creando types...');
@@ -413,6 +453,22 @@ async function main() {
         tenantId: null,
       },
     }),
+    prisma.mantCategory.create({
+      data: {
+        name: 'Sistema Termico EV',
+        description: 'Enfriamiento de baterias EV y motor',
+        isGlobal: true,
+        tenantId: null,
+      },
+    }),
+    prisma.mantCategory.create({
+      data: {
+        name: 'Alta Tension EV',
+        description: 'Sistema Alta Tension Bateria Motores EV',
+        isGlobal: true,
+        tenantId: null,
+      },
+    }),
   ]);
   const [
     catMotor,
@@ -423,6 +479,9 @@ async function main() {
     catLubricacion,
     catFiltros,
     catNeumaticos,
+    catCarroceria,
+    catTermicoEV,
+    catAltaTensionEV,
   ] = cats;
 
   // --- MANT ITEMS (17 preventivos + 16 correctivos = 33) ---
@@ -604,6 +663,58 @@ async function main() {
         mantType: 'PREVENTIVE',
         categoryId: catLubricacion.id,
         type: 'PART',
+        isGlobal: true,
+        tenantId: null,
+      },
+    }),
+    // SUV/Duster Especificos Preventivos
+    prisma.mantItem.create({
+      data: {
+        name: 'Cambio filtro habitaculo',
+        mantType: 'PREVENTIVE',
+        categoryId: catFiltros.id,
+        type: 'PART',
+        isGlobal: true,
+        tenantId: null,
+      },
+    }),
+    prisma.mantItem.create({
+      data: {
+        name: 'Cambio correa accesorios',
+        mantType: 'PREVENTIVE',
+        categoryId: catMotor.id,
+        type: 'PART',
+        isGlobal: true,
+        tenantId: null,
+      },
+    }),
+    // EV Especificos Preventivos
+    prisma.mantItem.create({
+      data: {
+        name: 'Inspeccion alta tension EV',
+        mantType: 'PREVENTIVE',
+        categoryId: catAltaTensionEV.id,
+        type: 'ACTION',
+        isGlobal: true,
+        tenantId: null,
+      },
+    }),
+    prisma.mantItem.create({
+      data: {
+        name: 'Cambio aceite engranaje reductor EV',
+        mantType: 'PREVENTIVE',
+        categoryId: catTransmision.id,
+        type: 'PART',
+        isGlobal: true,
+        tenantId: null,
+      },
+    }),
+    prisma.mantItem.create({
+      data: {
+        name: 'Flush liquido refrigerante EV',
+        mantType: 'PREVENTIVE',
+        categoryId: catTermicoEV.id,
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -798,10 +909,15 @@ async function main() {
   const iRotNeumaticos = items[14];
   const iBalanceo = items[15];
   const iLiqDireccion = items[16];
-  const iPastillasDelant = items[17];
+  const iFiltroHabitaculo = items[17];
+  const iCorreaAccesorios = items[18];
+  const iInspAltaTension = items[19];
+  const iAceiteReductorEV = items[20];
+  const iFlushRefriEV = items[21];
+  const iPastillasDelant = items[22];
 
-  // --- MASTER PARTS (10) ---
-  console.log('   Creando master parts (10)...');
+  // --- MASTER PARTS ---
+  console.log('   Creando master parts...');
   const parts = await Promise.all([
     // Aceites [0-2]
     prisma.masterPart.create({
@@ -936,6 +1052,59 @@ async function main() {
         isActive: true,
       },
     }),
+    // SUV/EV Especificos
+    prisma.masterPart.create({
+      data: {
+        tenantId: null,
+        code: 'RENAULT-HAB-123',
+        description: 'Filtro de Habitaculo / Cabina (Duster/Oroch)',
+        category: 'FILTROS',
+        subcategory: 'FILTRO_AIRE',
+        unit: 'UNIDAD',
+        referencePrice: 45000,
+        lastPriceUpdate: new Date(),
+        isActive: true,
+      },
+    }),
+    prisma.masterPart.create({
+      data: {
+        tenantId: null,
+        code: 'RENAULT-COR-456',
+        description: 'Correa de Accesorios Poly-V',
+        category: 'MOTOR',
+        subcategory: 'KITS',
+        unit: 'UNIDAD',
+        referencePrice: 65000,
+        lastPriceUpdate: new Date(),
+        isActive: true,
+      },
+    }),
+    prisma.masterPart.create({
+      data: {
+        tenantId: null,
+        code: 'DONGFENG-RED-789',
+        description: 'Aceite para Engranaje Reductor EV (Dongfeng)',
+        category: 'LUBRICANTES',
+        subcategory: 'ACEITE_TRANSMISION',
+        unit: 'LITRO',
+        referencePrice: 85000,
+        lastPriceUpdate: new Date(),
+        isActive: true,
+      },
+    }),
+    prisma.masterPart.create({
+      data: {
+        tenantId: null,
+        code: 'EV-COOLANT-BC',
+        description: 'Liquido Refrigerante EV (Baja Conductividad)',
+        category: 'LUBRICANTES',
+        subcategory: 'REFRIGERANTE',
+        unit: 'GALON',
+        referencePrice: 120000,
+        lastPriceUpdate: new Date(),
+        isActive: true,
+      },
+    }),
   ]);
   const [
     pShell,
@@ -948,6 +1117,10 @@ async function main() {
     pBoschFiltComb,
     pBoschPastillas,
     pCastrolDOT4,
+    pRenHabitaculo,
+    pRenCorrea,
+    pDfReductor,
+    pEvCoolant
   ] = parts;
   console.log(`   ${parts.length} master parts creados`);
 
@@ -956,7 +1129,7 @@ async function main() {
 
   // Helper to create packages with items for a template
   async function createTemplatePackages(
-    templateId: number,
+    templateId: string,
     packages: Array<{
       name: string;
       triggerKm: number;
@@ -964,7 +1137,7 @@ async function main() {
       estimatedTime: number;
       priority: 'MEDIUM' | 'HIGH';
       items: Array<{
-        mantItemId: number;
+        mantItemId: string;
         triggerKm: number;
         estimatedTime: number;
         order: number;
@@ -1717,7 +1890,129 @@ async function main() {
       ],
     },
   ]);
-  console.log('   3 templates con 12 paquetes creados');
+
+  // Template: Renault Duster
+  const tplDuster = await prisma.maintenanceTemplate.create({
+    data: {
+      name: 'Renault Duster 10K',
+      description: 'Programa mantenimiento 10K SUVs Compactos (Duster)',
+      vehicleBrandId: renault.id,
+      vehicleLineId: duster.id,
+      version: '1.0',
+      isDefault: true,
+      isGlobal: true,
+      tenantId: null,
+    },
+  });
+  await createTemplatePackages(tplDuster.id, [
+    {
+      name: 'Mantenimiento 10,000 km',
+      triggerKm: 10000,
+      estimatedCost: 280000,
+      estimatedTime: 2.0,
+      priority: 'MEDIUM',
+      items: [
+        { mantItemId: iCambioAceite.id, triggerKm: 10000, estimatedTime: 0.5, order: 1, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAceite.id, triggerKm: 10000, estimatedTime: 0.2, order: 2, priority: 'MEDIUM' },
+      ],
+    },
+    {
+      name: 'Mantenimiento 20,000 km',
+      triggerKm: 20000,
+      estimatedCost: 380000,
+      estimatedTime: 2.5,
+      priority: 'MEDIUM',
+      items: [
+        { mantItemId: iCambioAceite.id, triggerKm: 20000, estimatedTime: 0.5, order: 1, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAceite.id, triggerKm: 20000, estimatedTime: 0.2, order: 2, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAire.id, triggerKm: 20000, estimatedTime: 0.2, order: 3, priority: 'MEDIUM' },
+        { mantItemId: iFiltroHabitaculo.id, triggerKm: 20000, estimatedTime: 0.3, order: 4, priority: 'MEDIUM' },
+      ],
+    },
+    {
+      name: 'Mantenimiento 60,000 km (Servicio Critico)',
+      triggerKm: 60000,
+      estimatedCost: 1200000,
+      estimatedTime: 6.0,
+      priority: 'HIGH',
+      items: [
+        { mantItemId: iCambioAceite.id, triggerKm: 60000, estimatedTime: 0.5, order: 1, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAceite.id, triggerKm: 60000, estimatedTime: 0.2, order: 2, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAire.id, triggerKm: 60000, estimatedTime: 0.2, order: 3, priority: 'MEDIUM' },
+        { mantItemId: iFiltroHabitaculo.id, triggerKm: 60000, estimatedTime: 0.3, order: 4, priority: 'MEDIUM' },
+        { mantItemId: iCorreaAccesorios.id, triggerKm: 60000, estimatedTime: 1.0, order: 5, priority: 'HIGH' },
+      ],
+    },
+  ]);
+
+  // Template: Dongfeng Rich 6 EV
+  const tplEvDongfeng = await prisma.maintenanceTemplate.create({
+    data: {
+      name: 'Dongfeng Rich 6 EV 10K',
+      description: 'Programa mantenimiento EV 10K',
+      vehicleBrandId: dongfeng.id,
+      vehicleLineId: rich6ev.id,
+      version: '1.0',
+      isDefault: true,
+      isGlobal: true,
+      tenantId: null,
+    },
+  });
+  await createTemplatePackages(tplEvDongfeng.id, [
+    {
+      name: 'Servicio Anual / 10,000 km',
+      triggerKm: 10000,
+      estimatedCost: 150000,
+      estimatedTime: 1.5,
+      priority: 'MEDIUM',
+      items: [
+        { mantItemId: iInspAltaTension.id, triggerKm: 10000, estimatedTime: 0.8, order: 1, priority: 'HIGH' },
+        { mantItemId: iRotNeumaticos.id, triggerKm: 10000, estimatedTime: 0.7, order: 2, priority: 'MEDIUM' },
+      ],
+    },
+    {
+      name: 'Mantenimiento 20,000 km',
+      triggerKm: 20000,
+      estimatedCost: 220000,
+      estimatedTime: 2.0,
+      priority: 'MEDIUM',
+      items: [
+        { mantItemId: iInspAltaTension.id, triggerKm: 20000, estimatedTime: 0.8, order: 1, priority: 'HIGH' },
+        { mantItemId: iRotNeumaticos.id, triggerKm: 20000, estimatedTime: 0.7, order: 2, priority: 'MEDIUM' },
+        { mantItemId: iFiltroHabitaculo.id, triggerKm: 20000, estimatedTime: 0.3, order: 3, priority: 'MEDIUM' },
+      ],
+    },
+    {
+      name: 'Mantenimiento 40,000 km',
+      triggerKm: 40000,
+      estimatedCost: 320000,
+      estimatedTime: 3.0,
+      priority: 'HIGH',
+      items: [
+        { mantItemId: iInspAltaTension.id, triggerKm: 40000, estimatedTime: 0.8, order: 1, priority: 'HIGH' },
+        { mantItemId: iRotNeumaticos.id, triggerKm: 40000, estimatedTime: 0.7, order: 2, priority: 'MEDIUM' },
+        { mantItemId: iFiltroHabitaculo.id, triggerKm: 40000, estimatedTime: 0.3, order: 3, priority: 'MEDIUM' },
+        { mantItemId: iLiquidoFreno.id, triggerKm: 40000, estimatedTime: 1.0, order: 4, priority: 'HIGH' },
+      ],
+    },
+    {
+      name: 'Mantenimiento 60,000 km',
+      triggerKm: 60000,
+      estimatedCost: 650000,
+      estimatedTime: 4.5,
+      priority: 'HIGH',
+      items: [
+        { mantItemId: iInspAltaTension.id, triggerKm: 60000, estimatedTime: 0.8, order: 1, priority: 'HIGH' },
+        { mantItemId: iRotNeumaticos.id, triggerKm: 60000, estimatedTime: 0.7, order: 2, priority: 'MEDIUM' },
+        { mantItemId: iFiltroHabitaculo.id, triggerKm: 60000, estimatedTime: 0.3, order: 3, priority: 'MEDIUM' },
+        { mantItemId: iLiquidoFreno.id, triggerKm: 60000, estimatedTime: 1.0, order: 4, priority: 'HIGH' },
+        { mantItemId: iAceiteReductorEV.id, triggerKm: 60000, estimatedTime: 1.0, order: 5, priority: 'HIGH' },
+        { mantItemId: iFlushRefriEV.id, triggerKm: 60000, estimatedTime: 1.5, order: 6, priority: 'HIGH' },
+      ],
+    },
+  ]);
+
+  console.log('   5 templates con 21 paquetes creados');
 
   // --- DOCUMENT TYPE CONFIGS (CO) ---
   console.log('   Creando document type configs (CO)...');
@@ -1983,6 +2278,44 @@ async function main() {
       masterPartId: pCastrolDOT4.id,
       qty: 2,
     },
+    // Filtros Habitaculo (SUV/EV)
+    {
+      mantItemId: iFiltroHabitaculo.id,
+      brandId: renault.id,
+      lineId: duster.id,
+      masterPartId: pRenHabitaculo.id,
+      qty: 1,
+    },
+    {
+      mantItemId: iFiltroHabitaculo.id,
+      brandId: dongfeng.id,
+      lineId: rich6ev.id,
+      masterPartId: pRenHabitaculo.id, // Reusing similar part for simplicity if no specific one
+      qty: 1,
+    },
+    // Correa Accesorios (Duster)
+    {
+      mantItemId: iCorreaAccesorios.id,
+      brandId: renault.id,
+      lineId: duster.id,
+      masterPartId: pRenCorrea.id,
+      qty: 1,
+    },
+    // Fluídos EVE (Dongfeng)
+    {
+      mantItemId: iAceiteReductorEV.id,
+      brandId: dongfeng.id,
+      lineId: rich6ev.id,
+      masterPartId: pDfReductor.id,
+      qty: 1,
+    },
+    {
+      mantItemId: iFlushRefriEV.id,
+      brandId: dongfeng.id,
+      lineId: rich6ev.id,
+      masterPartId: pEvCoolant.id,
+      qty: 2, // 2 Gallons
+    }
   ];
 
   await Promise.all(
@@ -2102,6 +2435,13 @@ async function main() {
         name: 'Repuestos Toyota',
         specialty: 'REPUESTOS',
         status: 'ACTIVE',
+        nit: '900123456',
+        siigoIdType: 'NIT',
+        siigoPersonType: 'COMPANY',
+        stateCode: '11', // Bogota
+        cityCode: '11001',
+        fiscalResponsibilities: ['O-15', 'O-47'],
+        vatResponsible: true,
       },
     }),
     prisma.provider.create({
@@ -2110,6 +2450,13 @@ async function main() {
         name: 'Lubricantes Shell',
         specialty: 'LUBRICANTES',
         status: 'ACTIVE',
+        nit: '800987654',
+        siigoIdType: 'NIT',
+        siigoPersonType: 'COMPANY',
+        stateCode: '05', // Antioquia
+        cityCode: '05001',
+        fiscalResponsibilities: ['O-15'],
+        vatResponsible: true,
       },
     }),
     prisma.provider.create({
@@ -2118,6 +2465,13 @@ async function main() {
         name: 'Taller ABC Frenos',
         specialty: 'FRENOS',
         status: 'ACTIVE',
+        nit: '1020304050',
+        siigoIdType: 'CC',
+        siigoPersonType: 'PERSON',
+        stateCode: '11',
+        cityCode: '11001',
+        fiscalResponsibilities: ['R-99-PN'],
+        vatResponsible: false,
       },
     }),
   ]);
@@ -2412,25 +2766,46 @@ async function main() {
     prisma.provider.create({
       data: {
         tenantId: TENANT_2_ID,
-        name: 'Autopartes del Valle',
-        specialty: 'REPUESTOS',
+        name: 'Filtros Col',
+        specialty: 'FILTROS',
         status: 'ACTIVE',
+        nit: '900111222',
+        siigoIdType: 'NIT',
+        siigoPersonType: 'COMPANY',
+        stateCode: '11',
+        cityCode: '11001',
+        fiscalResponsibilities: ['O-15'],
+        vatResponsible: true,
       },
     }),
     prisma.provider.create({
       data: {
         tenantId: TENANT_2_ID,
-        name: 'Llantas y Servicios',
-        specialty: 'NEUMATICOS',
+        name: 'Taller Norte',
+        specialty: 'SERVICIOS_GENERALES',
         status: 'ACTIVE',
+        nit: '800555444',
+        siigoIdType: 'NIT',
+        siigoPersonType: 'COMPANY',
+        stateCode: '76', // Valle
+        cityCode: '76001',
+        fiscalResponsibilities: ['O-15', 'O-47'],
+        vatResponsible: true,
       },
     }),
     prisma.provider.create({
       data: {
         tenantId: TENANT_2_ID,
-        name: 'Taller Frenos Rapidos',
-        specialty: 'FRENOS',
+        name: 'Electricidad Auto',
+        specialty: 'ELECTRICO',
         status: 'ACTIVE',
+        nit: '1098765432',
+        siigoIdType: 'CC',
+        siigoPersonType: 'PERSON',
+        stateCode: '11',
+        cityCode: '11001',
+        fiscalResponsibilities: ['R-99-PN'],
+        vatResponsible: false,
       },
     }),
   ]);

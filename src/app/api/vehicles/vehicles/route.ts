@@ -1,18 +1,16 @@
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { canManageVehicles } from '@/lib/permissions';
 
 export async function GET() {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const vehicles = await prisma.vehicle.findMany({
+    const vehicles = await tenantPrisma.vehicle.findMany({
       where: {
-        tenantId: user.tenantId,
         status: 'ACTIVE',
       },
       include: {
@@ -37,10 +35,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManageVehicles(user)) {
@@ -69,12 +66,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const existingVehicle = await prisma.vehicle.findUnique({
+    const existingVehicle = await tenantPrisma.vehicle.findFirst({
       where: {
-        tenantId_licensePlate: {
-          tenantId: user.tenantId,
-          licensePlate: licensePlate,
-        },
+        licensePlate: licensePlate,
       },
     });
 
@@ -85,10 +79,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const vehicle = await prisma.vehicle.create({
+    const vehicle = await tenantPrisma.vehicle.create({
       data: {
         ...body,
-        tenantId: user.tenantId,
       },
     });
 

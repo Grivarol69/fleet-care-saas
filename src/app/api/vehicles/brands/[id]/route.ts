@@ -1,6 +1,6 @@
-// src/app/api/vehicles/brands/[id]/route.ts
 import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+// src/app/api/vehicles/brands/[id]/route.ts
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { requireMasterDataMutationPermission } from '@/lib/permissions';
 
@@ -10,10 +10,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -53,10 +52,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -101,7 +99,7 @@ export async function PUT(
     }
 
     // Verificar duplicados en el mismo scope
-    const duplicateBrand = await prisma.vehicleBrand.findFirst({
+    const duplicateBrand = await tenantPrisma.vehicleBrand.findFirst({
       where: {
         tenantId: existingBrand.tenantId,
         name: name.trim(),
@@ -116,7 +114,7 @@ export async function PUT(
       );
     }
 
-    const updatedBrand = await prisma.vehicleBrand.update({
+    const updatedBrand = await tenantPrisma.vehicleBrand.update({
       where: { id: brandId },
       data: { name: name.trim() },
     });
@@ -137,10 +135,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -175,7 +172,7 @@ export async function DELETE(
     }
 
     // Soft delete - cambiar status a INACTIVE
-    await prisma.vehicleBrand.update({
+    await tenantPrisma.vehicleBrand.update({
       where: { id: brandId },
       data: { status: 'INACTIVE' },
     });

@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { requireMasterDataMutationPermission } from '@/lib/permissions';
 
@@ -9,10 +9,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -65,10 +64,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -143,7 +141,7 @@ export async function PUT(
     }
 
     // Verificar duplicados en el mismo scope
-    const duplicateLine = await prisma.vehicleLine.findFirst({
+    const duplicateLine = await tenantPrisma.vehicleLine.findFirst({
       where: {
         tenantId: existingLine.tenantId,
         brandId: parsedBrandId,
@@ -159,7 +157,7 @@ export async function PUT(
       );
     }
 
-    const updatedLine = await prisma.vehicleLine.update({
+    const updatedLine = await tenantPrisma.vehicleLine.update({
       where: { id: lineId },
       data: {
         name: name.trim(),
@@ -193,10 +191,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -276,7 +273,7 @@ export async function PATCH(
       const checkBrandId =
         parsedBrandId !== undefined ? parsedBrandId : existingLine.brandId;
 
-      const duplicateLine = await prisma.vehicleLine.findFirst({
+      const duplicateLine = await tenantPrisma.vehicleLine.findFirst({
         where: {
           tenantId: existingLine.tenantId,
           brandId: checkBrandId,
@@ -293,7 +290,7 @@ export async function PATCH(
       }
     }
 
-    const updatedLine = await prisma.vehicleLine.update({
+    const updatedLine = await tenantPrisma.vehicleLine.update({
       where: { id: lineId },
       data: updateData,
       include: {
@@ -324,10 +321,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -362,12 +358,12 @@ export async function DELETE(
     }
 
     // Verificar dependencias
-    const hasVehicles = await prisma.vehicle.findFirst({
-      where: { lineId, tenantId: user.tenantId },
+    const hasVehicles = await tenantPrisma.vehicle.findFirst({
+      where: { lineId, },
     });
 
-    const hasMantTemplates = await prisma.maintenanceTemplate.findFirst({
-      where: { vehicleLineId: lineId, tenantId: user.tenantId },
+    const hasMantTemplates = await tenantPrisma.maintenanceTemplate.findFirst({
+      where: { vehicleLineId: lineId, },
     });
 
     if (hasVehicles || hasMantTemplates) {
@@ -381,7 +377,7 @@ export async function DELETE(
     }
 
     // Soft delete
-    await prisma.vehicleLine.update({
+    await tenantPrisma.vehicleLine.update({
       where: { id: lineId },
       data: { status: 'INACTIVE' },
     });

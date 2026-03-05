@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/hooks/use-toast';
 import { ArrowLeft, Trash2, Printer } from 'lucide-react';
 import { DetailsTab } from '../components/InvoiceDetail/DetailsTab';
-import { ItemsTab } from '../components/InvoiceDetail/ItemsTab';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +18,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { SiigoSyncStatusBadge } from '@/components/siigo/SiigoSyncStatusBadge';
+import { AlertCircle } from 'lucide-react';
 
 type Invoice = {
   id: string;
@@ -84,6 +86,11 @@ type Invoice = {
     referenceNumber: string | null;
     notes: string | null;
   }>;
+  siigoSyncStatus?: {
+    status: 'PENDING' | 'SYNCING' | 'SYNCED' | 'FAILED' | 'SKIPPED';
+    statusMessage?: string | null;
+    siigoId?: string | null;
+  } | null;
 };
 
 export default function InvoiceDetailPage() {
@@ -132,7 +139,7 @@ export default function InvoiceDetailPage() {
       const errorMessage =
         error instanceof Error && 'response' in error
           ? (error as { response?: { data?: { error?: string } } }).response
-              ?.data?.error
+            ?.data?.error
           : 'No se pudo eliminar la factura';
       toast({
         title: 'Error',
@@ -176,7 +183,7 @@ export default function InvoiceDetailPage() {
   }
 
   const canDelete = invoice.payments.length === 0;
-  const totalPaid = invoice.payments.reduce((sum, p) => sum + p.amount, 0);
+  const totalPaid = invoice.payments.reduce((sum: number, p: { amount: number }) => sum + p.amount, 0);
   const balance = invoice.totalAmount - totalPaid;
 
   return (
@@ -192,8 +199,15 @@ export default function InvoiceDetailPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">
+            <h1 className="text-3xl font-bold flex items-center gap-3">
               Factura {invoice.invoiceNumber}
+              {invoice.siigoSyncStatus && (
+                <SiigoSyncStatusBadge
+                  status={invoice.siigoSyncStatus.status}
+                  siigoId={invoice.siigoSyncStatus.siigoId || undefined}
+                  showTooltip={false}
+                />
+              )}
             </h1>
             <p className="text-muted-foreground mt-1">
               {invoice.supplier?.name || 'Sin proveedor'}
@@ -247,6 +261,17 @@ export default function InvoiceDetailPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Siigo Error Alert */}
+      {invoice.siigoSyncStatus?.status === 'FAILED' && invoice.siigoSyncStatus.statusMessage && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error en Sincronización con Siigo</AlertTitle>
+          <AlertDescription className="mt-2 text-xs break-words font-mono bg-destructive/10 p-2 rounded">
+            {invoice.siigoSyncStatus.statusMessage}
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Tabs */}

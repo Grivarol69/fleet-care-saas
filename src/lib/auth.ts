@@ -1,7 +1,8 @@
-import { currentUser, auth } from '@clerk/nextjs/server';
+import { currentUser, auth, clerkClient } from '@clerk/nextjs/server';
 
 import { prisma } from '@/lib/prisma';
-import { User } from '@prisma/client';
+import { getTenantPrisma } from '@/lib/tenant-prisma';
+import { User, UserRole } from '@prisma/client';
 
 // Platform Tenant ID para SUPER_ADMIN (único lugar de definición)
 export const PLATFORM_TENANT_ID = '00000000-0000-0000-0000-000000000000';
@@ -26,17 +27,20 @@ export async function getCurrentUser(): Promise<UserWithSuperAdmin | null> {
     // Timeout de 15s para evitar que la página se cuelgue si Neon tiene cold start
     const result = await Promise.race([
       getCurrentUserInternal(),
-      new Promise<null>(resolve => {
+      new Promise<null>((_, reject) => {
         setTimeout(() => {
-          console.warn(
+          console.error(
             '[AUTH] getCurrentUser() timeout after 15s - possible DB cold start'
           );
-          resolve(null);
+          reject(new Error('DATABASE_TIMEOUT'));
         }, 15000);
       }),
     ]);
     return result;
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message === 'DATABASE_TIMEOUT') {
+      throw error;
+    }
     console.error('[AUTH ERROR] Error obteniendo usuario:', error);
     return null;
   }
@@ -96,27 +100,72 @@ async function getCurrentUserInternal(): Promise<UserWithSuperAdmin | null> {
         },
       });
 
-      // Fallback JIT: si el usuario no existe, el webhook puede estar en tránsito.
-      // Esperamos brevemente y reintentamos una vez antes de rendirse.
+      // Fallback JIT: si el usuario no existe, el webhook puede estar en tránsito o falló.
+      // Lo creamos de manera proactiva utilizando los datos de session de Clerk.
       if (!user) {
         console.warn(
-          `[AUTH] User ${email} not found in DB for tenant ${orgId}. Retrying in 1.5s (webhook latency)...`
+          `[AUTH] User ${email} not found in DB for tenant ${orgId}. Webhook delayed/failed. Creating JIT...`
         );
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        user = await prisma.user.findFirst({
-          where: {
-            email,
-            tenantId: orgId,
-            isActive: true,
-          },
-        });
-      }
 
-      if (!user) {
-        console.warn(
-          `[AUTH] User ${email} still not found after retry for tenant ${orgId}. Webhook may have failed.`
-        );
-        return null;
+        const firstName = clerkUser.firstName || 'User';
+        const lastName = clerkUser.lastName || '';
+
+        // Resolve org membership via Clerk Backend API.
+        // currentUser() does NOT include organizationMemberships — we must call the API.
+        let jitOrgName: string | undefined;
+        let dbRole: UserRole = 'OWNER'; // safest fallback for the first user of a new org
+
+        try {
+          const client = await clerkClient();
+          const memberships = await client.organizations.getOrganizationMembershipList({
+            organizationId: orgId,
+          });
+          const membership = memberships.data.find(
+            (m) => m.publicUserData?.identifier === email
+          );
+          if (membership) {
+            jitOrgName = membership.organization.name;
+            const roleName = membership.role.replace('org:', '');
+            const jitRoleMapping: Record<string, UserRole> = {
+              admin: 'OWNER',
+              manager: 'MANAGER',
+              technician: 'TECHNICIAN',
+              purchaser: 'PURCHASER',
+              driver: 'DRIVER',
+            };
+            dbRole = jitRoleMapping[roleName] ?? 'DRIVER';
+          }
+        } catch (clerkApiErr) {
+          console.error('[AUTH] Failed to fetch org membership from Clerk API, defaulting to OWNER:', clerkApiErr);
+        }
+
+        // Validar que el Tenant también exista antes de crear el usuario
+        let tenant = await prisma.tenant.findUnique({ where: { id: orgId } });
+
+        if (!tenant) {
+          console.warn(`[AUTH] Tenant ${orgId} not found in DB. Webhook delayed/failed. Creating JIT...`);
+          tenant = await prisma.tenant.create({
+            data: {
+              id: orgId,
+              name: jitOrgName ?? 'Empresa (Auto-creada)',
+              slug: orgId.toLowerCase(),
+              onboardingStatus: 'PENDING',
+            }
+          });
+        }
+
+        user = await prisma.user.create({
+          data: {
+            id: clerkUser.id, // Reusamos el ID de clerk si queremos compatibilidad total
+            email,
+            firstName,
+            lastName,
+            tenantId: orgId,
+            role: dbRole,
+            isActive: true,
+          }
+        });
+        console.log(`[AUTH] JIT User created successfully:`, user.id);
       }
 
       // Retornar usuario
@@ -137,14 +186,20 @@ async function getCurrentUserInternal(): Promise<UserWithSuperAdmin | null> {
  * Obtiene el usuario autenticado o lanza excepción
  * Útil para APIs que REQUIEREN autenticación
  */
-export async function requireCurrentUser(): Promise<UserWithSuperAdmin> {
+export async function requireCurrentUser() {
   const user = await getCurrentUser();
 
   if (!user) {
-    throw new Error('No autenticado');
+    return { user: null, tenantPrisma: prisma as any };
   }
 
-  return user;
+  // Si es SUPER_ADMIN (operando globalmente en Platform Tenant) usa el prisma base
+  // De lo contrario usa el prisma con extensión de asilamiento por tenant
+  const tenantPrisma = (user.isSuperAdmin
+    ? prisma
+    : getTenantPrisma(user.tenantId)) as ReturnType<typeof getTenantPrisma>;
+
+  return { user, tenantPrisma };
 }
 
 /**

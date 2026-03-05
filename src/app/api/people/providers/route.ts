@@ -1,18 +1,18 @@
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { canManageProviders } from '@/lib/permissions';
 
+export const maxDuration = 60;
+
 export async function GET() {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const providers = await prisma.provider.findMany({
+    const providers = await tenantPrisma.provider.findMany({
       where: {
-        tenantId: user.tenantId,
         status: 'ACTIVE',
       },
       orderBy: {
@@ -31,10 +31,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManageProviders(user)) {
@@ -44,7 +43,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const { name, email, phone, address, specialty } = await req.json();
+    const {
+      name, email, phone, address, specialty,
+      nit, siigoIdType, siigoPersonType, stateCode, cityCode, fiscalResponsibilities, vatResponsible
+    } = await req.json();
 
     if (!name || name.trim() === '') {
       return NextResponse.json(
@@ -54,12 +56,9 @@ export async function POST(req: Request) {
     }
 
     // Verificar que no exista un proveedor con el mismo nombre
-    const existingProvider = await prisma.provider.findUnique({
+    const existingProvider = await tenantPrisma.provider.findFirst({
       where: {
-        tenantId_name: {
-          tenantId: user.tenantId,
-          name: name.trim(),
-        },
+        name: name.trim(),
       },
     });
 
@@ -70,15 +69,27 @@ export async function POST(req: Request) {
       );
     }
 
-    const provider = await prisma.provider.create({
+    const provider = await tenantPrisma.provider.create({
       data: {
         name: name.trim(),
         email: email?.trim() || null,
         phone: phone?.trim() || null,
         address: address?.trim() || null,
         specialty: specialty?.trim() || null,
-        tenantId: user.tenantId,
+        nit: nit?.trim() || null,
+        siigoIdType: siigoIdType || null,
+        siigoPersonType: siigoPersonType || null,
+        stateCode: stateCode?.trim() || null,
+        cityCode: cityCode?.trim() || null,
+        fiscalResponsibilities: Array.isArray(fiscalResponsibilities) ? fiscalResponsibilities : [],
+        vatResponsible: vatResponsible ?? false,
       },
+    });
+
+    const { after } = await import('next/server');
+    after(async () => {
+      const { SiigoSyncService } = await import('@/lib/services/siigo');
+      await SiigoSyncService.syncProvider(provider.id, user.tenantId);
     });
 
     return NextResponse.json(provider, { status: 201 });
@@ -90,3 +101,4 @@ export async function POST(req: Request) {
     );
   }
 }
+

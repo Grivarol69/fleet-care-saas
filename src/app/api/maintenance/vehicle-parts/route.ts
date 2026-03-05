@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireMasterDataMutationPermission } from '@/lib/permissions';
 
@@ -9,9 +9,9 @@ import { requireMasterDataMutationPermission } from '@/lib/permissions';
  */
 export async function GET(req: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = req.nextUrl;
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
     if (vehicleBrandId) where.vehicleBrandId = parseInt(vehicleBrandId);
     if (vehicleLineId) where.vehicleLineId = parseInt(vehicleLineId);
 
-    const items = await prisma.mantItemVehiclePart.findMany({
+    const items = await tenantPrisma.mantItemVehiclePart.findMany({
       where,
       include: {
         mantItem: { select: { id: true, name: true, type: true } },
@@ -56,9 +56,9 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await req.json();
@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Verificar que MasterPart existe
-    const masterPart = await prisma.masterPart.findUnique({
+    const masterPart = await tenantPrisma.masterPart.findUnique({
       where: { id: masterPartId },
     });
     if (!masterPart) {
@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Verificar duplicados
-    const existing = await prisma.mantItemVehiclePart.findFirst({
+    const existing = await tenantPrisma.mantItemVehiclePart.findFirst({
       where: {
         mantItemId,
         vehicleBrandId,
@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const created = await prisma.mantItemVehiclePart.create({
+    const created = await tenantPrisma.mantItemVehiclePart.create({
       data: {
         tenantId: isGlobal ? null : user.tenantId,
         isGlobal: isGlobal || false,

@@ -1,7 +1,6 @@
-import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { canManageMaintenancePrograms } from '@/lib/permissions';
 
 export async function PUT(
@@ -9,7 +8,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -41,7 +40,7 @@ export async function PUT(
     }
 
     // Verificar que el package item existe
-    const existingItem = await prisma.packageItem.findUnique({
+    const existingItem = await tenantPrisma.packageItem.findUnique({
       where: { id },
     });
 
@@ -52,7 +51,7 @@ export async function PUT(
       );
     }
 
-    const updatedPackageItem = await prisma.packageItem.update({
+    const updatedPackageItem = await tenantPrisma.packageItem.update({
       where: { id },
       data: {
         triggerKm,
@@ -83,7 +82,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -98,7 +97,7 @@ export async function DELETE(
     const { id } = await params;
 
     // Verificar que el package item existe
-    const existingItem = await prisma.packageItem.findUnique({
+    const existingItem = await tenantPrisma.packageItem.findUnique({
       where: { id },
     });
 
@@ -109,7 +108,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.packageItem.delete({
+    await tenantPrisma.packageItem.delete({
       where: { id },
     });
 
@@ -127,7 +126,7 @@ export async function GET(
   try {
     const { id } = await params;
 
-    const packageItem = await prisma.packageItem.findUnique({
+    const packageItem = await tenantPrisma.packageItem.findUnique({
       where: { id },
       include: {
         mantItem: {

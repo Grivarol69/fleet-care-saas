@@ -1,18 +1,20 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { z } from 'zod';
 import { canManageMaintenancePrograms } from '@/lib/permissions';
 
 const cloneSchema = z.object({
   templateId: z.string(),
+  name: z.string().min(1, "Name is required"),
+  vehicleBrandId: z.string().min(1, "Brand is required"),
+  vehicleLineId: z.string().min(1, "Line is required"),
 });
 
 export async function POST(req: Request) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManageMaintenancePrograms(user)) {
@@ -26,7 +28,7 @@ export async function POST(req: Request) {
     const body = cloneSchema.parse(json);
 
     // 1. Fetch the Global Template
-    const sourceTemplate = await prisma.maintenanceTemplate.findUnique({
+    const sourceTemplate = await tenantPrisma.maintenanceTemplate.findUnique({
       where: { id: body.templateId },
       include: {
         packages: {
@@ -51,13 +53,12 @@ export async function POST(req: Request) {
 
     // 2. Clone it (Deep Copy)
     // We create a new Template for this Tenant based on the Global one
-    const newTemplate = await prisma.maintenanceTemplate.create({
+    const newTemplate = await tenantPrisma.maintenanceTemplate.create({
       data: {
-        tenantId: user.tenantId,
-        name: `${sourceTemplate.name} (Copia)`,
+        name: body.name,
         description: sourceTemplate.description,
-        vehicleBrandId: sourceTemplate.vehicleBrandId,
-        vehicleLineId: sourceTemplate.vehicleLineId,
+        vehicleBrandId: body.vehicleBrandId,
+        vehicleLineId: body.vehicleLineId,
         version: sourceTemplate.version,
         isDefault: false,
         // Deep copy packages
@@ -69,6 +70,7 @@ export async function POST(req: Request) {
             estimatedCost: pkg.estimatedCost,
             estimatedTime: pkg.estimatedTime,
             isPattern: pkg.isPattern,
+            tenantId: user.tenantId,
             // Deep copy items
             packageItems: {
               create: pkg.packageItems.map(item => ({
@@ -78,6 +80,7 @@ export async function POST(req: Request) {
                 estimatedTime: item.estimatedTime,
                 technicalNotes: item.technicalNotes,
                 isOptional: item.isOptional,
+                tenantId: user.tenantId,
               })),
             },
           })),

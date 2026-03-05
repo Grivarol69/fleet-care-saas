@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import {
   MovementType,
   MovementReferenceType,
@@ -23,9 +22,9 @@ interface ConsumeItem {
  */
 export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canExecuteWorkOrders(user)) {
@@ -49,8 +48,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar que la OT existe y pertenece al tenant
-    const workOrder = await prisma.workOrder.findUnique({
-      where: { id: workOrderId, tenantId: user.tenantId },
+    const workOrder = await tenantPrisma.workOrder.findUnique({
+      where: { id: workOrderId, },
     });
 
     if (!workOrder) {
@@ -61,7 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Procesar todos los items en una transacción
-    const result = await prisma.$transaction(async tx => {
+    const result = await tenantPrisma.$transaction(async tx => {
       const processedItems: Array<{
         workOrderItemId: string;
         inventoryItemId: string;
@@ -134,7 +133,6 @@ export async function POST(request: NextRequest) {
         // 5. Crear InventoryMovement
         const movement = await tx.inventoryMovement.create({
           data: {
-            tenantId: user.tenantId,
             inventoryItemId: item.inventoryItemId,
             movementType: MovementType.CONSUMPTION,
             quantity: requestedQty,

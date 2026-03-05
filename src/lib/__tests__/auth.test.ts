@@ -14,6 +14,11 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     user: {
       findFirst: vi.fn(),
+      create: vi.fn().mockResolvedValue({ id: 'dummy_user_id' }),
+    },
+    tenant: {
+      findUnique: vi.fn(),
+      create: vi.fn().mockResolvedValue({ id: 'dummy_tenant_id' }),
     },
   },
 }));
@@ -77,7 +82,7 @@ describe('Auth Service (Multi-tenancy)', () => {
     );
   });
 
-  it('should retry once and return null if user NOT found in DB (Webhook latency)', async () => {
+  it('should retry once and return JIT created user if NOT found in DB (Webhook latency)', async () => {
     (auth as any).mockResolvedValue({
       userId: mockUserId,
       orgId: mockTenantId,
@@ -97,11 +102,12 @@ describe('Auth Service (Multi-tenancy)', () => {
 
     const result = await promise;
 
-    expect(result).toBeNull();
-    // Should be called 3 times:
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe('dummy_user_id');
+    // Should be called 2 times:
     // 1. SuperAdmin check
     // 2. Initial check
-    // 3. Retry check
-    expect(prisma.user.findFirst).toHaveBeenCalledTimes(3);
+    expect(prisma.user.findFirst).toHaveBeenCalledTimes(2);
+    expect(prisma.user.create).toHaveBeenCalledTimes(1);
   });
 });

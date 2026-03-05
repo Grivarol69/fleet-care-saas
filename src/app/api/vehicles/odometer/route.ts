@@ -1,20 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import { MaintenanceAlertService } from '@/lib/services/MaintenanceAlertService';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 
 // GET - Fetch all odometer logs for tenant
 export async function GET() {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const odometerLogs = await prisma.odometerLog.findMany({
+    const odometerLogs = await tenantPrisma.odometerLog.findMany({
       where: {
-        tenantId: user.tenantId,
-      },
+        },
       include: {
         vehicle: {
           include: {
@@ -40,9 +38,9 @@ export async function GET() {
 // POST - Create new odometer log
 export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
@@ -50,11 +48,10 @@ export async function POST(request: NextRequest) {
       body;
 
     // Validate vehicle belongs to tenant
-    const vehicle = await prisma.vehicle.findFirst({
+    const vehicle = await tenantPrisma.vehicle.findFirst({
       where: {
         id: vehicleId,
-        tenantId: user.tenantId,
-      },
+        },
     });
 
     if (!vehicle) {
@@ -65,11 +62,10 @@ export async function POST(request: NextRequest) {
 
     // Validate driver belongs to tenant (if provided)
     if (driverId) {
-      const driver = await prisma.driver.findFirst({
+      const driver = await tenantPrisma.driver.findFirst({
         where: {
           id: driverId,
-          tenantId: user.tenantId,
-        },
+          },
       });
 
       if (!driver) {
@@ -88,7 +84,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get last odometer reading for validation
-    const lastReading = await prisma.odometerLog.findFirst({
+    const lastReading = await tenantPrisma.odometerLog.findFirst({
       where: {
         vehicleId: vehicleId,
         measureType: measureType,
@@ -115,9 +111,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Create odometer log
-    const odometerLog = await prisma.odometerLog.create({
+    const odometerLog = await tenantPrisma.odometerLog.create({
       data: {
-        tenantId: user.tenantId,
         vehicleId,
         driverId: driverId || null,
         kilometers: measureType === 'KILOMETERS' ? kilometers : null,
@@ -139,7 +134,7 @@ export async function POST(request: NextRequest) {
 
     // Update vehicle mileage if kilometers
     if (measureType === 'KILOMETERS' && kilometers) {
-      await prisma.vehicle.update({
+      await tenantPrisma.vehicle.update({
         where: { id: vehicleId },
         data: {
           mileage: kilometers,

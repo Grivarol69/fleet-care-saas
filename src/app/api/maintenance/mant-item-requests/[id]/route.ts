@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { requireCurrentUser } from '@/lib/auth';
 import { isOwner, isManager, isSuperAdmin } from '@/lib/permissions';
 
 /**
@@ -12,9 +11,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -23,8 +22,8 @@ export async function GET(
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
-    const itemRequest = await prisma.mantItemRequest.findFirst({
-      where: { id: requestId, tenantId: user.tenantId },
+    const itemRequest = await tenantPrisma.mantItemRequest.findFirst({
+      where: { id: requestId, },
       include: {
         category: { select: { id: true, name: true } },
       },
@@ -54,9 +53,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!isSuperAdmin(user) && !isOwner(user) && !isManager(user)) {
@@ -82,8 +81,8 @@ export async function PATCH(
     }
 
     // Verificar que la solicitud existe y está pendiente
-    const itemRequest = await prisma.mantItemRequest.findFirst({
-      where: { id: requestId, tenantId: user.tenantId },
+    const itemRequest = await tenantPrisma.mantItemRequest.findFirst({
+      where: { id: requestId, },
     });
 
     if (!itemRequest) {
@@ -110,7 +109,7 @@ export async function PATCH(
         );
       }
 
-      const rejected = await prisma.mantItemRequest.update({
+      const rejected = await tenantPrisma.mantItemRequest.update({
         where: { id: requestId },
         data: {
           status: 'REJECTED',
@@ -127,11 +126,10 @@ export async function PATCH(
     }
 
     // APPROVED: crear MantItem + actualizar solicitud en transacción
-    const result = await prisma.$transaction(async tx => {
+    const result = await tenantPrisma.$transaction(async tx => {
       // Verificar duplicado exacto antes de crear
       const existing = await tx.mantItem.findFirst({
         where: {
-          tenantId: user.tenantId,
           name: itemRequest.suggestedName,
         },
       });
@@ -150,7 +148,6 @@ export async function PATCH(
           mantType: itemRequest.mantType,
           categoryId: itemRequest.categoryId,
           type: itemRequest.type,
-          tenantId: user.tenantId,
           isGlobal: false,
         },
         include: {

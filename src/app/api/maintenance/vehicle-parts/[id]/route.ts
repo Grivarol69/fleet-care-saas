@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireMasterDataMutationPermission } from '@/lib/permissions';
 
@@ -13,9 +13,9 @@ interface RouteParams {
  */
 export async function GET(_req: NextRequest, { params }: RouteParams) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -65,9 +65,9 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
  */
 export async function PUT(req: NextRequest, { params }: RouteParams) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -113,7 +113,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
 
     // Si cambia masterPartId, verificar que exista
     if (masterPartId && masterPartId !== existing.masterPartId) {
-      const masterPart = await prisma.masterPart.findUnique({
+      const masterPart = await tenantPrisma.masterPart.findUnique({
         where: { id: masterPartId },
       });
       if (!masterPart) {
@@ -124,7 +124,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
       }
 
       // Verificar duplicados con la nueva combinación
-      const duplicate = await prisma.mantItemVehiclePart.findFirst({
+      const duplicate = await tenantPrisma.mantItemVehiclePart.findFirst({
         where: {
           id: { not: itemId },
           mantItemId: existing.mantItemId,
@@ -143,7 +143,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
       }
     }
 
-    const updated = await prisma.mantItemVehiclePart.update({
+    const updated = await tenantPrisma.mantItemVehiclePart.update({
       where: { id: itemId },
       data: {
         ...(yearFrom !== undefined && { yearFrom: yearFrom || null }),

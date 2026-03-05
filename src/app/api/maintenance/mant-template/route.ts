@@ -1,14 +1,13 @@
 import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { canManageMaintenancePrograms } from '@/lib/permissions';
 
 export async function GET() {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Devolver templates GLOBALES + del tenant
@@ -73,9 +72,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManageMaintenancePrograms(user)) {
@@ -168,7 +167,7 @@ export async function POST(req: Request) {
     }
 
     // Verificar que no exista un template con el mismo nombre para la misma marca/línea en el scope
-    const existingTemplate = await prisma.maintenanceTemplate.findFirst({
+    const existingTemplate = await tenantPrisma.maintenanceTemplate.findFirst({
       where: {
         tenantId: targetTenant,
         vehicleBrandId,
@@ -188,7 +187,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const mantTemplate = await prisma.maintenanceTemplate.create({
+    const mantTemplate = await tenantPrisma.maintenanceTemplate.create({
       data: {
         name: name.trim(),
         description: description?.trim() || null,

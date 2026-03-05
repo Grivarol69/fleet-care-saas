@@ -1,13 +1,12 @@
 import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Devolver líneas GLOBALES + del tenant (solo activas)
@@ -52,10 +51,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { name, brandId, isGlobal } = await req.json();
@@ -113,7 +111,7 @@ export async function POST(req: Request) {
     }
 
     // Verificar que no existe
-    const existingLine = await prisma.vehicleLine.findFirst({
+    const existingLine = await tenantPrisma.vehicleLine.findFirst({
       where: {
         tenantId: targetTenant,
         brandId: parsedBrandId,
@@ -143,7 +141,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const line = await prisma.vehicleLine.create({
+    const line = await tenantPrisma.vehicleLine.create({
       data: {
         name: name.trim(),
         brandId: parsedBrandId,

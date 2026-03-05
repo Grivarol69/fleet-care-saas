@@ -1,11 +1,11 @@
-import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { canManagePurchases } from '@/lib/permissions';
 
-// Schema for creating a MasterPart
+export const maxDuration = 60;
+
 const createMasterPartSchema = z.object({
   code: z.string().min(1),
   description: z.string().min(1),
@@ -14,13 +14,16 @@ const createMasterPartSchema = z.object({
   unit: z.string().default('UNIDAD'),
   referencePrice: z.number().min(0).optional(),
   isActive: z.boolean().default(true),
+  accountGroup: z.number().int().optional(),
+  siigoTaxClassification: z.enum(['TAXED', 'EXEMPT', 'EXCLUDED']).optional(),
+  siigoUnit: z.number().int().optional(),
 });
 
 export async function GET(req: Request) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(req.url);
@@ -31,7 +34,7 @@ export async function GET(req: Request) {
       isActive: true,
       AND: [
         {
-          OR: [{ tenantId: null }, { tenantId: user.tenantId }],
+          OR: [{ tenantId: null }, {}],
         },
       ],
     };
@@ -52,7 +55,7 @@ export async function GET(req: Request) {
       }
     }
 
-    const parts = await prisma.masterPart.findMany({
+    const parts = await tenantPrisma.masterPart.findMany({
       where: whereClause,
       orderBy: { description: 'asc' },
     });
@@ -69,9 +72,9 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManagePurchases(user)) {
@@ -94,12 +97,12 @@ export async function POST(req: Request) {
     const data = validation.data;
 
     // Check if code exists in this scope
-    const existing = await prisma.masterPart.findFirst({
+    const existing = await tenantPrisma.masterPart.findFirst({
       where: {
         code: data.code,
         OR: [
           { tenantId: null }, // Conflict with global
-          { tenantId: user.tenantId }, // Conflict with local
+          {}, // Conflict with local
         ],
       },
     });
@@ -111,9 +114,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const part = await prisma.masterPart.create({
+    const part = await tenantPrisma.masterPart.create({
       data: {
-        tenantId: user.tenantId,
         code: data.code,
         description: data.description,
         category: data.category,
@@ -121,7 +123,16 @@ export async function POST(req: Request) {
         unit: data.unit,
         referencePrice: data.referencePrice ?? null,
         isActive: data.isActive,
+        accountGroup: data.accountGroup ?? null,
+        siigoTaxClassification: data.siigoTaxClassification ?? null,
+        siigoUnit: data.siigoUnit ?? null,
       },
+    });
+
+    const { after } = await import('next/server');
+    after(async () => {
+      const { SiigoSyncService } = await import('@/lib/services/siigo');
+      await SiigoSyncService.syncPart(part.id, user.tenantId);
     });
 
     return NextResponse.json(part, { status: 201 });

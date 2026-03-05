@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 
 export type MonthlyData = {
   month: string; // "Ene 2025"
@@ -12,9 +11,12 @@ export type MonthlyData = {
 
 export async function GET() {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     if (!user || !user.tenantId) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const tenantId = user.tenantId;
 
@@ -61,7 +63,7 @@ export async function GET() {
       const endOfMonth = new Date(year, monthIndex + 1, 0, 23, 59, 59);
 
       // Agregar invoices del mes
-      const invoices = await prisma.invoice.aggregate({
+      const invoices = await tenantPrisma.invoice.aggregate({
         where: {
           tenantId,
           invoiceDate: {

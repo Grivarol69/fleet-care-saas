@@ -1,93 +1,81 @@
 'use server';
 
-import { auth, currentUser } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
-import { revalidatePath } from 'next/cache';
+import { getCurrentUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 
-import { seedTenantData } from '@/actions/seed-tenant';
+export async function completeOnboarding(): Promise<{ success: boolean; error?: string }> {
+  try {
+    const dbUser = await getCurrentUser();
 
-export async function updateTenantProfile(formData: FormData) {
-  const { orgId } = await auth();
-  const user = await currentUser();
-  const email = user?.emailAddresses?.[0]?.emailAddress || '';
+    if (!dbUser || !dbUser.tenantId) {
+      return { success: false, error: 'No organization found' };
+    }
 
-  let tenantId = orgId;
-  if (!tenantId) {
-    const dbUser = await prisma.user.findFirst({
-      where: { email },
-      include: { tenant: true },
+    const tenant = await prisma.tenant.findUnique({ where: { id: dbUser.tenantId } });
+    if (!tenant || tenant.onboardingStatus !== 'PROFILE_COMPLETED') {
+      return { success: false, error: 'Debe completar el perfil primero' };
+    }
+
+    await prisma.tenant.update({
+      where: { id: dbUser.tenantId },
+      data: { onboardingStatus: 'COMPLETED' },
     });
-    tenantId = dbUser?.tenantId || null;
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('[Onboarding] completeOnboarding Error:', err);
+    return { success: false, error: err.message || 'Error completing onboarding' };
   }
-
-  if (!tenantId) throw new Error('No organization found');
-
-  const name = formData.get('orgName') as string;
-  const country = formData.get('country') as string;
-
-  // Mapeo simple de moneda por país (podría ser una tabla en DB)
-  const currencyMap: Record<string, string> = {
-    CO: 'COP',
-    MX: 'MXN',
-    CL: 'CLP',
-    AR: 'ARS',
-    PE: 'PEN',
-    US: 'USD',
-  };
-  const currency = currencyMap[country] || 'USD';
-
-  await prisma.tenant.update({
-    where: { id: tenantId },
-    data: {
-      name,
-      country,
-      currency,
-      onboardingStatus: 'PROFILE_COMPLETED',
-    },
-  });
-
-  revalidatePath('/onboarding');
 }
 
-export async function completeOnboarding() {
-  const { orgId } = await auth();
-  const user = await currentUser();
-  const email = user?.emailAddresses?.[0]?.emailAddress || '';
+export async function updateTenantProfile(
+  _prevState: { success: boolean; error?: string } | null,
+  formData: FormData
+): Promise<{ success: boolean; error?: string }> {
+  console.log('[Onboarding] updateTenantProfile triggered. Payload:', Object.fromEntries(formData.entries()));
 
-  let tenantId = orgId;
-  if (!tenantId) {
-    const dbUser = await prisma.user.findFirst({
-      where: { email },
-      include: { tenant: true },
+  try {
+    const dbUser = await getCurrentUser();
+
+    if (!dbUser || !dbUser.tenantId) {
+      console.error(`[Onboarding] No organization found for user.`);
+      return { success: false, error: 'No organization found. Por favor recarga la página en unos segundos.' };
+    }
+
+    const tenantId = dbUser.tenantId;
+
+    const country = formData.get('country') as string;
+
+    // Mapeo simple de moneda por país (podría ser una tabla en DB)
+    const currencyMap: Record<string, string> = {
+      CO: 'COP',
+      MX: 'MXN',
+      CL: 'CLP',
+      AR: 'ARS',
+      PE: 'PEN',
+      US: 'USD',
+    };
+    const currency = currencyMap[country] || 'USD';
+
+    console.log(`[Onboarding] Updating tenant ${tenantId} with country=${country}, currency=${currency}`);
+
+    const updated = await prisma.tenant.update({
+      where: { id: tenantId },
+      data: {
+        country,
+        currency,
+        onboardingStatus: 'PROFILE_COMPLETED',
+      },
     });
-    tenantId = dbUser?.tenantId || null;
+
+    console.log(`[Onboarding] Successfully updated tenant profile!`, updated.id);
+
+  } catch (err: any) {
+    console.error('[Onboarding] Server Action Error:', err);
+    return { success: false, error: err.message || 'Error occurred during profile update.' };
   }
 
-  if (!tenantId) throw new Error('No organization found');
-
-  // Fetch tenant to get country for seeding context
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: tenantId },
-  });
-
-  if (!tenant) throw new Error('Tenant not found');
-
-  // Aquí podríamos leer checkbox de tipos de vehículos seleccionados
-  // const vehicleTypes = formData.getAll("vehicleTypes");
-
-  await prisma.tenant.update({
-    where: { id: tenantId },
-    data: {
-      onboardingStatus: 'COMPLETED',
-    },
-  });
-
-  // Validar país antes de sembrar
-  if (tenant.country) {
-    // Ejecutar sembrado (bloqueante por ahora, mover a background job si crece)
-    await seedTenantData(tenantId, tenant.country);
-  }
-
-  redirect('/dashboard');
+  // Perfil guardado, redirigir a paso 2
+  redirect('/onboarding');
 }

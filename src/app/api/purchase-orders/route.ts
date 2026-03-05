@@ -1,6 +1,5 @@
-import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { Prisma, PurchaseOrderStatus, PurchaseOrderType } from '@prisma/client';
 import { canManagePurchases } from '@/lib/permissions';
 
@@ -10,9 +9,9 @@ import { canManagePurchases } from '@/lib/permissions';
  */
 export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -35,14 +34,13 @@ export async function GET(request: NextRequest) {
     }
 
     const where: Prisma.PurchaseOrderWhereInput = {
-      tenantId: user.tenantId,
       ...(workOrderId ? { workOrderId: workOrderId } : {}),
       ...(statusFilter ? { status: statusFilter } : {}),
       ...(type ? { type: type as PurchaseOrderType } : {}),
       ...(providerId ? { providerId: providerId } : {}),
     };
 
-    const purchaseOrders = await prisma.purchaseOrder.findMany({
+    const purchaseOrders = await tenantPrisma.purchaseOrder.findMany({
       where,
       include: {
         workOrder: {
@@ -95,9 +93,9 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Validar permisos (OWNER, MANAGER, PURCHASER)
@@ -120,8 +118,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Validar WorkOrder existe y pertenece al tenant
-    const workOrder = await prisma.workOrder.findUnique({
-      where: { id: workOrderId, tenantId: user.tenantId },
+    const workOrder = await tenantPrisma.workOrder.findUnique({
+      where: { id: workOrderId, },
     });
 
     if (!workOrder) {
@@ -132,8 +130,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Validar Provider existe y pertenece al tenant
-    const provider = await prisma.provider.findUnique({
-      where: { id: providerId, tenantId: user.tenantId },
+    const provider = await tenantPrisma.provider.findUnique({
+      where: { id: providerId, },
     });
 
     if (!provider) {
@@ -145,9 +143,8 @@ export async function POST(request: NextRequest) {
 
     // Generar numero de OC
     const year = new Date().getFullYear();
-    const lastOC = await prisma.purchaseOrder.findFirst({
+    const lastOC = await tenantPrisma.purchaseOrder.findFirst({
       where: {
-        tenantId: user.tenantId,
         orderNumber: { startsWith: `OC-${year}-` },
       },
       orderBy: { orderNumber: 'desc' },
@@ -173,10 +170,9 @@ export async function POST(request: NextRequest) {
     const total = subtotal + taxAmount;
 
     // Crear OC con items en transaccion
-    const purchaseOrder = await prisma.$transaction(async tx => {
+    const purchaseOrder = await tenantPrisma.$transaction(async tx => {
       const po = await tx.purchaseOrder.create({
         data: {
-          tenantId: user.tenantId,
           workOrderId,
           orderNumber,
           type: type as PurchaseOrderType,

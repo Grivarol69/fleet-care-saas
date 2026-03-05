@@ -44,6 +44,7 @@ import { FormAddPackage } from '../FormEditMantTemplate/components/FormAddPackag
 import { FormEditPackage } from '../FormEditMantTemplate/components/FormEditPackage';
 import { FormAddPackageItem } from '../FormEditMantTemplate/components/FormEditPackage/components/FormAddPackageItem';
 import { FormEditPackageItem } from '../FormEditMantTemplate/components/FormEditPackage/components/FormEditPackageItem';
+import { CloneTemplateModal } from '@/components/maintenance/templates/CloneTemplateModal';
 import axios from 'axios';
 import { useToast } from '@/components/hooks/use-toast';
 import {
@@ -160,11 +161,10 @@ function TemplateCard({
             </div>
             <Badge
               variant={template.status === 'ACTIVE' ? 'default' : 'secondary'}
-              className={`text-xs ${
-                template.status === 'ACTIVE'
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-gray-100 text-gray-800'
-              }`}
+              className={`text-xs ${template.status === 'ACTIVE'
+                ? 'bg-green-100 text-green-800'
+                : 'bg-gray-100 text-gray-800'
+                }`}
             >
               {template.status === 'ACTIVE' ? 'Activo' : 'Inactivo'}
             </Badge>
@@ -443,21 +443,21 @@ export function MantTemplatesList() {
 
   const packageMetrics = selectedTemplate
     ? {
-        total: packages.length,
-        preventive: packages.filter(p => p.packageType === 'PREVENTIVE').length,
-        corrective: packages.filter(p => p.packageType === 'CORRECTIVE').length,
-        predictive: packages.filter(p => p.packageType === 'PREDICTIVE').length,
-      }
+      total: packages.length,
+      preventive: packages.filter(p => p.packageType === 'PREVENTIVE').length,
+      corrective: packages.filter(p => p.packageType === 'CORRECTIVE').length,
+      predictive: packages.filter(p => p.packageType === 'PREDICTIVE').length,
+    }
     : null;
 
   const itemMetrics = selectedPackage
     ? {
-        total: packageItems.length,
-        low: packageItems.filter(i => i.priority === 'LOW').length,
-        medium: packageItems.filter(i => i.priority === 'MEDIUM').length,
-        high: packageItems.filter(i => i.priority === 'HIGH').length,
-        critical: packageItems.filter(i => i.priority === 'CRITICAL').length,
-      }
+      total: packageItems.length,
+      low: packageItems.filter(i => i.priority === 'LOW').length,
+      medium: packageItems.filter(i => i.priority === 'MEDIUM').length,
+      high: packageItems.filter(i => i.priority === 'HIGH').length,
+      critical: packageItems.filter(i => i.priority === 'CRITICAL').length,
+    }
     : null;
 
   // Columnas para templates (no usado - usando grid de cards en su lugar)
@@ -968,15 +968,25 @@ export function MantTemplatesList() {
                         {selectedTemplate.line.name}
                       </p>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setActiveTab('templates')}
-                      className="border-green-300 text-green-700 hover:bg-green-200 h-7 text-xs"
-                    >
-                      <ChevronRight className="h-3 w-3 mr-1 rotate-180" />
-                      Cambiar
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <CloneTemplateModal
+                        templateId={selectedTemplate.id}
+                        originalName={selectedTemplate.name}
+                        onSuccess={() => {
+                          setActiveTab('templates');
+                          fetchTemplates();
+                        }}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setActiveTab('templates')}
+                        className="border-green-300 text-green-700 hover:bg-green-200 h-7 text-xs"
+                      >
+                        <ChevronRight className="h-3 w-3 mr-1 rotate-180" />
+                        Cambiar
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -1033,9 +1043,9 @@ export function MantTemplatesList() {
                                 {header.isPlaceholder
                                   ? null
                                   : flexRender(
-                                      header.column.columnDef.header,
-                                      header.getContext()
-                                    )}
+                                    header.column.columnDef.header,
+                                    header.getContext()
+                                  )}
                               </TableHead>
                             ))}
                           </TableRow>
@@ -1181,9 +1191,9 @@ export function MantTemplatesList() {
                                   {header.isPlaceholder
                                     ? null
                                     : flexRender(
-                                        header.column.columnDef.header,
-                                        header.getContext()
-                                      )}
+                                      header.column.columnDef.header,
+                                      header.getContext()
+                                    )}
                                 </TableHead>
                               ))}
                             </TableRow>

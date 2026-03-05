@@ -17,6 +17,7 @@ import type { FleetStatusResponse } from '../fleet-status/route';
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn(),
+  requireCurrentUser: vi.fn(),
   isSuperAdmin: vi.fn().mockResolvedValue(false),
 }));
 

@@ -1,5 +1,4 @@
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { canManageVehicles } from '@/lib/permissions';
@@ -24,10 +23,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Validate id format (uuid)
@@ -38,11 +36,10 @@ export async function GET(
       );
     }
 
-    const document = await prisma.document.findUnique({
+    const document = await tenantPrisma.document.findUnique({
       where: {
         id,
-        tenantId: user.tenantId,
-      },
+        },
       include: {
         documentType: true,
       },
@@ -72,10 +69,9 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManageVehicles(user)) {
@@ -94,11 +90,10 @@ export async function PATCH(
     }
 
     // Verify document exists and belongs to tenant
-    const documentToUpdate = await prisma.document.findFirst({
+    const documentToUpdate = await tenantPrisma.document.findFirst({
       where: {
         id,
-        tenantId: user.tenantId,
-      },
+        },
     });
 
     if (!documentToUpdate) {
@@ -141,7 +136,7 @@ export async function PATCH(
     if (validatedData.status !== undefined)
       updateData.status = validatedData.status;
 
-    const updatedDocument = await prisma.document.update({
+    const updatedDocument = await tenantPrisma.document.update({
       where: { id },
       data: updateData,
       include: {
@@ -166,10 +161,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManageVehicles(user)) {
@@ -188,11 +182,10 @@ export async function DELETE(
     }
 
     // Verify document exists and belongs to tenant
-    const documentToDelete = await prisma.document.findFirst({
+    const documentToDelete = await tenantPrisma.document.findFirst({
       where: {
         id,
-        tenantId: user.tenantId,
-      },
+        },
     });
 
     if (!documentToDelete) {
@@ -202,7 +195,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.document.delete({
+    await tenantPrisma.document.delete({
       where: { id },
     });
 

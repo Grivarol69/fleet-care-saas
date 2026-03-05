@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 
 export async function GET(req: Request) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(req.url);
@@ -23,7 +22,7 @@ export async function GET(req: Request) {
     }
 
     // 1. Get Vehicle Specs
-    const vehicle = await prisma.vehicle.findUnique({
+    const vehicle = await tenantPrisma.vehicle.findUnique({
       where: { id: vehicleId },
       include: { brand: true, line: true },
     });
@@ -45,9 +44,9 @@ export async function GET(req: Request) {
     const modelName = vehicle.line.name;
     const year = vehicle.year;
 
-    const compatibleParts = await prisma.masterPart.findMany({
+    const compatibleParts = await tenantPrisma.masterPart.findMany({
       where: {
-        OR: [{ tenantId: user.tenantId }, { tenantId: null }],
+        OR: [{ }, { tenantId: null }],
         isActive: true,
         ...(category ? { category } : {}), // Apply category filter if present
         compatibilities: {

@@ -1,18 +1,16 @@
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { canManageMasterData } from '@/lib/permissions';
 
 export async function GET() {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const technicians = await prisma.technician.findMany({
+    const technicians = await tenantPrisma.technician.findMany({
       where: {
-        tenantId: user.tenantId,
         status: 'ACTIVE',
       },
       orderBy: {
@@ -31,10 +29,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManageMasterData(user)) {
@@ -54,13 +51,10 @@ export async function POST(req: Request) {
     }
 
     // Verificar que no exista un técnico con el mismo nombre
-    const existingTechnician = await prisma.technician.findUnique({
+    const existingTechnician = await tenantPrisma.technician.findFirst({
       where: {
-        tenantId_name: {
-          tenantId: user.tenantId,
           name: name.trim(),
         },
-      },
     });
 
     if (existingTechnician) {
@@ -70,14 +64,13 @@ export async function POST(req: Request) {
       );
     }
 
-    const technician = await prisma.technician.create({
+    const technician = await tenantPrisma.technician.create({
       data: {
         name: name.trim(),
         email: email?.trim() || null,
         phone: phone?.trim() || null,
         specialty: specialty?.trim() || null,
-        tenantId: user.tenantId,
-      },
+        },
     });
 
     return NextResponse.json(technician, { status: 201 });

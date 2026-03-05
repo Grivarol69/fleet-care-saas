@@ -53,11 +53,11 @@ async function fetchFileAsBase64(
 }
 
 function getClient(): Anthropic | null {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.warn('[OCR] ANTHROPIC_API_KEY not set — OCR skipped');
+  if (!process.env.ANTHROPIC_API_KEY_APP) {
+    console.warn('[OCR] ANTHROPIC_API_KEY_APP not set — OCR skipped');
     return null;
   }
-  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY_APP });
 }
 
 function buildContentBlock(

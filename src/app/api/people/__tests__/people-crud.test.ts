@@ -12,6 +12,7 @@ import {
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn(),
+  requireCurrentUser: vi.fn(),
   isSuperAdmin: vi.fn().mockResolvedValue(false),
 }));
 
@@ -223,7 +224,7 @@ describe('People CRUD API Integration Tests', () => {
       const data = await response.json();
 
       expect(response.status).toBe(401);
-      expect(data.error).toBe('No autenticado');
+      expect(data.error).toBe('Unauthorized');
     });
   });
 });

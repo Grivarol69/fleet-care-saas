@@ -52,6 +52,9 @@ export function FormEditPart({
       subcategory: part.subcategory ?? '',
       unit: part.unit,
       referencePrice: part.referencePrice ? Number(part.referencePrice) : '',
+      accountGroup: part.accountGroup ? Number(part.accountGroup) : null,
+      siigoTaxClassification: (part.siigoTaxClassification as any) || '',
+      siigoUnit: part.siigoUnit ? Number(part.siigoUnit) : null,
     },
   });
 
@@ -64,6 +67,9 @@ export function FormEditPart({
       subcategory: part.subcategory ?? '',
       unit: part.unit,
       referencePrice: part.referencePrice ? Number(part.referencePrice) : '',
+      accountGroup: part.accountGroup ? Number(part.accountGroup) : null,
+      siigoTaxClassification: (part.siigoTaxClassification as any) || '',
+      siigoUnit: part.siigoUnit ? Number(part.siigoUnit) : null,
     });
   }, [part, form]);
 
@@ -78,6 +84,9 @@ export function FormEditPart({
             ? null
             : Number(values.referencePrice),
         subcategory: values.subcategory || null,
+        accountGroup: values.accountGroup ? Number(values.accountGroup) : null,
+        siigoTaxClassification: values.siigoTaxClassification || null,
+        siigoUnit: values.siigoUnit ? Number(values.siigoUnit) : null,
       };
 
       const response = await axios.patch(
@@ -290,6 +299,75 @@ export function FormEditPart({
                 </FormItem>
               )}
             />
+
+            <div className="space-y-4 rounded-md border p-4 bg-muted/20">
+              <h4 className="text-sm font-semibold">Datos Contables (requeridos para Siigo)</h4>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="accountGroup"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Grupo de Cuenta (ID)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="Ej: 80"
+                          disabled={isLoading}
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="siigoUnit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Unidad Siigo (ID)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="Ej: 94"
+                          disabled={isLoading}
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="siigoTaxClassification"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Clasificación de Impuestos</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ''} disabled={isLoading}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Gravado">Gravado</SelectItem>
+                        <SelectItem value="Exento">Exento</SelectItem>
+                        <SelectItem value="Excluido">Excluido</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <div className="flex justify-end space-x-2 pt-2">
               <Button

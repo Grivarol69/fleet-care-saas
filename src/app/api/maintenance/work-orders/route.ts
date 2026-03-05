@@ -1,6 +1,5 @@
-import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { Prisma } from '@prisma/client';
 import { canCreateWorkOrders } from '@/lib/permissions';
 
@@ -9,9 +8,9 @@ import { canCreateWorkOrders } from '@/lib/permissions';
  */
 export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -21,9 +20,7 @@ export async function GET(request: NextRequest) {
     const limit = searchParams.get('limit');
 
     // Construir filtros
-    const where: Prisma.WorkOrderWhereInput = {
-      tenantId: user.tenantId,
-    };
+    const where: Prisma.WorkOrderWhereInput = {};
 
     if (vehicleId) {
       where.vehicleId = vehicleId;
@@ -38,7 +35,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Obtener WorkOrders con relaciones
-    const workOrders = await prisma.workOrder.findMany({
+    const workOrders = await tenantPrisma.workOrder.findMany({
       where,
       include: {
         vehicle: {
@@ -112,9 +109,9 @@ export async function POST(request: NextRequest) {
   try {
     console.log('====== [POST WO] STARTING REQUEST ======');
 
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     console.log('[POST WO] User found:', user?.email);
@@ -177,12 +174,11 @@ export async function POST(request: NextRequest) {
     // 1. Obtener las alertas seleccionadas con precios de referencia de partes
     let alerts: any[] = [];
     if (alertIds && alertIds.length > 0) {
-      alerts = await prisma.maintenanceAlert.findMany({
+      alerts = await tenantPrisma.maintenanceAlert.findMany({
         where: {
           id: { in: alertIds },
           status: { in: ['PENDING', 'ACKNOWLEDGED', 'SNOOZED'] },
           vehicleId,
-          tenantId: user.tenantId,
         },
         include: {
           programItem: {
@@ -256,8 +252,8 @@ export async function POST(request: NextRequest) {
     const estimatedCost = alertCosts.reduce((sum, cost) => sum + cost, 0);
 
     // 3. Obtener km actual del vehículo
-    const vehicle = await prisma.vehicle.findUnique({
-      where: { id: vehicleId, tenantId: user.tenantId },
+    const vehicle = await tenantPrisma.vehicle.findUnique({
+      where: { id: vehicleId },
     });
 
     if (!vehicle) {
@@ -268,9 +264,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. Crear WorkOrder
-    const workOrder = await prisma.workOrder.create({
+    const workOrder = await tenantPrisma.workOrder.create({
       data: {
-        tenantId: user.tenantId,
         vehicleId,
         title,
         description: description || null,
@@ -299,7 +294,7 @@ export async function POST(request: NextRequest) {
         (now.getTime() - alertCreatedAt.getTime()) / (1000 * 60)
       );
 
-      await prisma.maintenanceAlert.updateMany({
+      await tenantPrisma.maintenanceAlert.updateMany({
         where: { id: { in: alertIds } },
         data: {
           status: 'IN_PROGRESS',
@@ -316,7 +311,7 @@ export async function POST(request: NextRequest) {
       .map(a => a.programItemId)
       .filter((id): id is string => !!id);
     if (programItemIds.length > 0) {
-      await prisma.vehicleProgramItem.updateMany({
+      await tenantPrisma.vehicleProgramItem.updateMany({
         where: { id: { in: programItemIds } },
         data: { status: 'IN_PROGRESS' },
       });
@@ -326,9 +321,8 @@ export async function POST(request: NextRequest) {
     await Promise.all(
       alerts.map((alert, index) => {
         const itemCost = alertCosts[index] ?? 0;
-        return prisma.workOrderItem.create({
+        return tenantPrisma.workOrderItem.create({
           data: {
-            tenantId: user.tenantId,
             workOrderId: workOrder.id,
             mantItemId: alert.programItem.mantItemId,
             description: alert.itemName,

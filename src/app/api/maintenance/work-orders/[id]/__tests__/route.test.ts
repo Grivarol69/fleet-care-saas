@@ -4,13 +4,16 @@ import { PATCH } from '../route'; // Import directly from [id]/route.ts
 // NOTE: PATCH from items/[itemId]/route is imported inside the describe block below
 // to avoid a TypeScript noUnusedLocals false-positive caused by vi.mock() hoisting.
 import { prisma } from '@/lib/prisma';
+import { getTenantPrisma } from '@/lib/tenant-prisma';
 
 // Mock Auth
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn(),
+  requireCurrentUser: vi.fn(),
+  isSuperAdmin: vi.fn().mockResolvedValue(false),
 }));
 
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, requireCurrentUser } from '@/lib/auth';
 
 describe('Work Order Integration (PATCH)', () => {
   const tenantId = 'integration-patch-tenant-' + Date.now();
@@ -21,7 +24,7 @@ describe('Work Order Integration (PATCH)', () => {
 
   beforeEach(async () => {
     // Mock User
-    vi.mocked(getCurrentUser).mockResolvedValue({
+    const __mockUser = {
       id: userId,
       tenantId: tenantId,
       email: 'owner@patch.test',
@@ -29,7 +32,9 @@ describe('Work Order Integration (PATCH)', () => {
       lastName: 'Patch',
       role: 'OWNER',
       permissions: [],
-    } as any);
+    } as any;
+    vi.mocked(getCurrentUser).mockResolvedValue(__mockUser);
+    vi.mocked(requireCurrentUser).mockResolvedValue({ user: __mockUser, tenantPrisma: getTenantPrisma(__mockUser.tenantId) } as any);
 
     // Setup DB
     await prisma.tenant.create({
@@ -236,7 +241,7 @@ describe('Work Order PATCH — Role-Based Transition Guards', () => {
 
   // Helper: set the mocked user role
   const mockUser = (id: string, role: string) => {
-    vi.mocked(getCurrentUser).mockResolvedValue({
+    const __mockUser = {
       id,
       tenantId,
       email: `${role.toLowerCase()}@guard.test`,
@@ -245,7 +250,9 @@ describe('Work Order PATCH — Role-Based Transition Guards', () => {
       role,
       isSuperAdmin: false,
       permissions: [],
-    } as any);
+    } as any;
+    vi.mocked(getCurrentUser).mockResolvedValue(__mockUser);
+    vi.mocked(requireCurrentUser).mockResolvedValue({ user: __mockUser, tenantPrisma: getTenantPrisma(__mockUser.tenantId) } as any);
   };
 
   beforeEach(async () => {
@@ -584,7 +591,7 @@ describe('Work Order Item PATCH — Auto PENDING_INVOICE trigger', () => {
   let workOrderItemId: string;
 
   beforeEach(async () => {
-    vi.mocked(getCurrentUser).mockResolvedValue({
+    const __mockUser = {
       id: userId,
       tenantId,
       email: 'tech@autopi.test',
@@ -593,7 +600,9 @@ describe('Work Order Item PATCH — Auto PENDING_INVOICE trigger', () => {
       role: 'TECHNICIAN',
       isSuperAdmin: false,
       permissions: [],
-    } as any);
+    } as any;
+    vi.mocked(getCurrentUser).mockResolvedValue(__mockUser);
+    vi.mocked(requireCurrentUser).mockResolvedValue({ user: __mockUser, tenantPrisma: getTenantPrisma(__mockUser.tenantId) } as any);
 
     await prisma.tenant.create({
       data: {

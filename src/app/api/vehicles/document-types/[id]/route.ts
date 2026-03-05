@@ -1,5 +1,4 @@
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { canManageMasterData } from '@/lib/permissions';
@@ -10,9 +9,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -21,7 +20,7 @@ export async function GET(
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
-    const docType = await prisma.documentTypeConfig.findUnique({
+    const docType = await tenantPrisma.documentTypeConfig.findUnique({
       where: { id: docTypeId },
     });
 
@@ -66,9 +65,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManageMasterData(user)) {
@@ -84,7 +83,7 @@ export async function PUT(
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
-    const existing = await prisma.documentTypeConfig.findUnique({
+    const existing = await tenantPrisma.documentTypeConfig.findUnique({
       where: { id: docTypeId },
     });
 
@@ -144,7 +143,7 @@ export async function PUT(
     if (validData.sortOrder !== undefined)
       updateData.sortOrder = validData.sortOrder;
 
-    const updated = await prisma.documentTypeConfig.update({
+    const updated = await tenantPrisma.documentTypeConfig.update({
       where: { id: docTypeId },
       data: updateData,
     });
@@ -165,9 +164,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManageMasterData(user)) {
@@ -183,7 +182,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
-    const existing = await prisma.documentTypeConfig.findUnique({
+    const existing = await tenantPrisma.documentTypeConfig.findUnique({
       where: { id: docTypeId },
     });
 
@@ -208,7 +207,7 @@ export async function DELETE(
     }
 
     // Soft delete
-    const updated = await prisma.documentTypeConfig.update({
+    const updated = await tenantPrisma.documentTypeConfig.update({
       where: { id: docTypeId },
       data: { status: 'INACTIVE' },
     });

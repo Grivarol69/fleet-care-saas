@@ -1,5 +1,7 @@
 import { vi } from 'vitest';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, requireCurrentUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { getTenantPrisma } from '@/lib/tenant-prisma';
 
 /**
  * Auth mock helpers for integration tests.
@@ -8,6 +10,7 @@ import { getCurrentUser } from '@/lib/auth';
  * Example:
  *   vi.mock('@/lib/auth', () => ({
  *     getCurrentUser: vi.fn(),
+ *     requireCurrentUser: vi.fn(),
  *     isSuperAdmin: vi.fn().mockResolvedValue(false),
  *   }));
  */
@@ -43,6 +46,13 @@ export function mockAuthAsUser(user: MockUser) {
   };
 
   (getCurrentUser as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
+
+  const tenantPrisma = mockUser.isSuperAdmin ? prisma : getTenantPrisma(mockUser.tenantId);
+  (requireCurrentUser as ReturnType<typeof vi.fn>).mockResolvedValue({
+    user: mockUser,
+    tenantPrisma
+  });
+
   return mockUser;
 }
 
@@ -51,6 +61,7 @@ export function mockAuthAsUser(user: MockUser) {
  */
 export function mockAuthAsUnauthenticated() {
   (getCurrentUser as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+  (requireCurrentUser as ReturnType<typeof vi.fn>).mockResolvedValue({ user: null, tenantPrisma: prisma as any });
 }
 
 /**
