@@ -258,9 +258,10 @@ export async function POST(request: NextRequest) {
 
     const estimatedCost = alertCosts.reduce((sum, cost) => sum + cost, 0);
 
-    // 3. Obtener km actual del vehículo
+    // 3. Obtener km actual del vehículo y su costCenterId
     const vehicle = await tenantPrisma.vehicle.findUnique({
       where: { id: vehicleId },
+      select: { mileage: true, costCenterId: true },
     });
 
     if (!vehicle) {
@@ -288,7 +289,7 @@ export async function POST(request: NextRequest) {
         startDate: scheduledDate ? new Date(scheduledDate) : null,
         isPackageWork: alerts.length > 1,
         packageName: alerts.length > 1 ? title : null,
-        costCenterId: costCenterId || null,
+        costCenterId: costCenterId || vehicle.costCenterId || null,
       },
     });
 

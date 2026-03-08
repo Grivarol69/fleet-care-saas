@@ -71,6 +71,7 @@ model Tenant {
   ticketLaborEntries     TicketLaborEntry[]
   ticketPartEntries      TicketPartEntry[]
   costCenters            CostCenter[]
+  mantItemProcedures     MantItemProcedure[]
 
   @@index([slug])
   @@index([subscriptionStatus])
@@ -202,6 +203,7 @@ model VehicleBrand {
   vehicles             Vehicle[]
   maintenanceTemplates MaintenanceTemplate[] // ✅ CURRENT
   mantItemVehicleParts MantItemVehiclePart[] // KB: repuestos por marca
+  mantItemProcedures   MantItemProcedure[]   // KB: procedimientos de labor
 
   @@unique([tenantId, name])
   @@index([isGlobal])
@@ -223,6 +225,7 @@ model VehicleLine {
   vehicles             Vehicle[]
   maintenanceTemplates MaintenanceTemplate[] // ✅ CURRENT
   mantItemVehicleParts MantItemVehiclePart[] // KB: repuestos por línea
+  mantItemProcedures   MantItemProcedure[]   // KB: procedimientos de labor
 
   @@unique([tenantId, brandId, name])
   @@index([brandId])
@@ -352,6 +355,7 @@ model MantItem {
   parts               MantItemPart[] // Legacy: vínculo genérico sin contexto vehículo
   vehicleParts        MantItemVehiclePart[] // KB: repuestos por marca/línea/año
   purchaseOrderItems  PurchaseOrderItem[]
+  procedures          MantItemProcedure[]   // KB: procedimientos de labor
 
   @@unique([tenantId, name])
   @@index([categoryId])
@@ -439,6 +443,41 @@ model MantItemVehiclePart {
   @@index([vehicleBrandId, vehicleLineId])
   @@index([masterPartId])
   @@index([isGlobal])
+}
+
+// ========================================
+// KNOWLEDGE BASE: Procedimientos de Labor (Tempario)
+// Vincula MantItem + Marca? + Línea? → Procedimiento con pasos y horas estándar
+// ========================================
+
+model MantItemProcedure {
+  id       String  @id @default(uuid())
+  tenantId String?
+  isGlobal Boolean @default(false)
+
+  mantItemId String
+  mantItem   MantItem @relation(fields: [mantItemId], references: [id])
+
+  vehicleBrandId String?
+  vehicleBrand   VehicleBrand? @relation(fields: [vehicleBrandId], references: [id])
+  vehicleLineId  String?
+  vehicleLine    VehicleLine?  @relation(fields: [vehicleLineId], references: [id])
+
+  baseHours Decimal @db.Decimal(6, 2)
+  // [{ "order": 1, "description": "Drenar aceite", "estimatedHours": 0.30 }, ...]
+  steps     Json    @default("[]")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant            Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  workOrderSubTasks WorkOrderSubTask[]
+
+  // Unicidad manejada con partial indexes en la migración SQL (PostgreSQL no enforcea @@unique con NULLs)
+  @@index([mantItemId])
+  @@index([vehicleBrandId, vehicleLineId])
+  @@index([isGlobal])
+  @@index([tenantId])
 }
 
 // ========================================
@@ -641,6 +680,7 @@ model WorkOrderItem {
   ticketLaborEntries TicketLaborEntry[]
   ticketPartEntries  TicketPartEntry[]
   purchaseOrderItems PurchaseOrderItem[]
+  workOrderSubTasks  WorkOrderSubTask[]
 
   @@index([workOrderId])
   @@index([mantItemId])
@@ -1136,6 +1176,7 @@ model Technician {
   vehicleProgramItems    VehicleProgramItem[] // ✅ CURRENT ARCHITECTURE
   internalWorkTickets    InternalWorkTicket[]
   ticketLaborEntries     TicketLaborEntry[]
+  workOrderSubTasks      WorkOrderSubTask[]
 
   // Datos para Taller Interno
   employmentType EmploymentType @default(INTERNAL)
@@ -2106,4 +2147,45 @@ enum SiigoIdType {
 enum SiigoPersonType {
   PERSON // Persona natural
   COMPANY // Persona jurídica
+}
+
+// ========================================
+// WORK ORDER SUB-TASKS (Runtime del Tempario)
+// ========================================
+
+model WorkOrderSubTask {
+  id              String  @id @default(uuid())
+  workOrderItemId String
+  procedureId     String? // null = tarea eventual/manual
+  stepOrder       Int?    // posición en steps JSON; null = eventual
+
+  description   String
+  standardHours Decimal? @db.Decimal(6, 2) // del tempario, NUNCA editable por técnico
+  directHours   Decimal? @db.Decimal(6, 2) // horas productivas reales
+  indirectHours Decimal? @db.Decimal(6, 2) // tiempo perdido — solo métricas, no se cobra
+
+  status       WorkOrderSubTaskStatus @default(PENDING)
+  technicianId String?
+  sequence     Int                    @default(0)
+  notes        String?                // causa del tiempo indirecto
+
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  workOrderItem WorkOrderItem      @relation(fields: [workOrderItemId], references: [id], onDelete: Cascade)
+  procedure     MantItemProcedure? @relation(fields: [procedureId], references: [id])
+  technician    Technician?        @relation(fields: [technicianId], references: [id])
+
+  @@index([workOrderItemId])
+  @@index([procedureId])
+  @@index([technicianId])
+  @@index([status])
+}
+
+enum WorkOrderSubTaskStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+  CANCELLED
 }
