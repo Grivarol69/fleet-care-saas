@@ -3,9 +3,9 @@ import axios from 'axios';
 
 // Types
 export interface MaintenanceAlert {
-  id: number;
-  programItemId: number;
-  vehicleId: number;
+  id: string;
+  programItemId: string;
+  vehicleId: string;
 
   // Vehículo
   vehiclePlate: string;
@@ -32,13 +32,13 @@ export interface MaintenanceAlert {
 
   // Estado
   status:
-    | 'PENDING'
-    | 'ACKNOWLEDGED'
-    | 'IN_PROGRESS'
-    | 'COMPLETED'
-    | 'CLOSED'
-    | 'SNOOZED'
-    | 'CANCELLED';
+  | 'PENDING'
+  | 'ACKNOWLEDGED'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'CLOSED'
+  | 'SNOOZED'
+  | 'CANCELLED';
 
   // Costos
   estimatedCost: number | null;
@@ -46,7 +46,7 @@ export interface MaintenanceAlert {
 
   // WorkOrder
   workOrder: {
-    id: number;
+    id: string;
     title: string;
     status: string;
   } | null;
@@ -63,7 +63,7 @@ export interface MaintenanceAlert {
 }
 
 interface AlertFilters {
-  vehicleId?: number;
+  vehicleId?: string;
   status?: string;
   priority?: string;
 }
@@ -78,7 +78,7 @@ export function useMaintenanceAlerts(filters?: AlertFilters) {
       const params = new URLSearchParams();
 
       if (filters?.vehicleId) {
-        params.append('vehicleId', filters.vehicleId.toString());
+        params.append('vehicleId', filters.vehicleId);
       }
       if (filters?.status) {
         params.append('status', filters.status);
@@ -100,7 +100,7 @@ export function useMaintenanceAlerts(filters?: AlertFilters) {
 /**
  * Hook para obtener alertas de un vehículo específico
  */
-export function useVehicleAlerts(vehicleId: number) {
+export function useVehicleAlerts(vehicleId: string) {
   return useMaintenanceAlerts({ vehicleId });
 }
 
@@ -112,7 +112,7 @@ export function useUpdateAlertStatus() {
 
   return useMutation({
     mutationFn: async (params: {
-      alertId: number;
+      alertId: string;
       status: string;
       notes?: string;
       snoozedUntil?: Date;
@@ -134,7 +134,7 @@ export function useAcknowledgeAlert() {
   const updateStatus = useUpdateAlertStatus();
 
   return {
-    acknowledgeAlert: (alertId: number) => {
+    acknowledgeAlert: (alertId: string) => {
       return updateStatus.mutateAsync({
         alertId,
         status: 'ACKNOWLEDGED',
@@ -151,9 +151,9 @@ export function useSnoozeAlert() {
   const updateStatus = useUpdateAlertStatus();
 
   return {
-    snoozeAlert: (alertId: number, snoozedUntil: Date, reason?: string) => {
+    snoozeAlert: (alertId: string, snoozedUntil: Date, reason?: string) => {
       const params: {
-        alertId: number;
+        alertId: string;
         status: string;
         snoozedUntil: Date;
         notes?: string;
@@ -177,7 +177,7 @@ export function useCancelAlert() {
   const updateStatus = useUpdateAlertStatus();
 
   return {
-    cancelAlert: (alertId: number, reason: string) => {
+    cancelAlert: (alertId: string, reason: string) => {
       return updateStatus.mutateAsync({
         alertId,
         status: 'CANCELLED',
@@ -211,9 +211,9 @@ export function useAlertsGroupedByVehicle(filters?: AlertFilters) {
       return acc;
     },
     {} as Record<
-      number,
+      string,
       {
-        vehicleId: number;
+        vehicleId: string;
         vehiclePlate: string;
         vehiclePhoto: string;
         brandName: string;
@@ -232,7 +232,7 @@ export function useAlertsGroupedByVehicle(filters?: AlertFilters) {
 /**
  * Hook para agrupar alertas por paquete
  */
-export function useAlertsGroupedByPackage(vehicleId?: number) {
+export function useAlertsGroupedByPackage(vehicleId?: string) {
   const { data: alerts, ...rest } = useMaintenanceAlerts(
     vehicleId ? { vehicleId } : undefined
   );

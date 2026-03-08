@@ -233,10 +233,10 @@ export function FormAssignProgramImproved({
   // Filter templates compatible with selected vehicle
   const compatibleTemplates = selectedVehicle
     ? templates.filter(
-        t =>
-          t.brand.id === selectedVehicle.brand.id &&
-          t.line.id === selectedVehicle.line.id
-      )
+      t =>
+        t.brand.id === selectedVehicle.brand.id &&
+        t.line.id === selectedVehicle.line.id
+    )
     : [];
 
   // Watch form values for preview
@@ -399,7 +399,7 @@ export function FormAssignProgramImproved({
                     <FormItem>
                       <FormLabel>Template de Mantenimiento *</FormLabel>
                       <Select
-                        onValueChange={value => field.onChange(parseInt(value))}
+                        onValueChange={value => field.onChange(value)}
                         value={field.value ? field.value.toString() : ''}
                       >
                         <FormControl>
@@ -567,7 +567,7 @@ export function FormAssignProgramImproved({
                                           Diferencia: ±
                                           {Math.abs(
                                             inferred.triggerKm -
-                                              lastMaintenanceExecutedKm
+                                            lastMaintenanceExecutedKm
                                           )}{' '}
                                           km
                                         </p>

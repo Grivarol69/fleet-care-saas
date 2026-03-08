@@ -19,8 +19,8 @@ interface VehicleGroup {
 
 interface Props {
   vehicles: VehicleGroup[];
-  selectedAlertIds: number[];
-  onSelectionChange: (ids: number[]) => void;
+  selectedAlertIds: string[];
+  onSelectionChange: (ids: string[]) => void;
   onCreateWorkOrder: () => void;
 }
 
@@ -38,7 +38,7 @@ export function AlertsTable({
     setExpandedVehicleId(expandedVehicleId === vehicleId ? null : vehicleId);
   };
 
-  const handleToggleAlert = (alertId: number) => {
+  const handleToggleAlert = (alertId: string) => {
     if (selectedAlertIds.includes(alertId)) {
       onSelectionChange(selectedAlertIds.filter(id => id !== alertId));
     } else {
@@ -201,13 +201,12 @@ export function AlertsTable({
                       {nextAlert && (
                         <div>
                           <span
-                            className={`font-semibold ${
-                              nextAlert.kmToMaintenance <= 0
+                            className={`font-semibold ${nextAlert.kmToMaintenance <= 0
                                 ? 'text-red-600'
                                 : nextAlert.kmToMaintenance <= 500
                                   ? 'text-orange-600'
                                   : 'text-gray-700'
-                            }`}
+                              }`}
                           >
                             {nextAlert.kmToMaintenance <= 0
                               ? `${Math.abs(nextAlert.kmToMaintenance)} km VENCIDO`
@@ -325,11 +324,10 @@ export function AlertsTable({
                                       return (
                                         <div
                                           key={alert.id}
-                                          className={`flex items-center gap-3 px-3 py-2 rounded text-sm ${
-                                            isSelected
+                                          className={`flex items-center gap-3 px-3 py-2 rounded text-sm ${isSelected
                                               ? 'bg-blue-50 border border-blue-300'
                                               : 'bg-white border border-gray-200'
-                                          }`}
+                                            }`}
                                         >
                                           <Checkbox
                                             checked={isSelected}
@@ -342,11 +340,10 @@ export function AlertsTable({
                                               {alert.itemName}
                                             </span>
                                             <span
-                                              className={`font-semibold min-w-[120px] ${
-                                                isOverdue
+                                              className={`font-semibold min-w-[120px] ${isOverdue
                                                   ? 'text-red-600'
                                                   : 'text-gray-700'
-                                              }`}
+                                                }`}
                                             >
                                               {isOverdue
                                                 ? `${Math.abs(alert.kmToMaintenance)} km VENCIDO`

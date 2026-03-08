@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Calendar, User, DollarSign, Package } from 'lucide-react';
+import { useCostCenters } from '@/lib/hooks/usePeople';
 
 type WorkOrder = {
   id: string;
@@ -27,6 +28,8 @@ type WorkOrder = {
   priority: string;
   estimatedCost: number | null;
   actualCost: number | null;
+  costCenterId: string | null;
+  costCenterRef: { id: string; name: string } | null;
   createdAt: string;
   startDate: string | null;
   endDate: string | null;
@@ -135,14 +138,17 @@ export function GeneralInfoTab({ workOrder, onUpdate }: GeneralInfoTabProps) {
     priority: workOrder.priority,
     description: workOrder.description || '',
     actualCost: workOrder.actualCost?.toString() || '',
+    costCenterId: workOrder.costCenterId || '',
   });
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+
+  const { data: costCenters = [] } = useCostCenters();
 
   useEffect(() => {
     fetch('/api/auth/me')
       .then(res => res.json())
       .then((data: CurrentUser) => setCurrentUser(data))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const statusInfo = statusConfig[workOrder.status] ?? {
@@ -179,6 +185,12 @@ export function GeneralInfoTab({ workOrder, onUpdate }: GeneralInfoTabProps) {
 
     if (formData.actualCost) {
       updates.actualCost = parseFloat(formData.actualCost);
+    }
+
+    if (formData.costCenterId) {
+      updates.costCenterId = formData.costCenterId;
+    } else {
+      updates.costCenterId = null;
     }
 
     await onUpdate(updates);
@@ -349,6 +361,34 @@ export function GeneralInfoTab({ workOrder, onUpdate }: GeneralInfoTabProps) {
               ) : (
                 <p className={`mt-2 ${priorityInfo.color}`}>
                   {priorityInfo.label}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Label>Centro de Costos</Label>
+              {isEditing ? (
+                <Select
+                  value={formData.costCenterId || 'NONE'}
+                  onValueChange={val =>
+                    setFormData({ ...formData, costCenterId: val === 'NONE' ? '' : val })
+                  }
+                >
+                  <SelectTrigger className="mt-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">Sin centro de costos</SelectItem>
+                    {costCenters.map(cc => (
+                      <SelectItem key={cc.id} value={cc.id}>
+                        {cc.code} — {cc.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {workOrder.costCenterRef?.name || '—'}
                 </p>
               )}
             </div>

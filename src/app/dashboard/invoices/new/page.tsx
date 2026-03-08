@@ -54,7 +54,7 @@ import { UploadButton } from '@/lib/uploadthing';
 
 interface InvoiceItem {
   id: string;
-  workOrderItemId?: number;
+  workOrderItemId?: string;
   mantItemId?: string;
   description: string;
   details?: string;
@@ -96,7 +96,7 @@ interface PendingPO {
     quantity: number;
     unitPrice: number;
     total: number;
-    workOrderItemId?: number;
+    workOrderItemId?: string;
     mantItemId?: string;
     masterPart?: { code: string; description: string };
   }>;
@@ -536,9 +536,9 @@ function NewInvoiceContent() {
         invoiceNumber,
         invoiceDate,
         dueDate: dueDate || null,
-        supplierId: parseInt(supplierId),
+        supplierId: supplierId,
         workOrderId: workOrderId
-          ? parseInt(workOrderId)
+          ? workOrderId
           : selectedPO?.workOrder.id || null,
         purchaseOrderId: selectedPO?.id || null,
         subtotal: totals.realSubtotal,
@@ -579,7 +579,7 @@ function NewInvoiceContent() {
       const errorMessage =
         error instanceof Error && 'response' in error
           ? (error as { response?: { data?: { error?: string } } }).response
-              ?.data?.error
+            ?.data?.error
           : 'No se pudo crear la factura';
       toast({
         title: 'Error',
@@ -987,7 +987,7 @@ function NewInvoiceContent() {
                                   'text-right font-medium',
                                   variance > 5 && 'border-red-300 bg-red-50',
                                   variance < -5 &&
-                                    'border-green-300 bg-green-50',
+                                  'border-green-300 bg-green-50',
                                   item.isFree && 'bg-blue-50'
                                 )}
                                 required={!item.isFree}
@@ -1248,8 +1248,8 @@ function NewInvoiceContent() {
                         const parsedItems =
                           typeof sd?.ocrItemsJson === 'string'
                             ? (JSON.parse(
-                                sd.ocrItemsJson
-                              ) as InvoiceOCRResult['items'])
+                              sd.ocrItemsJson
+                            ) as InvoiceOCRResult['items'])
                             : undefined;
                         const ocr: InvoiceOCRResult = {
                           confidence,

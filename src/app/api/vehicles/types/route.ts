@@ -1,4 +1,3 @@
-import { prisma } from '@/lib/prisma';
 import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 
@@ -9,10 +8,9 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Devolver solo tipos del tenant (los globales se copian en onboarding)
-    const types = await prisma.vehicleType.findMany({
+    // Devolver tipos globales y del tenant — el interceptor tenant-prisma aplica OR[tenantId, isGlobal]
+    const types = await tenantPrisma.vehicleType.findMany({
       where: {
-        tenantId: user.tenantId,
         status: 'ACTIVE',
       },
       orderBy: {

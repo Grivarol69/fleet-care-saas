@@ -14,6 +14,7 @@ import {
   ShoppingCart,
   BookOpen,
   Plug2,
+  Landmark,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -65,6 +66,12 @@ export const dataAdminSidebar: SidebarItem[] = [
         icon: Plug2,
         href: '/dashboard/empresa/integraciones/siigo',
         roles: [UserRole.OWNER, UserRole.MANAGER],
+      },
+      {
+        label: 'Centros de Costos',
+        icon: Landmark,
+        href: '/dashboard/cost-centers',
+        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
       },
     ],
   },
@@ -145,14 +152,8 @@ export const dataAdminSidebar: SidebarItem[] = [
         roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
       },
       {
-        label: 'Plantillas Planes Mantenimiento',
+        label: 'Planes de Mantenimiento',
         href: '/dashboard/maintenance/mant-template',
-        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
-      },
-      {
-        label: 'Paquetes de Mantenimiento',
-        icon: ClipboardCheck,
-        href: '/dashboard/maintenance/packages',
         roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
       },
       {
@@ -234,7 +235,7 @@ export const dataAdminSidebar: SidebarItem[] = [
       },
       {
         label: 'Compras',
-        href: '/dashboard/inventory/purchases/new',
+        href: '/dashboard/inventory/purchases',
         roles: [
           UserRole.SUPER_ADMIN,
           UserRole.OWNER,

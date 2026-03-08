@@ -32,11 +32,6 @@ export async function GET(req: Request) {
 
     const whereClause: Prisma.MasterPartWhereInput = {
       isActive: true,
-      AND: [
-        {
-          OR: [{ tenantId: null }, {}],
-        },
-      ],
     };
 
     if (category) {
@@ -44,15 +39,10 @@ export async function GET(req: Request) {
     }
 
     if (search) {
-      // Safely add search conditions to AND array
-      if (Array.isArray(whereClause.AND)) {
-        whereClause.AND.push({
-          OR: [
-            { description: { contains: search, mode: 'insensitive' } },
-            { code: { contains: search, mode: 'insensitive' } },
-          ],
-        });
-      }
+      whereClause.OR = [
+        { description: { contains: search, mode: 'insensitive' } },
+        { code: { contains: search, mode: 'insensitive' } },
+      ];
     }
 
     const parts = await tenantPrisma.masterPart.findMany({

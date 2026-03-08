@@ -213,8 +213,8 @@ export function InvoicesList({
                   {invoice.siigoSyncStatus ? (
                     <SiigoSyncStatusBadge
                       status={invoice.siigoSyncStatus.status}
-                      error={invoice.siigoSyncStatus.statusMessage || undefined}
-                      siigoId={invoice.siigoSyncStatus.siigoId || undefined}
+                      error={invoice.siigoSyncStatus.statusMessage || null}
+                      siigoId={invoice.siigoSyncStatus.siigoId || null}
                     />
                   ) : (
                     <span className="text-xs text-muted-foreground">-</span>

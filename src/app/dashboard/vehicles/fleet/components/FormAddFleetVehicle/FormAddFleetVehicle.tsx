@@ -42,20 +42,33 @@ const formSchema = z.object({
   brandId: z.string().min(1).min(1, 'Seleccione una marca'),
   lineId: z.string().min(1).min(1, 'Seleccione una línea'),
   typeId: z.string().min(1).min(1, 'Seleccione un tipo'),
-  mileage: z.number().min(0, 'El kilometraje debe ser positivo'),
-  cylinder: z.number().optional(),
+  mileage: z.coerce.number().min(0, 'El kilometraje debe ser positivo'),
+  cylinder: z.coerce.number().optional(),
   bodyWork: z.string().optional(),
   engineNumber: z.string().optional(),
   chasisNumber: z.string().optional(),
   ownerCard: z.string().optional(),
   color: z.string().min(1, 'El color es requerido'),
-  owner: z.string().min(1, 'Seleccione el propietario'),
-  year: z
+  owner: z.enum(['OWN', 'LEASED', 'RENTED', 'THIRD_PARTY']),
+  costCenterId: z.string().optional().nullable(),
+  year: z.coerce
     .number()
     .min(1900, 'Ingrese un año válido')
     .max(new Date().getFullYear() + 1),
   situation: z.string().min(1, 'Seleccione el estado'),
-});
+}).refine(
+  (data) => data.owner !== 'THIRD_PARTY' || !!data.costCenterId,
+  {
+    message: 'El centro de costos es requerido para vehículos de terceros',
+    path: ['costCenterId'],
+  }
+);
+
+type CostCenter = {
+  id: string;
+  code: string;
+  name: string;
+};
 
 type VehicleBrand = {
   id: string;
@@ -91,6 +104,7 @@ export function FormAddFleetVehicle({
   const [vehicleBrands, setVehicleBrands] = useState<VehicleBrand[]>([]);
   const [vehicleLines, setVehicleLines] = useState<VehicleLine[]>([]);
   const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
+  const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -108,26 +122,31 @@ export function FormAddFleetVehicle({
       chasisNumber: '',
       ownerCard: '',
       color: '',
-      owner: '',
+      owner: 'OWN',
+      costCenterId: null,
       year: new Date().getFullYear(),
       situation: '',
     },
   });
+
+  const watchedOwner = form.watch('owner');
 
   const router = useRouter();
   const { toast } = useToast();
 
   const fetchData = useCallback(async () => {
     try {
-      const [brandsRes, linesRes, typesRes] = await Promise.all([
+      const [brandsRes, linesRes, typesRes, costCentersRes] = await Promise.all([
         axios.get('/api/vehicles/brands'),
         axios.get('/api/vehicles/lines'),
         axios.get('/api/vehicles/types'),
+        axios.get<CostCenter[]>('/api/cost-centers'),
       ]);
 
       setVehicleBrands(brandsRes.data);
       setVehicleLines(linesRes.data);
       setVehicleTypes(typesRes.data);
+      setCostCenters(costCentersRes.data);
     } catch (error) {
       console.error('Error cargando datos:', error);
       toast({
@@ -359,7 +378,6 @@ export function FormAddFleetVehicle({
                           type="number"
                           placeholder="0"
                           {...field}
-                          onChange={e => field.onChange(Number(e.target.value))}
                           disabled={isLoading}
                         />
                       </FormControl>
@@ -399,7 +417,6 @@ export function FormAddFleetVehicle({
                           type="number"
                           placeholder="2024"
                           {...field}
-                          onChange={e => field.onChange(e.target.value)}
                           disabled={isLoading}
                         />
                       </FormControl>
@@ -416,7 +433,12 @@ export function FormAddFleetVehicle({
                     <FormItem>
                       <FormLabel>Propietario *</FormLabel>
                       <Select
-                        onValueChange={field.onChange}
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          if (value !== 'THIRD_PARTY') {
+                            form.setValue('costCenterId', null);
+                          }
+                        }}
                         value={field.value}
                       >
                         <FormControl>
@@ -428,12 +450,45 @@ export function FormAddFleetVehicle({
                           <SelectItem value="OWN">Propio</SelectItem>
                           <SelectItem value="LEASED">Arrendado</SelectItem>
                           <SelectItem value="RENTED">Rentado</SelectItem>
+                          <SelectItem value="THIRD_PARTY">Tercero (administrado)</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+                {/* Centro de Costos Condicional */}
+                {watchedOwner === 'THIRD_PARTY' && (
+                  <FormField
+                    control={form.control}
+                    name="costCenterId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Centro de Costos *</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || ''}
+                          disabled={isLoading}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccione centro de costos" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {costCenters.map((cc) => (
+                              <SelectItem key={cc.id} value={cc.id}>
+                                {cc.code} — {cc.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 {/* Estado */}
                 <FormField
@@ -476,9 +531,6 @@ export function FormAddFleetVehicle({
                           type="number"
                           placeholder="1600"
                           {...field}
-                          onChange={e =>
-                            field.onChange(Number(e.target.value) || undefined)
-                          }
                           disabled={isLoading}
                         />
                       </FormControl>

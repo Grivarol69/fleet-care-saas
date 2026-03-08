@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/hooks/use-toast';
 import { ArrowLeft, Trash2, Printer } from 'lucide-react';
 import { DetailsTab } from '../components/InvoiceDetail/DetailsTab';
+import { ItemsTab } from '../components/InvoiceDetail/ItemsTab';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -204,7 +205,7 @@ export default function InvoiceDetailPage() {
               {invoice.siigoSyncStatus && (
                 <SiigoSyncStatusBadge
                   status={invoice.siigoSyncStatus.status}
-                  siigoId={invoice.siigoSyncStatus.siigoId || undefined}
+                  siigoId={invoice.siigoSyncStatus.siigoId || null}
                   showTooltip={false}
                 />
               )}

@@ -1,4 +1,3 @@
-import { prisma } from '@/lib/prisma';
 import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { canManageMaintenancePrograms } from '@/lib/permissions';
@@ -10,10 +9,9 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Devolver solo templates del tenant (los globales se copian en onboarding)
-    const mantTemplates = await prisma.maintenanceTemplate.findMany({
+    // Devolver templates globales y del tenant — el interceptor tenant-prisma aplica OR[tenantId, isGlobal]
+    const mantTemplates = await tenantPrisma.maintenanceTemplate.findMany({
       where: {
-        tenantId: user.tenantId,
         status: 'ACTIVE',
       },
       include: {
@@ -92,14 +90,14 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!vehicleBrandId || vehicleBrandId <= 0) {
+    if (!vehicleBrandId || vehicleBrandId.trim() === '') {
       return NextResponse.json(
         { error: 'La marca del vehículo es requerida' },
         { status: 400 }
       );
     }
 
-    if (!vehicleLineId || vehicleLineId <= 0) {
+    if (!vehicleLineId || vehicleLineId.trim() === '') {
       return NextResponse.json(
         { error: 'La línea del vehículo es requerida' },
         { status: 400 }
@@ -129,11 +127,10 @@ export async function POST(req: Request) {
       targetTenant = user.tenantId;
     }
 
-    // Verificar que la marca existe en el tenant
-    const brand = await prisma.vehicleBrand.findFirst({
+    // Verificar que la marca existe (global o del tenant)
+    const brand = await tenantPrisma.vehicleBrand.findFirst({
       where: {
         id: vehicleBrandId,
-        tenantId: targetTenant,
       },
     });
 
@@ -144,12 +141,11 @@ export async function POST(req: Request) {
       );
     }
 
-    // Verificar que la línea existe en el tenant y pertenece a la marca
-    const line = await prisma.vehicleLine.findFirst({
+    // Verificar que la línea existe (global o del tenant) y pertenece a la marca
+    const line = await tenantPrisma.vehicleLine.findFirst({
       where: {
         id: vehicleLineId,
         brandId: vehicleBrandId,
-        tenantId: targetTenant,
       },
     });
 

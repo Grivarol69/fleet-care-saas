@@ -144,6 +144,13 @@ export function canManagePurchases(user: User | null): boolean {
 }
 
 /**
+ * SUPER_ADMIN, OWNER, MANAGER pueden gestionar centros de costos
+ */
+export function canManageCostCenters(user: User | null): boolean {
+  return isSuperAdmin(user) || isOwner(user) || isManager(user);
+}
+
+/**
  * SUPER_ADMIN, OWNER, MANAGER, PURCHASER pueden gestionar proveedores
  */
 export function canManageProviders(user: User | null): boolean {

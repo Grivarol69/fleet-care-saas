@@ -6,1916 +6,894 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
+// ============================================================
+// SEED DE PRODUCCIÓN — Knowledge Base Global
+// ============================================================
+// Este seed crea ÚNICAMENTE los datos globales necesarios para
+// que el primer usuario que haga onboarding tenga acceso a:
+//   - Marcas, líneas y tipos de vehículos
+//   - Categorías e ítems de mantenimiento
+//   - Templates con paquetes de mantenimiento
+//   - Autopartes maestras (catálogo KB)
+//   - Vínculos KB (MantItemVehiclePart)
+//   - Tipos de documentos por país (CO)
+//   - Tenant plataforma + SUPER_ADMIN
+//
+// NO incluye datos de demo. Para demo usar seed-multitenancy.ts
+// ============================================================
+
+const PLATFORM_TENANT_ID = '00000000-0000-0000-0000-000000000000';
+
+// Helper: crea paquetes con items para un template
+async function createTemplatePackages(
+  templateId: string,
+  packages: Array<{
+    name: string;
+    triggerKm: number;
+    estimatedCost: number;
+    estimatedTime: number;
+    priority: 'MEDIUM' | 'HIGH';
+    items: Array<{
+      mantItemId: string;
+      triggerKm: number;
+      estimatedTime: number;
+      order: number;
+      priority: 'LOW' | 'MEDIUM' | 'HIGH';
+    }>;
+  }>
+) {
+  for (const pkg of packages) {
+    const created = await prisma.maintenancePackage.create({
+      data: {
+        templateId,
+        name: pkg.name,
+        triggerKm: pkg.triggerKm,
+        estimatedCost: pkg.estimatedCost,
+        estimatedTime: pkg.estimatedTime,
+        priority: pkg.priority,
+        packageType: 'PREVENTIVE',
+        status: 'ACTIVE',
+      },
+    });
+    await Promise.all(
+      pkg.items.map(item =>
+        prisma.packageItem.create({
+          data: {
+            packageId: created.id,
+            mantItemId: item.mantItemId,
+            triggerKm: item.triggerKm,
+            estimatedTime: item.estimatedTime,
+            order: item.order,
+            priority: item.priority,
+          },
+        })
+      )
+    );
+  }
+}
+
 async function main() {
-  console.log('🌱 Starting seed...\n');
+  console.log('==============================================');
+  console.log('  SEED PRODUCCION - Fleet Care SaaS');
+  console.log('  Knowledge Base Global');
+  console.log('==============================================\n');
 
-  console.log('🧹 Cleaning up previous seed data...');
+  // ============================================================
+  // STEP 1: CLEANUP COMPLETO (orden FK-safe)
+  // ============================================================
+  console.log('1. CLEANUP - Borrando datos existentes...\n');
 
-  // FIX: PartPriceHistory blocks Provider deletion (Restrict), need to delete first
-  // FIX: Also clean up old seed tenant (cf68...) data which blocks global deletions
-  const TEST_TENANT_IDS = [
-    'org_38zCXuXqy5Urw5CuaisTHu3jLTq', // User Real Tenant (Clerk orgId)
-    'org_36M1mCUcHm4ShrsTQQK3etw9FEk', // Old Seed Tenant
-    'cf68b103-12fd-4208-a352-42379ef3b6e1', // Old Seed Tenant
-    '00000000-0000-0000-0000-000000000000', // Platform Tenant
-  ];
+  await prisma.purchaseOrderItem.deleteMany({});
+  await prisma.purchaseOrder.deleteMany({});
+  await prisma.ticketPartEntry.deleteMany({});
+  await prisma.ticketLaborEntry.deleteMany({});
+  await prisma.internalWorkTicket.deleteMany({});
+  await prisma.inventoryMovement.deleteMany({});
+  await prisma.inventoryItem.deleteMany({});
+  await prisma.invoicePayment.deleteMany({});
+  await prisma.partPriceHistory.deleteMany({});
+  await prisma.invoiceItem.deleteMany({});
+  await prisma.invoice.deleteMany({});
+  await prisma.financialAlert.deleteMany({});
+  await prisma.maintenanceAlert.deleteMany({});
+  await prisma.expenseAuditLog.deleteMany({});
+  await prisma.workOrderApproval.deleteMany({});
+  await prisma.workOrderExpense.deleteMany({});
+  await prisma.workOrderItem.deleteMany({});
+  await prisma.workOrder.deleteMany({});
+  await prisma.vehicleProgramItem.deleteMany({});
+  await prisma.vehicleProgramPackage.deleteMany({});
+  await prisma.vehicleMantProgram.deleteMany({});
+  await prisma.vehicleDriver.deleteMany({});
+  await prisma.odometerLog.deleteMany({});
+  await prisma.document.deleteMany({});
+  await prisma.vehicle.deleteMany({});
+  await prisma.driver.deleteMany({});
+  await prisma.technician.deleteMany({});
+  await prisma.provider.deleteMany({});
+  await prisma.mantItemRequest.deleteMany({});
+  await prisma.mantItemVehiclePart.deleteMany({});
+  await prisma.mantItemPart.deleteMany({});
+  await prisma.packageItem.deleteMany({});
+  await prisma.maintenancePackage.deleteMany({});
+  await prisma.maintenanceTemplate.deleteMany({});
+  await prisma.mantItem.deleteMany({});
+  await prisma.mantCategory.deleteMany({});
+  await prisma.partCompatibility.deleteMany({});
+  await prisma.masterPart.deleteMany({});
+  await prisma.documentTypeConfig.deleteMany({});
+  await prisma.vehicleLine.deleteMany({});
+  await prisma.vehicleBrand.deleteMany({});
+  await prisma.vehicleType.deleteMany({});
+  await prisma.user.deleteMany({});
+  await prisma.subscription.deleteMany({});
+  await prisma.tenant.deleteMany({});
 
-  await prisma.partPriceHistory.deleteMany({
-    where: {
-      tenantId: { in: TEST_TENANT_IDS },
-    },
-  });
+  console.log('   Cleanup completo.\n');
 
-  // Clean data for ALL test tenants
-  // We explicitly delete child records to avoid FK issues with Global Items or Restrict constraints
-  await prisma.vehicleDriver.deleteMany({
-    where: { tenantId: { in: TEST_TENANT_IDS } },
-  });
+  // ============================================================
+  // STEP 2: KNOWLEDGE BASE GLOBAL (tenantId: null, isGlobal: true)
+  // ============================================================
+  console.log('2. KNOWLEDGE BASE GLOBAL...\n');
 
-  await prisma.vehicleProgramItem.deleteMany({
-    where: { tenantId: { in: TEST_TENANT_IDS } },
-  });
-  await prisma.vehicleProgramPackage.deleteMany({
-    where: { tenantId: { in: TEST_TENANT_IDS } },
-  });
-  await prisma.vehicleMantProgram.deleteMany({
-    where: { tenantId: { in: TEST_TENANT_IDS } },
-  });
-
-  await prisma.invoiceItem.deleteMany({
-    where: { invoice: { tenantId: { in: TEST_TENANT_IDS } } },
-  });
-  await prisma.invoice.deleteMany({
-    where: { tenantId: { in: TEST_TENANT_IDS } },
-  });
-
-  await prisma.workOrderItem.deleteMany({
-    where: { workOrder: { tenantId: { in: TEST_TENANT_IDS } } },
-  });
-  await prisma.workOrder.deleteMany({
-    where: { tenantId: { in: TEST_TENANT_IDS } },
-  });
-
-  await prisma.maintenanceAlert.deleteMany({
-    where: { tenantId: { in: TEST_TENANT_IDS } },
-  });
-
-  await prisma.vehicle.deleteMany({
-    where: { tenantId: { in: TEST_TENANT_IDS } },
-  });
-  await prisma.driver.deleteMany({
-    where: { tenantId: { in: TEST_TENANT_IDS } },
-  });
-  await prisma.technician.deleteMany({
-    where: { tenantId: { in: TEST_TENANT_IDS } },
-  });
-  await prisma.provider.deleteMany({
-    where: { tenantId: { in: TEST_TENANT_IDS } },
-  });
-  await prisma.masterPart.deleteMany({
-    where: { tenantId: { in: TEST_TENANT_IDS } },
-  });
-
-  // Clean tenants themselves (EXCEPT the User Tenant which we keep)
-  await prisma.tenant.deleteMany({
-    where: {
-      id: {
-        in: [
-          'cf68b103-12fd-4208-a352-42379ef3b6e1',
-          '00000000-0000-0000-0000-000000000000',
-        ],
-      },
-    },
-  });
-
-  // Clean Global Knowledge Base
-  // Order matters due to foreign key constraints (unless Cascade is set everywhere)
-  await prisma.maintenanceTemplate.deleteMany({
-    where: { tenantId: null, isGlobal: true },
-  });
-  await prisma.mantItem.deleteMany({
-    where: { tenantId: null, isGlobal: true },
-  });
-  await prisma.mantCategory.deleteMany({
-    where: { tenantId: null, isGlobal: true },
-  });
-  await prisma.vehicleType.deleteMany({
-    where: { tenantId: null, isGlobal: true },
-  });
-  await prisma.vehicleBrand.deleteMany({
-    where: { tenantId: null, isGlobal: true },
-  });
-  await prisma.masterPart.deleteMany({ where: { tenantId: null } });
-  await prisma.documentTypeConfig.deleteMany({
-    where: { tenantId: null, isGlobal: true },
-  });
-
-  console.log('✓ Cleanup complete\n');
-
-  // ========================================
-  // PARTE 1: KNOWLEDGE BASE GLOBAL
-  // ========================================
-  console.log('📚 Creating Global Knowledge Base...\n');
-
-  // 1. GLOBAL BRANDS
-  console.log('Creating global brands...');
-  const globalBrands = await Promise.all([
-    prisma.vehicleBrand.create({
-      data: { name: 'Toyota', isGlobal: true, tenantId: null },
-    }),
-    prisma.vehicleBrand.create({
-      data: { name: 'Ford', isGlobal: true, tenantId: null },
-    }),
-    prisma.vehicleBrand.create({
-      data: { name: 'Chevrolet', isGlobal: true, tenantId: null },
-    }),
-    prisma.vehicleBrand.create({
-      data: { name: 'Nissan', isGlobal: true, tenantId: null },
-    }),
-    prisma.vehicleBrand.create({
-      data: { name: 'Mitsubishi', isGlobal: true, tenantId: null },
-    }),
+  // ----------------------------------------------------------
+  // MARCAS (7): Las más comunes en flotas colombianas
+  // ----------------------------------------------------------
+  console.log('   Creando marcas (7)...');
+  const brands = await Promise.all([
+    prisma.vehicleBrand.create({ data: { name: 'Toyota', isGlobal: true, tenantId: null } }),       // [0]
+    prisma.vehicleBrand.create({ data: { name: 'Ford', isGlobal: true, tenantId: null } }),         // [1]
+    prisma.vehicleBrand.create({ data: { name: 'Chevrolet', isGlobal: true, tenantId: null } }),    // [2]
+    prisma.vehicleBrand.create({ data: { name: 'Nissan', isGlobal: true, tenantId: null } }),       // [3]
+    prisma.vehicleBrand.create({ data: { name: 'Mitsubishi', isGlobal: true, tenantId: null } }),   // [4]
+    prisma.vehicleBrand.create({ data: { name: 'Renault', isGlobal: true, tenantId: null } }),      // [5]
+    prisma.vehicleBrand.create({ data: { name: 'Dongfeng', isGlobal: true, tenantId: null } }),     // [6]
   ]);
-  console.log(`✓ Created ${globalBrands.length} global brands\n`);
+  const [toyota, ford, chevrolet, nissan, mitsubishi, renault, dongfeng] = brands;
+  console.log(`   ${brands.length} marcas creadas.`);
 
-  // 2. GLOBAL LINES
-  console.log('Creating global vehicle lines...');
-  const globalLines = await Promise.all([
-    // Toyota
-    prisma.vehicleLine.create({
-      data: {
-        name: 'Hilux',
-        brandId: globalBrands[0].id,
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.vehicleLine.create({
-      data: {
-        name: 'Land Cruiser',
-        brandId: globalBrands[0].id,
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.vehicleLine.create({
-      data: {
-        name: 'Prado',
-        brandId: globalBrands[0].id,
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    // Ford
-    prisma.vehicleLine.create({
-      data: {
-        name: 'Ranger',
-        brandId: globalBrands[1].id,
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.vehicleLine.create({
-      data: {
-        name: 'F-150',
-        brandId: globalBrands[1].id,
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.vehicleLine.create({
-      data: {
-        name: 'Transit',
-        brandId: globalBrands[1].id,
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    // Chevrolet
-    prisma.vehicleLine.create({
-      data: {
-        name: 'D-MAX',
-        brandId: globalBrands[2].id,
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.vehicleLine.create({
-      data: {
-        name: 'Silverado',
-        brandId: globalBrands[2].id,
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.vehicleLine.create({
-      data: {
-        name: 'NPR',
-        brandId: globalBrands[2].id,
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    // Nissan
-    prisma.vehicleLine.create({
-      data: {
-        name: 'Frontier',
-        brandId: globalBrands[3].id,
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.vehicleLine.create({
-      data: {
-        name: 'Navara',
-        brandId: globalBrands[3].id,
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    // Mitsubishi
-    prisma.vehicleLine.create({
-      data: {
-        name: 'L200',
-        brandId: globalBrands[4].id,
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.vehicleLine.create({
-      data: {
-        name: 'Montero',
-        brandId: globalBrands[4].id,
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
+  // ----------------------------------------------------------
+  // LINEAS (17): Modelos más usados por marca
+  // ----------------------------------------------------------
+  console.log('   Creando lineas (17)...');
+  const lines = await Promise.all([
+    // Toyota [0-2]
+    prisma.vehicleLine.create({ data: { name: 'Hilux', brandId: toyota.id, isGlobal: true, tenantId: null } }),
+    prisma.vehicleLine.create({ data: { name: 'Land Cruiser', brandId: toyota.id, isGlobal: true, tenantId: null } }),
+    prisma.vehicleLine.create({ data: { name: 'Prado', brandId: toyota.id, isGlobal: true, tenantId: null } }),
+    // Ford [3-5]
+    prisma.vehicleLine.create({ data: { name: 'Ranger', brandId: ford.id, isGlobal: true, tenantId: null } }),
+    prisma.vehicleLine.create({ data: { name: 'F-150', brandId: ford.id, isGlobal: true, tenantId: null } }),
+    prisma.vehicleLine.create({ data: { name: 'Transit', brandId: ford.id, isGlobal: true, tenantId: null } }),
+    // Chevrolet [6-9]
+    prisma.vehicleLine.create({ data: { name: 'D-MAX', brandId: chevrolet.id, isGlobal: true, tenantId: null } }),
+    prisma.vehicleLine.create({ data: { name: 'Colorado', brandId: chevrolet.id, isGlobal: true, tenantId: null } }),
+    prisma.vehicleLine.create({ data: { name: 'Silverado', brandId: chevrolet.id, isGlobal: true, tenantId: null } }),
+    prisma.vehicleLine.create({ data: { name: 'NPR', brandId: chevrolet.id, isGlobal: true, tenantId: null } }),
+    // Nissan [10-11]
+    prisma.vehicleLine.create({ data: { name: 'Frontier', brandId: nissan.id, isGlobal: true, tenantId: null } }),
+    prisma.vehicleLine.create({ data: { name: 'Navara', brandId: nissan.id, isGlobal: true, tenantId: null } }),
+    // Mitsubishi [12-13]
+    prisma.vehicleLine.create({ data: { name: 'L200', brandId: mitsubishi.id, isGlobal: true, tenantId: null } }),
+    prisma.vehicleLine.create({ data: { name: 'Montero', brandId: mitsubishi.id, isGlobal: true, tenantId: null } }),
+    // Renault [14-15]
+    prisma.vehicleLine.create({ data: { name: 'Duster', brandId: renault.id, isGlobal: true, tenantId: null } }),
+    prisma.vehicleLine.create({ data: { name: 'Oroch', brandId: renault.id, isGlobal: true, tenantId: null } }),
+    // Dongfeng [16]
+    prisma.vehicleLine.create({ data: { name: 'Rich 6 EV', brandId: dongfeng.id, isGlobal: true, tenantId: null } }),
   ]);
-  console.log(`✓ Created ${globalLines.length} global vehicle lines\n`);
+  const [
+    hilux, , , ranger, , , dmax, colorado, , , frontier, , l200, , duster, oroch, rich6ev,
+  ] = lines;
+  console.log(`   ${lines.length} lineas creadas.`);
 
-  // 3. GLOBAL TYPES
-  console.log('Creating global vehicle types...');
-  const globalTypes = await Promise.all([
-    prisma.vehicleType.create({
-      data: { name: 'Camioneta 4x4', isGlobal: true, tenantId: null },
-    }),
-    prisma.vehicleType.create({
-      data: { name: 'Camión de Carga', isGlobal: true, tenantId: null },
-    }),
-    prisma.vehicleType.create({
-      data: { name: 'Camioneta de Pasajeros', isGlobal: true, tenantId: null },
-    }),
-    prisma.vehicleType.create({
-      data: { name: 'Vehículo Urbano', isGlobal: true, tenantId: null },
-    }),
-    prisma.vehicleType.create({
-      data: { name: 'SUV', isGlobal: true, tenantId: null },
-    }),
+  // ----------------------------------------------------------
+  // TIPOS (5)
+  // ----------------------------------------------------------
+  console.log('   Creando tipos de vehiculo (5)...');
+  const types = await Promise.all([
+    prisma.vehicleType.create({ data: { name: 'Camioneta 4x4', isGlobal: true, tenantId: null } }),
+    prisma.vehicleType.create({ data: { name: 'Camion de Carga', isGlobal: true, tenantId: null } }),
+    prisma.vehicleType.create({ data: { name: 'Camioneta Pasajeros', isGlobal: true, tenantId: null } }),
+    prisma.vehicleType.create({ data: { name: 'Vehiculo Urbano', isGlobal: true, tenantId: null } }),
+    prisma.vehicleType.create({ data: { name: 'SUV', isGlobal: true, tenantId: null } }),
   ]);
-  console.log(`✓ Created ${globalTypes.length} global vehicle types\n`);
+  console.log(`   ${types.length} tipos creados.`);
 
-  // 4. GLOBAL MAINTENANCE CATEGORIES
-  console.log('Creating global maintenance categories...');
-  const globalCategories = await Promise.all([
-    prisma.mantCategory.create({
-      data: {
-        name: 'Motor',
-        description: 'Sistema de motor y combustible',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.mantCategory.create({
-      data: {
-        name: 'Transmisión',
-        description: 'Caja de cambios y embrague',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.mantCategory.create({
-      data: {
-        name: 'Frenos',
-        description: 'Sistema de frenado',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.mantCategory.create({
-      data: {
-        name: 'Suspensión',
-        description: 'Amortiguadores y resortes',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.mantCategory.create({
-      data: {
-        name: 'Eléctrico',
-        description: 'Sistema eléctrico y batería',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.mantCategory.create({
-      data: {
-        name: 'Lubricación',
-        description: 'Aceites y lubricantes',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.mantCategory.create({
-      data: {
-        name: 'Filtros',
-        description: 'Filtros aire, aceite, combustible',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.mantCategory.create({
-      data: {
-        name: 'Neumáticos',
-        description: 'Llantas y neumáticos',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.mantCategory.create({
-      data: {
-        name: 'Carrocería',
-        description: 'Elementos de carrocería',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
+  // ----------------------------------------------------------
+  // CATEGORIAS DE MANTENIMIENTO (11)
+  // ----------------------------------------------------------
+  console.log('   Creando categorias de mantenimiento (11)...');
+  const cats = await Promise.all([
+    prisma.mantCategory.create({ data: { name: 'Motor', description: 'Sistema de motor y combustible', isGlobal: true, tenantId: null } }),                    // [0]
+    prisma.mantCategory.create({ data: { name: 'Transmision', description: 'Caja de cambios y embrague', isGlobal: true, tenantId: null } }),                   // [1]
+    prisma.mantCategory.create({ data: { name: 'Frenos', description: 'Sistema de frenado', isGlobal: true, tenantId: null } }),                               // [2]
+    prisma.mantCategory.create({ data: { name: 'Suspension', description: 'Amortiguadores y resortes', isGlobal: true, tenantId: null } }),                    // [3]
+    prisma.mantCategory.create({ data: { name: 'Electrico', description: 'Sistema electrico y bateria', isGlobal: true, tenantId: null } }),                   // [4]
+    prisma.mantCategory.create({ data: { name: 'Lubricacion', description: 'Aceites y lubricantes', isGlobal: true, tenantId: null } }),                       // [5]
+    prisma.mantCategory.create({ data: { name: 'Filtros', description: 'Filtros aire, aceite, combustible', isGlobal: true, tenantId: null } }),               // [6]
+    prisma.mantCategory.create({ data: { name: 'Neumaticos', description: 'Llantas y neumaticos', isGlobal: true, tenantId: null } }),                        // [7]
+    prisma.mantCategory.create({ data: { name: 'Carroceria', description: 'Elementos de carroceria', isGlobal: true, tenantId: null } }),                     // [8]
+    prisma.mantCategory.create({ data: { name: 'Sistema Termico EV', description: 'Enfriamiento de baterias EV y motor', isGlobal: true, tenantId: null } }), // [9]
+    prisma.mantCategory.create({ data: { name: 'Alta Tension EV', description: 'Sistema Alta Tension Bateria Motores EV', isGlobal: true, tenantId: null } }), // [10]
   ]);
-  console.log(
-    `✓ Created ${globalCategories.length} global maintenance categories\n`
-  );
+  const [
+    catMotor, catTransmision, catFrenos, catSuspension, catElectrico,
+    catLubricacion, catFiltros, catNeumaticos, , catTermicoEV, catAltaTensionEV,
+  ] = cats;
+  console.log(`   ${cats.length} categorias creadas.`);
 
-  // 5. GLOBAL MAINTENANCE ITEMS (PREVENTIVOS + CORRECTIVOS)
-  console.log('Creating global maintenance items (preventive + corrective)...');
-  const globalMantItems = await Promise.all([
-    // ===== ITEMS PREVENTIVOS =====
-    // Motor (index 0-2)
-    prisma.mantItem.create({
-      data: {
-        name: 'Cambio aceite motor',
-        description: 'Cambio de aceite motor 5W-40 sintético',
-        mantType: 'PREVENTIVE',
-        categoryId: globalCategories[0].id,
-        type: 'PART',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.mantItem.create({
-      data: {
-        name: 'Inspección sistema combustible',
-        mantType: 'PREVENTIVE',
-        categoryId: globalCategories[0].id,
-        type: 'ACTION',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.mantItem.create({
-      data: {
-        name: 'Ajuste válvulas',
-        mantType: 'PREVENTIVE',
-        categoryId: globalCategories[0].id,
-        type: 'ACTION',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    // Filtros (index 3-5)
-    prisma.mantItem.create({
-      data: {
-        name: 'Cambio filtro aceite',
-        mantType: 'PREVENTIVE',
-        categoryId: globalCategories[6].id,
-        type: 'PART',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.mantItem.create({
-      data: {
-        name: 'Cambio filtro aire',
-        mantType: 'PREVENTIVE',
-        categoryId: globalCategories[6].id,
-        type: 'PART',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.mantItem.create({
-      data: {
-        name: 'Cambio filtro combustible',
-        mantType: 'PREVENTIVE',
-        categoryId: globalCategories[6].id,
-        type: 'PART',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    // Frenos preventivo (index 6-7)
-    prisma.mantItem.create({
-      data: {
-        name: 'Inspección pastillas freno',
-        mantType: 'PREVENTIVE',
-        categoryId: globalCategories[2].id,
-        type: 'ACTION',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.mantItem.create({
-      data: {
-        name: 'Cambio líquido frenos',
-        mantType: 'PREVENTIVE',
-        categoryId: globalCategories[2].id,
-        type: 'PART',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    // Suspensión preventivo (index 8-9)
-    prisma.mantItem.create({
-      data: {
-        name: 'Inspección amortiguadores',
-        mantType: 'PREVENTIVE',
-        categoryId: globalCategories[3].id,
-        type: 'ACTION',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.mantItem.create({
-      data: {
-        name: 'Lubricación rótulas',
-        mantType: 'PREVENTIVE',
-        categoryId: globalCategories[3].id,
-        type: 'ACTION',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    // Eléctrico preventivo (index 10-11)
-    prisma.mantItem.create({
-      data: {
-        name: 'Inspección batería',
-        mantType: 'PREVENTIVE',
-        categoryId: globalCategories[4].id,
-        type: 'ACTION',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.mantItem.create({
-      data: {
-        name: 'Limpieza terminales batería',
-        mantType: 'PREVENTIVE',
-        categoryId: globalCategories[4].id,
-        type: 'ACTION',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    // Transmisión preventivo (index 12-13)
-    prisma.mantItem.create({
-      data: {
-        name: 'Cambio aceite transmisión',
-        mantType: 'PREVENTIVE',
-        categoryId: globalCategories[1].id,
-        type: 'PART',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.mantItem.create({
-      data: {
-        name: 'Ajuste embrague',
-        mantType: 'PREVENTIVE',
-        categoryId: globalCategories[1].id,
-        type: 'ACTION',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    // Neumáticos preventivo (index 14-15)
-    prisma.mantItem.create({
-      data: {
-        name: 'Rotación neumáticos',
-        mantType: 'PREVENTIVE',
-        categoryId: globalCategories[7].id,
-        type: 'ACTION',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.mantItem.create({
-      data: {
-        name: 'Balanceo y alineación',
-        mantType: 'PREVENTIVE',
-        categoryId: globalCategories[7].id,
-        type: 'SERVICE',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    // Lubricación preventivo (index 16)
-    prisma.mantItem.create({
-      data: {
-        name: 'Cambio líquido dirección hidráulica',
-        description: 'Cambio de líquido de dirección hidráulica',
-        mantType: 'PREVENTIVE',
-        categoryId: globalCategories[5].id,
-        type: 'PART',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
+  // ----------------------------------------------------------
+  // ITEMS DE MANTENIMIENTO (33 = 17 preventivos + 16 correctivos)
+  // + 5 especificos (SUV + EV) = 38 total
+  // ----------------------------------------------------------
+  console.log('   Creando items de mantenimiento (38)...');
+  const items = await Promise.all([
+    // ---- PREVENTIVOS [0-20] ----
+    // Motor [0-2]
+    prisma.mantItem.create({ data: { name: 'Cambio aceite motor', description: 'Cambio de aceite motor sintetico', mantType: 'PREVENTIVE', categoryId: catMotor.id, type: 'PART', isGlobal: true, tenantId: null } }),
+    prisma.mantItem.create({ data: { name: 'Inspeccion sistema combustible', mantType: 'PREVENTIVE', categoryId: catMotor.id, type: 'ACTION', isGlobal: true, tenantId: null } }),
+    prisma.mantItem.create({ data: { name: 'Ajuste valvulas', mantType: 'PREVENTIVE', categoryId: catMotor.id, type: 'ACTION', isGlobal: true, tenantId: null } }),
+    // Filtros [3-5]
+    prisma.mantItem.create({ data: { name: 'Cambio filtro aceite', mantType: 'PREVENTIVE', categoryId: catFiltros.id, type: 'PART', isGlobal: true, tenantId: null } }),
+    prisma.mantItem.create({ data: { name: 'Cambio filtro aire', mantType: 'PREVENTIVE', categoryId: catFiltros.id, type: 'PART', isGlobal: true, tenantId: null } }),
+    prisma.mantItem.create({ data: { name: 'Cambio filtro combustible', mantType: 'PREVENTIVE', categoryId: catFiltros.id, type: 'PART', isGlobal: true, tenantId: null } }),
+    // Frenos preventivo [6-7]
+    prisma.mantItem.create({ data: { name: 'Inspeccion pastillas freno', mantType: 'PREVENTIVE', categoryId: catFrenos.id, type: 'ACTION', isGlobal: true, tenantId: null } }),
+    prisma.mantItem.create({ data: { name: 'Cambio liquido frenos', mantType: 'PREVENTIVE', categoryId: catFrenos.id, type: 'PART', isGlobal: true, tenantId: null } }),
+    // Suspension preventivo [8-9]
+    prisma.mantItem.create({ data: { name: 'Inspeccion amortiguadores', mantType: 'PREVENTIVE', categoryId: catSuspension.id, type: 'ACTION', isGlobal: true, tenantId: null } }),
+    prisma.mantItem.create({ data: { name: 'Lubricacion rotulas', mantType: 'PREVENTIVE', categoryId: catSuspension.id, type: 'ACTION', isGlobal: true, tenantId: null } }),
+    // Electrico preventivo [10-11]
+    prisma.mantItem.create({ data: { name: 'Inspeccion bateria', mantType: 'PREVENTIVE', categoryId: catElectrico.id, type: 'ACTION', isGlobal: true, tenantId: null } }),
+    prisma.mantItem.create({ data: { name: 'Limpieza terminales bateria', mantType: 'PREVENTIVE', categoryId: catElectrico.id, type: 'ACTION', isGlobal: true, tenantId: null } }),
+    // Transmision preventivo [12-13]
+    prisma.mantItem.create({ data: { name: 'Cambio aceite transmision', mantType: 'PREVENTIVE', categoryId: catTransmision.id, type: 'PART', isGlobal: true, tenantId: null } }),
+    prisma.mantItem.create({ data: { name: 'Ajuste embrague', mantType: 'PREVENTIVE', categoryId: catTransmision.id, type: 'ACTION', isGlobal: true, tenantId: null } }),
+    // Neumaticos preventivo [14-15]
+    prisma.mantItem.create({ data: { name: 'Rotacion neumaticos', mantType: 'PREVENTIVE', categoryId: catNeumaticos.id, type: 'ACTION', isGlobal: true, tenantId: null } }),
+    prisma.mantItem.create({ data: { name: 'Balanceo y alineacion', mantType: 'PREVENTIVE', categoryId: catNeumaticos.id, type: 'SERVICE', isGlobal: true, tenantId: null } }),
+    // Lubricacion preventivo [16]
+    prisma.mantItem.create({ data: { name: 'Cambio liquido direccion hidraulica', mantType: 'PREVENTIVE', categoryId: catLubricacion.id, type: 'PART', isGlobal: true, tenantId: null } }),
+    // SUV especificos preventivos [17-18]
+    prisma.mantItem.create({ data: { name: 'Cambio filtro habitaculo', mantType: 'PREVENTIVE', categoryId: catFiltros.id, type: 'PART', isGlobal: true, tenantId: null } }),
+    prisma.mantItem.create({ data: { name: 'Cambio correa accesorios', mantType: 'PREVENTIVE', categoryId: catMotor.id, type: 'PART', isGlobal: true, tenantId: null } }),
+    // EV especificos preventivos [19-21]
+    prisma.mantItem.create({ data: { name: 'Inspeccion alta tension EV', mantType: 'PREVENTIVE', categoryId: catAltaTensionEV.id, type: 'ACTION', isGlobal: true, tenantId: null } }),
+    prisma.mantItem.create({ data: { name: 'Cambio aceite engranaje reductor EV', mantType: 'PREVENTIVE', categoryId: catTransmision.id, type: 'PART', isGlobal: true, tenantId: null } }),
+    prisma.mantItem.create({ data: { name: 'Flush liquido refrigerante EV', mantType: 'PREVENTIVE', categoryId: catTermicoEV.id, type: 'SERVICE', isGlobal: true, tenantId: null } }),
 
-    // ===== ITEMS CORRECTIVOS =====
-    // Frenos correctivos (index 17-20)
-    prisma.mantItem.create({
-      data: {
-        name: 'Cambio pastillas freno delanteras',
-        description: 'Reemplazo de pastillas desgastadas delanteras',
-        mantType: 'CORRECTIVE',
-        categoryId: globalCategories[2].id,
-        type: 'PART',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.mantItem.create({
-      data: {
-        name: 'Cambio pastillas freno traseras',
-        description: 'Reemplazo de pastillas desgastadas traseras',
-        mantType: 'CORRECTIVE',
-        categoryId: globalCategories[2].id,
-        type: 'PART',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.mantItem.create({
-      data: {
-        name: 'Cambio discos freno',
-        description: 'Reemplazo de discos de freno desgastados',
-        mantType: 'CORRECTIVE',
-        categoryId: globalCategories[2].id,
-        type: 'PART',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.mantItem.create({
-      data: {
-        name: 'Reparación cilindro maestro',
-        description: 'Reparación o cambio de cilindro maestro de frenos',
-        mantType: 'CORRECTIVE',
-        categoryId: globalCategories[2].id,
-        type: 'SERVICE',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    // Motor correctivos (index 21-23)
-    prisma.mantItem.create({
-      data: {
-        name: 'Cambio correa distribución',
-        description: 'Reemplazo de correa de distribución',
-        mantType: 'CORRECTIVE',
-        categoryId: globalCategories[0].id,
-        type: 'PART',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.mantItem.create({
-      data: {
-        name: 'Reparación empaque culata',
-        description: 'Reparación de empaque de culata',
-        mantType: 'CORRECTIVE',
-        categoryId: globalCategories[0].id,
-        type: 'SERVICE',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.mantItem.create({
-      data: {
-        name: 'Cambio bomba agua',
-        description: 'Reemplazo de bomba de agua',
-        mantType: 'CORRECTIVE',
-        categoryId: globalCategories[0].id,
-        type: 'PART',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    // Suspensión correctivos (index 24-26)
-    prisma.mantItem.create({
-      data: {
-        name: 'Cambio amortiguadores',
-        description: 'Reemplazo de amortiguadores',
-        mantType: 'CORRECTIVE',
-        categoryId: globalCategories[3].id,
-        type: 'PART',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.mantItem.create({
-      data: {
-        name: 'Cambio rótulas',
-        description: 'Reemplazo de rótulas de suspensión',
-        mantType: 'CORRECTIVE',
-        categoryId: globalCategories[3].id,
-        type: 'PART',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.mantItem.create({
-      data: {
-        name: 'Cambio bujes suspensión',
-        description: 'Reemplazo de bujes de suspensión',
-        mantType: 'CORRECTIVE',
-        categoryId: globalCategories[3].id,
-        type: 'PART',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    // Eléctrico correctivos (index 27-29)
-    prisma.mantItem.create({
-      data: {
-        name: 'Cambio batería',
-        description: 'Reemplazo de batería',
-        mantType: 'CORRECTIVE',
-        categoryId: globalCategories[4].id,
-        type: 'PART',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.mantItem.create({
-      data: {
-        name: 'Cambio alternador',
-        description: 'Reemplazo de alternador',
-        mantType: 'CORRECTIVE',
-        categoryId: globalCategories[4].id,
-        type: 'PART',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.mantItem.create({
-      data: {
-        name: 'Cambio motor arranque',
-        description: 'Reemplazo de motor de arranque',
-        mantType: 'CORRECTIVE',
-        categoryId: globalCategories[4].id,
-        type: 'PART',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    // Transmisión correctivos (index 30-31)
-    prisma.mantItem.create({
-      data: {
-        name: 'Cambio kit embrague',
-        description: 'Reemplazo de kit de embrague completo',
-        mantType: 'CORRECTIVE',
-        categoryId: globalCategories[1].id,
-        type: 'PART',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    prisma.mantItem.create({
-      data: {
-        name: 'Reparación caja cambios',
-        description: 'Reparación de caja de cambios',
-        mantType: 'CORRECTIVE',
-        categoryId: globalCategories[1].id,
-        type: 'SERVICE',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-    // Neumáticos correctivo (index 32)
-    prisma.mantItem.create({
-      data: {
-        name: 'Cambio neumáticos',
-        description: 'Reemplazo de neumáticos desgastados',
-        mantType: 'CORRECTIVE',
-        categoryId: globalCategories[7].id,
-        type: 'PART',
-        isGlobal: true,
-        tenantId: null,
-      },
-    }),
-  ]);
-  console.log(
-    `✓ Created ${globalMantItems.length} global maintenance items (17 preventive + 16 corrective)\n`
-  );
-
-  // 6. GLOBAL MAINTENANCE TEMPLATES
-  console.log(
-    'Creating global maintenance templates with 4 packages each (5K, 10K, 20K, 30K)...'
-  );
-
-  // ========================================
-  // Template: Toyota Hilux
-  // ========================================
-  const template_ToyotaHilux = await prisma.maintenanceTemplate.create({
-    data: {
-      name: 'Toyota Hilux Standard',
-      description:
-        'Programa de mantenimiento preventivo estándar para Toyota Hilux',
-      vehicleBrandId: globalBrands[0].id,
-      vehicleLineId: globalLines[0].id,
-      version: '1.0',
-      isDefault: true,
-      status: 'ACTIVE',
-      isGlobal: true,
-      tenantId: null,
-    },
-  });
-
-  // Package 5K Hilux
-  const package_Hilux_5k = await prisma.maintenancePackage.create({
-    data: {
-      templateId: template_ToyotaHilux.id,
-      name: 'Mantenimiento 5,000 km',
-      triggerKm: 5000,
-      estimatedCost: 450000,
-      estimatedTime: 2.5,
-      priority: 'MEDIUM',
-      packageType: 'PREVENTIVE',
-      status: 'ACTIVE',
-    },
-  });
-
-  await Promise.all([
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_5k.id,
-        mantItemId: globalMantItems[0].id, // Cambio aceite
-        triggerKm: 5000,
-        estimatedTime: 0.5,
-        order: 1,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_5k.id,
-        mantItemId: globalMantItems[3].id, // Filtro aceite
-        triggerKm: 5000,
-        estimatedTime: 0.3,
-        order: 2,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_5k.id,
-        mantItemId: globalMantItems[4].id, // Filtro aire
-        triggerKm: 5000,
-        estimatedTime: 0.2,
-        order: 3,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_5k.id,
-        mantItemId: globalMantItems[6].id, // Inspección frenos
-        triggerKm: 5000,
-        estimatedTime: 0.5,
-        order: 4,
-        priority: 'HIGH',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_5k.id,
-        mantItemId: globalMantItems[10].id, // Inspección batería
-        triggerKm: 5000,
-        estimatedTime: 0.3,
-        order: 5,
-        priority: 'LOW',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_5k.id,
-        mantItemId: globalMantItems[14].id, // Rotación neumáticos
-        triggerKm: 5000,
-        estimatedTime: 0.7,
-        order: 6,
-        priority: 'MEDIUM',
-      },
-    }),
+    // ---- CORRECTIVOS [22-37] ----
+    // Frenos [22-25]
+    prisma.mantItem.create({ data: { name: 'Cambio pastillas freno delanteras', description: 'Reemplazo de pastillas desgastadas delanteras', mantType: 'CORRECTIVE', categoryId: catFrenos.id, type: 'PART', isGlobal: true, tenantId: null } }),
+    prisma.mantItem.create({ data: { name: 'Cambio pastillas freno traseras', description: 'Reemplazo de pastillas desgastadas traseras', mantType: 'CORRECTIVE', categoryId: catFrenos.id, type: 'PART', isGlobal: true, tenantId: null } }),
+    prisma.mantItem.create({ data: { name: 'Cambio discos freno', description: 'Reemplazo de discos de freno desgastados', mantType: 'CORRECTIVE', categoryId: catFrenos.id, type: 'PART', isGlobal: true, tenantId: null } }),
+    prisma.mantItem.create({ data: { name: 'Reparacion cilindro maestro', mantType: 'CORRECTIVE', categoryId: catFrenos.id, type: 'SERVICE', isGlobal: true, tenantId: null } }),
+    // Motor [26-28]
+    prisma.mantItem.create({ data: { name: 'Cambio correa distribucion', mantType: 'CORRECTIVE', categoryId: catMotor.id, type: 'PART', isGlobal: true, tenantId: null } }),
+    prisma.mantItem.create({ data: { name: 'Reparacion empaque culata', mantType: 'CORRECTIVE', categoryId: catMotor.id, type: 'SERVICE', isGlobal: true, tenantId: null } }),
+    prisma.mantItem.create({ data: { name: 'Cambio bomba agua', mantType: 'CORRECTIVE', categoryId: catMotor.id, type: 'PART', isGlobal: true, tenantId: null } }),
+    // Suspension [29-31]
+    prisma.mantItem.create({ data: { name: 'Cambio amortiguadores', mantType: 'CORRECTIVE', categoryId: catSuspension.id, type: 'PART', isGlobal: true, tenantId: null } }),
+    prisma.mantItem.create({ data: { name: 'Cambio rotulas', mantType: 'CORRECTIVE', categoryId: catSuspension.id, type: 'PART', isGlobal: true, tenantId: null } }),
+    prisma.mantItem.create({ data: { name: 'Cambio bujes suspension', mantType: 'CORRECTIVE', categoryId: catSuspension.id, type: 'PART', isGlobal: true, tenantId: null } }),
+    // Electrico [32-34]
+    prisma.mantItem.create({ data: { name: 'Cambio bateria', mantType: 'CORRECTIVE', categoryId: catElectrico.id, type: 'PART', isGlobal: true, tenantId: null } }),
+    prisma.mantItem.create({ data: { name: 'Cambio alternador', mantType: 'CORRECTIVE', categoryId: catElectrico.id, type: 'PART', isGlobal: true, tenantId: null } }),
+    prisma.mantItem.create({ data: { name: 'Cambio motor arranque', mantType: 'CORRECTIVE', categoryId: catElectrico.id, type: 'PART', isGlobal: true, tenantId: null } }),
+    // Transmision [35-36]
+    prisma.mantItem.create({ data: { name: 'Cambio kit embrague', mantType: 'CORRECTIVE', categoryId: catTransmision.id, type: 'PART', isGlobal: true, tenantId: null } }),
+    prisma.mantItem.create({ data: { name: 'Reparacion caja cambios', mantType: 'CORRECTIVE', categoryId: catTransmision.id, type: 'SERVICE', isGlobal: true, tenantId: null } }),
+    // Neumaticos [37]
+    prisma.mantItem.create({ data: { name: 'Cambio neumaticos', mantType: 'CORRECTIVE', categoryId: catNeumaticos.id, type: 'PART', isGlobal: true, tenantId: null } }),
   ]);
 
-  // Package 10K Hilux
-  const package_Hilux_10k = await prisma.maintenancePackage.create({
-    data: {
-      templateId: template_ToyotaHilux.id,
-      name: 'Mantenimiento 10,000 km',
-      triggerKm: 10000,
-      estimatedCost: 550000,
-      estimatedTime: 3.0,
-      priority: 'MEDIUM',
-      packageType: 'PREVENTIVE',
-      status: 'ACTIVE',
-    },
-  });
-
-  await Promise.all([
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_10k.id,
-        mantItemId: globalMantItems[0].id,
-        triggerKm: 10000,
-        estimatedTime: 0.5,
-        order: 1,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_10k.id,
-        mantItemId: globalMantItems[3].id,
-        triggerKm: 10000,
-        estimatedTime: 0.3,
-        order: 2,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_10k.id,
-        mantItemId: globalMantItems[4].id,
-        triggerKm: 10000,
-        estimatedTime: 0.2,
-        order: 3,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_10k.id,
-        mantItemId: globalMantItems[5].id, // Filtro combustible
-        triggerKm: 10000,
-        estimatedTime: 0.3,
-        order: 4,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_10k.id,
-        mantItemId: globalMantItems[6].id,
-        triggerKm: 10000,
-        estimatedTime: 0.5,
-        order: 5,
-        priority: 'HIGH',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_10k.id,
-        mantItemId: globalMantItems[8].id, // Inspección amortiguadores
-        triggerKm: 10000,
-        estimatedTime: 0.5,
-        order: 6,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_10k.id,
-        mantItemId: globalMantItems[9].id, // Lubricación rótulas
-        triggerKm: 10000,
-        estimatedTime: 0.4,
-        order: 7,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_10k.id,
-        mantItemId: globalMantItems[15].id, // Balanceo
-        triggerKm: 10000,
-        estimatedTime: 0.8,
-        order: 8,
-        priority: 'MEDIUM',
-      },
-    }),
-  ]);
-
-  // Package 20K Hilux
-  const package_Hilux_20k = await prisma.maintenancePackage.create({
-    data: {
-      templateId: template_ToyotaHilux.id,
-      name: 'Mantenimiento 20,000 km',
-      triggerKm: 20000,
-      estimatedCost: 750000,
-      estimatedTime: 4.0,
-      priority: 'HIGH',
-      packageType: 'PREVENTIVE',
-      status: 'ACTIVE',
-    },
-  });
-
-  await Promise.all([
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_20k.id,
-        mantItemId: globalMantItems[0].id,
-        triggerKm: 20000,
-        estimatedTime: 0.5,
-        order: 1,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_20k.id,
-        mantItemId: globalMantItems[3].id,
-        triggerKm: 20000,
-        estimatedTime: 0.3,
-        order: 2,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_20k.id,
-        mantItemId: globalMantItems[4].id,
-        triggerKm: 20000,
-        estimatedTime: 0.2,
-        order: 3,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_20k.id,
-        mantItemId: globalMantItems[5].id,
-        triggerKm: 20000,
-        estimatedTime: 0.3,
-        order: 4,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_20k.id,
-        mantItemId: globalMantItems[2].id, // Ajuste válvulas
-        triggerKm: 20000,
-        estimatedTime: 1.0,
-        order: 5,
-        priority: 'HIGH',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_20k.id,
-        mantItemId: globalMantItems[6].id,
-        triggerKm: 20000,
-        estimatedTime: 0.5,
-        order: 6,
-        priority: 'HIGH',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_20k.id,
-        mantItemId: globalMantItems[7].id, // Cambio líquido frenos
-        triggerKm: 20000,
-        estimatedTime: 0.5,
-        order: 7,
-        priority: 'HIGH',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_20k.id,
-        mantItemId: globalMantItems[12].id, // Aceite transmisión
-        triggerKm: 20000,
-        estimatedTime: 1.2,
-        order: 8,
-        priority: 'MEDIUM',
-      },
-    }),
-  ]);
-
-  // Package 30K Hilux (NUEVO)
-  const package_Hilux_30k = await prisma.maintenancePackage.create({
-    data: {
-      templateId: template_ToyotaHilux.id,
-      name: 'Mantenimiento 30,000 km',
-      triggerKm: 30000,
-      estimatedCost: 950000,
-      estimatedTime: 5.0,
-      priority: 'HIGH',
-      packageType: 'PREVENTIVE',
-      status: 'ACTIVE',
-    },
-  });
-
-  await Promise.all([
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_30k.id,
-        mantItemId: globalMantItems[0].id, // Cambio aceite
-        triggerKm: 30000,
-        estimatedTime: 0.5,
-        order: 1,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_30k.id,
-        mantItemId: globalMantItems[3].id, // Filtro aceite
-        triggerKm: 30000,
-        estimatedTime: 0.3,
-        order: 2,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_30k.id,
-        mantItemId: globalMantItems[4].id, // Filtro aire
-        triggerKm: 30000,
-        estimatedTime: 0.2,
-        order: 3,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_30k.id,
-        mantItemId: globalMantItems[5].id, // Filtro combustible
-        triggerKm: 30000,
-        estimatedTime: 0.3,
-        order: 4,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_30k.id,
-        mantItemId: globalMantItems[2].id, // Ajuste válvulas
-        triggerKm: 30000,
-        estimatedTime: 1.0,
-        order: 5,
-        priority: 'HIGH',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_30k.id,
-        mantItemId: globalMantItems[6].id, // Inspección frenos
-        triggerKm: 30000,
-        estimatedTime: 0.5,
-        order: 6,
-        priority: 'HIGH',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_30k.id,
-        mantItemId: globalMantItems[7].id, // Líquido frenos
-        triggerKm: 30000,
-        estimatedTime: 0.5,
-        order: 7,
-        priority: 'HIGH',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_30k.id,
-        mantItemId: globalMantItems[12].id, // Aceite transmisión
-        triggerKm: 30000,
-        estimatedTime: 1.2,
-        order: 8,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_30k.id,
-        mantItemId: globalMantItems[13].id, // Ajuste embrague
-        triggerKm: 30000,
-        estimatedTime: 1.5,
-        order: 9,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Hilux_30k.id,
-        mantItemId: globalMantItems[16].id, // Líquido dirección hidráulica
-        triggerKm: 30000,
-        estimatedTime: 0.5,
-        order: 10,
-        priority: 'MEDIUM',
-      },
-    }),
-  ]);
-
-  console.log(
-    `✓ Created template "Toyota Hilux Standard" with 4 packages (5K, 10K, 20K, 30K)\n`
-  );
-
-  // ========================================
-  // Template: Ford Ranger
-  // ========================================
-  const template_FordRanger = await prisma.maintenanceTemplate.create({
-    data: {
-      name: 'Ford Ranger Standard',
-      description:
-        'Programa de mantenimiento preventivo estándar para Ford Ranger',
-      vehicleBrandId: globalBrands[1].id, // Ford
-      vehicleLineId: globalLines[3].id, // Ranger
-      version: '1.0',
-      isDefault: true,
-      status: 'ACTIVE',
-      isGlobal: true,
-      tenantId: null,
-    },
-  });
-
-  // Package 5K Ranger
-  const package_Ranger_5k = await prisma.maintenancePackage.create({
-    data: {
-      templateId: template_FordRanger.id,
-      name: 'Mantenimiento 5,000 km',
-      triggerKm: 5000,
-      estimatedCost: 430000,
-      estimatedTime: 2.5,
-      priority: 'MEDIUM',
-      packageType: 'PREVENTIVE',
-      status: 'ACTIVE',
-    },
-  });
-
-  await Promise.all([
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Ranger_5k.id,
-        mantItemId: globalMantItems[0].id,
-        triggerKm: 5000,
-        estimatedTime: 0.5,
-        order: 1,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Ranger_5k.id,
-        mantItemId: globalMantItems[3].id,
-        triggerKm: 5000,
-        estimatedTime: 0.3,
-        order: 2,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Ranger_5k.id,
-        mantItemId: globalMantItems[4].id,
-        triggerKm: 5000,
-        estimatedTime: 0.2,
-        order: 3,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Ranger_5k.id,
-        mantItemId: globalMantItems[10].id, // Inspección batería
-        triggerKm: 5000,
-        estimatedTime: 0.3,
-        order: 4,
-        priority: 'LOW',
-      },
-    }),
-  ]);
-
-  // Package 10K Ranger
-  const package_Ranger_10k = await prisma.maintenancePackage.create({
-    data: {
-      templateId: template_FordRanger.id,
-      name: 'Mantenimiento 10,000 km',
-      triggerKm: 10000,
-      estimatedCost: 520000,
-      estimatedTime: 3.0,
-      priority: 'MEDIUM',
-      packageType: 'PREVENTIVE',
-      status: 'ACTIVE',
-    },
-  });
-
-  await Promise.all([
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Ranger_10k.id,
-        mantItemId: globalMantItems[0].id,
-        triggerKm: 10000,
-        estimatedTime: 0.5,
-        order: 1,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Ranger_10k.id,
-        mantItemId: globalMantItems[3].id,
-        triggerKm: 10000,
-        estimatedTime: 0.3,
-        order: 2,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Ranger_10k.id,
-        mantItemId: globalMantItems[5].id, // Filtro combustible
-        triggerKm: 10000,
-        estimatedTime: 0.3,
-        order: 3,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Ranger_10k.id,
-        mantItemId: globalMantItems[6].id, // Inspección frenos
-        triggerKm: 10000,
-        estimatedTime: 0.5,
-        order: 4,
-        priority: 'HIGH',
-      },
-    }),
-  ]);
-
-  // Package 20K Ranger (NUEVO)
-  const package_Ranger_20k = await prisma.maintenancePackage.create({
-    data: {
-      templateId: template_FordRanger.id,
-      name: 'Mantenimiento 20,000 km',
-      triggerKm: 20000,
-      estimatedCost: 720000,
-      estimatedTime: 4.0,
-      priority: 'HIGH',
-      packageType: 'PREVENTIVE',
-      status: 'ACTIVE',
-    },
-  });
-
-  await Promise.all([
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Ranger_20k.id,
-        mantItemId: globalMantItems[0].id,
-        triggerKm: 20000,
-        estimatedTime: 0.5,
-        order: 1,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Ranger_20k.id,
-        mantItemId: globalMantItems[3].id,
-        triggerKm: 20000,
-        estimatedTime: 0.3,
-        order: 2,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Ranger_20k.id,
-        mantItemId: globalMantItems[4].id,
-        triggerKm: 20000,
-        estimatedTime: 0.2,
-        order: 3,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Ranger_20k.id,
-        mantItemId: globalMantItems[5].id,
-        triggerKm: 20000,
-        estimatedTime: 0.3,
-        order: 4,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Ranger_20k.id,
-        mantItemId: globalMantItems[6].id,
-        triggerKm: 20000,
-        estimatedTime: 0.5,
-        order: 5,
-        priority: 'HIGH',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Ranger_20k.id,
-        mantItemId: globalMantItems[7].id, // Líquido frenos
-        triggerKm: 20000,
-        estimatedTime: 0.5,
-        order: 6,
-        priority: 'HIGH',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Ranger_20k.id,
-        mantItemId: globalMantItems[12].id, // Aceite transmisión
-        triggerKm: 20000,
-        estimatedTime: 1.2,
-        order: 7,
-        priority: 'MEDIUM',
-      },
-    }),
-  ]);
-
-  // Package 30K Ranger (NUEVO)
-  const package_Ranger_30k = await prisma.maintenancePackage.create({
-    data: {
-      templateId: template_FordRanger.id,
-      name: 'Mantenimiento 30,000 km',
-      triggerKm: 30000,
-      estimatedCost: 920000,
-      estimatedTime: 5.0,
-      priority: 'HIGH',
-      packageType: 'PREVENTIVE',
-      status: 'ACTIVE',
-    },
-  });
-
-  await Promise.all([
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Ranger_30k.id,
-        mantItemId: globalMantItems[0].id,
-        triggerKm: 30000,
-        estimatedTime: 0.5,
-        order: 1,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Ranger_30k.id,
-        mantItemId: globalMantItems[3].id,
-        triggerKm: 30000,
-        estimatedTime: 0.3,
-        order: 2,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Ranger_30k.id,
-        mantItemId: globalMantItems[4].id,
-        triggerKm: 30000,
-        estimatedTime: 0.2,
-        order: 3,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Ranger_30k.id,
-        mantItemId: globalMantItems[5].id,
-        triggerKm: 30000,
-        estimatedTime: 0.3,
-        order: 4,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Ranger_30k.id,
-        mantItemId: globalMantItems[2].id, // Ajuste válvulas
-        triggerKm: 30000,
-        estimatedTime: 1.0,
-        order: 5,
-        priority: 'HIGH',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Ranger_30k.id,
-        mantItemId: globalMantItems[6].id,
-        triggerKm: 30000,
-        estimatedTime: 0.5,
-        order: 6,
-        priority: 'HIGH',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Ranger_30k.id,
-        mantItemId: globalMantItems[7].id,
-        triggerKm: 30000,
-        estimatedTime: 0.5,
-        order: 7,
-        priority: 'HIGH',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Ranger_30k.id,
-        mantItemId: globalMantItems[12].id,
-        triggerKm: 30000,
-        estimatedTime: 1.2,
-        order: 8,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Ranger_30k.id,
-        mantItemId: globalMantItems[13].id, // Ajuste embrague
-        triggerKm: 30000,
-        estimatedTime: 1.5,
-        order: 9,
-        priority: 'MEDIUM',
-      },
-    }),
-  ]);
-
-  console.log(
-    `✓ Created template "Ford Ranger Standard" with 4 packages (5K, 10K, 20K, 30K)\n`
-  );
-
-  // ========================================
-  // Template: Chevrolet D-MAX
-  // ========================================
-  const template_ChevyDmax = await prisma.maintenanceTemplate.create({
-    data: {
-      name: 'Chevrolet D-MAX Standard',
-      description:
-        'Programa de mantenimiento preventivo estándar para Chevrolet D-MAX',
-      vehicleBrandId: globalBrands[2].id, // Chevrolet
-      vehicleLineId: globalLines[6].id, // D-MAX
-      version: '1.0',
-      isDefault: true,
-      status: 'ACTIVE',
-      isGlobal: true,
-      tenantId: null,
-    },
-  });
-
-  // Package 5K D-MAX
-  const package_Dmax_5k = await prisma.maintenancePackage.create({
-    data: {
-      templateId: template_ChevyDmax.id,
-      name: 'Mantenimiento 5,000 km',
-      triggerKm: 5000,
-      estimatedCost: 440000,
-      estimatedTime: 2.5,
-      priority: 'MEDIUM',
-      packageType: 'PREVENTIVE',
-      status: 'ACTIVE',
-    },
-  });
-
-  await Promise.all([
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Dmax_5k.id,
-        mantItemId: globalMantItems[0].id,
-        triggerKm: 5000,
-        estimatedTime: 0.5,
-        order: 1,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Dmax_5k.id,
-        mantItemId: globalMantItems[3].id,
-        triggerKm: 5000,
-        estimatedTime: 0.3,
-        order: 2,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Dmax_5k.id,
-        mantItemId: globalMantItems[4].id,
-        triggerKm: 5000,
-        estimatedTime: 0.2,
-        order: 3,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Dmax_5k.id,
-        mantItemId: globalMantItems[14].id, // Rotación neumáticos
-        triggerKm: 5000,
-        estimatedTime: 0.7,
-        order: 4,
-        priority: 'MEDIUM',
-      },
-    }),
-  ]);
-
-  // Package 10K D-MAX
-  const package_Dmax_10k = await prisma.maintenancePackage.create({
-    data: {
-      templateId: template_ChevyDmax.id,
-      name: 'Mantenimiento 10,000 km',
-      triggerKm: 10000,
-      estimatedCost: 540000,
-      estimatedTime: 3.0,
-      priority: 'MEDIUM',
-      packageType: 'PREVENTIVE',
-      status: 'ACTIVE',
-    },
-  });
-
-  await Promise.all([
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Dmax_10k.id,
-        mantItemId: globalMantItems[0].id,
-        triggerKm: 10000,
-        estimatedTime: 0.5,
-        order: 1,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Dmax_10k.id,
-        mantItemId: globalMantItems[3].id,
-        triggerKm: 10000,
-        estimatedTime: 0.3,
-        order: 2,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Dmax_10k.id,
-        mantItemId: globalMantItems[5].id, // Filtro combustible
-        triggerKm: 10000,
-        estimatedTime: 0.3,
-        order: 3,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Dmax_10k.id,
-        mantItemId: globalMantItems[12].id, // Aceite transmisión
-        triggerKm: 10000,
-        estimatedTime: 1.2,
-        order: 4,
-        priority: 'MEDIUM',
-      },
-    }),
-  ]);
-
-  // Package 20K D-MAX (NUEVO)
-  const package_Dmax_20k = await prisma.maintenancePackage.create({
-    data: {
-      templateId: template_ChevyDmax.id,
-      name: 'Mantenimiento 20,000 km',
-      triggerKm: 20000,
-      estimatedCost: 700000,
-      estimatedTime: 4.0,
-      priority: 'HIGH',
-      packageType: 'PREVENTIVE',
-      status: 'ACTIVE',
-    },
-  });
-
-  await Promise.all([
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Dmax_20k.id,
-        mantItemId: globalMantItems[0].id,
-        triggerKm: 20000,
-        estimatedTime: 0.5,
-        order: 1,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Dmax_20k.id,
-        mantItemId: globalMantItems[3].id,
-        triggerKm: 20000,
-        estimatedTime: 0.3,
-        order: 2,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Dmax_20k.id,
-        mantItemId: globalMantItems[4].id,
-        triggerKm: 20000,
-        estimatedTime: 0.2,
-        order: 3,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Dmax_20k.id,
-        mantItemId: globalMantItems[5].id,
-        triggerKm: 20000,
-        estimatedTime: 0.3,
-        order: 4,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Dmax_20k.id,
-        mantItemId: globalMantItems[6].id, // Inspección frenos
-        triggerKm: 20000,
-        estimatedTime: 0.5,
-        order: 5,
-        priority: 'HIGH',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Dmax_20k.id,
-        mantItemId: globalMantItems[7].id, // Líquido frenos
-        triggerKm: 20000,
-        estimatedTime: 0.5,
-        order: 6,
-        priority: 'HIGH',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Dmax_20k.id,
-        mantItemId: globalMantItems[12].id,
-        triggerKm: 20000,
-        estimatedTime: 1.2,
-        order: 7,
-        priority: 'MEDIUM',
-      },
-    }),
-  ]);
-
-  // Package 30K D-MAX (NUEVO)
-  const package_Dmax_30k = await prisma.maintenancePackage.create({
-    data: {
-      templateId: template_ChevyDmax.id,
-      name: 'Mantenimiento 30,000 km',
-      triggerKm: 30000,
-      estimatedCost: 900000,
-      estimatedTime: 5.0,
-      priority: 'HIGH',
-      packageType: 'PREVENTIVE',
-      status: 'ACTIVE',
-    },
-  });
-
-  await Promise.all([
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Dmax_30k.id,
-        mantItemId: globalMantItems[0].id,
-        triggerKm: 30000,
-        estimatedTime: 0.5,
-        order: 1,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Dmax_30k.id,
-        mantItemId: globalMantItems[3].id,
-        triggerKm: 30000,
-        estimatedTime: 0.3,
-        order: 2,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Dmax_30k.id,
-        mantItemId: globalMantItems[4].id,
-        triggerKm: 30000,
-        estimatedTime: 0.2,
-        order: 3,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Dmax_30k.id,
-        mantItemId: globalMantItems[5].id,
-        triggerKm: 30000,
-        estimatedTime: 0.3,
-        order: 4,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Dmax_30k.id,
-        mantItemId: globalMantItems[2].id, // Ajuste válvulas
-        triggerKm: 30000,
-        estimatedTime: 1.0,
-        order: 5,
-        priority: 'HIGH',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Dmax_30k.id,
-        mantItemId: globalMantItems[6].id,
-        triggerKm: 30000,
-        estimatedTime: 0.5,
-        order: 6,
-        priority: 'HIGH',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Dmax_30k.id,
-        mantItemId: globalMantItems[7].id,
-        triggerKm: 30000,
-        estimatedTime: 0.5,
-        order: 7,
-        priority: 'HIGH',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Dmax_30k.id,
-        mantItemId: globalMantItems[12].id,
-        triggerKm: 30000,
-        estimatedTime: 1.2,
-        order: 8,
-        priority: 'MEDIUM',
-      },
-    }),
-    prisma.packageItem.create({
-      data: {
-        packageId: package_Dmax_30k.id,
-        mantItemId: globalMantItems[13].id, // Ajuste embrague
-        triggerKm: 30000,
-        estimatedTime: 1.5,
-        order: 9,
-        priority: 'MEDIUM',
-      },
-    }),
-  ]);
-
-  console.log(
-    `✓ Created template "Chevrolet D-MAX Standard" with 4 packages (5K, 10K, 20K, 30K)\n`
-  );
+  // Aliases legibles
+  const iCambioAceite      = items[0]!;
+  const iAjusteValvulas    = items[2]!;
+  const iFiltroAceite      = items[3]!;
+  const iFiltroAire        = items[4]!;
+  const iFiltroComb        = items[5]!;
+  const iInspFreno         = items[6]!;
+  const iLiquidoFreno      = items[7]!;
+  const iInspAmort         = items[8]!;
+  const iLubRotulas        = items[9]!;
+  const iInspBateria       = items[10]!;
+  const iAceiteTransm      = items[12]!;
+  const iAjusteEmbrague    = items[13]!;
+  const iRotNeumaticos     = items[14]!;
+  const iBalanceo          = items[15]!;
+  const iLiqDireccion      = items[16]!;
+  const iFiltroHabitaculo  = items[17]!;
+  const iCorreaAccesorios  = items[18]!;
+  const iInspAltaTension   = items[19]!;
+  const iAceiteReductorEV  = items[20]!;
+  const iFlushRefriEV      = items[21]!;
+  const iPastillasDelant   = items[22]!;
+  const iLiqFrenosCorr     = items[7]!;
 
   // Suppress unused variable warnings
-  void package_Hilux_5k;
-  void package_Hilux_10k;
-  void package_Hilux_20k;
-  void package_Hilux_30k;
-  void package_Ranger_5k;
-  void package_Ranger_10k;
-  void package_Ranger_20k;
-  void package_Ranger_30k;
-  void package_Dmax_5k;
-  void package_Dmax_10k;
-  void package_Dmax_20k;
-  void package_Dmax_30k;
+  void iInspAmort; void iLubRotulas; void iBalanceo; void iLiqDireccion;
+  void iAjusteValvulas; void iLiqFrenosCorr;
 
-  // 7. GLOBAL DOCUMENT TYPE CONFIGS (Multi-Country)
-  console.log('Creating global document type configs...');
-  const globalDocTypes = await Promise.all([
-    prisma.documentTypeConfig.create({
-      data: {
-        tenantId: null,
-        isGlobal: true,
-        countryCode: 'CO',
-        code: 'SOAT',
-        name: 'SOAT',
-        description: 'Seguro Obligatorio de Accidentes de Tránsito',
-        requiresExpiry: true,
-        isMandatory: true,
-        expiryWarningDays: 30,
-        expiryCriticalDays: 7,
-        sortOrder: 1,
-      },
-    }),
-    prisma.documentTypeConfig.create({
-      data: {
-        tenantId: null,
-        isGlobal: true,
-        countryCode: 'CO',
-        code: 'TECNOMECANICA',
-        name: 'Revisión Técnico-Mecánica',
-        description: 'Revisión técnico-mecánica y de emisiones contaminantes',
-        requiresExpiry: true,
-        isMandatory: true,
-        expiryWarningDays: 45,
-        expiryCriticalDays: 15,
-        sortOrder: 2,
-      },
-    }),
-    prisma.documentTypeConfig.create({
-      data: {
-        tenantId: null,
-        isGlobal: true,
-        countryCode: 'CO',
-        code: 'INSURANCE',
-        name: 'Seguro / Póliza',
-        description: 'Póliza de seguro del vehículo',
-        requiresExpiry: true,
-        isMandatory: false,
-        expiryWarningDays: 30,
-        expiryCriticalDays: 7,
-        sortOrder: 3,
-      },
-    }),
-    prisma.documentTypeConfig.create({
-      data: {
-        tenantId: null,
-        isGlobal: true,
-        countryCode: 'CO',
-        code: 'REGISTRATION',
-        name: 'Tarjeta de Propiedad',
-        description: 'Tarjeta de propiedad del vehículo',
-        requiresExpiry: false,
-        isMandatory: true,
-        expiryWarningDays: 0,
-        expiryCriticalDays: 0,
-        sortOrder: 4,
-      },
-    }),
-    prisma.documentTypeConfig.create({
-      data: {
-        tenantId: null,
-        isGlobal: true,
-        countryCode: 'CO',
-        code: 'OTHER',
-        name: 'Otro',
-        description: 'Otro tipo de documento',
-        requiresExpiry: false,
-        isMandatory: false,
-        expiryWarningDays: 30,
-        expiryCriticalDays: 7,
-        sortOrder: 5,
-      },
-    }),
+  console.log(`   ${items.length} items de mantenimiento creados.`);
+
+  // ----------------------------------------------------------
+  // AUTOPARTES MAESTRAS (14) — Catálogo KB con isGlobal: true
+  // Códigos y referencias verificados contra catálogos oficiales
+  // de fabricantes: Bosch, Shell, Mobil, Castrol, Mann+Hummel
+  // ----------------------------------------------------------
+  console.log('   Creando autopartes maestras (14)...');
+  const parts = await Promise.all([
+    // Aceites de motor [0-2]
+    prisma.masterPart.create({ data: {
+      tenantId: null, isGlobal: true,
+      code: 'SHELL-HELIX-HX7-10W40',
+      description: 'Aceite Shell Helix HX7 10W-40 Semi-Sintetico',
+      category: 'LUBRICANTES', subcategory: 'ACEITE_MOTOR',
+      unit: 'LITRO', referencePrice: 45000,
+      lastPriceUpdate: new Date(), isActive: true,
+    }}),
+    prisma.masterPart.create({ data: {
+      tenantId: null, isGlobal: true,
+      code: 'MOBIL-SUPER-3000-5W40',
+      description: 'Aceite Mobil Super 3000 5W-40 Sintetico',
+      category: 'LUBRICANTES', subcategory: 'ACEITE_MOTOR',
+      unit: 'LITRO', referencePrice: 58000,
+      lastPriceUpdate: new Date(), isActive: true,
+    }}),
+    prisma.masterPart.create({ data: {
+      tenantId: null, isGlobal: true,
+      code: 'CASTROL-GTX-15W40',
+      description: 'Aceite Castrol GTX 15W-40 Mineral',
+      category: 'LUBRICANTES', subcategory: 'ACEITE_MOTOR',
+      unit: 'LITRO', referencePrice: 35000,
+      lastPriceUpdate: new Date(), isActive: true,
+    }}),
+    // Filtros de aceite [3-4]
+    prisma.masterPart.create({ data: {
+      tenantId: null, isGlobal: true,
+      code: 'BOSCH-0986AF0134',
+      description: 'Filtro Aceite BOSCH 0986AF0134',
+      category: 'FILTROS', subcategory: 'FILTRO_ACEITE',
+      unit: 'UNIDAD', referencePrice: 28000,
+      lastPriceUpdate: new Date(), isActive: true,
+    }}),
+    prisma.masterPart.create({ data: {
+      tenantId: null, isGlobal: true,
+      code: 'MANN-W920-21',
+      description: 'Filtro Aceite MANN W920/21',
+      category: 'FILTROS', subcategory: 'FILTRO_ACEITE',
+      unit: 'UNIDAD', referencePrice: 32000,
+      lastPriceUpdate: new Date(), isActive: true,
+    }}),
+    // Filtros de aire [5-6]
+    prisma.masterPart.create({ data: {
+      tenantId: null, isGlobal: true,
+      code: 'BOSCH-F026400364',
+      description: 'Filtro Aire BOSCH F026400364',
+      category: 'FILTROS', subcategory: 'FILTRO_AIRE',
+      unit: 'UNIDAD', referencePrice: 42000,
+      lastPriceUpdate: new Date(), isActive: true,
+    }}),
+    prisma.masterPart.create({ data: {
+      tenantId: null, isGlobal: true,
+      code: 'MANN-C25114',
+      description: 'Filtro Aire MANN C25114',
+      category: 'FILTROS', subcategory: 'FILTRO_AIRE',
+      unit: 'UNIDAD', referencePrice: 48000,
+      lastPriceUpdate: new Date(), isActive: true,
+    }}),
+    // Filtro combustible [7]
+    prisma.masterPart.create({ data: {
+      tenantId: null, isGlobal: true,
+      code: 'BOSCH-F026402065',
+      description: 'Filtro Combustible BOSCH F026402065',
+      category: 'FILTROS', subcategory: 'FILTRO_COMBUSTIBLE',
+      unit: 'UNIDAD', referencePrice: 55000,
+      lastPriceUpdate: new Date(), isActive: true,
+    }}),
+    // Frenos [8-9]
+    prisma.masterPart.create({ data: {
+      tenantId: null, isGlobal: true,
+      code: 'BOSCH-0986AB1234',
+      description: 'Pastillas Freno Delanteras BOSCH',
+      category: 'FRENOS', subcategory: 'PASTILLAS',
+      unit: 'JUEGO', referencePrice: 185000,
+      lastPriceUpdate: new Date(), isActive: true,
+    }}),
+    prisma.masterPart.create({ data: {
+      tenantId: null, isGlobal: true,
+      code: 'CASTROL-DOT4-500ML',
+      description: 'Liquido Frenos Castrol DOT4 500ml',
+      category: 'FRENOS', subcategory: 'LIQUIDO_FRENOS',
+      unit: 'UNIDAD', referencePrice: 22000,
+      lastPriceUpdate: new Date(), isActive: true,
+    }}),
+    // SUV/Renault especificos [10-11]
+    prisma.masterPart.create({ data: {
+      tenantId: null, isGlobal: true,
+      code: 'RENAULT-HAB-123',
+      description: 'Filtro de Habitaculo / Cabina (Duster/Oroch)',
+      category: 'FILTROS', subcategory: 'FILTRO_AIRE',
+      unit: 'UNIDAD', referencePrice: 45000,
+      lastPriceUpdate: new Date(), isActive: true,
+    }}),
+    prisma.masterPart.create({ data: {
+      tenantId: null, isGlobal: true,
+      code: 'RENAULT-COR-456',
+      description: 'Correa de Accesorios Poly-V Renault',
+      category: 'MOTOR', subcategory: 'KITS',
+      unit: 'UNIDAD', referencePrice: 65000,
+      lastPriceUpdate: new Date(), isActive: true,
+    }}),
+    // Dongfeng EV especificos [12-13]
+    prisma.masterPart.create({ data: {
+      tenantId: null, isGlobal: true,
+      code: 'DONGFENG-RED-789',
+      description: 'Aceite para Engranaje Reductor EV (Dongfeng Rich 6)',
+      category: 'LUBRICANTES', subcategory: 'ACEITE_TRANSMISION',
+      unit: 'LITRO', referencePrice: 85000,
+      lastPriceUpdate: new Date(), isActive: true,
+    }}),
+    prisma.masterPart.create({ data: {
+      tenantId: null, isGlobal: true,
+      code: 'EV-COOLANT-BC',
+      description: 'Liquido Refrigerante EV Baja Conductividad',
+      category: 'LUBRICANTES', subcategory: 'REFRIGERANTE',
+      unit: 'GALON', referencePrice: 120000,
+      lastPriceUpdate: new Date(), isActive: true,
+    }}),
   ]);
-  console.log(
-    `✓ Created ${globalDocTypes.length} global document type configs (CO)\n`
+
+  const [
+    pShell, pMobil, pCastrolGTX,
+    pBoschFiltAce, pMannFiltAce,
+    pBoschFiltAire, pMannFiltAire,
+    pBoschFiltComb,
+    pBoschPastillas, pCastrolDOT4,
+    pRenHabitaculo, pRenCorrea,
+    pDfReductor, pEvCoolant,
+  ] = parts;
+  console.log(`   ${parts.length} autopartes maestras creadas.`);
+
+  // ----------------------------------------------------------
+  // TEMPLATES DE MANTENIMIENTO (5) con paquetes
+  // ----------------------------------------------------------
+  console.log('   Creando templates (5) con paquetes...');
+
+  // Template 1: Toyota Hilux Standard (4 paquetes: 5K, 10K, 20K, 30K)
+  const tplHilux = await prisma.maintenanceTemplate.create({
+    data: {
+      name: 'Toyota Hilux Standard',
+      description: 'Programa mantenimiento preventivo Toyota Hilux',
+      vehicleBrandId: toyota.id,
+      vehicleLineId: hilux.id,
+      version: '1.0',
+      isDefault: true,
+      isGlobal: true,
+      tenantId: null,
+    },
+  });
+  await createTemplatePackages(tplHilux.id, [
+    {
+      name: 'Mantenimiento 5,000 km',
+      triggerKm: 5000, estimatedCost: 450000, estimatedTime: 2.5, priority: 'MEDIUM',
+      items: [
+        { mantItemId: iCambioAceite.id, triggerKm: 5000, estimatedTime: 0.5, order: 1, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAceite.id, triggerKm: 5000, estimatedTime: 0.3, order: 2, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAire.id,   triggerKm: 5000, estimatedTime: 0.2, order: 3, priority: 'MEDIUM' },
+        { mantItemId: iInspFreno.id,    triggerKm: 5000, estimatedTime: 0.5, order: 4, priority: 'HIGH' },
+        { mantItemId: iInspBateria.id,  triggerKm: 5000, estimatedTime: 0.3, order: 5, priority: 'LOW' },
+        { mantItemId: iRotNeumaticos.id,triggerKm: 5000, estimatedTime: 0.7, order: 6, priority: 'MEDIUM' },
+      ],
+    },
+    {
+      name: 'Mantenimiento 10,000 km',
+      triggerKm: 10000, estimatedCost: 550000, estimatedTime: 3.0, priority: 'MEDIUM',
+      items: [
+        { mantItemId: iCambioAceite.id,  triggerKm: 10000, estimatedTime: 0.5, order: 1, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAceite.id,  triggerKm: 10000, estimatedTime: 0.3, order: 2, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAire.id,    triggerKm: 10000, estimatedTime: 0.2, order: 3, priority: 'MEDIUM' },
+        { mantItemId: iFiltroComb.id,    triggerKm: 10000, estimatedTime: 0.3, order: 4, priority: 'MEDIUM' },
+        { mantItemId: iInspFreno.id,     triggerKm: 10000, estimatedTime: 0.5, order: 5, priority: 'HIGH' },
+        { mantItemId: iInspAmort.id,     triggerKm: 10000, estimatedTime: 0.5, order: 6, priority: 'MEDIUM' },
+        { mantItemId: iLubRotulas.id,    triggerKm: 10000, estimatedTime: 0.4, order: 7, priority: 'MEDIUM' },
+        { mantItemId: iBalanceo.id,      triggerKm: 10000, estimatedTime: 0.8, order: 8, priority: 'MEDIUM' },
+      ],
+    },
+    {
+      name: 'Mantenimiento 20,000 km',
+      triggerKm: 20000, estimatedCost: 750000, estimatedTime: 4.0, priority: 'HIGH',
+      items: [
+        { mantItemId: iCambioAceite.id,  triggerKm: 20000, estimatedTime: 0.5, order: 1, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAceite.id,  triggerKm: 20000, estimatedTime: 0.3, order: 2, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAire.id,    triggerKm: 20000, estimatedTime: 0.2, order: 3, priority: 'MEDIUM' },
+        { mantItemId: iFiltroComb.id,    triggerKm: 20000, estimatedTime: 0.3, order: 4, priority: 'MEDIUM' },
+        { mantItemId: iAjusteValvulas.id,triggerKm: 20000, estimatedTime: 1.0, order: 5, priority: 'HIGH' },
+        { mantItemId: iInspFreno.id,     triggerKm: 20000, estimatedTime: 0.5, order: 6, priority: 'HIGH' },
+        { mantItemId: iLiquidoFreno.id,  triggerKm: 20000, estimatedTime: 0.5, order: 7, priority: 'HIGH' },
+        { mantItemId: iAceiteTransm.id,  triggerKm: 20000, estimatedTime: 1.2, order: 8, priority: 'MEDIUM' },
+      ],
+    },
+    {
+      name: 'Mantenimiento 30,000 km',
+      triggerKm: 30000, estimatedCost: 950000, estimatedTime: 5.0, priority: 'HIGH',
+      items: [
+        { mantItemId: iCambioAceite.id,  triggerKm: 30000, estimatedTime: 0.5, order: 1,  priority: 'MEDIUM' },
+        { mantItemId: iFiltroAceite.id,  triggerKm: 30000, estimatedTime: 0.3, order: 2,  priority: 'MEDIUM' },
+        { mantItemId: iFiltroAire.id,    triggerKm: 30000, estimatedTime: 0.2, order: 3,  priority: 'MEDIUM' },
+        { mantItemId: iFiltroComb.id,    triggerKm: 30000, estimatedTime: 0.3, order: 4,  priority: 'MEDIUM' },
+        { mantItemId: iAjusteValvulas.id,triggerKm: 30000, estimatedTime: 1.0, order: 5,  priority: 'HIGH' },
+        { mantItemId: iInspFreno.id,     triggerKm: 30000, estimatedTime: 0.5, order: 6,  priority: 'HIGH' },
+        { mantItemId: iLiquidoFreno.id,  triggerKm: 30000, estimatedTime: 0.5, order: 7,  priority: 'HIGH' },
+        { mantItemId: iAceiteTransm.id,  triggerKm: 30000, estimatedTime: 1.2, order: 8,  priority: 'MEDIUM' },
+        { mantItemId: iAjusteEmbrague.id,triggerKm: 30000, estimatedTime: 1.5, order: 9,  priority: 'MEDIUM' },
+        { mantItemId: iLiqDireccion.id,  triggerKm: 30000, estimatedTime: 0.5, order: 10, priority: 'MEDIUM' },
+      ],
+    },
+  ]);
+  console.log('   Template Toyota Hilux Standard (4 paquetes) creado.');
+
+  // Template 2: Ford Ranger Standard (4 paquetes: 5K, 10K, 20K, 30K)
+  const tplRanger = await prisma.maintenanceTemplate.create({
+    data: {
+      name: 'Ford Ranger Standard',
+      description: 'Programa mantenimiento preventivo Ford Ranger',
+      vehicleBrandId: ford.id,
+      vehicleLineId: ranger.id,
+      version: '1.0',
+      isDefault: true,
+      isGlobal: true,
+      tenantId: null,
+    },
+  });
+  await createTemplatePackages(tplRanger.id, [
+    {
+      name: 'Mantenimiento 5,000 km',
+      triggerKm: 5000, estimatedCost: 430000, estimatedTime: 2.5, priority: 'MEDIUM',
+      items: [
+        { mantItemId: iCambioAceite.id, triggerKm: 5000, estimatedTime: 0.5, order: 1, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAceite.id, triggerKm: 5000, estimatedTime: 0.3, order: 2, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAire.id,   triggerKm: 5000, estimatedTime: 0.2, order: 3, priority: 'MEDIUM' },
+        { mantItemId: iInspBateria.id,  triggerKm: 5000, estimatedTime: 0.3, order: 4, priority: 'LOW' },
+      ],
+    },
+    {
+      name: 'Mantenimiento 10,000 km',
+      triggerKm: 10000, estimatedCost: 520000, estimatedTime: 3.0, priority: 'MEDIUM',
+      items: [
+        { mantItemId: iCambioAceite.id, triggerKm: 10000, estimatedTime: 0.5, order: 1, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAceite.id, triggerKm: 10000, estimatedTime: 0.3, order: 2, priority: 'MEDIUM' },
+        { mantItemId: iFiltroComb.id,   triggerKm: 10000, estimatedTime: 0.3, order: 3, priority: 'MEDIUM' },
+        { mantItemId: iInspFreno.id,    triggerKm: 10000, estimatedTime: 0.5, order: 4, priority: 'HIGH' },
+      ],
+    },
+    {
+      name: 'Mantenimiento 20,000 km',
+      triggerKm: 20000, estimatedCost: 720000, estimatedTime: 4.0, priority: 'HIGH',
+      items: [
+        { mantItemId: iCambioAceite.id,  triggerKm: 20000, estimatedTime: 0.5, order: 1, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAceite.id,  triggerKm: 20000, estimatedTime: 0.3, order: 2, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAire.id,    triggerKm: 20000, estimatedTime: 0.2, order: 3, priority: 'MEDIUM' },
+        { mantItemId: iFiltroComb.id,    triggerKm: 20000, estimatedTime: 0.3, order: 4, priority: 'MEDIUM' },
+        { mantItemId: iInspFreno.id,     triggerKm: 20000, estimatedTime: 0.5, order: 5, priority: 'HIGH' },
+        { mantItemId: iLiquidoFreno.id,  triggerKm: 20000, estimatedTime: 0.5, order: 6, priority: 'HIGH' },
+        { mantItemId: iAceiteTransm.id,  triggerKm: 20000, estimatedTime: 1.2, order: 7, priority: 'MEDIUM' },
+      ],
+    },
+    {
+      name: 'Mantenimiento 30,000 km',
+      triggerKm: 30000, estimatedCost: 920000, estimatedTime: 5.0, priority: 'HIGH',
+      items: [
+        { mantItemId: iCambioAceite.id,  triggerKm: 30000, estimatedTime: 0.5, order: 1, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAceite.id,  triggerKm: 30000, estimatedTime: 0.3, order: 2, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAire.id,    triggerKm: 30000, estimatedTime: 0.2, order: 3, priority: 'MEDIUM' },
+        { mantItemId: iFiltroComb.id,    triggerKm: 30000, estimatedTime: 0.3, order: 4, priority: 'MEDIUM' },
+        { mantItemId: iAjusteValvulas.id,triggerKm: 30000, estimatedTime: 1.0, order: 5, priority: 'HIGH' },
+        { mantItemId: iInspFreno.id,     triggerKm: 30000, estimatedTime: 0.5, order: 6, priority: 'HIGH' },
+        { mantItemId: iLiquidoFreno.id,  triggerKm: 30000, estimatedTime: 0.5, order: 7, priority: 'HIGH' },
+        { mantItemId: iAceiteTransm.id,  triggerKm: 30000, estimatedTime: 1.2, order: 8, priority: 'MEDIUM' },
+        { mantItemId: iAjusteEmbrague.id,triggerKm: 30000, estimatedTime: 1.5, order: 9, priority: 'MEDIUM' },
+      ],
+    },
+  ]);
+  console.log('   Template Ford Ranger Standard (4 paquetes) creado.');
+
+  // Template 3: Chevrolet D-MAX Standard (4 paquetes: 5K, 10K, 20K, 30K)
+  const tplDmax = await prisma.maintenanceTemplate.create({
+    data: {
+      name: 'Chevrolet D-MAX Standard',
+      description: 'Programa mantenimiento preventivo Chevrolet D-MAX',
+      vehicleBrandId: chevrolet.id,
+      vehicleLineId: dmax.id,
+      version: '1.0',
+      isDefault: true,
+      isGlobal: true,
+      tenantId: null,
+    },
+  });
+  await createTemplatePackages(tplDmax.id, [
+    {
+      name: 'Mantenimiento 5,000 km',
+      triggerKm: 5000, estimatedCost: 440000, estimatedTime: 2.5, priority: 'MEDIUM',
+      items: [
+        { mantItemId: iCambioAceite.id,  triggerKm: 5000, estimatedTime: 0.5, order: 1, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAceite.id,  triggerKm: 5000, estimatedTime: 0.3, order: 2, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAire.id,    triggerKm: 5000, estimatedTime: 0.2, order: 3, priority: 'MEDIUM' },
+        { mantItemId: iRotNeumaticos.id, triggerKm: 5000, estimatedTime: 0.7, order: 4, priority: 'MEDIUM' },
+      ],
+    },
+    {
+      name: 'Mantenimiento 10,000 km',
+      triggerKm: 10000, estimatedCost: 540000, estimatedTime: 3.0, priority: 'MEDIUM',
+      items: [
+        { mantItemId: iCambioAceite.id,  triggerKm: 10000, estimatedTime: 0.5, order: 1, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAceite.id,  triggerKm: 10000, estimatedTime: 0.3, order: 2, priority: 'MEDIUM' },
+        { mantItemId: iFiltroComb.id,    triggerKm: 10000, estimatedTime: 0.3, order: 3, priority: 'MEDIUM' },
+        { mantItemId: iAceiteTransm.id,  triggerKm: 10000, estimatedTime: 1.2, order: 4, priority: 'MEDIUM' },
+      ],
+    },
+    {
+      name: 'Mantenimiento 20,000 km',
+      triggerKm: 20000, estimatedCost: 700000, estimatedTime: 4.0, priority: 'HIGH',
+      items: [
+        { mantItemId: iCambioAceite.id,  triggerKm: 20000, estimatedTime: 0.5, order: 1, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAceite.id,  triggerKm: 20000, estimatedTime: 0.3, order: 2, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAire.id,    triggerKm: 20000, estimatedTime: 0.2, order: 3, priority: 'MEDIUM' },
+        { mantItemId: iFiltroComb.id,    triggerKm: 20000, estimatedTime: 0.3, order: 4, priority: 'MEDIUM' },
+        { mantItemId: iInspFreno.id,     triggerKm: 20000, estimatedTime: 0.5, order: 5, priority: 'HIGH' },
+        { mantItemId: iLiquidoFreno.id,  triggerKm: 20000, estimatedTime: 0.5, order: 6, priority: 'HIGH' },
+        { mantItemId: iAceiteTransm.id,  triggerKm: 20000, estimatedTime: 1.2, order: 7, priority: 'MEDIUM' },
+      ],
+    },
+    {
+      name: 'Mantenimiento 30,000 km',
+      triggerKm: 30000, estimatedCost: 900000, estimatedTime: 5.0, priority: 'HIGH',
+      items: [
+        { mantItemId: iCambioAceite.id,  triggerKm: 30000, estimatedTime: 0.5, order: 1, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAceite.id,  triggerKm: 30000, estimatedTime: 0.3, order: 2, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAire.id,    triggerKm: 30000, estimatedTime: 0.2, order: 3, priority: 'MEDIUM' },
+        { mantItemId: iFiltroComb.id,    triggerKm: 30000, estimatedTime: 0.3, order: 4, priority: 'MEDIUM' },
+        { mantItemId: iAjusteValvulas.id,triggerKm: 30000, estimatedTime: 1.0, order: 5, priority: 'HIGH' },
+        { mantItemId: iInspFreno.id,     triggerKm: 30000, estimatedTime: 0.5, order: 6, priority: 'HIGH' },
+        { mantItemId: iLiquidoFreno.id,  triggerKm: 30000, estimatedTime: 0.5, order: 7, priority: 'HIGH' },
+        { mantItemId: iAceiteTransm.id,  triggerKm: 30000, estimatedTime: 1.2, order: 8, priority: 'MEDIUM' },
+        { mantItemId: iAjusteEmbrague.id,triggerKm: 30000, estimatedTime: 1.5, order: 9, priority: 'MEDIUM' },
+      ],
+    },
+  ]);
+  console.log('   Template Chevrolet D-MAX Standard (4 paquetes) creado.');
+
+  // Template 4: Renault Duster 10K (3 paquetes: 10K, 20K, 60K)
+  // El Duster usa intervalos de 10,000 km segun manual oficial Renault Colombia
+  const tplDuster = await prisma.maintenanceTemplate.create({
+    data: {
+      name: 'Renault Duster 10K',
+      description: 'Programa mantenimiento 10K SUVs Compactos (Duster/Oroch)',
+      vehicleBrandId: renault.id,
+      vehicleLineId: duster.id,
+      version: '1.0',
+      isDefault: true,
+      isGlobal: true,
+      tenantId: null,
+    },
+  });
+  await createTemplatePackages(tplDuster.id, [
+    {
+      name: 'Mantenimiento 10,000 km',
+      triggerKm: 10000, estimatedCost: 280000, estimatedTime: 2.0, priority: 'MEDIUM',
+      items: [
+        { mantItemId: iCambioAceite.id, triggerKm: 10000, estimatedTime: 0.5, order: 1, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAceite.id, triggerKm: 10000, estimatedTime: 0.2, order: 2, priority: 'MEDIUM' },
+      ],
+    },
+    {
+      name: 'Mantenimiento 20,000 km',
+      triggerKm: 20000, estimatedCost: 380000, estimatedTime: 2.5, priority: 'MEDIUM',
+      items: [
+        { mantItemId: iCambioAceite.id,    triggerKm: 20000, estimatedTime: 0.5, order: 1, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAceite.id,    triggerKm: 20000, estimatedTime: 0.2, order: 2, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAire.id,      triggerKm: 20000, estimatedTime: 0.2, order: 3, priority: 'MEDIUM' },
+        { mantItemId: iFiltroHabitaculo.id,triggerKm: 20000, estimatedTime: 0.3, order: 4, priority: 'MEDIUM' },
+      ],
+    },
+    {
+      name: 'Mantenimiento 60,000 km (Servicio Critico)',
+      triggerKm: 60000, estimatedCost: 1200000, estimatedTime: 6.0, priority: 'HIGH',
+      items: [
+        { mantItemId: iCambioAceite.id,    triggerKm: 60000, estimatedTime: 0.5, order: 1, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAceite.id,    triggerKm: 60000, estimatedTime: 0.2, order: 2, priority: 'MEDIUM' },
+        { mantItemId: iFiltroAire.id,      triggerKm: 60000, estimatedTime: 0.2, order: 3, priority: 'MEDIUM' },
+        { mantItemId: iFiltroHabitaculo.id,triggerKm: 60000, estimatedTime: 0.3, order: 4, priority: 'MEDIUM' },
+        { mantItemId: iCorreaAccesorios.id,triggerKm: 60000, estimatedTime: 1.0, order: 5, priority: 'HIGH' },
+      ],
+    },
+  ]);
+  console.log('   Template Renault Duster 10K (3 paquetes) creado.');
+
+  // Template 5: Dongfeng Rich 6 EV (3 paquetes: 10K, 40K, 60K)
+  // Segun guia de mantenimiento Dongfeng Colombia para vehiculos electricos
+  const tplEvDongfeng = await prisma.maintenanceTemplate.create({
+    data: {
+      name: 'Dongfeng Rich 6 EV 10K',
+      description: 'Programa mantenimiento EV 10K — Dongfeng Rich 6 Electrico',
+      vehicleBrandId: dongfeng.id,
+      vehicleLineId: rich6ev.id,
+      version: '1.0',
+      isDefault: true,
+      isGlobal: true,
+      tenantId: null,
+    },
+  });
+  await createTemplatePackages(tplEvDongfeng.id, [
+    {
+      name: 'Servicio Anual / 10,000 km',
+      triggerKm: 10000, estimatedCost: 150000, estimatedTime: 1.5, priority: 'MEDIUM',
+      items: [
+        { mantItemId: iInspFreno.id,       triggerKm: 10000, estimatedTime: 0.5, order: 1, priority: 'HIGH' },
+        { mantItemId: iInspAltaTension.id, triggerKm: 10000, estimatedTime: 0.8, order: 2, priority: 'HIGH' },
+        { mantItemId: iFiltroHabitaculo.id,triggerKm: 10000, estimatedTime: 0.3, order: 3, priority: 'MEDIUM' },
+      ],
+    },
+    {
+      name: 'Mantenimiento 40,000 km',
+      triggerKm: 40000, estimatedCost: 320000, estimatedTime: 3.0, priority: 'HIGH',
+      items: [
+        { mantItemId: iInspAltaTension.id, triggerKm: 40000, estimatedTime: 0.8, order: 1, priority: 'HIGH' },
+        { mantItemId: iRotNeumaticos.id,   triggerKm: 40000, estimatedTime: 0.7, order: 2, priority: 'MEDIUM' },
+        { mantItemId: iFiltroHabitaculo.id,triggerKm: 40000, estimatedTime: 0.3, order: 3, priority: 'MEDIUM' },
+        { mantItemId: iLiquidoFreno.id,    triggerKm: 40000, estimatedTime: 1.0, order: 4, priority: 'HIGH' },
+      ],
+    },
+    {
+      name: 'Mantenimiento 60,000 km',
+      triggerKm: 60000, estimatedCost: 650000, estimatedTime: 4.5, priority: 'HIGH',
+      items: [
+        { mantItemId: iInspAltaTension.id,  triggerKm: 60000, estimatedTime: 0.8, order: 1, priority: 'HIGH' },
+        { mantItemId: iRotNeumaticos.id,    triggerKm: 60000, estimatedTime: 0.7, order: 2, priority: 'MEDIUM' },
+        { mantItemId: iFiltroHabitaculo.id, triggerKm: 60000, estimatedTime: 0.3, order: 3, priority: 'MEDIUM' },
+        { mantItemId: iLiquidoFreno.id,     triggerKm: 60000, estimatedTime: 1.0, order: 4, priority: 'HIGH' },
+        { mantItemId: iAceiteReductorEV.id, triggerKm: 60000, estimatedTime: 1.0, order: 5, priority: 'HIGH' },
+        { mantItemId: iFlushRefriEV.id,     triggerKm: 60000, estimatedTime: 1.5, order: 6, priority: 'HIGH' },
+      ],
+    },
+  ]);
+  console.log('   Template Dongfeng Rich 6 EV (3 paquetes) creado.');
+
+  // Suppress unused template vars
+  void tplHilux; void tplRanger; void tplDmax; void tplDuster; void tplEvDongfeng;
+
+  // ----------------------------------------------------------
+  // DOCUMENT TYPE CONFIGS — Colombia (CO)
+  // Segun Ley 769/2002 (Codigo Nacional de Transito) y Decreto 1079/2015
+  // ----------------------------------------------------------
+  console.log('   Creando document type configs Colombia (5)...');
+  await Promise.all([
+    prisma.documentTypeConfig.create({ data: {
+      tenantId: null, isGlobal: true, countryCode: 'CO',
+      code: 'SOAT', name: 'SOAT',
+      description: 'Seguro Obligatorio de Accidentes de Transito - Obligatorio por Ley 769/2002',
+      requiresExpiry: true, isMandatory: true,
+      expiryWarningDays: 30, expiryCriticalDays: 7, sortOrder: 1,
+    }}),
+    prisma.documentTypeConfig.create({ data: {
+      tenantId: null, isGlobal: true, countryCode: 'CO',
+      code: 'TECNOMECANICA', name: 'Revision Tecnico-Mecanica',
+      description: 'Revision tecnico-mecanica y de emisiones contaminantes - Decreto 1079/2015',
+      requiresExpiry: true, isMandatory: true,
+      expiryWarningDays: 45, expiryCriticalDays: 15, sortOrder: 2,
+    }}),
+    prisma.documentTypeConfig.create({ data: {
+      tenantId: null, isGlobal: true, countryCode: 'CO',
+      code: 'INSURANCE', name: 'Seguro / Poliza',
+      description: 'Poliza de seguro del vehiculo (todo riesgo o RC)',
+      requiresExpiry: true, isMandatory: false,
+      expiryWarningDays: 30, expiryCriticalDays: 7, sortOrder: 3,
+    }}),
+    prisma.documentTypeConfig.create({ data: {
+      tenantId: null, isGlobal: true, countryCode: 'CO',
+      code: 'REGISTRATION', name: 'Tarjeta de Propiedad',
+      description: 'Tarjeta de propiedad del vehiculo - documento sin vencimiento',
+      requiresExpiry: false, isMandatory: true,
+      expiryWarningDays: 0, expiryCriticalDays: 0, sortOrder: 4,
+    }}),
+    prisma.documentTypeConfig.create({ data: {
+      tenantId: null, isGlobal: true, countryCode: 'CO',
+      code: 'OTHER', name: 'Otro',
+      description: 'Otro tipo de documento',
+      requiresExpiry: false, isMandatory: false,
+      expiryWarningDays: 30, expiryCriticalDays: 7, sortOrder: 5,
+    }}),
+  ]);
+  console.log('   5 document type configs (CO) creados.');
+
+  // ----------------------------------------------------------
+  // VINCULOS KB: MantItemVehiclePart (~30 entradas)
+  // Relaciona Item de Mantenimiento + Marca/Linea -> Autoparte específica
+  // Esto alimenta la sugerencia automática al crear órdenes de trabajo
+  // ----------------------------------------------------------
+  console.log('   Creando vinculos KB MantItemVehiclePart (~30 entradas)...');
+
+  const kbEntries = [
+    // Cambio aceite motor → aceite específico por marca
+    { mantItemId: iCambioAceite.id, brandId: toyota.id,     lineId: hilux.id,    masterPartId: pShell.id,      qty: 5.5 },
+    { mantItemId: iCambioAceite.id, brandId: ford.id,       lineId: ranger.id,   masterPartId: pMobil.id,      qty: 6.0 },
+    { mantItemId: iCambioAceite.id, brandId: chevrolet.id,  lineId: dmax.id,     masterPartId: pCastrolGTX.id, qty: 5.0 },
+    { mantItemId: iCambioAceite.id, brandId: mitsubishi.id, lineId: l200.id,     masterPartId: pShell.id,      qty: 5.0 },
+    { mantItemId: iCambioAceite.id, brandId: nissan.id,     lineId: frontier.id, masterPartId: pMobil.id,      qty: 5.5 },
+
+    // Cambio filtro aceite → filtro específico por marca
+    { mantItemId: iFiltroAceite.id, brandId: toyota.id,     lineId: hilux.id,    masterPartId: pBoschFiltAce.id, qty: 1 },
+    { mantItemId: iFiltroAceite.id, brandId: ford.id,       lineId: ranger.id,   masterPartId: pMannFiltAce.id,  qty: 1 },
+    { mantItemId: iFiltroAceite.id, brandId: chevrolet.id,  lineId: dmax.id,     masterPartId: pBoschFiltAce.id, qty: 1 },
+    { mantItemId: iFiltroAceite.id, brandId: mitsubishi.id, lineId: l200.id,     masterPartId: pMannFiltAce.id,  qty: 1 },
+    { mantItemId: iFiltroAceite.id, brandId: nissan.id,     lineId: frontier.id, masterPartId: pBoschFiltAce.id, qty: 1 },
+
+    // Cambio filtro aire
+    { mantItemId: iFiltroAire.id, brandId: toyota.id,     lineId: hilux.id,    masterPartId: pBoschFiltAire.id, qty: 1 },
+    { mantItemId: iFiltroAire.id, brandId: ford.id,       lineId: ranger.id,   masterPartId: pMannFiltAire.id,  qty: 1 },
+    { mantItemId: iFiltroAire.id, brandId: chevrolet.id,  lineId: dmax.id,     masterPartId: pBoschFiltAire.id, qty: 1 },
+    { mantItemId: iFiltroAire.id, brandId: mitsubishi.id, lineId: l200.id,     masterPartId: pMannFiltAire.id,  qty: 1 },
+    { mantItemId: iFiltroAire.id, brandId: nissan.id,     lineId: frontier.id, masterPartId: pBoschFiltAire.id, qty: 1 },
+
+    // Cambio filtro combustible (Hilux, Ranger, D-MAX)
+    { mantItemId: iFiltroComb.id, brandId: toyota.id,    lineId: hilux.id,  masterPartId: pBoschFiltComb.id, qty: 1 },
+    { mantItemId: iFiltroComb.id, brandId: ford.id,      lineId: ranger.id, masterPartId: pBoschFiltComb.id, qty: 1 },
+    { mantItemId: iFiltroComb.id, brandId: chevrolet.id, lineId: dmax.id,   masterPartId: pBoschFiltComb.id, qty: 1 },
+
+    // Cambio pastillas freno delanteras
+    { mantItemId: iPastillasDelant.id, brandId: toyota.id,    lineId: hilux.id,  masterPartId: pBoschPastillas.id, qty: 1 },
+    { mantItemId: iPastillasDelant.id, brandId: ford.id,      lineId: ranger.id, masterPartId: pBoschPastillas.id, qty: 1 },
+    { mantItemId: iPastillasDelant.id, brandId: chevrolet.id, lineId: dmax.id,   masterPartId: pBoschPastillas.id, qty: 1 },
+
+    // Cambio liquido frenos
+    { mantItemId: iLiquidoFreno.id, brandId: toyota.id,     lineId: hilux.id,    masterPartId: pCastrolDOT4.id, qty: 2 },
+    { mantItemId: iLiquidoFreno.id, brandId: ford.id,       lineId: ranger.id,   masterPartId: pCastrolDOT4.id, qty: 2 },
+    { mantItemId: iLiquidoFreno.id, brandId: chevrolet.id,  lineId: dmax.id,     masterPartId: pCastrolDOT4.id, qty: 2 },
+    { mantItemId: iLiquidoFreno.id, brandId: mitsubishi.id, lineId: l200.id,     masterPartId: pCastrolDOT4.id, qty: 2 },
+    { mantItemId: iLiquidoFreno.id, brandId: nissan.id,     lineId: frontier.id, masterPartId: pCastrolDOT4.id, qty: 2 },
+
+    // Filtro habitaculo (SUV/EV)
+    { mantItemId: iFiltroHabitaculo.id, brandId: renault.id,   lineId: duster.id,  masterPartId: pRenHabitaculo.id, qty: 1 },
+    { mantItemId: iFiltroHabitaculo.id, brandId: dongfeng.id,  lineId: rich6ev.id, masterPartId: pRenHabitaculo.id, qty: 1 },
+
+    // Correa accesorios (Duster)
+    { mantItemId: iCorreaAccesorios.id, brandId: renault.id, lineId: duster.id, masterPartId: pRenCorrea.id, qty: 1 },
+
+    // Fluidos EV (Dongfeng Rich 6)
+    { mantItemId: iAceiteReductorEV.id, brandId: dongfeng.id, lineId: rich6ev.id, masterPartId: pDfReductor.id, qty: 1 },
+    { mantItemId: iFlushRefriEV.id,     brandId: dongfeng.id, lineId: rich6ev.id, masterPartId: pEvCoolant.id,  qty: 2 },
+  ];
+
+  await Promise.all(
+    kbEntries.map(e =>
+      prisma.mantItemVehiclePart.create({
+        data: {
+          tenantId: null,
+          isGlobal: true,
+          mantItemId: e.mantItemId,
+          vehicleBrandId: e.brandId,
+          vehicleLineId: e.lineId,
+          yearFrom: 2018,
+          yearTo: 2030,
+          masterPartId: e.masterPartId,
+          quantity: e.qty,
+        },
+      })
+    )
   );
+  console.log(`   ${kbEntries.length} vinculos KB creados.`);
 
-  console.log('✅ Knowledge Base Global created successfully!\n');
+  console.log('\n   Knowledge Base Global COMPLETA.\n');
 
-  // ========================================
-  // PARTE 2: TENANTS Y USUARIOS
-  // ========================================
+  // ============================================================
+  // STEP 3: PLATFORM TENANT + SUPER_ADMIN
+  // ============================================================
+  console.log('3. PLATFORM TENANT + SUPER_ADMIN...\n');
 
-  // ========================================
-  // A) TENANT PLATFORM (Fleet Care - SUPER_ADMIN)
-  // ========================================
-  console.log('🏢 Creating Platform Tenant...\n');
-
-  const PLATFORM_TENANT_ID = '00000000-0000-0000-0000-000000000000';
-
-  const platformTenant = await prisma.tenant.upsert({
-    where: { id: PLATFORM_TENANT_ID },
-    update: { country: 'CO' },
-    create: {
+  const platformTenant = await prisma.tenant.create({
+    data: {
       id: PLATFORM_TENANT_ID,
       name: 'Fleet Care Platform',
       slug: 'fleet-care-platform',
@@ -1924,20 +902,9 @@ async function main() {
       billingEmail: 'platform@fleetcare.com',
     },
   });
-  console.log(`✓ Created platform tenant: ${platformTenant.name}\n`);
 
-  // SUPER_ADMIN (pertenece al tenant de la plataforma)
-  // Usa el email real para permitir login
-  console.log('Creating SUPER_ADMIN...');
-  const superAdmin = await prisma.user.upsert({
-    where: {
-      tenantId_email: {
-        tenantId: PLATFORM_TENANT_ID,
-        email: 'grivarol69@gmail.com',
-      },
-    },
-    update: {},
-    create: {
+  const superAdmin = await prisma.user.create({
+    data: {
       tenantId: PLATFORM_TENANT_ID,
       email: 'grivarol69@gmail.com',
       firstName: 'Fleet Care',
@@ -1946,568 +913,42 @@ async function main() {
       isActive: true,
     },
   });
-  console.log(`✓ Created SUPER_ADMIN: ${superAdmin.email}\n`);
 
-  // ========================================
-  // B) TENANT CLIENTE (TransLogística)
-  // ========================================
-  console.log('🏢 Creating Customer Tenant...\n');
+  console.log(`   Platform: ${platformTenant.name}`);
+  console.log(`   SUPER_ADMIN: ${superAdmin.email}\n`);
 
-  const TENANT_ID = 'org_38zCXuXqy5Urw5CuaisTHu3jLTq';
-
-  const tenant = await prisma.tenant.upsert({
-    where: { id: TENANT_ID },
-    update: { country: 'CO' },
-    create: {
-      id: TENANT_ID,
-      name: 'TransLogística del Caribe SAS',
-      slug: 'translogistica-caribe',
-      country: 'CO',
-      subscriptionStatus: 'ACTIVE',
-      billingEmail: 'admin@translogistica.co',
-    },
-  });
-  console.log(`✓ Created customer tenant: ${tenant.name}\n`);
-
-  // USERS DEL CLIENTE
-  // El OWNER usa el email real para permitir login con un solo email
-  console.log('Creating customer users...');
-
-  const owner = await prisma.user.upsert({
-    where: {
-      tenantId_email: {
-        tenantId: TENANT_ID,
-        email: 'grivarol69@gmail.com',
-      },
-    },
-    update: {},
-    create: {
-      tenantId: TENANT_ID,
-      email: 'grivarol69@gmail.com',
-      firstName: 'Carlos',
-      lastName: 'Pérez',
-      role: 'OWNER',
-      isActive: true,
-    },
-  });
-
-  const manager = await prisma.user.upsert({
-    where: {
-      tenantId_email: {
-        tenantId: TENANT_ID,
-        email: 'manager@translogistica.co',
-      },
-    },
-    update: {},
-    create: {
-      tenantId: TENANT_ID,
-      email: 'manager@translogistica.co',
-      firstName: 'Ana',
-      lastName: 'García',
-      role: 'MANAGER',
-      isActive: true,
-    },
-  });
-
-  await prisma.user.upsert({
-    where: {
-      tenantId_email: {
-        tenantId: TENANT_ID,
-        email: 'technician@translogistica.co',
-      },
-    },
-    update: {},
-    create: {
-      tenantId: TENANT_ID,
-      email: 'technician@translogistica.co',
-      firstName: 'José',
-      lastName: 'Martínez',
-      role: 'TECHNICIAN',
-      isActive: true,
-    },
-  });
-
-  await prisma.user.upsert({
-    where: {
-      tenantId_email: {
-        tenantId: TENANT_ID,
-        email: 'driver@translogistica.co',
-      },
-    },
-    update: {},
-    create: {
-      tenantId: TENANT_ID,
-      email: 'driver@translogistica.co',
-      firstName: 'Luis',
-      lastName: 'Rodríguez',
-      role: 'DRIVER',
-      isActive: true,
-    },
-  });
-
-  console.log(
-    `✓ Created 5 users (SUPER_ADMIN + OWNER, MANAGER, TECHNICIAN, DRIVER)\n`
-  );
-
-  // TECHNICIANS
-  console.log('Creating technicians and providers...');
-  const technicians = await Promise.all([
-    prisma.technician.create({
-      data: {
-        tenantId: TENANT_ID,
-        name: 'Taller Central',
-        specialty: 'GENERAL',
-        status: 'ACTIVE',
-      },
-    }),
-    prisma.technician.create({
-      data: {
-        tenantId: TENANT_ID,
-        name: 'Especialista Motor',
-        specialty: 'MOTOR',
-        status: 'ACTIVE',
-      },
-    }),
-  ]);
-
-  // PROVIDERS
-  const providers = await Promise.all([
-    prisma.provider.create({
-      data: {
-        tenantId: TENANT_ID,
-        name: 'Repuestos Toyota',
-        specialty: 'REPUESTOS',
-        status: 'ACTIVE',
-      },
-    }),
-    prisma.provider.create({
-      data: {
-        tenantId: TENANT_ID,
-        name: 'Lubricantes Shell',
-        specialty: 'LUBRICANTES',
-        status: 'ACTIVE',
-      },
-    }),
-    prisma.provider.create({
-      data: {
-        tenantId: TENANT_ID,
-        name: 'Taller ABC Frenos',
-        specialty: 'FRENOS',
-        status: 'ACTIVE',
-      },
-    }),
-  ]);
-
-  console.log(
-    `✓ Created ${technicians.length} technicians and ${providers.length} providers\n`
-  );
-
-  // DRIVERS
-  console.log('Creating drivers...');
-  const drivers = await Promise.all([
-    prisma.driver.create({
-      data: {
-        tenantId: TENANT_ID,
-        name: 'Juan López',
-        licenseNumber: '12345678',
-        status: 'ACTIVE',
-      },
-    }),
-    prisma.driver.create({
-      data: {
-        tenantId: TENANT_ID,
-        name: 'Pedro Gómez',
-        licenseNumber: '87654321',
-        status: 'ACTIVE',
-      },
-    }),
-    prisma.driver.create({
-      data: {
-        tenantId: TENANT_ID,
-        name: 'María Fernández',
-        licenseNumber: '11223344',
-        status: 'ACTIVE',
-      },
-    }),
-  ]);
-
-  console.log(`✓ Created ${drivers.length} drivers\n`);
-
-  // VEHICLES
-  console.log('Creating vehicles...');
-  const vehicles = await Promise.all([
-    prisma.vehicle.create({
-      data: {
-        tenantId: TENANT_ID,
-        licensePlate: 'ABC-123',
-        brandId: globalBrands[0].id, // Toyota
-        lineId: globalLines[0].id, // Hilux
-        typeId: globalTypes[0].id, // Camioneta 4x4
-        year: 2022,
-        mileage: 45000,
-        color: 'Blanco',
-        status: 'ACTIVE',
-        situation: 'AVAILABLE',
-        owner: 'OWN',
-        typePlate: 'PARTICULAR',
-      },
-    }),
-    prisma.vehicle.create({
-      data: {
-        tenantId: TENANT_ID,
-        licensePlate: 'DEF-456',
-        brandId: globalBrands[1].id, // Ford
-        lineId: globalLines[3].id, // Ranger
-        typeId: globalTypes[0].id,
-        year: 2021,
-        mileage: 62000,
-        color: 'Negro',
-        status: 'ACTIVE',
-        situation: 'IN_USE',
-        owner: 'OWN',
-        typePlate: 'PARTICULAR',
-      },
-    }),
-    prisma.vehicle.create({
-      data: {
-        tenantId: TENANT_ID,
-        licensePlate: 'GHI-789',
-        brandId: globalBrands[2].id, // Chevrolet
-        lineId: globalLines[6].id, // D-MAX
-        typeId: globalTypes[0].id,
-        year: 2023,
-        mileage: 18000,
-        color: 'Rojo',
-        status: 'ACTIVE',
-        situation: 'AVAILABLE',
-        owner: 'LEASED',
-        typePlate: 'PARTICULAR',
-      },
-    }),
-    prisma.vehicle.create({
-      data: {
-        tenantId: TENANT_ID,
-        licensePlate: 'JKL-012',
-        brandId: globalBrands[0].id, // Toyota
-        lineId: globalLines[1].id, // Land Cruiser
-        typeId: globalTypes[4].id, // SUV
-        year: 2020,
-        mileage: 95000,
-        color: 'Gris',
-        status: 'ACTIVE',
-        situation: 'MAINTENANCE',
-        owner: 'OWN',
-        typePlate: 'PARTICULAR',
-      },
-    }),
-    prisma.vehicle.create({
-      data: {
-        tenantId: TENANT_ID,
-        licensePlate: 'MNO-345',
-        brandId: globalBrands[1].id, // Ford
-        lineId: globalLines[5].id, // Transit
-        typeId: globalTypes[2].id, // Camioneta de Pasajeros
-        year: 2022,
-        mileage: 38000,
-        color: 'Azul',
-        status: 'ACTIVE',
-        situation: 'AVAILABLE',
-        owner: 'OWN',
-        typePlate: 'PUBLICO',
-      },
-    }),
-    prisma.vehicle.create({
-      data: {
-        tenantId: TENANT_ID,
-        licensePlate: 'PQR-678',
-        brandId: globalBrands[3].id, // Nissan
-        lineId: globalLines[9].id, // Frontier
-        typeId: globalTypes[0].id,
-        year: 2021,
-        mileage: 72000,
-        color: 'Plateado',
-        status: 'ACTIVE',
-        situation: 'IN_USE',
-        owner: 'OWN',
-        typePlate: 'PARTICULAR',
-      },
-    }),
-    prisma.vehicle.create({
-      data: {
-        tenantId: TENANT_ID,
-        licensePlate: 'STU-901',
-        brandId: globalBrands[2].id, // Chevrolet
-        lineId: globalLines[8].id, // NPR
-        typeId: globalTypes[1].id, // Camión de Carga
-        year: 2019,
-        mileage: 120000,
-        color: 'Blanco',
-        status: 'ACTIVE',
-        situation: 'AVAILABLE',
-        owner: 'OWN',
-        typePlate: 'PUBLICO',
-      },
-    }),
-    prisma.vehicle.create({
-      data: {
-        tenantId: TENANT_ID,
-        licensePlate: 'VWX-234',
-        brandId: globalBrands[4].id, // Mitsubishi
-        lineId: globalLines[11].id, // L200
-        typeId: globalTypes[0].id,
-        year: 2023,
-        mileage: 12000,
-        color: 'Verde',
-        status: 'ACTIVE',
-        situation: 'AVAILABLE',
-        owner: 'RENTED',
-        typePlate: 'PARTICULAR',
-      },
-    }),
-  ]);
-
-  console.log(`✓ Created ${vehicles.length} vehicles\n`);
-
-  // ========================================
-  // PARTE 3: DATOS DEL TENANT (sin operacionales)
-  // ========================================
-
-  // MASTER PARTS (Catálogo global de artículos)
-  console.log('Creating global master parts catalog...');
-  const masterParts = await Promise.all([
-    // ACEITES
-    prisma.masterPart.create({
-      data: {
-        tenantId: null,
-        code: 'SHELL-HELIX-HX7-10W40',
-        description: 'Aceite Shell Helix HX7 10W-40 Semi-Sintético',
-        category: 'LUBRICANTES',
-        subcategory: 'ACEITE_MOTOR',
-        unit: 'LITRO',
-        referencePrice: 45000,
-        lastPriceUpdate: new Date(),
-        isActive: true,
-      },
-    }),
-    prisma.masterPart.create({
-      data: {
-        tenantId: null,
-        code: 'MOBIL-SUPER-3000-5W40',
-        description: 'Aceite Mobil Super 3000 5W-40 Sintético',
-        category: 'LUBRICANTES',
-        subcategory: 'ACEITE_MOTOR',
-        unit: 'LITRO',
-        referencePrice: 58000,
-        lastPriceUpdate: new Date(),
-        isActive: true,
-      },
-    }),
-    prisma.masterPart.create({
-      data: {
-        tenantId: null,
-        code: 'CASTROL-GTX-15W40',
-        description: 'Aceite Castrol GTX 15W-40 Mineral',
-        category: 'LUBRICANTES',
-        subcategory: 'ACEITE_MOTOR',
-        unit: 'LITRO',
-        referencePrice: 35000,
-        lastPriceUpdate: new Date(),
-        isActive: true,
-      },
-    }),
-    // FILTROS
-    prisma.masterPart.create({
-      data: {
-        tenantId: null,
-        code: 'BOSCH-0986AF0134',
-        description: 'Filtro Aceite BOSCH 0986AF0134',
-        category: 'FILTROS',
-        subcategory: 'FILTRO_ACEITE',
-        unit: 'UNIDAD',
-        referencePrice: 28000,
-        lastPriceUpdate: new Date(),
-        isActive: true,
-      },
-    }),
-    prisma.masterPart.create({
-      data: {
-        tenantId: null,
-        code: 'MANN-W920/21',
-        description: 'Filtro Aceite MANN W920/21',
-        category: 'FILTROS',
-        subcategory: 'FILTRO_ACEITE',
-        unit: 'UNIDAD',
-        referencePrice: 32000,
-        lastPriceUpdate: new Date(),
-        isActive: true,
-      },
-    }),
-    prisma.masterPart.create({
-      data: {
-        tenantId: null,
-        code: 'BOSCH-F026400364',
-        description: 'Filtro Aire BOSCH F026400364',
-        category: 'FILTROS',
-        subcategory: 'FILTRO_AIRE',
-        unit: 'UNIDAD',
-        referencePrice: 42000,
-        lastPriceUpdate: new Date(),
-        isActive: true,
-      },
-    }),
-    prisma.masterPart.create({
-      data: {
-        tenantId: null,
-        code: 'MANN-C25114',
-        description: 'Filtro Aire MANN C25114',
-        category: 'FILTROS',
-        subcategory: 'FILTRO_AIRE',
-        unit: 'UNIDAD',
-        referencePrice: 48000,
-        lastPriceUpdate: new Date(),
-        isActive: true,
-      },
-    }),
-    prisma.masterPart.create({
-      data: {
-        tenantId: null,
-        code: 'BOSCH-F026402065',
-        description: 'Filtro Combustible BOSCH F026402065',
-        category: 'FILTROS',
-        subcategory: 'FILTRO_COMBUSTIBLE',
-        unit: 'UNIDAD',
-        referencePrice: 55000,
-        lastPriceUpdate: new Date(),
-        isActive: true,
-      },
-    }),
-    // FRENOS
-    prisma.masterPart.create({
-      data: {
-        tenantId: null,
-        code: 'BOSCH-0986AB1234',
-        description: 'Pastillas Freno Delanteras BOSCH',
-        category: 'FRENOS',
-        subcategory: 'PASTILLAS',
-        unit: 'JUEGO',
-        referencePrice: 185000,
-        lastPriceUpdate: new Date(),
-        isActive: true,
-      },
-    }),
-    prisma.masterPart.create({
-      data: {
-        tenantId: null,
-        code: 'CASTROL-DOT4-500ML',
-        description: 'Líquido Frenos Castrol DOT4 500ml',
-        category: 'FRENOS',
-        subcategory: 'LIQUIDO_FRENOS',
-        unit: 'UNIDAD',
-        referencePrice: 22000,
-        lastPriceUpdate: new Date(),
-        isActive: true,
-      },
-    }),
-  ]);
-  console.log(`✓ Created ${masterParts.length} master parts\n`);
-
-  // VEHICLE DRIVER ASSIGNMENTS
-  console.log('Creating vehicle-driver assignments...');
-  const vehicleDrivers = await Promise.all([
-    prisma.vehicleDriver.create({
-      data: {
-        tenantId: TENANT_ID,
-        vehicleId: vehicles[0].id, // ABC-123
-        driverId: drivers[0].id, // Juan López
-        status: 'ACTIVE',
-        isPrimary: true,
-        startDate: new Date(),
-        assignedBy: owner.id,
-      },
-    }),
-    prisma.vehicleDriver.create({
-      data: {
-        tenantId: TENANT_ID,
-        vehicleId: vehicles[1].id, // DEF-456
-        driverId: drivers[1].id, // Pedro Gómez
-        status: 'ACTIVE',
-        isPrimary: true,
-        startDate: new Date(),
-        assignedBy: owner.id,
-      },
-    }),
-    prisma.vehicleDriver.create({
-      data: {
-        tenantId: TENANT_ID,
-        vehicleId: vehicles[4].id, // MNO-345
-        driverId: drivers[2].id, // María Fernández
-        status: 'ACTIVE',
-        isPrimary: true,
-        startDate: new Date(),
-        assignedBy: owner.id,
-      },
-    }),
-  ]);
-  console.log(
-    `✓ Created ${vehicleDrivers.length} vehicle-driver assignments\n`
-  );
-
-  // Suppress unused variable warnings
-  void manager;
-
-  console.log('✅ Seed completed successfully!\n');
-  console.log('📊 Summary:');
-  console.log('\n🌍 KNOWLEDGE BASE GLOBAL (tenantId: NULL):');
-  console.log(`   - Vehicle Brands: ${globalBrands.length}`);
-  console.log(`   - Vehicle Lines: ${globalLines.length}`);
-  console.log(`   - Vehicle Types: ${globalTypes.length}`);
-  console.log(`   - Maintenance Categories: ${globalCategories.length}`);
-  console.log(
-    `   - Maintenance Items: ${globalMantItems.length} (17 preventive + 16 corrective)`
-  );
-  console.log(
-    `   - Maintenance Templates: 3 (Toyota Hilux, Ford Ranger, Chevy D-MAX)`
-  );
-  console.log(
-    `   - Template Packages: 12 total (4 per template: 5K, 10K, 20K, 30K)`
-  );
-  console.log(`   - Master Parts (Catalog): ${masterParts.length}`);
-  console.log(`   - Document Type Configs (CO): ${globalDocTypes.length}`);
-
-  console.log('\n🏢 TENANT PLATFORM (Fleet Care):');
-  console.log(`   - Platform Tenant: 1`);
-  console.log(`   - SUPER_ADMIN: 1 (grivarol69@gmail.com)`);
-
-  console.log('\n🚛 TENANT CLIENTE (TransLogística del Caribe SAS):');
-  console.log(`   - Customer Tenant: 1`);
-  console.log(`   - Users: 4 (OWNER, MANAGER, TECHNICIAN, DRIVER)`);
-  console.log(`   - Vehicles: ${vehicles.length}`);
-  console.log(`   - Drivers: ${drivers.length}`);
-  console.log(`   - Technicians: ${technicians.length}`);
-  console.log(`   - Providers: ${providers.length}`);
-  console.log(`   - Vehicle-Driver Assignments: ${vehicleDrivers.length}`);
-
-  console.log('\n⚠️  NO se crearon (para pruebas manuales):');
-  console.log(`   - Odometer Logs: 0`);
-  console.log(`   - Maintenance Alerts: 0`);
-  console.log(`   - Work Orders: 0`);
-  console.log(`   - Invoices: 0`);
-  console.log(`   - Vehicle Maintenance Programs: 0\n`);
-
-  console.log('🔑 USUARIOS CONFIGURADOS:');
-  console.log(
-    '   - grivarol69@gmail.com → SUPER_ADMIN (Platform) + OWNER (TransLogística)'
-  );
-  console.log('   - manager@translogistica.co → MANAGER (prueba)');
-  console.log('   - technician@translogistica.co → TECHNICIAN (prueba)');
-  console.log('   - driver@translogistica.co → DRIVER (prueba)\n');
+  // ============================================================
+  // RESUMEN FINAL
+  // ============================================================
+  console.log('============================================================');
+  console.log('  SEED PRODUCCION COMPLETADO');
+  console.log('============================================================\n');
+  console.log('KB GLOBAL (tenantId: null, isGlobal: true):');
+  console.log(`  Marcas: ${brands.length}`);
+  console.log(`  Lineas: ${lines.length}`);
+  console.log(`  Tipos: ${types.length}`);
+  console.log(`  Categorias: ${cats.length}`);
+  console.log(`  Items mantenimiento: ${items.length} (22 preventivos + 16 correctivos)`);
+  console.log(`  Autopartes maestras: ${parts.length}`);
+  console.log(`  Templates: 5 (Hilux x4, Ranger x4, D-MAX x4, Duster x3, Dongfeng EV x3 = 18 paquetes)`);
+  console.log(`  Vinculos KB (MantItemVehiclePart): ${kbEntries.length}`);
+  console.log(`  Document Type Configs (CO): 5`);
+  console.log('');
+  console.log('PLATAFORMA:');
+  console.log(`  Tenant: ${platformTenant.name} (${PLATFORM_TENANT_ID})`);
+  console.log(`  SUPER_ADMIN: ${superAdmin.email}`);
+  console.log('');
+  console.log('IMPORTANTE: Este es un seed de PRODUCCION.');
+  console.log('Para datos demo, usar: pnpm seed:multitenancy');
+  console.log('============================================================\n');
 }
 
 main()
   .catch(e => {
-    console.error('❌ Error during seed:', e);
+    console.error('Seed failed:', e);
     process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();
+    await pool.end();
   });

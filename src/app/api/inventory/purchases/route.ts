@@ -119,6 +119,10 @@ export async function POST(req: Request) {
               averageCost: newAvgCost,
             },
           });
+
+          // Update the object in memory so Movement gets the new value
+          invItem.quantity = newTotalQuantity as any; // any because Prisma Decimal vs JS number/type
+          invItem.averageCost = newAvgCost as any;
         } else {
           // Create new
           invItem = await tx.inventoryItem.create({
@@ -204,6 +208,59 @@ export async function POST(req: Request) {
       return new NextResponse(JSON.stringify(error.issues), { status: 422 });
     }
     console.error('[INVENTORY_PURCHASE]', error);
+    return new NextResponse('Internal Error', { status: 500 });
+  }
+}
+
+export async function GET(req: Request) {
+  try {
+    const { user, tenantPrisma } = await requireCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!canManagePurchases(user)) {
+      return NextResponse.json(
+        { error: 'No tienes permisos para esta acción' },
+        { status: 403 }
+      );
+    }
+
+    const { searchParams } = new URL(req.url);
+    const search = searchParams.get('search');
+    const supplierId = searchParams.get('supplierId');
+    const includeDeleted = searchParams.get('includeDeleted') === 'true';
+
+    const purchases = await tenantPrisma.invoice.findMany({
+      where: {
+        tenantId: user.tenantId,
+        ...(includeDeleted ? {} : { status: { not: 'CANCELLED' } }),
+        ...(search
+          ? {
+            OR: [
+              { invoiceNumber: { contains: search, mode: 'insensitive' } },
+              { supplier: { name: { contains: search, mode: 'insensitive' } } },
+            ],
+          }
+          : {}),
+        ...(supplierId ? { supplierId } : {}),
+      },
+      include: {
+        supplier: true,
+        items: {
+          include: {
+            masterPart: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return NextResponse.json(purchases);
+  } catch (error) {
+    console.error('[INVENTORY_PURCHASE_GET]', error);
     return new NextResponse('Internal Error', { status: 500 });
   }
 }

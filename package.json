@@ -2,6 +2,9 @@
   "name": "fleet-care-saas",
   "version": "0.1.0",
   "private": true,
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "scripts": {
     "dev": "next dev --webpack",
     "build": "prisma generate && next build --webpack",
@@ -14,9 +17,9 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "prisma:seed": "tsx prisma/seed.kb.ts",
-    "db:seed": "tsx prisma/seed.kb.ts",
-    "seed": "tsx prisma/seed.kb.ts",
+    "prisma:seed": "tsx prisma/seed.ts",
+    "db:seed": "tsx prisma/seed.ts",
+    "seed": "tsx prisma/seed.ts",
     "deploy:staging": "bash scripts/deploy.sh staging",
     "deploy:production": "bash scripts/deploy.sh production",
     "deploy:all": "bash scripts/deploy.sh all",
@@ -27,9 +30,6 @@
     "test:watch": "dotenv -e .env.test -- vitest",
     "db:test:push": "dotenv -e .env.test -- prisma db push",
     "db:test:seed": "dotenv -e .env.test -- tsx prisma/seed-multitenancy.ts"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed-multitenancy.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

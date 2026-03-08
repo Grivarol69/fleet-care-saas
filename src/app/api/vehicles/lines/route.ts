@@ -1,4 +1,3 @@
-import { prisma } from '@/lib/prisma';
 import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 
@@ -9,11 +8,9 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Devolver solo líneas del tenant (isGlobal: false)
-    // Las globales se copian al tenant durante el onboarding (copy-kb-to-tenant)
-    const lines = await prisma.vehicleLine.findMany({
+    // Devolver marcas globales y del tenant confiando en el interceptor `tenant-prisma.ts`
+    const lines = await tenantPrisma.vehicleLine.findMany({
       where: {
-        tenantId: user.tenantId,
         status: 'ACTIVE',
       },
       orderBy: {
@@ -124,11 +121,10 @@ export async function POST(req: Request) {
       );
     }
 
-    // Verificar que la marca existe (global o del tenant)
-    const brand = await prisma.vehicleBrand.findFirst({
+    // Verificar que la marca existe (global o del tenant) usando el interceptor
+    const brand = await tenantPrisma.vehicleBrand.findFirst({
       where: {
         id: parsedBrandId,
-        OR: [{ isGlobal: true }, { tenantId: targetTenant }],
       },
     });
 

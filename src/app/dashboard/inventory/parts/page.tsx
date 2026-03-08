@@ -11,7 +11,7 @@ export default async function MasterPartsPage() {
     redirect('/sign-in');
   }
 
-  const parts = await prisma.masterPart.findMany({
+  const partsRaw = await prisma.masterPart.findMany({
     where: {
       OR: [{ tenantId: null }, { tenantId: user.tenantId }],
     },
@@ -22,6 +22,19 @@ export default async function MasterPartsPage() {
     },
     orderBy: { description: 'asc' },
   });
+
+  const parts = partsRaw.map((part) => ({
+    ...part,
+    referencePrice: part.referencePrice ? Number(part.referencePrice) : null,
+    inventoryItems: part.inventoryItems.map((inv) => ({
+      ...inv,
+      quantity: Number(inv.quantity),
+      minStock: Number(inv.minStock),
+      maxStock: inv.maxStock ? Number(inv.maxStock) : null,
+      averageCost: Number(inv.averageCost),
+      totalValue: Number(inv.totalValue),
+    })),
+  }));
 
   return (
     <div className="p-6">

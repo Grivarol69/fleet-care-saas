@@ -4,30 +4,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-export async function completeOnboarding(): Promise<{ success: boolean; error?: string }> {
-  try {
-    const dbUser = await getCurrentUser();
-
-    if (!dbUser || !dbUser.tenantId) {
-      return { success: false, error: 'No organization found' };
-    }
-
-    const tenant = await prisma.tenant.findUnique({ where: { id: dbUser.tenantId } });
-    if (!tenant || tenant.onboardingStatus !== 'PROFILE_COMPLETED') {
-      return { success: false, error: 'Debe completar el perfil primero' };
-    }
-
-    await prisma.tenant.update({
-      where: { id: dbUser.tenantId },
-      data: { onboardingStatus: 'COMPLETED' },
-    });
-
-    return { success: true };
-  } catch (err: any) {
-    console.error('[Onboarding] completeOnboarding Error:', err);
-    return { success: false, error: err.message || 'Error completing onboarding' };
-  }
-}
+// Removed completeOnboarding as the KB step is skipped
 
 export async function updateTenantProfile(
   _prevState: { success: boolean; error?: string } | null,
@@ -65,7 +42,7 @@ export async function updateTenantProfile(
       data: {
         country,
         currency,
-        onboardingStatus: 'PROFILE_COMPLETED',
+        onboardingStatus: 'COMPLETED',
       },
     });
 
@@ -76,6 +53,6 @@ export async function updateTenantProfile(
     return { success: false, error: err.message || 'Error occurred during profile update.' };
   }
 
-  // Perfil guardado, redirigir a paso 2
-  redirect('/onboarding');
+  // Perfil guardado, redirigir al dashboard
+  redirect('/dashboard');
 }

@@ -135,7 +135,7 @@ export function AddItemDialog({
       try {
         const res = await axios.get('/api/people/providers');
         setProviders(res.data || []);
-      } catch (e) {}
+      } catch (e) { }
     }
     if (open) fetchProviders();
   }, [open]);
@@ -314,12 +314,12 @@ export function AddItemDialog({
     setIsLoading(true);
     try {
       await axios.post(`/api/maintenance/work-orders/${workOrderId}/items`, {
-        mantItemId: parseInt(values.mantItemId),
+        mantItemId: values.mantItemId,
         quantity: values.quantity,
         unitPrice: values.unitPrice,
         description: values.description,
         itemSource: values.itemSource,
-        providerId: values.providerId ? parseInt(values.providerId) : undefined,
+        providerId: values.providerId ? values.providerId : undefined,
         masterPartId: values.masterPartId || undefined,
       });
 
@@ -515,11 +515,10 @@ export function AddItemDialog({
             {/* Stock Info (Parts only) */}
             {type === 'PART' && selectedItem && (
               <div
-                className={`p-3 rounded border text-sm flex items-center gap-2 ${
-                  stock && Number(stock.quantity) > 0
+                className={`p-3 rounded border text-sm flex items-center gap-2 ${stock && Number(stock.quantity) > 0
                     ? 'bg-green-50 border-green-200 text-green-700'
                     : 'bg-amber-50 border-amber-200 text-amber-700'
-                }`}
+                  }`}
               >
                 <Box className="h-4 w-4" />
                 {stock ? (

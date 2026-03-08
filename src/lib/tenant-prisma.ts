@@ -28,7 +28,7 @@ export function getTenantPrisma(tenantId: string) {
 
                     const isGlobalModel = globalModels.has(model);
                     // Clonamos de forma segura sin JSON.parse para no romper objetos tipo Date o Decimal
-                    const argsClone = args ? { ...args } : {};
+                    const argsClone: any = args ? { ...args } : {};
 
                     // 1. Operaciones de ESCRITURA (create, createMany)
                     if (operation === 'create') {
@@ -77,42 +77,31 @@ export function getTenantPrisma(tenantId: string) {
 
                     // 3. Operaciones que requieren restricciones Unique (findUnique, update, delete, upsert)
                     if (operation === 'findUnique') {
-                        return (prisma as any)[model].findFirst(argsClone);
+                        return query(argsClone);
                     }
                     if (operation === 'findUniqueOrThrow') {
-                        return (prisma as any)[model].findFirstOrThrow(argsClone);
+                        return query(argsClone);
                     }
 
                     if (operation === 'update') {
-                        const record = await (prisma as any)[model].findFirst({ where: argsClone.where });
-                        if (!record) throw new Error('Record not found or not authorized');
-
-                        // Validado. Ejecutamos el update original con args.
-                        if (args.data && (args.data as any).tenantId) {
-                            delete (args.data as any).tenantId;
+                        if (argsClone.data && (argsClone.data as any).tenantId) {
+                            delete (argsClone.data as any).tenantId;
                         }
-                        return query(args);
+                        return query(argsClone);
                     }
 
                     if (operation === 'delete') {
-                        const record = await (prisma as any)[model].findFirst({ where: argsClone.where });
-                        if (!record) throw new Error('Record not found or not authorized');
-                        return query(args);
+                        return query(argsClone);
                     }
 
                     if (operation === 'upsert') {
-                        const record = await (prisma as any)[model].findFirst({ where: argsClone.where });
-                        if (record) {
-                            // Update usando query original para no romper unique index
-                            if (args.update && (args.update as any).tenantId) {
-                                delete (args.update as any).tenantId;
-                            }
-                            return query(args);
-                        } else {
-                            // Create. Evitando upsert porque Prisma inyecta `where` params al update/create.
-                            const createData = { ...(args.create as any), tenantId };
-                            return (prisma as any)[model].create({ data: createData });
+                        // Create receives tenantId; Update does not modify it.
+                        // args.create se clonó superficialmente en argsClone, hay que reasignar para evitar mutar el original
+                        argsClone.create = argsClone.create ? { ...(argsClone.create as any), tenantId } : { tenantId };
+                        if (argsClone.update && (argsClone.update as any).tenantId) {
+                            delete (argsClone.update as any).tenantId;
                         }
+                        return query(argsClone);
                     }
 
                     if (operation === 'updateMany') {

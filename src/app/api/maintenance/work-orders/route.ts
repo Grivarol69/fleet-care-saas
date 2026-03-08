@@ -82,6 +82,12 @@ export async function GET(request: NextRequest) {
             status: true,
           },
         },
+        costCenterRef: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
@@ -142,6 +148,7 @@ export async function POST(request: NextRequest) {
       priority = 'MEDIUM',
       mantType = 'PREVENTIVE',
       workType = 'EXTERNAL',
+      costCenterId,
     } = body;
 
     // Sanitize IDs
@@ -281,6 +288,7 @@ export async function POST(request: NextRequest) {
         startDate: scheduledDate ? new Date(scheduledDate) : null,
         isPackageWork: alerts.length > 1,
         packageName: alerts.length > 1 ? title : null,
+        costCenterId: costCenterId || null,
       },
     });
 

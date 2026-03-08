@@ -441,22 +441,24 @@ export function MantTemplatesList() {
       .length,
   };
 
+  const safePackages = Array.isArray(packages) ? packages : (packages as any)?.data ? ((packages as any).data as MaintenancePackage[]) : [];
   const packageMetrics = selectedTemplate
     ? {
-      total: packages.length,
-      preventive: packages.filter(p => p.packageType === 'PREVENTIVE').length,
-      corrective: packages.filter(p => p.packageType === 'CORRECTIVE').length,
-      predictive: packages.filter(p => p.packageType === 'PREDICTIVE').length,
+      total: safePackages.length,
+      preventive: safePackages.filter(p => p.packageType === 'PREVENTIVE').length,
+      corrective: safePackages.filter(p => p.packageType === 'CORRECTIVE').length,
+      predictive: safePackages.filter(p => p.packageType === 'PREDICTIVE').length,
     }
     : null;
 
+  const safePackageItems = Array.isArray(packageItems) ? packageItems : (packageItems as any)?.data ? ((packageItems as any).data as PackageItem[]) : [];
   const itemMetrics = selectedPackage
     ? {
-      total: packageItems.length,
-      low: packageItems.filter(i => i.priority === 'LOW').length,
-      medium: packageItems.filter(i => i.priority === 'MEDIUM').length,
-      high: packageItems.filter(i => i.priority === 'HIGH').length,
-      critical: packageItems.filter(i => i.priority === 'CRITICAL').length,
+      total: safePackageItems.length,
+      low: safePackageItems.filter(i => i.priority === 'LOW').length,
+      medium: safePackageItems.filter(i => i.priority === 'MEDIUM').length,
+      high: safePackageItems.filter(i => i.priority === 'HIGH').length,
+      critical: safePackageItems.filter(i => i.priority === 'CRITICAL').length,
     }
     : null;
 

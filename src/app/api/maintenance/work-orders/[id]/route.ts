@@ -79,7 +79,7 @@ export async function GET(
     const workOrder = await tenantPrisma.workOrder.findUnique({
       where: {
         id: workOrderId,
-        },
+      },
       include: {
         vehicle: {
           select: {
@@ -144,6 +144,12 @@ export async function GET(
         },
         workOrderExpenses: true,
         approvals: true,
+        costCenterRef: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 
@@ -252,11 +258,16 @@ export async function PATCH(
       completionMileage,
       technicianId,
       providerId,
+      costCenterId,
     } = body;
 
     // Preparar datos para actualizar
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateData: Record<string, any> = {};
+
+    if (costCenterId !== undefined) {
+      updateData.costCenterId = costCenterId;
+    }
 
     if (status) {
       const fromStatus = existingWO.status as WorkOrderStatus;

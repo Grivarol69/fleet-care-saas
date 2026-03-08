@@ -35,6 +35,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { DocumentsList } from './components/DocumentsList';
 import { Loader2, X } from 'lucide-react';
+import { useCostCenters } from '@/lib/hooks/usePeople';
 
 // Schema corregido
 const formSchema = z.object({
@@ -58,6 +59,7 @@ const formSchema = z.object({
     .min(1900, 'Ingrese un año válido')
     .max(new Date().getFullYear() + 1),
   situation: z.enum(['AVAILABLE', 'IN_USE', 'MAINTENANCE']),
+  costCenterId: z.string().optional().nullable(),
 });
 
 type VehicleBrand = {
@@ -93,6 +95,7 @@ interface FleetVehicle {
   owner: 'OWN' | 'LEASED' | 'RENTED';
   year: number;
   situation: 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE';
+  costCenterId?: string | null;
 }
 
 interface FormEditFleetVehicleProps {
@@ -116,6 +119,7 @@ export function FormEditFleetVehicle({
   const [vehicleBrands, setVehicleBrands] = useState<VehicleBrand[]>([]);
   const [vehicleLines, setVehicleLines] = useState<VehicleLine[]>([]);
   const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
+  const { data: costCenters = [] } = useCostCenters();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -137,6 +141,7 @@ export function FormEditFleetVehicle({
       owner: fleetVehicle.owner,
       year: fleetVehicle.year,
       situation: fleetVehicle.situation,
+      costCenterId: fleetVehicle.costCenterId || null,
     },
   });
 
@@ -186,6 +191,7 @@ export function FormEditFleetVehicle({
         owner: fleetVehicle.owner,
         year: fleetVehicle.year,
         situation: fleetVehicle.situation,
+        costCenterId: fleetVehicle.costCenterId || null,
       });
     }
   }, [isOpen, fleetVehicle, form, fetchData]);
@@ -572,6 +578,38 @@ export function FormEditFleetVehicle({
                               disabled={isLoading}
                             />
                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Centro de Costos */}
+                    <FormField
+                      control={form.control}
+                      name="costCenterId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Centro de Costos</FormLabel>
+                          <Select
+                            onValueChange={val =>
+                              field.onChange(val === 'NONE' ? null : val)
+                            }
+                            value={field.value ?? 'NONE'}
+                          >
+                            <FormControl>
+                              <SelectTrigger disabled={isLoading}>
+                                <SelectValue placeholder="Sin asignar" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="NONE">Sin asignar</SelectItem>
+                              {costCenters.map(cc => (
+                                <SelectItem key={cc.id} value={cc.id}>
+                                  {cc.code} — {cc.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}

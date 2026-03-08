@@ -94,7 +94,7 @@ export function PartsList({
   const handleToggleActive = async (part: MasterPartRow) => {
     const action = part.isActive ? 'desactivar' : 'activar';
     try {
-      const response = await axios.patch<MasterPart>(
+      const response = await axios.patch<Omit<MasterPart, 'referencePrice'> & { referencePrice: number | null }>(
         `/api/inventory/parts/${part.id}`,
         { isActive: !part.isActive }
       );
@@ -339,7 +339,7 @@ export function PartsList({
         isOpen={isAddDialogOpen}
         setIsOpen={setIsAddDialogOpen}
         onAddPart={newPart =>
-          setData(prev => [{ ...newPart, inventoryItems: [] }, ...prev])
+          setData(prev => [{ ...newPart, referencePrice: newPart.referencePrice ? Number(newPart.referencePrice) : null, inventoryItems: [] }, ...prev])
         }
       />
 
@@ -350,7 +350,7 @@ export function PartsList({
           part={editingPart}
           onEditPart={updated =>
             setData(prev =>
-              prev.map(p => (p.id === updated.id ? { ...p, ...updated } : p))
+              prev.map(p => (p.id === updated.id ? { ...p, ...updated, referencePrice: updated.referencePrice ? Number(updated.referencePrice) : null } : p))
             )
           }
         />

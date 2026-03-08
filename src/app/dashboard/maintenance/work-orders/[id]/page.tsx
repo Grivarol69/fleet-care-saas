@@ -10,9 +10,8 @@ import { ArrowLeft, Trash2 } from 'lucide-react';
 import { GeneralInfoTab } from '../components/WorkOrderDetail/GeneralInfoTab';
 import { ServicesTab } from '../components/WorkOrderDetail/ServicesTab';
 import { PartsTab } from '../components/WorkOrderDetail/PartsTab';
-import { PurchaseOrdersTab } from '../components/WorkOrderDetail/PurchaseOrdersTab';
 import { ExpensesTab } from '../components/WorkOrderDetail/ExpensesTab';
-import { HistoryTab } from '../components/WorkOrderDetail/HistoryTab';
+import { InternalWorkTab } from '../components/WorkOrderDetail/InternalWorkTab';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,6 +58,8 @@ type WorkOrder = {
     email: string | null;
     phone: string | null;
   } | null;
+  costCenterId: string | null;
+  costCenterRef: { id: string; name: string } | null;
   maintenanceAlerts: Array<{
     id: string;
     itemName: string;
@@ -251,17 +252,11 @@ export default function WorkOrderDetailPage() {
 
       {/* Tabs */}
       <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="general">Info General</TabsTrigger>
-          <TabsTrigger value="services">
-            Servicios (
-            {
-              workOrder.workOrderItems.filter(
-                i =>
-                  i.mantItem.type === 'ACTION' || i.mantItem.type === 'SERVICE'
-              ).length
-            }
-            )
+          <TabsTrigger value="taller-propio">Taller Propio</TabsTrigger>
+          <TabsTrigger value="servicios-ext">
+            Servicios Externos
           </TabsTrigger>
           <TabsTrigger value="parts">
             Repuestos (
@@ -271,18 +266,22 @@ export default function WorkOrderDetailPage() {
             }
             )
           </TabsTrigger>
-          <TabsTrigger value="purchase-orders">Órdenes Compra</TabsTrigger>
           <TabsTrigger value="expenses">
             Gastos ({workOrder.workOrderExpenses.length})
           </TabsTrigger>
-          <TabsTrigger value="history">Historial</TabsTrigger>
+          {/* <TabsTrigger value="purchase-orders">Órdenes Compra</TabsTrigger> */}
+          {/* <TabsTrigger value="history">Historial</TabsTrigger> */}
         </TabsList>
 
         <TabsContent value="general" className="mt-6">
           <GeneralInfoTab workOrder={workOrder} onUpdate={handleUpdate} />
         </TabsContent>
 
-        <TabsContent value="services" className="mt-6">
+        <TabsContent value="taller-propio" className="mt-6">
+          <InternalWorkTab workOrderId={workOrder.id} onRefresh={fetchWorkOrder} />
+        </TabsContent>
+
+        <TabsContent value="servicios-ext" className="mt-6">
           <ServicesTab workOrderId={workOrder.id} onRefresh={fetchWorkOrder} />
         </TabsContent>
 
@@ -294,17 +293,17 @@ export default function WorkOrderDetailPage() {
           />
         </TabsContent>
 
-        <TabsContent value="purchase-orders" className="mt-6">
-          <PurchaseOrdersTab workOrderId={workOrder.id} />
-        </TabsContent>
-
         <TabsContent value="expenses" className="mt-6">
           <ExpensesTab workOrder={workOrder} onRefresh={fetchWorkOrder} />
         </TabsContent>
 
+        {/* <TabsContent value="purchase-orders" className="mt-6">
+          <PurchaseOrdersTab workOrderId={workOrder.id} />
+        </TabsContent>
+
         <TabsContent value="history" className="mt-6">
           <HistoryTab workOrder={workOrder} />
-        </TabsContent>
+        </TabsContent> */}
       </Tabs>
 
       {/* Delete Confirmation Dialog */}

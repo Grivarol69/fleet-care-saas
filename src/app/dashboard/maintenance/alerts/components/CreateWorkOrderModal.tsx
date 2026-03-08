@@ -24,12 +24,12 @@ import {
 import { useMaintenanceAlerts } from '@/lib/hooks/useMaintenanceAlerts';
 import { CheckCircle2, Clock, DollarSign, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/hooks/use-toast';
-import { useTechnicians, useProviders } from '@/lib/hooks/usePeople';
+import { useTechnicians, useProviders, useCostCenters } from '@/lib/hooks/usePeople';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  selectedAlertIds: number[];
+  selectedAlertIds: string[];
   onSuccess: () => void;
 }
 
@@ -43,9 +43,9 @@ export function CreateWorkOrderModal({
   const queryClient = useQueryClient();
   const { data: allAlerts } = useMaintenanceAlerts();
 
-  // Real Data Hooks
   const { data: technicians = [] } = useTechnicians();
   const { data: providers = [] } = useProviders();
+  const { data: costCenters = [] } = useCostCenters();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [title, setTitle] = useState('');
@@ -54,6 +54,7 @@ export function CreateWorkOrderModal({
     undefined
   );
   const [providerId, setProviderId] = useState<string | undefined>(undefined);
+  const [costCenterId, setCostCenterId] = useState<string | undefined>(undefined);
   const [scheduledDate, setScheduledDate] = useState('');
   const [priority, setPriority] = useState('MEDIUM');
 
@@ -126,10 +127,12 @@ export function CreateWorkOrderModal({
         description,
         technicianId:
           technicianId && technicianId !== 'NONE'
-            ? parseInt(technicianId)
+            ? technicianId
             : null,
         providerId:
-          providerId && providerId !== 'NONE' ? parseInt(providerId) : null,
+          providerId && providerId !== 'NONE' ? providerId : null,
+        costCenterId:
+          costCenterId && costCenterId !== 'NONE' ? costCenterId : null,
         scheduledDate: scheduledDate || null,
         priority,
       });
@@ -291,6 +294,29 @@ export function CreateWorkOrderModal({
                         value={provider.id.toString()}
                       >
                         {provider.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Centro de costos */}
+              <div className="space-y-2">
+                <Label htmlFor="costCenter">Centro de costos (opcional)</Label>
+                <Select
+                  value={costCenterId || 'NONE'}
+                  onValueChange={val =>
+                    setCostCenterId(val === 'NONE' ? undefined : val)
+                  }
+                >
+                  <SelectTrigger id="costCenter">
+                    <SelectValue placeholder="Seleccionar centro de costos..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">Sin asignar</SelectItem>
+                    {costCenters.map(cc => (
+                      <SelectItem key={cc.id} value={cc.id}>
+                        {cc.code} — {cc.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

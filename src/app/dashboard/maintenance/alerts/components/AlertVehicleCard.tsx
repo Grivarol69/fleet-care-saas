@@ -30,8 +30,8 @@ interface Props {
   vehicleGroup: VehicleGroup;
   isExpanded: boolean;
   onToggle: () => void;
-  selectedAlertIds: number[];
-  onSelectionChange: (ids: number[]) => void;
+  selectedAlertIds: string[];
+  onSelectionChange: (ids: string[]) => void;
   onCreateWorkOrder: () => void;
 }
 
@@ -103,7 +103,7 @@ export function AlertVehicleCard({
   );
 
   // Handlers de selección
-  const handleToggleAlert = (alertId: number) => {
+  const handleToggleAlert = (alertId: string) => {
     if (selectedAlertIds.includes(alertId)) {
       onSelectionChange(selectedAlertIds.filter(id => id !== alertId));
     } else {
@@ -227,13 +227,12 @@ export function AlertVehicleCard({
               <div className="mt-3 text-sm">
                 <span className="text-gray-500">Próximo vencimiento: </span>
                 <span
-                  className={`font-bold ${
-                    nextAlert.kmToMaintenance <= 0
+                  className={`font-bold ${nextAlert.kmToMaintenance <= 0
                       ? 'text-red-600'
                       : nextAlert.kmToMaintenance <= 500
                         ? 'text-orange-600'
                         : 'text-yellow-600'
-                  }`}
+                    }`}
                 >
                   {nextAlert.kmToMaintenance <= 0
                     ? `${Math.abs(nextAlert.kmToMaintenance)} km VENCIDO`
@@ -271,11 +270,10 @@ export function AlertVehicleCard({
                 return (
                   <div
                     key={pkg.packageName}
-                    className={`border rounded-lg p-4 ${
-                      packageCritical > 0
+                    className={`border rounded-lg p-4 ${packageCritical > 0
                         ? 'border-red-300 bg-red-50'
                         : 'border-gray-200 bg-gray-50'
-                    }`}
+                      }`}
                   >
                     {/* Header del paquete */}
                     <div className="flex items-center gap-3 mb-3">
@@ -321,11 +319,10 @@ export function AlertVehicleCard({
                         return (
                           <div
                             key={alert.id}
-                            className={`flex items-center gap-3 p-3 rounded-md border transition-all ${
-                              isSelected
+                            className={`flex items-center gap-3 p-3 rounded-md border transition-all ${isSelected
                                 ? 'bg-blue-50 border-blue-300'
                                 : 'bg-white border-gray-200 hover:border-gray-300'
-                            }`}
+                              }`}
                           >
                             <Checkbox
                               checked={isSelected}
@@ -350,13 +347,12 @@ export function AlertVehicleCard({
                               </div>
                               <div className="flex gap-4 mt-1 text-sm text-gray-600">
                                 <span
-                                  className={`font-semibold ${
-                                    isOverdue
+                                  className={`font-semibold ${isOverdue
                                       ? 'text-red-600'
                                       : isUrgent
                                         ? 'text-orange-600'
                                         : 'text-green-600'
-                                  }`}
+                                    }`}
                                 >
                                   {isOverdue
                                     ? `${Math.abs(alert.kmToMaintenance)} km VENCIDO`

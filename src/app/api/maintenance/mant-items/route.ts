@@ -1,4 +1,3 @@
-import { prisma } from '@/lib/prisma';
 import { requireCurrentUser } from '@/lib/auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { canCreateMantItems } from '@/lib/permissions';
@@ -15,14 +14,13 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const typeFilter = searchParams.get('type');
 
-    // Devolver solo items del tenant (las globales se copian en onboarding)
-    const mantItems = await prisma.mantItem.findMany({
+    // Devolver items del tenant y globales confiando en tenantPrisma
+    const mantItems = await tenantPrisma.mantItem.findMany({
       where: {
-        tenantId: user.tenantId,
         ...(typeFilter &&
           ['ACTION', 'PART', 'SERVICE'].includes(typeFilter) && {
-            type: typeFilter as 'ACTION' | 'PART' | 'SERVICE',
-          }),
+          type: typeFilter as 'ACTION' | 'PART' | 'SERVICE',
+        }),
         ...(search && {
           AND: [
             {
@@ -84,7 +82,7 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!categoryId || categoryId <= 0) {
+    if (!categoryId || categoryId.trim() === '') {
       return NextResponse.json(
         { error: 'Categoría inválida' },
         { status: 400 }
@@ -129,10 +127,9 @@ export async function POST(req: Request) {
     }
 
     // Verificar que la categoría existe (global o del tenant)
-    const category = await prisma.mantCategory.findFirst({
+    const category = await tenantPrisma.mantCategory.findFirst({
       where: {
         id: categoryId,
-        OR: [{ isGlobal: true }, { tenantId: targetTenant }],
       },
     });
 

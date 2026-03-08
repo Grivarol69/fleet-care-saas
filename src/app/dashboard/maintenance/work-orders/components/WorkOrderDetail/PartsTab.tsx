@@ -44,7 +44,7 @@ import axios from 'axios';
 import { AddItemDialog } from './AddItemDialog';
 
 type PartItem = {
-  workOrderItemId: number;
+  workOrderItemId: string;
   mantItemId: string;
   mantItemName: string;
   mantItemType: 'PART';
@@ -104,8 +104,8 @@ export function PartsTab({ workOrderId, vehicleId, onRefresh }: PartsTabProps) {
   );
 
   // Selection state
-  const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
-  const [itemOrigins, setItemOrigins] = useState<Map<number, ItemOrigin>>(
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [itemOrigins, setItemOrigins] = useState<Map<string, ItemOrigin>>(
     new Map()
   );
 
@@ -127,7 +127,7 @@ export function PartsTab({ workOrderId, vehicleId, onRefresh }: PartsTabProps) {
       setItems(fetchedItems);
 
       // Initialize origins for pending items
-      const initialOrigins = new Map<number, ItemOrigin>();
+      const initialOrigins = new Map<string, ItemOrigin>();
       fetchedItems.forEach(item => {
         if (item.closureType === 'PENDING') {
           initialOrigins.set(item.workOrderItemId, 'EXTERNAL');
@@ -201,7 +201,7 @@ export function PartsTab({ workOrderId, vehicleId, onRefresh }: PartsTabProps) {
   }, [fetchItems, fetchProviders]);
 
   // Toggle item selection
-  const toggleItemSelection = (itemId: number) => {
+  const toggleItemSelection = (itemId: string) => {
     const newSelected = new Set(selectedItems);
     if (newSelected.has(itemId)) {
       newSelected.delete(itemId);
@@ -222,7 +222,7 @@ export function PartsTab({ workOrderId, vehicleId, onRefresh }: PartsTabProps) {
   };
 
   // Change item origin
-  const setItemOrigin = (itemId: number, origin: ItemOrigin) => {
+  const setItemOrigin = (itemId: string, origin: ItemOrigin) => {
     const newOrigins = new Map(itemOrigins);
     newOrigins.set(itemId, origin);
     setItemOrigins(newOrigins);
@@ -291,7 +291,7 @@ export function PartsTab({ workOrderId, vehicleId, onRefresh }: PartsTabProps) {
       await axios.post('/api/purchase-orders', {
         workOrderId,
         type: 'PARTS',
-        providerId: parseInt(selectedProviderId),
+        providerId: selectedProviderId,
         items: ocItems,
         notes: `OC de Repuestos generada desde OT #${workOrderId}`,
       });
@@ -495,126 +495,285 @@ export function PartsTab({ workOrderId, vehicleId, onRefresh }: PartsTabProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {items.map(item => {
-                    const isPending = item.closureType === 'PENDING';
-                    const origin =
-                      itemOrigins.get(item.workOrderItemId) || 'EXTERNAL';
-                    const stockDisplay = getStockDisplay(item);
-
-                    return (
-                      <TableRow key={item.workOrderItemId}>
-                        <TableCell>
-                          {isPending && (
-                            <Checkbox
-                              checked={selectedItems.has(item.workOrderItemId)}
-                              onCheckedChange={() =>
-                                toggleItemSelection(item.workOrderItemId)
-                              }
-                            />
-                          )}
-                        </TableCell>
-                        <TableCell className="font-mono text-sm">
-                          {item.masterPartCode || '-'}
-                        </TableCell>
-                        <TableCell className="font-medium max-w-xs">
-                          <div className="truncate">
-                            {item.masterPartDescription || item.mantItemName}
-                          </div>
-                          {item.masterPartDescription &&
-                            item.masterPartDescription !==
-                              item.mantItemName && (
-                              <div className="text-xs text-muted-foreground truncate">
-                                {item.mantItemName}
-                              </div>
-                            )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {item.quantity}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(item.unitPrice)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(item.totalCost)}
-                        </TableCell>
-                        <TableCell>
-                          {stockDisplay ? (
-                            <div className="flex items-center gap-1">
-                              {stockDisplay.sufficient ? (
-                                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                              ) : (
-                                <AlertTriangle className="h-4 w-4 text-amber-500" />
-                              )}
-                              <span
-                                className={
-                                  stockDisplay.sufficient
-                                    ? 'text-green-600'
-                                    : 'text-amber-500'
-                                }
-                              >
-                                {stockDisplay.quantity}
-                              </span>
+                  {/* EXTERNAL PARTS SECTION */}
+                  {items.some(
+                    i => i.itemSource === 'EXTERNAL' || i.closureType === 'PENDING'
+                  ) && (
+                      <>
+                        <TableRow className="bg-muted/50 hover:bg-muted/50">
+                          <TableCell colSpan={9} className="py-2">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-blue-700">Compra a Proveedor Externo</span>
+                              <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-100">{items.filter(i => i.itemSource === 'EXTERNAL' || i.closureType === 'PENDING').length}</Badge>
                             </div>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">
-                              -
-                            </span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {isPending ? (
-                            <Select
-                              value={origin}
-                              onValueChange={val =>
-                                setItemOrigin(
-                                  item.workOrderItemId,
-                                  val as ItemOrigin
-                                )
-                              }
-                            >
-                              <SelectTrigger className="w-32">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="EXTERNAL">
-                                  <div className="flex items-center gap-1">
-                                    <ShoppingCart className="h-3 w-3" />
-                                    Compra
+                          </TableCell>
+                        </TableRow>
+                        {items
+                          .filter(
+                            i => i.itemSource === 'EXTERNAL' || i.closureType === 'PENDING'
+                          )
+                          .map(item => {
+                            const isPending = item.closureType === 'PENDING';
+                            const origin =
+                              itemOrigins.get(item.workOrderItemId) || 'EXTERNAL';
+                            const stockDisplay = getStockDisplay(item);
+
+                            return (
+                              <TableRow key={item.workOrderItemId}>
+                                <TableCell>
+                                  {isPending && (
+                                    <Checkbox
+                                      checked={selectedItems.has(item.workOrderItemId)}
+                                      onCheckedChange={() =>
+                                        toggleItemSelection(item.workOrderItemId)
+                                      }
+                                    />
+                                  )}
+                                </TableCell>
+                                <TableCell className="font-mono text-sm">
+                                  {item.masterPartCode || '-'}
+                                </TableCell>
+                                <TableCell className="font-medium max-w-xs">
+                                  <div className="truncate">
+                                    {item.masterPartDescription || item.mantItemName}
                                   </div>
-                                </SelectItem>
-                                <SelectItem
-                                  value="STOCK"
-                                  disabled={
-                                    !stockDisplay || !stockDisplay.sufficient
-                                  }
-                                >
-                                  <div className="flex items-center gap-1">
-                                    <Warehouse className="h-3 w-3" />
-                                    Inventario
+                                  {item.masterPartDescription &&
+                                    item.masterPartDescription !==
+                                    item.mantItemName && (
+                                      <div className="text-xs text-muted-foreground truncate">
+                                        {item.mantItemName}
+                                      </div>
+                                    )}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {item.quantity}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {formatCurrency(item.unitPrice)}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {formatCurrency(item.totalCost)}
+                                </TableCell>
+                                <TableCell>
+                                  {stockDisplay ? (
+                                    <div className="flex items-center gap-1">
+                                      {stockDisplay.sufficient ? (
+                                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                      ) : (
+                                        <AlertTriangle className="h-4 w-4 text-amber-500" />
+                                      )}
+                                      <span
+                                        className={
+                                          stockDisplay.sufficient
+                                            ? 'text-green-600'
+                                            : 'text-amber-500'
+                                        }
+                                      >
+                                        {stockDisplay.quantity}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-muted-foreground text-sm">
+                                      -
+                                    </span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  {isPending ? (
+                                    <Select
+                                      value={origin}
+                                      onValueChange={val =>
+                                        setItemOrigin(
+                                          item.workOrderItemId,
+                                          val as ItemOrigin
+                                        )
+                                      }
+                                    >
+                                      <SelectTrigger className="w-32">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="EXTERNAL">
+                                          <div className="flex items-center gap-1">
+                                            <ShoppingCart className="h-3 w-3" />
+                                            Compra
+                                          </div>
+                                        </SelectItem>
+                                        <SelectItem
+                                          value="STOCK"
+                                          disabled={
+                                            !stockDisplay || !stockDisplay.sufficient
+                                          }
+                                        >
+                                          <div className="flex items-center gap-1">
+                                            <Warehouse className="h-3 w-3" />
+                                            Inventario
+                                          </div>
+                                        </SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  ) : (
+                                    <Badge variant="outline">
+                                      {item.itemSource === 'INTERNAL_STOCK'
+                                        ? 'Inventario'
+                                        : 'Compra'}
+                                    </Badge>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <Badge
+                                    variant={
+                                      statusConfig[item.status]?.variant || 'outline'
+                                    }
+                                  >
+                                    {statusConfig[item.status]?.label || item.status}
+                                  </Badge>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                      </>
+                    )}
+
+                  {/* INTERNAL INVENTORY CONSUMPTION SECTION */}
+                  {items.some(
+                    i => i.itemSource === 'INTERNAL_STOCK' || i.closureType === 'INTERNAL_TICKET' || i.closureType === 'PURCHASE_ORDER'
+                  ) && (
+                      <>
+                        <TableRow className="bg-muted/50 hover:bg-muted/50">
+                          <TableCell colSpan={9} className="py-2">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-green-700">Consumo de Inventario Propio</span>
+                              <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100">{items.filter(i => i.itemSource === 'INTERNAL_STOCK' || i.closureType === 'INTERNAL_TICKET' || i.closureType === 'PURCHASE_ORDER').length}</Badge>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                        {items
+                          .filter(
+                            i => i.itemSource === 'INTERNAL_STOCK' || i.closureType === 'INTERNAL_TICKET' || i.closureType === 'PURCHASE_ORDER'
+                          )
+                          .map(item => {
+                            const isPending = item.closureType === 'PENDING';
+                            const origin =
+                              itemOrigins.get(item.workOrderItemId) || 'EXTERNAL';
+                            const stockDisplay = getStockDisplay(item);
+
+                            return (
+                              <TableRow key={item.workOrderItemId}>
+                                <TableCell>
+                                  {isPending && (
+                                    <Checkbox
+                                      checked={selectedItems.has(item.workOrderItemId)}
+                                      onCheckedChange={() =>
+                                        toggleItemSelection(item.workOrderItemId)
+                                      }
+                                    />
+                                  )}
+                                </TableCell>
+                                <TableCell className="font-mono text-sm">
+                                  {item.masterPartCode || '-'}
+                                </TableCell>
+                                <TableCell className="font-medium max-w-xs">
+                                  <div className="truncate">
+                                    {item.masterPartDescription || item.mantItemName}
                                   </div>
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <Badge variant="outline">
-                              {item.itemSource === 'INTERNAL_STOCK'
-                                ? 'Inventario'
-                                : 'Compra'}
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              statusConfig[item.status]?.variant || 'outline'
-                            }
-                          >
-                            {statusConfig[item.status]?.label || item.status}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                                  {item.masterPartDescription &&
+                                    item.masterPartDescription !==
+                                    item.mantItemName && (
+                                      <div className="text-xs text-muted-foreground truncate">
+                                        {item.mantItemName}
+                                      </div>
+                                    )}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {item.quantity}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {formatCurrency(item.unitPrice)}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {formatCurrency(item.totalCost)}
+                                </TableCell>
+                                <TableCell>
+                                  {stockDisplay ? (
+                                    <div className="flex items-center gap-1">
+                                      {stockDisplay.sufficient ? (
+                                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                      ) : (
+                                        <AlertTriangle className="h-4 w-4 text-amber-500" />
+                                      )}
+                                      <span
+                                        className={
+                                          stockDisplay.sufficient
+                                            ? 'text-green-600'
+                                            : 'text-amber-500'
+                                        }
+                                      >
+                                        {stockDisplay.quantity}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-muted-foreground text-sm">
+                                      -
+                                    </span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  {isPending ? (
+                                    <Select
+                                      value={origin}
+                                      onValueChange={val =>
+                                        setItemOrigin(
+                                          item.workOrderItemId,
+                                          val as ItemOrigin
+                                        )
+                                      }
+                                    >
+                                      <SelectTrigger className="w-32">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="EXTERNAL">
+                                          <div className="flex items-center gap-1">
+                                            <ShoppingCart className="h-3 w-3" />
+                                            Compra
+                                          </div>
+                                        </SelectItem>
+                                        <SelectItem
+                                          value="STOCK"
+                                          disabled={
+                                            !stockDisplay || !stockDisplay.sufficient
+                                          }
+                                        >
+                                          <div className="flex items-center gap-1">
+                                            <Warehouse className="h-3 w-3" />
+                                            Inventario
+                                          </div>
+                                        </SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  ) : (
+                                    <Badge variant="outline">
+                                      {item.itemSource === 'INTERNAL_STOCK'
+                                        ? 'Inventario'
+                                        : 'Compra'}
+                                    </Badge>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <Badge
+                                    variant={
+                                      statusConfig[item.status]?.variant || 'outline'
+                                    }
+                                  >
+                                    {statusConfig[item.status]?.label || item.status}
+                                  </Badge>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                      </>
+                    )}
                 </TableBody>
               </Table>
 

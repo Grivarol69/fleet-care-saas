@@ -1,4 +1,3 @@
-import { prisma } from '@/lib/prisma';
 import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 
@@ -9,11 +8,8 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Devolver solo categorías del tenant (las globales se copian en onboarding)
-    const categories = await prisma.mantCategory.findMany({
-      where: {
-        tenantId: user.tenantId,
-      },
+    // Devolver categorías globales y del tenant — interceptor aplica OR[tenantId, isGlobal]
+    const categories = await tenantPrisma.mantCategory.findMany({
       orderBy: {
         name: 'asc',
       },

@@ -30,19 +30,15 @@ import {
 } from '@/components/ui/dialog';
 import {
   Wrench,
-  Building2,
-  FileText,
   ShoppingCart,
   Loader2,
   AlertCircle,
   Plus,
-  Eye,
 } from 'lucide-react';
 import { useToast } from '@/components/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
 import axios from 'axios';
 import { AddItemDialog } from './AddItemDialog';
-import { InternalTicketSummaryModal } from './InternalTicketSummaryModal';
 
 type ServiceItem = {
   workOrderItemId: number;
@@ -65,18 +61,10 @@ type Provider = {
   name: string;
 };
 
-type Technician = {
-  id: string;
-  name: string;
-  hourlyRate?: number;
-};
-
 type ServicesTabProps = {
   workOrderId: string;
   onRefresh: () => void;
 };
-
-type ItemDestination = 'EXTERNAL' | 'INTERNAL';
 
 const typeConfig = {
   ACTION: { label: 'Acción', className: 'bg-purple-100 text-purple-700' },
@@ -100,26 +88,15 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
   const [items, setItems] = useState<ServiceItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [providers, setProviders] = useState<Provider[]>([]);
-  const [technicians, setTechnicians] = useState<Technician[]>([]);
 
   // Selection state
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
-  const [itemDestinations, setItemDestinations] = useState<
-    Map<number, ItemDestination>
-  >(new Map());
 
   // Dialog state
   const [showOCDialog, setShowOCDialog] = useState(false);
-  const [showTicketDialog, setShowTicketDialog] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedProviderId, setSelectedProviderId] = useState<string>('');
-  const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Ticket summary modal
-  const [showSummaryModal, setShowSummaryModal] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [summaryTicket, setSummaryTicket] = useState<any>(null);
 
   // Fetch service items (ACTION + SERVICE types)
   const fetchItems = useCallback(async () => {
@@ -129,16 +106,12 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
         `/api/maintenance/work-orders/${workOrderId}/items?type=SERVICE,ACTION`
       );
       const fetchedItems = (res.data.items || []) as ServiceItem[];
-      setItems(fetchedItems);
 
-      // Initialize destinations for pending items
-      const initialDestinations = new Map<number, ItemDestination>();
-      fetchedItems.forEach(item => {
-        if (item.closureType === 'PENDING') {
-          initialDestinations.set(item.workOrderItemId, 'EXTERNAL');
-        }
-      });
-      setItemDestinations(initialDestinations);
+      const externalItems = fetchedItems.filter(
+        i => i.itemSource === 'EXTERNAL' || (i.closureType === 'PENDING' && i.itemSource !== 'INTERNAL')
+      );
+
+      setItems(externalItems);
     } catch (error) {
       console.error('Error fetching service items:', error);
       toast({
@@ -151,15 +124,11 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
     }
   }, [workOrderId, toast]);
 
-  // Fetch providers and technicians
+  // Fetch providers
   const fetchResources = useCallback(async () => {
     try {
-      const [providersRes, techniciansRes] = await Promise.all([
-        axios.get('/api/people/providers'),
-        axios.get('/api/people/technicians'),
-      ]);
+      const providersRes = await axios.get('/api/people/providers');
       setProviders(providersRes.data || []);
-      setTechnicians(techniciansRes.data || []);
     } catch {
       // Non-critical, continue
     }
@@ -191,189 +160,11 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
     }
   };
 
-  // Change item destination
-  const setItemDestination = (itemId: number, destination: ItemDestination) => {
-    const newDestinations = new Map(itemDestinations);
-    newDestinations.set(itemId, destination);
-    setItemDestinations(newDestinations);
-  };
-
-  // Get selected items by destination
-  const getSelectedByDestination = (destination: ItemDestination) => {
-    return items.filter(
-      item =>
-        selectedItems.has(item.workOrderItemId) &&
-        itemDestinations.get(item.workOrderItemId) === destination
-    );
-  };
-
-  // Generate Purchase Order for external services
-  const handleGenerateServiceOC = async () => {
-    const externalItems = getSelectedByDestination('EXTERNAL');
-    if (externalItems.length === 0) {
-      toast({
-        title: 'Sin items',
-        description: 'No hay items externos seleccionados',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (!selectedProviderId) {
-      toast({
-        title: 'Proveedor requerido',
-        description: 'Selecciona un proveedor para la OC',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const ocItems = externalItems.map(item => ({
-        workOrderItemId: item.workOrderItemId,
-        mantItemId: item.mantItemId,
-        description: item.description || item.mantItemName,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-      }));
-
-      await axios.post('/api/purchase-orders', {
-        workOrderId,
-        type: 'SERVICES',
-        providerId: selectedProviderId,
-        items: ocItems,
-        notes: `OC de Servicios generada desde OT #${workOrderId}`,
-      });
-
-      // Update itemSource for these items
-      await Promise.all(
-        externalItems.map(item =>
-          axios.patch(
-            `/api/maintenance/work-orders/${workOrderId}/items/${item.workOrderItemId}`,
-            {
-              itemSource: 'EXTERNAL',
-            }
-          )
-        )
-      );
-
-      toast({
-        title: 'OC Creada',
-        description: `Orden de compra de servicios creada con ${externalItems.length} items`,
-      });
-
-      setShowOCDialog(false);
-      setSelectedItems(new Set());
-      setSelectedProviderId('');
-      fetchItems();
-      onRefresh();
-    } catch (error) {
-      const message = axios.isAxiosError(error)
-        ? error.response?.data?.error
-        : 'Error al crear OC';
-      toast({
-        title: 'Error',
-        description: message || 'No se pudo crear la orden de compra',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Generate Internal Work Ticket
-  const handleGenerateInternalTicket = async () => {
-    const internalItems = getSelectedByDestination('INTERNAL');
-    if (internalItems.length === 0) {
-      toast({
-        title: 'Sin items',
-        description: 'No hay items internos seleccionados',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (!selectedTechnicianId) {
-      toast({
-        title: 'Técnico requerido',
-        description: 'Selecciona un técnico para el ticket interno',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const technician = technicians.find(t => t.id === selectedTechnicianId);
-      const hourlyRate = technician?.hourlyRate || 50000; // Default hourly rate
-
-      const laborEntries = internalItems.map(item => ({
-        description: item.description || item.mantItemName,
-        hours: 1, // Default 1 hour per service
-        hourlyRate,
-        workOrderItemId: item.workOrderItemId,
-      }));
-
-      await axios.post('/api/internal-tickets', {
-        workOrderId,
-        technicianId: selectedTechnicianId,
-        description: `Ticket interno para servicios OT #${workOrderId}`,
-        laborEntries,
-        partEntries: [], // Services don't have parts
-      });
-
-      // Update itemSource and closureType for these items
-      await Promise.all(
-        internalItems.map(item =>
-          axios.patch(
-            `/api/maintenance/work-orders/${workOrderId}/items/${item.workOrderItemId}`,
-            {
-              itemSource: 'INTERNAL_STOCK',
-              closureType: 'INTERNAL_TICKET',
-            }
-          )
-        )
-      );
-
-      // Fetch the newly created ticket for the summary modal
-      const ticketsRes = await axios.get(
-        `/api/internal-tickets?workOrderId=${workOrderId}`
-      );
-      const created = (ticketsRes.data as any[])[0];
-      if (created) {
-        setSummaryTicket(created);
-        setShowSummaryModal(true);
-      }
-
-      toast({
-        title: 'Ticket Creado',
-        description: `Ticket interno creado con ${internalItems.length} servicios`,
-      });
-
-      setShowTicketDialog(false);
-      setSelectedItems(new Set());
-      setSelectedTechnicianId('');
-      fetchItems();
-      onRefresh();
-    } catch (error) {
-      const message = axios.isAxiosError(error)
-        ? error.response?.data?.error
-        : 'Error al crear ticket';
-      toast({
-        title: 'Error',
-        description: message || 'No se pudo crear el ticket interno',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   // Calculate totals
   const pendingItems = items.filter(i => i.closureType === 'PENDING');
-  const externalSelected = getSelectedByDestination('EXTERNAL');
-  const internalSelected = getSelectedByDestination('INTERNAL');
+  const externalSelected = items.filter(
+    item => selectedItems.has(item.workOrderItemId)
+  );
   const totalEstimated = items.reduce((sum, i) => sum + i.totalCost, 0);
 
   if (isLoading) {
@@ -410,16 +201,6 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
                 >
                   <ShoppingCart className="mr-2 h-4 w-4" />
                   Generar OC ({externalSelected.length})
-                </Button>
-              )}
-              {internalSelected.length > 0 && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setShowTicketDialog(true)}
-                >
-                  <FileText className="mr-2 h-4 w-4" />
-                  Ticket Interno ({internalSelected.length})
                 </Button>
               )}
             </div>
@@ -465,8 +246,6 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
                 <TableBody>
                   {items.map(item => {
                     const isPending = item.closureType === 'PENDING';
-                    const destination =
-                      itemDestinations.get(item.workOrderItemId) || 'EXTERNAL';
 
                     return (
                       <TableRow key={item.workOrderItemId}>
@@ -485,10 +264,9 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
                         </TableCell>
                         <TableCell>
                           <span
-                            className={`text-xs px-1.5 py-0.5 rounded-full ${
-                              typeConfig[item.mantItemType]?.className ||
+                            className={`text-xs px-1.5 py-0.5 rounded-full ${typeConfig[item.mantItemType]?.className ||
                               'bg-gray-100 text-gray-700'
-                            }`}
+                              }`}
                           >
                             {typeConfig[item.mantItemType]?.label ||
                               item.mantItemType}
@@ -508,39 +286,9 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
                         </TableCell>
                         <TableCell>
                           {isPending ? (
-                            <Select
-                              value={destination}
-                              onValueChange={val =>
-                                setItemDestination(
-                                  item.workOrderItemId,
-                                  val as ItemDestination
-                                )
-                              }
-                            >
-                              <SelectTrigger className="w-32">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="EXTERNAL">
-                                  <div className="flex items-center gap-1">
-                                    <Building2 className="h-3 w-3" />
-                                    Externo
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="INTERNAL">
-                                  <div className="flex items-center gap-1">
-                                    <Wrench className="h-3 w-3" />
-                                    Interno
-                                  </div>
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <Badge variant="outline">Externo</Badge>
                           ) : (
-                            <Badge variant="outline">
-                              {item.itemSource === 'EXTERNAL'
-                                ? 'Externo'
-                                : 'Interno'}
-                            </Badge>
+                            <Badge variant="outline">Externo</Badge>
                           )}
                         </TableCell>
                         <TableCell>
@@ -552,26 +300,6 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
                             >
                               {statusConfig[item.status]?.label || item.status}
                             </Badge>
-                            {item.closureType === 'INTERNAL_TICKET' && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6"
-                                title="Ver ticket interno"
-                                onClick={async () => {
-                                  const res = await axios.get(
-                                    `/api/internal-tickets?workOrderId=${workOrderId}`
-                                  );
-                                  const ticket = (res.data as any[])[0];
-                                  if (ticket) {
-                                    setSummaryTicket(ticket);
-                                    setShowSummaryModal(true);
-                                  }
-                                }}
-                              >
-                                <Eye className="h-3.5 w-3.5" />
-                              </Button>
-                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -667,7 +395,78 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
               Cancelar
             </Button>
             <Button
-              onClick={handleGenerateServiceOC}
+              onClick={async () => {
+                if (externalSelected.length === 0) {
+                  toast({
+                    title: 'Sin items',
+                    description: 'No hay items externos seleccionados',
+                    variant: 'destructive',
+                  });
+                  return;
+                }
+
+                if (!selectedProviderId) {
+                  toast({
+                    title: 'Proveedor requerido',
+                    description: 'Selecciona un proveedor para la OC',
+                    variant: 'destructive',
+                  });
+                  return;
+                }
+
+                setIsSubmitting(true);
+                try {
+                  const ocItems = externalSelected.map(item => ({
+                    workOrderItemId: item.workOrderItemId,
+                    mantItemId: item.mantItemId,
+                    description: item.description || item.mantItemName,
+                    quantity: item.quantity,
+                    unitPrice: item.unitPrice,
+                  }));
+
+                  await axios.post('/api/purchase-orders', {
+                    workOrderId,
+                    type: 'SERVICES',
+                    providerId: selectedProviderId,
+                    items: ocItems,
+                    notes: `OC de Servicios generada desde OT #${workOrderId}`,
+                  });
+
+                  // Update itemSource for these items
+                  await Promise.all(
+                    externalSelected.map(item =>
+                      axios.patch(
+                        `/api/maintenance/work-orders/${workOrderId}/items/${item.workOrderItemId}`,
+                        {
+                          itemSource: 'EXTERNAL',
+                        }
+                      )
+                    )
+                  );
+
+                  toast({
+                    title: 'OC Creada',
+                    description: `Orden de compra de servicios creada con ${externalSelected.length} items`,
+                  });
+
+                  setShowOCDialog(false);
+                  setSelectedItems(new Set());
+                  setSelectedProviderId('');
+                  fetchItems();
+                  onRefresh();
+                } catch (error) {
+                  const message = axios.isAxiosError(error)
+                    ? error.response?.data?.error
+                    : 'Error al crear OC';
+                  toast({
+                    title: 'Error',
+                    description: message || 'No se pudo crear la orden de compra',
+                    variant: 'destructive',
+                  });
+                } finally {
+                  setIsSubmitting(false);
+                }
+              }}
               disabled={isSubmitting || !selectedProviderId}
             >
               {isSubmitting && (
@@ -679,74 +478,6 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Internal Ticket Dialog */}
-      <Dialog open={showTicketDialog} onOpenChange={setShowTicketDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Generar Ticket Interno</DialogTitle>
-            <DialogDescription>
-              Se creará un ticket interno para {internalSelected.length}{' '}
-              servicio(s).
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Técnico Asignado</label>
-              <Select
-                value={selectedTechnicianId}
-                onValueChange={setSelectedTechnicianId}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar técnico..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {technicians.map(t => (
-                    <SelectItem key={t.id} value={t.id.toString()}>
-                      {t.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="rounded-md bg-muted p-3">
-              <h4 className="font-medium mb-2">Servicios a realizar:</h4>
-              <ul className="text-sm space-y-1">
-                {internalSelected.map(item => (
-                  <li key={item.workOrderItemId}>{item.mantItemName}</li>
-                ))}
-              </ul>
-            </div>
-
-            {technicians.length === 0 && (
-              <div className="flex items-center gap-2 text-amber-600 text-sm">
-                <AlertCircle className="h-4 w-4" />
-                No hay técnicos registrados
-              </div>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowTicketDialog(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleGenerateInternalTicket}
-              disabled={isSubmitting || !selectedTechnicianId}
-            >
-              {isSubmitting && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              Crear Ticket
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      {/* Add Item Dialog */}
       <AddItemDialog
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
@@ -756,13 +487,6 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
           fetchItems();
           onRefresh();
         }}
-      />
-
-      {/* Internal Ticket Summary Modal */}
-      <InternalTicketSummaryModal
-        open={showSummaryModal}
-        onClose={() => setShowSummaryModal(false)}
-        ticket={summaryTicket}
       />
     </div>
   );
