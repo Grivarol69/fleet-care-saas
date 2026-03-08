@@ -59,7 +59,7 @@ export function getTenantPrisma(tenantId: string) {
 
                     if (isGlobalModel && isReadOperation) {
                         // Models con isGlobal: leer global O tenant
-                        const originalWhere = args.where || {};
+                        const originalWhere = (args as any).where || {};
                         if (Object.keys(originalWhere).length === 0) {
                             argsClone.where = { OR: [{ tenantId }, { isGlobal: true }] };
                         } else {
