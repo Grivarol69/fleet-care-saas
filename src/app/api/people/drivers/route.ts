@@ -54,9 +54,9 @@ export async function POST(req: Request) {
     // Verificar que no exista un conductor con la misma licencia (si se proporciona)
     if (licenseNumber && licenseNumber.trim() !== '') {
       const existingDriverWithLicense = await tenantPrisma.driver.findFirst({
-      where: {
-            licenseNumber: licenseNumber.trim(),
-          },
+        where: {
+          licenseNumber: licenseNumber.trim(),
+        },
       });
 
       if (existingDriverWithLicense) {
@@ -69,12 +69,13 @@ export async function POST(req: Request) {
 
     const driver = await tenantPrisma.driver.create({
       data: {
+        tenantId: user.tenantId,
         name: name.trim(),
         email: email?.trim() || null,
         phone: phone?.trim() || null,
         licenseNumber: licenseNumber?.trim() || null,
         licenseExpiry: licenseExpiry ? new Date(licenseExpiry) : null,
-        },
+      },
     });
 
     return NextResponse.json(driver, { status: 201 });

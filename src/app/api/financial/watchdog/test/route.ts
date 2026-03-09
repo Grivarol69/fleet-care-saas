@@ -11,14 +11,16 @@ export async function POST(_req: Request) {
 
     // 1. Create a Dummy Master Part with reference price
     const dummyPart = await tenantPrisma.masterPart.upsert({
-      where: { code: 'TEST-PART-001' },
+      where: {
+        tenantId_code: { tenantId: user.tenantId, code: 'TEST-PART-001' },
+      },
       update: { referencePrice: 100 },
       create: {
         code: 'TEST-PART-001',
         description: 'Test Watchdog Part',
         category: 'TEST',
         referencePrice: 100, // Reference is $100
-        },
+      },
     });
 
     // 2. Trigger Watchdog with a deviated price ($150 => 50% deviation)

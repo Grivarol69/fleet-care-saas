@@ -20,7 +20,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 
     // Verificar que OC existe y pertenece al tenant
     const purchaseOrder = await tenantPrisma.purchaseOrder.findUnique({
-      where: { id, },
+      where: { id },
     });
 
     if (!purchaseOrder) {
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     // Verificar OC y estado
     const purchaseOrder = await tenantPrisma.purchaseOrder.findUnique({
-      where: { id, },
+      where: { id },
     });
 
     if (!purchaseOrder) {
@@ -110,6 +110,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const result = await tenantPrisma.$transaction(async tx => {
       const newItem = await tx.purchaseOrderItem.create({
         data: {
+          tenantId: user.tenantId,
           purchaseOrderId: id,
           workOrderItemId: workOrderItemId || null,
           mantItemId: mantItemId || null,

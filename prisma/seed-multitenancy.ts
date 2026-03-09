@@ -2,6 +2,8 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import { seedHino300Dutro } from './seeds/hino-300-dutro';
+import { seedInternational7400WorkStar } from './seeds/international-7400-workstar';
+import { seedTemparioAutomotriz } from './seeds/tempario-automotriz';
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -11,7 +13,8 @@ const prisma = new PrismaClient({ adapter });
 // IDs - Usar el ID de Clerk para demo
 // ========================================
 const PLATFORM_TENANT_ID = '00000000-0000-0000-0000-000000000000';
-const DEMO_TENANT_ID = process.env.DEMO_TENANT_ID || 'org_3AaUgIFnMhblTZ83zNzyerKq9NB'; // Tu org de Clerk
+const DEMO_TENANT_ID =
+  process.env.DEMO_TENANT_ID || 'org_3AaUgIFnMhblTZ83zNzyerKq9NB'; // Tu org de Clerk
 const ALL_TENANT_IDS = [PLATFORM_TENANT_ID, DEMO_TENANT_ID];
 
 // ========================================
@@ -2563,7 +2566,8 @@ async function main() {
   });
 
   // Users - OWNER, MANAGER, TECHNICIAN, PURCHASER
-  const ownerEmail = process.env.DEMO_OWNER_EMAIL || 'guillerivar69+owner@gmail.com';
+  const ownerEmail =
+    process.env.DEMO_OWNER_EMAIL || 'guillerivar69+owner@gmail.com';
   const managerEmail = 'dyaponter+manager@gmail.com';
   const techEmail = 'grivarol69driver+technician@gmail.com';
   const purchaserEmail = 'dyaponter+purchaser@gmail.com';
@@ -2581,7 +2585,9 @@ async function main() {
     },
   });
   const t1Manager = await prisma.user.upsert({
-    where: { tenantId_email: { tenantId: DEMO_TENANT_ID, email: managerEmail } },
+    where: {
+      tenantId_email: { tenantId: DEMO_TENANT_ID, email: managerEmail },
+    },
     update: { role: 'MANAGER', isActive: true },
     create: {
       tenantId: DEMO_TENANT_ID,
@@ -2605,7 +2611,9 @@ async function main() {
     },
   });
   const t1Purchaser = await prisma.user.upsert({
-    where: { tenantId_email: { tenantId: DEMO_TENANT_ID, email: purchaserEmail } },
+    where: {
+      tenantId_email: { tenantId: DEMO_TENANT_ID, email: purchaserEmail },
+    },
     update: { role: 'PURCHASER', isActive: true },
     create: {
       tenantId: DEMO_TENANT_ID,
@@ -2907,18 +2915,37 @@ async function main() {
   console.log('   Creando Work Orders...');
 
   // Obtener vehicles y provider
-  const t1VehiclesList = await prisma.vehicle.findMany({ where: { tenantId: DEMO_TENANT_ID } });
-  const t1ProviderList = await prisma.provider.findMany({ where: { tenantId: DEMO_TENANT_ID } });
-  const t1TechnicianList = await prisma.technician.findMany({ where: { tenantId: DEMO_TENANT_ID } });
-  const t1UsersList = await prisma.user.findMany({ where: { tenantId: DEMO_TENANT_ID } });
-  const t1MantItems = await prisma.mantItem.findMany({ where: { isGlobal: true } });
+  const t1VehiclesList = await prisma.vehicle.findMany({
+    where: { tenantId: DEMO_TENANT_ID },
+  });
+  const t1ProviderList = await prisma.provider.findMany({
+    where: { tenantId: DEMO_TENANT_ID },
+  });
+  const t1TechnicianList = await prisma.technician.findMany({
+    where: { tenantId: DEMO_TENANT_ID },
+  });
+  const t1UsersList = await prisma.user.findMany({
+    where: { tenantId: DEMO_TENANT_ID },
+  });
+  const t1MantItems = await prisma.mantItem.findMany({
+    where: { isGlobal: true },
+  });
 
-  const repuestosToyota = t1ProviderList.find(p => p.name === 'Repuestos Toyota');
-  const lubricantesShell = t1ProviderList.find(p => p.name === 'Lubricantes Shell');
+  const repuestosToyota = t1ProviderList.find(
+    p => p.name === 'Repuestos Toyota'
+  );
+  const lubricantesShell = t1ProviderList.find(
+    p => p.name === 'Lubricantes Shell'
+  );
   const tallerCentral = t1TechnicianList.find(t => t.name === 'Taller Central');
   const owner = t1UsersList.find(u => u.role === 'OWNER');
 
-  if (t1VehiclesList.length > 0 && repuestosToyota && lubricantesShell && owner) {
+  if (
+    t1VehiclesList.length > 0 &&
+    repuestosToyota &&
+    lubricantesShell &&
+    owner
+  ) {
     // WO 1: Cambio aceite ABC-123 (completado)
     const wo1 = await prisma.workOrder.create({
       data: {
@@ -2946,7 +2973,8 @@ async function main() {
     await prisma.workOrderItem.create({
       data: {
         workOrderId: wo1.id,
-        mantItemId: t1MantItems.find(i => i.name === 'Cambio aceite motor')?.id || '',
+        mantItemId:
+          t1MantItems.find(i => i.name === 'Cambio aceite motor')?.id || '',
         tenantId: DEMO_TENANT_ID,
         description: 'Aceite Shell Helix HX7 10W-40',
         partNumber: 'SHELL-HELIX-HX7-10W40',
@@ -2965,7 +2993,8 @@ async function main() {
     await prisma.workOrderItem.create({
       data: {
         workOrderId: wo1.id,
-        mantItemId: t1MantItems.find(i => i.name === 'Cambio filtro aceite')?.id || '',
+        mantItemId:
+          t1MantItems.find(i => i.name === 'Cambio filtro aceite')?.id || '',
         tenantId: DEMO_TENANT_ID,
         description: 'Filtro Aceite BOSCH',
         partNumber: 'BOSCH-0986AF0134',
@@ -2984,7 +3013,8 @@ async function main() {
     await prisma.workOrderItem.create({
       data: {
         workOrderId: wo1.id,
-        mantItemId: t1MantItems.find(i => i.name === 'Cambio filtro aire')?.id || '',
+        mantItemId:
+          t1MantItems.find(i => i.name === 'Cambio filtro aire')?.id || '',
         tenantId: DEMO_TENANT_ID,
         description: 'Filtro Aire BOSCH',
         partNumber: 'BOSCH-F026400364',
@@ -3027,7 +3057,8 @@ async function main() {
     await prisma.workOrderItem.create({
       data: {
         workOrderId: wo2.id,
-        mantItemId: t1MantItems.find(i => i.name === 'Cambio aceite motor')?.id || '',
+        mantItemId:
+          t1MantItems.find(i => i.name === 'Cambio aceite motor')?.id || '',
         tenantId: DEMO_TENANT_ID,
         description: 'Aceite Mobil Super 3000 5W-40',
         partNumber: 'MOBIL-SUPER-3000-5W40',
@@ -3046,7 +3077,8 @@ async function main() {
     await prisma.workOrderItem.create({
       data: {
         workOrderId: wo2.id,
-        mantItemId: t1MantItems.find(i => i.name === 'Cambio filtro aceite')?.id || '',
+        mantItemId:
+          t1MantItems.find(i => i.name === 'Cambio filtro aceite')?.id || '',
         tenantId: DEMO_TENANT_ID,
         description: 'Filtro Aceite MANN',
         partNumber: 'MANN-W920/21',
@@ -3088,7 +3120,9 @@ async function main() {
     await prisma.workOrderItem.create({
       data: {
         workOrderId: wo3.id,
-        mantItemId: t1MantItems.find(i => i.name === 'Cambio pastillas freno delanteras')?.id || '',
+        mantItemId:
+          t1MantItems.find(i => i.name === 'Cambio pastillas freno delanteras')
+            ?.id || '',
         tenantId: DEMO_TENANT_ID,
         description: 'Pastillas Freno Delanteras BOSCH',
         partNumber: 'BOSCH-0986AB1234',
@@ -3126,7 +3160,8 @@ async function main() {
     await prisma.workOrderItem.create({
       data: {
         workOrderId: wo4.id,
-        mantItemId: t1MantItems.find(i => i.name === 'Cambio aceite motor')?.id || '',
+        mantItemId:
+          t1MantItems.find(i => i.name === 'Cambio aceite motor')?.id || '',
         tenantId: DEMO_TENANT_ID,
         description: 'Aceite Castrol GTX 15W-40',
         partNumber: 'CASTROL-GTX-15W40',
@@ -3148,58 +3183,130 @@ async function main() {
   // ========================================
   // INVOICES - Tenant 1 (facturas de proveedores)
   // ========================================
-  console.log('   Creando Invoices con Items, Movimientos e Historial de Precios...');
+  console.log(
+    '   Creando Invoices con Items, Movimientos e Historial de Precios...'
+  );
 
-  if (repuestosToyota && lubricantesShell && owner && t1VehiclesList.length > 0) {
+  if (
+    repuestosToyota &&
+    lubricantesShell &&
+    owner &&
+    t1VehiclesList.length > 0
+  ) {
     // Collect created inventory items to get IDs
-    const t1DbInventory = await prisma.inventoryItem.findMany({ where: { tenantId: DEMO_TENANT_ID } });
+    const t1DbInventory = await prisma.inventoryItem.findMany({
+      where: { tenantId: DEMO_TENANT_ID },
+    });
 
     const demoInvoicesData = [
       {
-        number: 'FAC-2025-001', date: '2025-01-16', due: '2025-02-15', supplier: repuestosToyota.id,
+        number: 'FAC-2025-001',
+        date: '2025-01-16',
+        due: '2025-02-15',
+        supplier: repuestosToyota.id,
         items: [
-          { masterPartId: pBoschFiltAce.id, desc: 'Filtro Aceite BOSCH 0986AF0134', qty: 6, price: 28000 },
-          { masterPartId: pBoschFiltAire.id, desc: 'Filtro Aire BOSCH F026400364', qty: 4, price: 42000 }
-        ]
+          {
+            masterPartId: pBoschFiltAce.id,
+            desc: 'Filtro Aceite BOSCH 0986AF0134',
+            qty: 6,
+            price: 28000,
+          },
+          {
+            masterPartId: pBoschFiltAire.id,
+            desc: 'Filtro Aire BOSCH F026400364',
+            qty: 4,
+            price: 42000,
+          },
+        ],
       },
       {
-        number: 'FAC-2025-002', date: '2025-01-20', due: '2025-02-19', supplier: lubricantesShell.id,
+        number: 'FAC-2025-002',
+        date: '2025-01-20',
+        due: '2025-02-19',
+        supplier: lubricantesShell.id,
         items: [
-          { masterPartId: pShell.id, desc: 'Aceite Shell Helix HX7 10W-40', qty: 20, price: 45000 }
-        ]
+          {
+            masterPartId: pShell.id,
+            desc: 'Aceite Shell Helix HX7 10W-40',
+            qty: 20,
+            price: 45000,
+          },
+        ],
       },
       {
-        number: 'FAC-2025-003', date: '2025-02-05', due: '2025-03-05', supplier: repuestosToyota.id,
+        number: 'FAC-2025-003',
+        date: '2025-02-05',
+        due: '2025-03-05',
+        supplier: repuestosToyota.id,
         items: [
-          { masterPartId: pBoschFiltComb.id, desc: 'Filtro Combustible BOSCH', qty: 3, price: 55000 },
-          { masterPartId: pCastrolDOT4.id, desc: 'Liq Frenos Castrol DOT4', qty: 8, price: 22000 }
-        ]
+          {
+            masterPartId: pBoschFiltComb.id,
+            desc: 'Filtro Combustible BOSCH',
+            qty: 3,
+            price: 55000,
+          },
+          {
+            masterPartId: pCastrolDOT4.id,
+            desc: 'Liq Frenos Castrol DOT4',
+            qty: 8,
+            price: 22000,
+          },
+        ],
       },
       {
-        number: 'FAC-2025-004', date: '2025-02-15', due: '2025-03-15', supplier: repuestosToyota.id, // Pastillas
+        number: 'FAC-2025-004',
+        date: '2025-02-15',
+        due: '2025-03-15',
+        supplier: repuestosToyota.id, // Pastillas
         items: [
-          { masterPartId: pBoschPastillas.id, desc: 'Pastillas Freno Delanteras BOSCH', qty: 4, price: 185000 }
-        ]
+          {
+            masterPartId: pBoschPastillas.id,
+            desc: 'Pastillas Freno Delanteras BOSCH',
+            qty: 4,
+            price: 185000,
+          },
+        ],
       },
       {
-        number: 'FAC-2025-005', date: '2025-03-01', due: '2025-03-31', supplier: lubricantesShell.id,
+        number: 'FAC-2025-005',
+        date: '2025-03-01',
+        due: '2025-03-31',
+        supplier: lubricantesShell.id,
         // Price variation! Trigger financial alert later
         items: [
-          { masterPartId: pShell.id, desc: 'Aceite Shell Helix HX7 10W-40', qty: 5, price: 58000 }
-        ]
+          {
+            masterPartId: pShell.id,
+            desc: 'Aceite Shell Helix HX7 10W-40',
+            qty: 5,
+            price: 58000,
+          },
+        ],
       },
       {
-        number: 'FAC-2025-006', date: '2025-03-10', due: '2025-04-09', supplier: repuestosToyota.id,
+        number: 'FAC-2025-006',
+        date: '2025-03-10',
+        due: '2025-04-09',
+        supplier: repuestosToyota.id,
         items: [
-          { masterPartId: pBoschFiltAce.id, desc: 'Filtro Aceite BOSCH 0986AF0134', qty: 2, price: 29000 },
-          { masterPartId: pBoschFiltAire.id, desc: 'Filtro Aire BOSCH F026400364', qty: 2, price: 44000 }
-        ]
-      }
+          {
+            masterPartId: pBoschFiltAce.id,
+            desc: 'Filtro Aceite BOSCH 0986AF0134',
+            qty: 2,
+            price: 29000,
+          },
+          {
+            masterPartId: pBoschFiltAire.id,
+            desc: 'Filtro Aire BOSCH F026400364',
+            qty: 2,
+            price: 44000,
+          },
+        ],
+      },
     ];
 
     for (const invData of demoInvoicesData) {
       let subtotal = 0;
-      invData.items.forEach(i => subtotal += i.qty * i.price);
+      invData.items.forEach(i => (subtotal += i.qty * i.price));
       const tax = subtotal * 0.19;
       const total = subtotal + tax;
 
@@ -3218,7 +3325,7 @@ async function main() {
           approvedBy: owner.id,
           approvedAt: new Date(invData.date),
           registeredBy: owner.id,
-        }
+        },
       });
 
       for (const item of invData.items) {
@@ -3237,7 +3344,7 @@ async function main() {
             taxRate: 19,
             taxAmount: itemTax,
             total: itemSubtotal + itemTax,
-          }
+          },
         });
 
         // Price History
@@ -3249,11 +3356,13 @@ async function main() {
             price: item.price,
             quantity: item.qty,
             recordedAt: new Date(invData.date),
-          }
+          },
         });
 
         // Inventory Movement (Simulated as IN)
-        const invItem = t1DbInventory.find(inv => inv.masterPartId === item.masterPartId);
+        const invItem = t1DbInventory.find(
+          inv => inv.masterPartId === item.masterPartId
+        );
         if (invItem) {
           await prisma.inventoryMovement.create({
             data: {
@@ -3271,13 +3380,15 @@ async function main() {
               referenceId: createdInv.id,
               performedBy: owner.id,
               performedAt: new Date(invData.date),
-            }
+            },
           });
         }
       }
     }
 
-    console.log(`   ${demoInvoicesData.length} Invoices creadas con historial y movimientos`);
+    console.log(
+      `   ${demoInvoicesData.length} Invoices creadas con historial y movimientos`
+    );
   }
 
   // ========================================
@@ -3287,14 +3398,22 @@ async function main() {
 
   const t1VehiclesWithProgram = await prisma.vehicle.findMany({
     where: { tenantId: DEMO_TENANT_ID },
-    include: { vehicleMantProgram: { include: { packages: { include: { items: true } } } } }
+    include: {
+      vehicleMantProgram: {
+        include: { packages: { include: { items: true } } },
+      },
+    },
   });
 
   if (t1VehiclesWithProgram.length > 0) {
     // Alert para ABC-123 (próximo mantenimiento)
-    const abc123 = t1VehiclesWithProgram.find(v => v.licensePlate === 'ABC-123');
+    const abc123 = t1VehiclesWithProgram.find(
+      v => v.licensePlate === 'ABC-123'
+    );
     if (abc123 && abc123.vehicleMantProgram) {
-      const nextPkg = abc123.vehicleMantProgram.packages.find(p => p.status === 'PENDING');
+      const nextPkg = abc123.vehicleMantProgram.packages.find(
+        p => p.status === 'PENDING'
+      );
       if (nextPkg && nextPkg.items.length > 0) {
         const nextItem = nextPkg.items[0];
         await prisma.maintenanceAlert.create({
@@ -3324,13 +3443,16 @@ async function main() {
     }
 
     // Alert para DEF-456 (crítico - próximo)
-    const def456 = t1VehiclesWithProgram.find(v => v.licensePlate === 'DEF-456');
+    const def456 = t1VehiclesWithProgram.find(
+      v => v.licensePlate === 'DEF-456'
+    );
     if (def456 && def456.vehicleMantProgram) {
       await prisma.maintenanceAlert.create({
         data: {
           tenantId: DEMO_TENANT_ID,
           vehicleId: def456.id,
-          programItemId: def456.vehicleMantProgram.packages[0]?.items[0]?.id || '',
+          programItemId:
+            def456.vehicleMantProgram.packages[0]?.items[0]?.id || '',
           type: 'PREVENTIVE',
           category: 'MAJOR_COMPONENT',
           itemName: 'Cambio filtro combustible',
@@ -3351,13 +3473,16 @@ async function main() {
     }
 
     // Alert para GHI-789 (pendiente)
-    const ghi789 = t1VehiclesWithProgram.find(v => v.licensePlate === 'GHI-789');
+    const ghi789 = t1VehiclesWithProgram.find(
+      v => v.licensePlate === 'GHI-789'
+    );
     if (ghi789 && ghi789.vehicleMantProgram) {
       await prisma.maintenanceAlert.create({
         data: {
           tenantId: DEMO_TENANT_ID,
           vehicleId: ghi789.id,
-          programItemId: ghi789.vehicleMantProgram.packages[0]?.items[0]?.id || '',
+          programItemId:
+            ghi789.vehicleMantProgram.packages[0]?.items[0]?.id || '',
           type: 'PREVENTIVE',
           category: 'ROUTINE',
           itemName: 'Rotación neumaticos',
@@ -3385,14 +3510,17 @@ async function main() {
 
   const invoice5 = await prisma.invoice.findFirst({
     where: { tenantId: DEMO_TENANT_ID, invoiceNumber: 'FAC-2025-005' },
-    include: { items: { include: { masterPart: true } } }
+    include: { items: { include: { masterPart: true } } },
   });
 
   if (invoice5 && invoice5.items.length > 0) {
     const item = invoice5.items[0];
     if (item.masterPart && item.unitPrice && item.masterPart.referencePrice) {
       const unitPrice = Number(item.unitPrice);
-      const refPrice = Number(item.masterPart.referencePrice) > 0 ? Number(item.masterPart.referencePrice) : 45000;
+      const refPrice =
+        Number(item.masterPart.referencePrice) > 0
+          ? Number(item.masterPart.referencePrice)
+          : 45000;
       const deviation = ((unitPrice - refPrice) / refPrice) * 100;
 
       await prisma.financialAlert.create({
@@ -3404,7 +3532,11 @@ async function main() {
           severity: deviation > 20 ? 'CRITICAL' : 'HIGH',
           status: 'PENDING',
           message: `Desviación del ${deviation.toFixed(1)}% en compra de ${item.masterPart.description}. Referencia: $${refPrice}, Compra: $${unitPrice}`,
-          details: { expected: refPrice, actual: unitPrice, deviation: deviation.toFixed(1) },
+          details: {
+            expected: refPrice,
+            actual: unitPrice,
+            deviation: deviation.toFixed(1),
+          },
         },
       });
     }
@@ -3412,7 +3544,9 @@ async function main() {
 
   console.log('   1 Financial Alert creado');
 
-  console.log(`\n   Demo Tenant "${(await prisma.tenant.findUnique({ where: { id: DEMO_TENANT_ID } }))?.name}" COMPLETO.\n`);
+  console.log(
+    `\n   Demo Tenant "${(await prisma.tenant.findUnique({ where: { id: DEMO_TENANT_ID } }))?.name}" COMPLETO.\n`
+  );
 
   // ========================================
   // SUMMARY
@@ -4050,6 +4184,12 @@ async function main() {
 
   // Hino 300 Dutro
   await seedHino300Dutro(prisma);
+
+  // International 7400 WorkStar
+  await seedInternational7400WorkStar(prisma);
+
+  // Tempario Automotriz
+  await seedTemparioAutomotriz(prisma);
 
   console.log('\nAISLAMIENTO:');
   console.log('  - Demo tenant tiene datos propios');

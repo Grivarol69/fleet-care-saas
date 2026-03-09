@@ -159,7 +159,7 @@ export async function POST(req: Request) {
 
     // Obtener datos del vehículo
     const vehicle = await tenantPrisma.vehicle.findUnique({
-      where: { id: vehicleId, },
+      where: { id: vehicleId },
       include: {
         brand: true,
         line: true,
@@ -210,6 +210,7 @@ export async function POST(req: Request) {
       // 1. Crear VehicleMantProgram
       const program = await tx.vehicleMantProgram.create({
         data: {
+          tenantId: user.tenantId,
           vehicleId: vehicleId,
           name: `Programa ${vehicle.brand.name} ${vehicle.line.name} ${vehicle.licensePlate}`,
           description:
@@ -232,6 +233,7 @@ export async function POST(req: Request) {
 
         const vehiclePackage = await tx.vehicleProgramPackage.create({
           data: {
+            tenantId: user.tenantId,
             programId: program.id,
             name: templatePackage.name,
             description: templatePackage.description,
@@ -249,6 +251,7 @@ export async function POST(req: Request) {
         for (const packageItem of templatePackage.packageItems) {
           await tx.vehicleProgramItem.create({
             data: {
+              tenantId: user.tenantId,
               packageId: vehiclePackage.id,
               mantItemId: packageItem.mantItemId,
               mantType: packageItem.mantItem.mantType,
@@ -275,6 +278,7 @@ export async function POST(req: Request) {
       // 4. Crear package para mantenimientos correctivos
       await tx.vehicleProgramPackage.create({
         data: {
+          tenantId: user.tenantId,
           programId: program.id,
           name: 'Items Mantenimiento Correctivo',
           description: 'Package automático para mantenimientos correctivos',
@@ -315,6 +319,7 @@ export async function POST(req: Request) {
             const historicalVehiclePackage =
               await tx.vehicleProgramPackage.create({
                 data: {
+                  tenantId: user.tenantId,
                   programId: program.id,
                   name: templatePackage.name,
                   description: templatePackage.description,
@@ -332,6 +337,7 @@ export async function POST(req: Request) {
             for (const packageItem of templatePackage.packageItems) {
               await tx.vehicleProgramItem.create({
                 data: {
+                  tenantId: user.tenantId,
                   packageId: historicalVehiclePackage.id,
                   mantItemId: packageItem.mantItemId,
                   mantType: packageItem.mantItem.mantType,
@@ -375,6 +381,7 @@ export async function POST(req: Request) {
         if (lastMaintenance.provider || lastMaintenance.cost) {
           await tx.workOrder.create({
             data: {
+              tenantId: user.tenantId,
               vehicleId: vehicleId,
               mantType: 'PREVENTIVE', // fixed: matches enum
               status: 'COMPLETED',

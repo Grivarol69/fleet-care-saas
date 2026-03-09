@@ -7,19 +7,21 @@ export async function GET(
 ) {
   try {
     const { user, tenantPrisma } = await requireCurrentUser();
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!user)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { id } = await params;
 
     const workOrder = await tenantPrisma.workOrder.findUnique({
       where: { id, tenantId: user.tenantId },
     });
-    if (!workOrder) return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
+    if (!workOrder)
+      return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
 
     const subTasks = await tenantPrisma.workOrderSubTask.findMany({
       where: { workOrderItem: { workOrderId: id } },
       include: {
-        procedure: { select: { id: true, mantItemId: true, baseHours: true } },
-        technician: { select: { id: true, name: true } },
+        procedure: { select: { id: true, mantItemId: true } },
+        temparioItem: { select: { id: true, code: true, description: true } },
       },
       orderBy: [{ workOrderItemId: 'asc' }, { sequence: 'asc' }],
     });
@@ -45,31 +47,35 @@ export async function POST(
 ) {
   try {
     const { user, tenantPrisma } = await requireCurrentUser();
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!user)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { id: workOrderId } = await params;
 
     const body = await req.json();
-    const { workOrderItemId, description, directHours, indirectHours, technicianId, notes, sequence } = body;
+    const { workOrderItemId, description, directHours, notes, sequence } = body;
 
     if (!description)
-      return NextResponse.json({ error: 'description es requerido' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'description es requerido' },
+        { status: 400 }
+      );
 
     const workOrderItem = await tenantPrisma.workOrderItem.findUnique({
       where: { id: workOrderItemId, workOrderId },
     });
     if (!workOrderItem)
-      return NextResponse.json({ error: 'WorkOrderItem no pertenece a esta OT' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'WorkOrderItem no pertenece a esta OT' },
+        { status: 400 }
+      );
 
     const subTask = await tenantPrisma.workOrderSubTask.create({
       data: {
         workOrderItemId,
         description,
         procedureId: null,
-        stepOrder: null,
         standardHours: null,
         directHours: directHours ?? null,
-        indirectHours: indirectHours ?? null,
-        technicianId: technicianId ?? null,
         notes: notes ?? null,
         sequence: sequence ?? 0,
         status: 'PENDING',

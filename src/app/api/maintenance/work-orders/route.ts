@@ -274,6 +274,7 @@ export async function POST(request: NextRequest) {
     // 4. Crear WorkOrder
     const workOrder = await tenantPrisma.workOrder.create({
       data: {
+        tenantId: user.tenantId,
         vehicleId,
         title,
         description: description || null,
@@ -332,6 +333,7 @@ export async function POST(request: NextRequest) {
         const itemCost = alertCosts[index] ?? 0;
         return tenantPrisma.workOrderItem.create({
           data: {
+            tenantId: user.tenantId,
             workOrderId: workOrder.id,
             mantItemId: alert.programItem.mantItemId,
             description: alert.itemName,

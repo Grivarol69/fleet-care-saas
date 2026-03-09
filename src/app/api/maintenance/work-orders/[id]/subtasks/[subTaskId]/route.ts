@@ -8,24 +8,24 @@ export async function PATCH(
 ) {
   try {
     const { user, tenantPrisma } = await requireCurrentUser();
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!user)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { subTaskId } = await params;
 
     const body = await req.json();
-    const { directHours, indirectHours, status, notes, technicianId } = body;
+    const { directHours, status, notes } = body;
 
     const existing = await tenantPrisma.workOrderSubTask.findUnique({
       where: { id: subTaskId },
     });
-    if (!existing) return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
+    if (!existing)
+      return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
 
     const data: Prisma.WorkOrderSubTaskUpdateInput = {};
 
-    if (directHours !== undefined && directHours >= 0) data.directHours = directHours;
-    if (indirectHours !== undefined && indirectHours >= 0) data.indirectHours = indirectHours;
+    if (directHours !== undefined && directHours >= 0)
+      data.directHours = directHours;
     if (notes !== undefined) data.notes = notes;
-    if (technicianId !== undefined)
-      data.technician = technicianId ? { connect: { id: technicianId } } : { disconnect: true };
 
     if (status !== undefined) {
       data.status = status;
@@ -54,13 +54,15 @@ export async function DELETE(
 ) {
   try {
     const { user, tenantPrisma } = await requireCurrentUser();
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!user)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { subTaskId } = await params;
 
     const existing = await tenantPrisma.workOrderSubTask.findUnique({
       where: { id: subTaskId },
     });
-    if (!existing) return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
+    if (!existing)
+      return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
 
     if (existing.status !== 'PENDING')
       return NextResponse.json(

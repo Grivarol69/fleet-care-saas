@@ -53,8 +53,8 @@ export async function POST(req: Request) {
     // Verificar que no exista un técnico con el mismo nombre
     const existingTechnician = await tenantPrisma.technician.findFirst({
       where: {
-          name: name.trim(),
-        },
+        name: name.trim(),
+      },
     });
 
     if (existingTechnician) {
@@ -66,11 +66,12 @@ export async function POST(req: Request) {
 
     const technician = await tenantPrisma.technician.create({
       data: {
+        tenantId: user.tenantId,
         name: name.trim(),
         email: email?.trim() || null,
         phone: phone?.trim() || null,
         specialty: specialty?.trim() || null,
-        },
+      },
     });
 
     return NextResponse.json(technician, { status: 201 });

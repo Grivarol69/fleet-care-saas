@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { tenantService } from '@/lib/tenant';
 import { requireCurrentUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 import type { InputJsonValue } from '@prisma/client/runtime/library';
+import { Prisma } from '@prisma/client';
 
 // GET /api/tenants - Listar todos los tenants (solo OWNER de su propio tenant)
 export async function GET() {
@@ -79,7 +81,7 @@ export async function POST(request: NextRequest) {
       : null;
 
     // Crear tenant
-    const tenant = await tenantPrisma.tenant.create({
+    const tenant = await prisma.tenant.create({
       data: {
         name: name.trim(),
         slug: slug,
@@ -95,7 +97,7 @@ export async function POST(request: NextRequest) {
 
     // Si hay preset, crear datos iniciales
     if (presetConfig) {
-      await tenantPrisma.$transaction(async tx => {
+      await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         await tenantService.createInitialTenantData(tx, tenant.id);
       });
     }

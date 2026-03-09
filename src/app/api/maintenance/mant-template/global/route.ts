@@ -4,7 +4,7 @@ import { requireCurrentUser } from '@/lib/auth';
 
 export async function GET(_req: Request) {
   try {
-    const { user, tenantPrisma } = await requireCurrentUser();
+    const { user } = await requireCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

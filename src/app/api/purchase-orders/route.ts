@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
 
     // Validar WorkOrder existe y pertenece al tenant
     const workOrder = await tenantPrisma.workOrder.findUnique({
-      where: { id: workOrderId, },
+      where: { id: workOrderId },
     });
 
     if (!workOrder) {
@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
 
     // Validar Provider existe y pertenece al tenant
     const provider = await tenantPrisma.provider.findUnique({
-      where: { id: providerId, },
+      where: { id: providerId },
     });
 
     if (!provider) {
@@ -173,6 +173,7 @@ export async function POST(request: NextRequest) {
     const purchaseOrder = await tenantPrisma.$transaction(async tx => {
       const po = await tx.purchaseOrder.create({
         data: {
+          tenantId: user.tenantId,
           workOrderId,
           orderNumber,
           type: type as PurchaseOrderType,

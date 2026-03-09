@@ -6,7 +6,7 @@ import { canManageMaintenancePrograms } from '@/lib/permissions';
 
 export async function GET(request: NextRequest) {
   try {
-    const { user, tenantPrisma } = await requireCurrentUser();
+    const { user } = await requireCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

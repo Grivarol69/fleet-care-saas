@@ -20,8 +20,8 @@ export async function GET(req: Request) {
 
     const vehicle = await tenantPrisma.vehicle.findFirst({
       where: {
-          licensePlate: vehiclePlate,
-        },
+        licensePlate: vehiclePlate,
+      },
     });
 
     if (!vehicle) {
@@ -83,8 +83,8 @@ export async function POST(req: Request) {
 
     const vehicle = await tenantPrisma.vehicle.findFirst({
       where: {
-          licensePlate: vehiclePlate,
-        },
+        licensePlate: vehiclePlate,
+      },
     });
 
     if (!vehicle) {
@@ -109,6 +109,7 @@ export async function POST(req: Request) {
 
     const newDocument = await tenantPrisma.document.create({
       data: {
+        tenantId: user.tenantId,
         vehicleId: vehicle.id,
         documentTypeId,
         fileName,

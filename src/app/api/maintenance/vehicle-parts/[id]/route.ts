@@ -13,7 +13,7 @@ interface RouteParams {
  */
 export async function GET(_req: NextRequest, { params }: RouteParams) {
   try {
-    const { user, tenantPrisma } = await requireCurrentUser();
+    const { user } = await requireCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

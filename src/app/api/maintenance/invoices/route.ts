@@ -209,6 +209,7 @@ export async function POST(request: NextRequest) {
       // 1. Crear Invoice
       const newInvoice = await tx.invoice.create({
         data: {
+          tenantId: user.tenantId,
           invoiceNumber,
           invoiceDate: new Date(invoiceDate),
           dueDate: dueDate ? new Date(dueDate) : null,
@@ -230,6 +231,7 @@ export async function POST(request: NextRequest) {
         items.map((item: InvoiceItemInput) =>
           tx.invoiceItem.create({
             data: {
+              tenantId: user.tenantId,
               invoiceId: newInvoice.id,
               masterPartId: item.masterPartId || null,
               workOrderItemId: item.workOrderItemId || null,

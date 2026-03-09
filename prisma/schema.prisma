@@ -72,6 +72,7 @@ model Tenant {
   ticketPartEntries      TicketPartEntry[]
   costCenters            CostCenter[]
   mantItemProcedures     MantItemProcedure[]
+  temparios              Tempario[]
 
   @@index([slug])
   @@index([subscriptionStatus])
@@ -129,6 +130,9 @@ model User {
   priceHistoryApproved  PartPriceHistory[] @relation("PriceHistoryApprover")
   priceHistoryPurchased PartPriceHistory[] @relation("PriceHistoryPurchaser")
   paymentsRegistered    InvoicePayment[]   @relation("PaymentRegistrar")
+
+  technicianProfile Technician?
+  driverProfile     Driver?
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -446,6 +450,46 @@ model MantItemVehiclePart {
 }
 
 // ========================================
+// TEMPARIO: Catálogo de Operaciones Automotrices
+// ========================================
+
+model Tempario {
+  id          String   @id @default(uuid())
+  tenantId    String?
+  isGlobal    Boolean  @default(false)
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant Tenant?        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  items  TemparioItem[]
+
+  @@index([tenantId])
+  @@index([isGlobal])
+}
+
+model TemparioItem {
+  id             String   @id @default(uuid())
+  temparioId     String
+  code           String
+  description    String
+  category       String?
+  referenceHours Decimal  @db.Decimal(6, 2)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tempario       Tempario               @relation(fields: [temparioId], references: [id], onDelete: Cascade)
+  procedureSteps MantItemProcedureStep[]
+  subTasks       WorkOrderSubTask[]
+
+  @@unique([temparioId, code])
+  @@index([temparioId])
+  @@index([code])
+}
+
+// ========================================
 // KNOWLEDGE BASE: Procedimientos de Labor (Tempario)
 // Vincula MantItem + Marca? + Línea? → Procedimiento con pasos y horas estándar
 // ========================================
@@ -463,21 +507,32 @@ model MantItemProcedure {
   vehicleLineId  String?
   vehicleLine    VehicleLine?  @relation(fields: [vehicleLineId], references: [id])
 
-  baseHours Decimal @db.Decimal(6, 2)
-  // [{ "order": 1, "description": "Drenar aceite", "estimatedHours": 0.30 }, ...]
-  steps     Json    @default("[]")
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant            Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant            Tenant?                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   workOrderSubTasks WorkOrderSubTask[]
+  steps             MantItemProcedureStep[]
 
-  // Unicidad manejada con partial indexes en la migración SQL (PostgreSQL no enforcea @@unique con NULLs)
   @@index([mantItemId])
   @@index([vehicleBrandId, vehicleLineId])
   @@index([isGlobal])
   @@index([tenantId])
+}
+
+model MantItemProcedureStep {
+  id             String  @id @default(uuid())
+  procedureId    String
+  temparioItemId String
+  order          Int
+  standardHours  Decimal @db.Decimal(6, 2)
+
+  procedure    MantItemProcedure @relation(fields: [procedureId], references: [id], onDelete: Cascade)
+  temparioItem TemparioItem      @relation(fields: [temparioItemId], references: [id])
+
+  @@unique([procedureId, order])
+  @@index([procedureId])
+  @@index([temparioItemId])
 }
 
 // ========================================
@@ -670,6 +725,9 @@ model WorkOrderItem {
   executionMileage Int?
   notes            String?
   status           WorkOrderStatus @default(PENDING)
+  technicianId          String?
+  indirectHours         Decimal? @db.Decimal(6, 2)
+  indirectJustification String?
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
@@ -681,7 +739,9 @@ model WorkOrderItem {
   ticketPartEntries  TicketPartEntry[]
   purchaseOrderItems PurchaseOrderItem[]
   workOrderSubTasks  WorkOrderSubTask[]
+  technician Technician? @relation(fields: [technicianId], references: [id])
 
+  @@index([technicianId])
   @@index([workOrderId])
   @@index([mantItemId])
   @@index([supplier])
@@ -1176,12 +1236,15 @@ model Technician {
   vehicleProgramItems    VehicleProgramItem[] // ✅ CURRENT ARCHITECTURE
   internalWorkTickets    InternalWorkTicket[]
   ticketLaborEntries     TicketLaborEntry[]
-  workOrderSubTasks      WorkOrderSubTask[]
+  workOrderItems         WorkOrderItem[]
 
   // Datos para Taller Interno
   employmentType EmploymentType @default(INTERNAL)
   hourlyRate     Decimal?       @db.Decimal(10, 2)
   location       String?
+
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id])
 
   @@unique([tenantId, name])
   @@index([tenantId])
@@ -1239,6 +1302,9 @@ model Driver {
   tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   odometerLogs   OdometerLog[]
   vehicleDrivers VehicleDriver[]
+
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id])
 
   @@unique([tenantId, licenseNumber])
   @@index([tenantId])
@@ -2156,18 +2222,16 @@ enum SiigoPersonType {
 model WorkOrderSubTask {
   id              String  @id @default(uuid())
   workOrderItemId String
-  procedureId     String? // null = tarea eventual/manual
-  stepOrder       Int?    // posición en steps JSON; null = eventual
+  procedureId     String?
+  temparioItemId  String?
 
-  description   String
-  standardHours Decimal? @db.Decimal(6, 2) // del tempario, NUNCA editable por técnico
-  directHours   Decimal? @db.Decimal(6, 2) // horas productivas reales
-  indirectHours Decimal? @db.Decimal(6, 2) // tiempo perdido — solo métricas, no se cobra
+  description   String?
+  standardHours Decimal? @db.Decimal(6, 2)
+  directHours   Decimal? @db.Decimal(6, 2)
 
-  status       WorkOrderSubTaskStatus @default(PENDING)
-  technicianId String?
-  sequence     Int                    @default(0)
-  notes        String?                // causa del tiempo indirecto
+  status    WorkOrderSubTaskStatus @default(PENDING)
+  sequence  Int                    @default(0)
+  notes     String?
 
   completedAt DateTime?
   createdAt   DateTime  @default(now())
@@ -2175,11 +2239,11 @@ model WorkOrderSubTask {
 
   workOrderItem WorkOrderItem      @relation(fields: [workOrderItemId], references: [id], onDelete: Cascade)
   procedure     MantItemProcedure? @relation(fields: [procedureId], references: [id])
-  technician    Technician?        @relation(fields: [technicianId], references: [id])
+  temparioItem  TemparioItem?      @relation(fields: [temparioItemId], references: [id])
 
   @@index([workOrderItemId])
   @@index([procedureId])
-  @@index([technicianId])
+  @@index([temparioItemId])
   @@index([status])
 }
 

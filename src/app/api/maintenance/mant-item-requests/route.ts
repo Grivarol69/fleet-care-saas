@@ -112,6 +112,7 @@ export async function POST(req: Request) {
 
     const itemRequest = await tenantPrisma.mantItemRequest.create({
       data: {
+        tenantId: user.tenantId,
         suggestedName: suggestedName.trim(),
         description: description?.trim() || null,
         mantType,

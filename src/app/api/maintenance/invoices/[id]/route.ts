@@ -14,7 +14,7 @@ export async function GET({ params }: { params: Promise<{ id: string }> }) {
     const invoice = await tenantPrisma.invoice.findUnique({
       where: {
         id,
-        },
+      },
       include: {
         supplier: {
           select: {
@@ -138,7 +138,7 @@ export async function PATCH(
 
     // Validar que existe
     const existingInvoice = await tenantPrisma.invoice.findUnique({
-      where: { id, },
+      where: { id },
     });
 
     if (!existingInvoice) {
@@ -267,6 +267,7 @@ export async function PATCH(
           if (invoiceItem.masterPartId) {
             await tx.partPriceHistory.create({
               data: {
+                tenantId: user.tenantId,
                 masterPartId: invoiceItem.masterPartId,
                 supplierId: invoice.supplierId,
                 price: invoiceItem.unitPrice,

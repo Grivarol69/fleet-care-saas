@@ -50,7 +50,7 @@ export async function POST(
 
     // 0. Verify the WorkOrder belongs to this tenant
     const workOrder = await tenantPrisma.workOrder.findUnique({
-      where: { id: workOrderId, },
+      where: { id: workOrderId },
     });
     if (!workOrder) {
       return new NextResponse('Not Found', { status: 404 });
@@ -59,6 +59,7 @@ export async function POST(
     // 1. Create the Expense
     const expense = await tenantPrisma.workOrderExpense.create({
       data: {
+        tenantId: user.tenantId,
         workOrderId,
         description: body.description,
         expenseType: body.expenseType,
@@ -119,7 +120,7 @@ export async function GET(
 
     // Verify the WorkOrder belongs to this tenant before exposing its expenses
     const workOrder = await tenantPrisma.workOrder.findUnique({
-      where: { id: workOrderId, },
+      where: { id: workOrderId },
     });
     if (!workOrder) {
       return new NextResponse('Not Found', { status: 404 });

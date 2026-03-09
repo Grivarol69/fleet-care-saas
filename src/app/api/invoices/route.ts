@@ -121,8 +121,8 @@ export async function POST(request: NextRequest) {
     // Validar que el número de factura no exista para este tenant
     const existingInvoice = await tenantPrisma.invoice.findFirst({
       where: {
-          invoiceNumber,
-        },
+        invoiceNumber,
+      },
     });
 
     if (existingInvoice) {
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
       const workOrder = await tenantPrisma.workOrder.findUnique({
         where: {
           id: workOrderId,
-          },
+        },
       });
 
       if (!workOrder) {
@@ -152,7 +152,7 @@ export async function POST(request: NextRequest) {
     const provider = await tenantPrisma.provider.findUnique({
       where: {
         id: supplierId,
-        },
+      },
     });
 
     if (!provider) {
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
       purchaseOrder = await tenantPrisma.purchaseOrder.findUnique({
         where: {
           id: purchaseOrderId,
-          },
+        },
         include: { items: true },
       });
 
@@ -192,6 +192,7 @@ export async function POST(request: NextRequest) {
       // 1. Crear Invoice
       const newInvoice = await tx.invoice.create({
         data: {
+          tenantId: user.tenantId,
           invoiceNumber,
           invoiceDate: new Date(invoiceDate),
           dueDate: dueDate ? new Date(dueDate) : null,
@@ -214,6 +215,7 @@ export async function POST(request: NextRequest) {
         items.map((item: InvoiceItemInput) =>
           tx.invoiceItem.create({
             data: {
+              tenantId: user.tenantId,
               invoiceId: newInvoice.id,
               description: item.description,
               quantity: item.quantity,
@@ -238,6 +240,7 @@ export async function POST(request: NextRequest) {
           // Registrar en PartPriceHistory
           await tx.partPriceHistory.create({
             data: {
+              tenantId: user.tenantId,
               masterPartId: invoiceItem.masterPartId,
               supplierId,
               price: invoiceItem.unitPrice,
@@ -272,6 +275,7 @@ export async function POST(request: NextRequest) {
             if (deviation > PRICE_DEVIATION_THRESHOLD) {
               await tx.financialAlert.create({
                 data: {
+                  tenantId: user.tenantId,
                   workOrderId: workOrderId || undefined,
                   masterPartId: invoiceItem.masterPartId,
                   type: 'PRICE_DEVIATION',

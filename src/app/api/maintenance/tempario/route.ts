@@ -6,7 +6,8 @@ import { Prisma } from '@prisma/client';
 export async function GET(req: NextRequest) {
   try {
     const { user, tenantPrisma } = await requireCurrentUser();
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!user)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { searchParams } = req.nextUrl;
     const mantItemId = searchParams.get('mantItemId');
@@ -46,22 +47,22 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const { user, tenantPrisma } = await requireCurrentUser();
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!user)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
     const {
       mantItemId,
       vehicleBrandId,
       vehicleLineId,
-      baseHours,
-      steps = [],
       isGlobal = false,
     } = body;
 
     if (!mantItemId)
-      return NextResponse.json({ error: 'mantItemId requerido' }, { status: 400 });
-    if (baseHours === undefined || baseHours <= 0)
-      return NextResponse.json({ error: 'baseHours debe ser > 0' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'mantItemId requerido' },
+        { status: 400 }
+      );
 
     const itemScope = {
       isGlobal: isGlobal as boolean,
@@ -101,8 +102,6 @@ export async function POST(req: NextRequest) {
         mantItemId,
         vehicleBrandId: vehicleBrandId ?? null,
         vehicleLineId: vehicleLineId ?? null,
-        baseHours,
-        steps,
       },
       include: {
         mantItem: { select: { id: true, name: true } },

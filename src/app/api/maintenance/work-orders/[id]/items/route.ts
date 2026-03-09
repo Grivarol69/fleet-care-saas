@@ -29,7 +29,7 @@ export async function GET(
 
     // Verify parent WorkOrder belongs to tenant
     const workOrder = await tenantPrisma.workOrder.findUnique({
-      where: { id: workOrderId, },
+      where: { id: workOrderId },
     });
     if (!workOrder) {
       return NextResponse.json({ error: 'Not Found' }, { status: 404 });
@@ -182,6 +182,7 @@ export async function POST(
     // 5. Create Work Order Item
     const newItem = await tenantPrisma.workOrderItem.create({
       data: {
+        tenantId: user.tenantId,
         workOrderId,
         mantItemId,
         masterPartId: masterPartId || null, // Ensure null if undefined/empty

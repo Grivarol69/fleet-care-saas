@@ -44,8 +44,18 @@ export async function POST(req: Request) {
     }
 
     const {
-      name, email, phone, address, specialty,
-      nit, siigoIdType, siigoPersonType, stateCode, cityCode, fiscalResponsibilities, vatResponsible
+      name,
+      email,
+      phone,
+      address,
+      specialty,
+      nit,
+      siigoIdType,
+      siigoPersonType,
+      stateCode,
+      cityCode,
+      fiscalResponsibilities,
+      vatResponsible,
     } = await req.json();
 
     if (!name || name.trim() === '') {
@@ -71,6 +81,7 @@ export async function POST(req: Request) {
 
     const provider = await tenantPrisma.provider.create({
       data: {
+        tenantId: user.tenantId,
         name: name.trim(),
         email: email?.trim() || null,
         phone: phone?.trim() || null,
@@ -81,7 +92,9 @@ export async function POST(req: Request) {
         siigoPersonType: siigoPersonType || null,
         stateCode: stateCode?.trim() || null,
         cityCode: cityCode?.trim() || null,
-        fiscalResponsibilities: Array.isArray(fiscalResponsibilities) ? fiscalResponsibilities : [],
+        fiscalResponsibilities: Array.isArray(fiscalResponsibilities)
+          ? fiscalResponsibilities
+          : [],
         vatResponsible: vatResponsible ?? false,
       },
     });
@@ -101,4 +114,3 @@ export async function POST(req: Request) {
     );
   }
 }
-

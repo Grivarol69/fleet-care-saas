@@ -35,7 +35,7 @@ export async function POST(
 
     // 1. Verify WorkOrder
     const workOrder = await tenantPrisma.workOrder.findUnique({
-      where: { id: workOrderId, },
+      where: { id: workOrderId },
     });
 
     if (!workOrder) {
@@ -72,6 +72,7 @@ export async function POST(
       for (const item of pkg.packageItems) {
         await tx.workOrderItem.create({
           data: {
+            tenantId: user.tenantId,
             workOrderId,
             mantItemId: item.mantItemId,
             description: item.mantItem.name,

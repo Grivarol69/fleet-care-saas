@@ -15,7 +15,8 @@ export async function GET(
 ) {
   try {
     const { user, tenantPrisma } = await requireCurrentUser();
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!user)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { id } = await params;
 
     const procedure = await tenantPrisma.mantItemProcedure.findFirst({
@@ -23,7 +24,8 @@ export async function GET(
       include: PROCEDURE_INCLUDE,
     });
 
-    if (!procedure) return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
+    if (!procedure)
+      return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
     return NextResponse.json(procedure);
   } catch (error) {
     console.error('[TEMPARIO_ID_GET]', error);
@@ -37,28 +39,36 @@ export async function PATCH(
 ) {
   try {
     const { user, tenantPrisma } = await requireCurrentUser();
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!user)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { id } = await params;
 
-    const existing = await tenantPrisma.mantItemProcedure.findUnique({ where: { id } });
-    if (!existing) return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
+    const existing = await tenantPrisma.mantItemProcedure.findUnique({
+      where: { id },
+    });
+    if (!existing)
+      return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
 
     try {
       requireMasterDataMutationPermission(user, existing);
     } catch (permError) {
-      return NextResponse.json({ error: (permError as Error).message }, { status: 403 });
+      return NextResponse.json(
+        { error: (permError as Error).message },
+        { status: 403 }
+      );
     }
 
-    const { baseHours, steps, vehicleBrandId, vehicleLineId } = await req.json();
+    const { vehicleBrandId, vehicleLineId } = await req.json();
     const data: Prisma.MantItemProcedureUpdateInput = {};
 
-    if (baseHours !== undefined && typeof baseHours === 'number' && baseHours > 0)
-      data.baseHours = baseHours;
-    if (steps !== undefined) data.steps = steps;
     if (vehicleBrandId !== undefined)
-      data.vehicleBrand = vehicleBrandId ? { connect: { id: vehicleBrandId } } : { disconnect: true };
+      data.vehicleBrand = vehicleBrandId
+        ? { connect: { id: vehicleBrandId } }
+        : { disconnect: true };
     if (vehicleLineId !== undefined)
-      data.vehicleLine = vehicleLineId ? { connect: { id: vehicleLineId } } : { disconnect: true };
+      data.vehicleLine = vehicleLineId
+        ? { connect: { id: vehicleLineId } }
+        : { disconnect: true };
 
     const updated = await tenantPrisma.mantItemProcedure.update({
       where: { id },
@@ -79,16 +89,23 @@ export async function DELETE(
 ) {
   try {
     const { user, tenantPrisma } = await requireCurrentUser();
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!user)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { id } = await params;
 
-    const existing = await tenantPrisma.mantItemProcedure.findUnique({ where: { id } });
-    if (!existing) return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
+    const existing = await tenantPrisma.mantItemProcedure.findUnique({
+      where: { id },
+    });
+    if (!existing)
+      return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
 
     try {
       requireMasterDataMutationPermission(user, existing);
     } catch (permError) {
-      return NextResponse.json({ error: (permError as Error).message }, { status: 403 });
+      return NextResponse.json(
+        { error: (permError as Error).message },
+        { status: 403 }
+      );
     }
 
     await tenantPrisma.mantItemProcedure.delete({ where: { id } });

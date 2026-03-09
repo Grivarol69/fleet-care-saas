@@ -2,16 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireCurrentUser } from '@/lib/auth';
 import { Prisma } from '@prisma/client';
 
-type MantItemProcedureClient = {
-  mantItemProcedure: {
-    findFirst(args: {
-      where: Prisma.MantItemProcedureWhereInput;
-    }): Promise<{ id: string; steps: Prisma.JsonValue; [key: string]: unknown } | null>;
-  };
-};
-
 export async function resolveProcedure(
-  tenantPrisma: MantItemProcedureClient,
+  tenantPrisma: Awaited<ReturnType<typeof requireCurrentUser>>['tenantPrisma'],
   mantItemId: string,
   vehicleBrandId: string | null,
   vehicleLineId: string | null,
@@ -20,13 +12,28 @@ export async function resolveProcedure(
   const variations: Prisma.MantItemProcedureWhereInput[] = [
     { tenantId, mantItemId, vehicleBrandId, vehicleLineId, isGlobal: false },
     { isGlobal: true, mantItemId, vehicleBrandId, vehicleLineId },
-    { tenantId, mantItemId, vehicleBrandId, vehicleLineId: null, isGlobal: false },
+    {
+      tenantId,
+      mantItemId,
+      vehicleBrandId,
+      vehicleLineId: null,
+      isGlobal: false,
+    },
     { isGlobal: true, mantItemId, vehicleBrandId, vehicleLineId: null },
     { isGlobal: true, mantItemId, vehicleBrandId: null, vehicleLineId: null },
   ];
 
   for (const where of variations) {
-    const match = await tenantPrisma.mantItemProcedure.findFirst({ where });
+    const match = await tenantPrisma.mantItemProcedure.findFirst({
+      where,
+      include: {
+        steps: {
+          include: {
+            temparioItem: { select: { id: true, description: true } },
+          },
+        },
+      },
+    });
     if (match) return match;
   }
   return null;
@@ -35,7 +42,8 @@ export async function resolveProcedure(
 export async function GET(req: NextRequest) {
   try {
     const { user, tenantPrisma } = await requireCurrentUser();
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!user)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { searchParams } = req.nextUrl;
     const mantItemId = searchParams.get('mantItemId');
@@ -43,7 +51,10 @@ export async function GET(req: NextRequest) {
     const vehicleLineId = searchParams.get('vehicleLineId');
 
     if (!mantItemId) {
-      return NextResponse.json({ error: 'mantItemId es requerido' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'mantItemId es requerido' },
+        { status: 400 }
+      );
     }
 
     const procedure = await resolveProcedure(

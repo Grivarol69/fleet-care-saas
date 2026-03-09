@@ -4,8 +4,12 @@ import { resolveProcedure } from '../../../../tempario/lookup/route';
 
 type ProcedureStep = {
   order: number;
-  description: string;
-  estimatedHours?: number;
+  standardHours: number;
+  temparioItemId: string;
+  temparioItem: {
+    id: string;
+    description: string;
+  };
 };
 
 export async function POST(
@@ -14,14 +18,18 @@ export async function POST(
 ) {
   try {
     const { user, tenantPrisma } = await requireCurrentUser();
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!user)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { id: workOrderId } = await params;
 
     const body = await req.json();
     const { workOrderItemId } = body;
 
     if (!workOrderItemId)
-      return NextResponse.json({ error: 'workOrderItemId es requerido' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'workOrderItemId es requerido' },
+        { status: 400 }
+      );
 
     const workOrderItem = await tenantPrisma.workOrderItem.findUnique({
       where: { id: workOrderItemId, workOrderId },
@@ -70,12 +78,12 @@ export async function POST(
       );
 
     await tenantPrisma.workOrderSubTask.createMany({
-      data: steps.map((step) => ({
+      data: steps.map(step => ({
         workOrderItemId,
         procedureId: procedure.id,
-        stepOrder: step.order,
-        description: step.description,
-        standardHours: step.estimatedHours ?? null,
+        temparioItemId: step.temparioItemId,
+        description: step.temparioItem.description,
+        standardHours: step.standardHours,
         sequence: step.order,
         status: 'PENDING' as const,
       })),

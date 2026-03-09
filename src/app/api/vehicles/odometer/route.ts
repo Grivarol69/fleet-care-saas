@@ -11,8 +11,7 @@ export async function GET() {
     }
 
     const odometerLogs = await tenantPrisma.odometerLog.findMany({
-      where: {
-        },
+      where: {},
       include: {
         vehicle: {
           include: {
@@ -51,7 +50,7 @@ export async function POST(request: NextRequest) {
     const vehicle = await tenantPrisma.vehicle.findFirst({
       where: {
         id: vehicleId,
-        },
+      },
     });
 
     if (!vehicle) {
@@ -65,7 +64,7 @@ export async function POST(request: NextRequest) {
       const driver = await tenantPrisma.driver.findFirst({
         where: {
           id: driverId,
-          },
+        },
       });
 
       if (!driver) {
@@ -113,6 +112,7 @@ export async function POST(request: NextRequest) {
     // Create odometer log
     const odometerLog = await tenantPrisma.odometerLog.create({
       data: {
+        tenantId: user.tenantId,
         vehicleId,
         driverId: driverId || null,
         kilometers: measureType === 'KILOMETERS' ? kilometers : null,

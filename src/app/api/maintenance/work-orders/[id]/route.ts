@@ -202,7 +202,7 @@ Stack: ${error instanceof Error ? error.stack : 'N/A'}
  */
 function checkRoleGuard(
   guard: RoleGuard,
-  user: Awaited<ReturnType<typeof getCurrentUser>>
+  user: NonNullable<Awaited<ReturnType<typeof requireCurrentUser>>['user']>
 ): boolean {
   if (!user) return false;
   switch (guard) {
@@ -240,7 +240,7 @@ export async function PATCH(
 
     // Validar que la WO existe y pertenece al tenant
     const existingWO = await tenantPrisma.workOrder.findUnique({
-      where: { id: workOrderId, },
+      where: { id: workOrderId },
       include: { maintenanceAlerts: true },
     });
 
@@ -546,7 +546,7 @@ export async function DELETE(
 
     // Validar que existe
     const existingWO = await tenantPrisma.workOrder.findUnique({
-      where: { id: workOrderId, },
+      where: { id: workOrderId },
       include: {
         maintenanceAlerts: true,
       },

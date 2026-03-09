@@ -15,6 +15,7 @@ import {
   BookOpen,
   Plug2,
   Landmark,
+  Clock,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -198,6 +199,12 @@ export const dataAdminSidebar: SidebarItem[] = [
         label: 'KB Autopartes',
         icon: BookOpen,
         href: '/dashboard/maintenance/vehicle-parts',
+        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
+      },
+      {
+        label: 'Tempario',
+        icon: Clock,
+        href: '/dashboard/maintenance/tempario',
         roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
       },
       {
