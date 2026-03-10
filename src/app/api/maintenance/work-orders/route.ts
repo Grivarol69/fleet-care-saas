@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireCurrentUser } from '@/lib/auth';
-import { Prisma } from '@prisma/client';
+import { Prisma, WorkOrderStatus } from '@prisma/client';
 import { canCreateWorkOrders } from '@/lib/permissions';
 
 /**
@@ -18,6 +18,8 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const mantType = searchParams.get('mantType');
     const limit = searchParams.get('limit');
+    const hasInternalWork = searchParams.get('hasInternalWork');
+    const assignedToMe = searchParams.get('assignedToMe');
 
     // Construir filtros
     const where: Prisma.WorkOrderWhereInput = {};
@@ -27,11 +29,36 @@ export async function GET(request: NextRequest) {
     }
 
     if (status) {
-      where.status = status as Prisma.EnumWorkOrderStatusFilter<'WorkOrder'>;
+      const statusList = status.split(',').map(s => s.trim());
+      if (statusList.length === 1) {
+        where.status =
+          statusList[0] as Prisma.EnumWorkOrderStatusFilter<'WorkOrder'>;
+      } else {
+        where.status = { in: statusList as WorkOrderStatus[] };
+      }
     }
 
     if (mantType) {
       where.mantType = mantType as Prisma.EnumMantTypeFilter<'WorkOrder'>;
+    }
+
+    if (hasInternalWork === 'true') {
+      where.workOrderItems = {
+        some: {
+          itemSource: 'INTERNAL_STOCK',
+        },
+      };
+    }
+
+    if (assignedToMe === 'true') {
+      // Resolver el technicanId del usuario actual server-side
+      const technician = await tenantPrisma.technician.findFirst({
+        where: { userId: user.id },
+        select: { id: true },
+      });
+      if (technician) {
+        where.technicianId = technician.id;
+      }
     }
 
     // Obtener WorkOrders con relaciones

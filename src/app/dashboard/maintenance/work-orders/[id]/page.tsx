@@ -6,12 +6,12 @@ import axios from 'axios';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/hooks/use-toast';
-import { ArrowLeft, Trash2 } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { GeneralInfoTab } from '../components/WorkOrderDetail/GeneralInfoTab';
-import { ServicesTab } from '../components/WorkOrderDetail/ServicesTab';
-import { PartsTab } from '../components/WorkOrderDetail/PartsTab';
-import { ExpensesTab } from '../components/WorkOrderDetail/ExpensesTab';
-import { InternalWorkTab } from '../components/WorkOrderDetail/InternalWorkTab';
+import { WorkTab } from '../components/WorkOrderDetail/WorkTab';
+import { CostsTab } from '../components/WorkOrderDetail/CostsTab';
+import { WorkOrderHeader } from '../components/WorkOrderDetail/WorkOrderHeader';
+import { ActivityTab } from '../components/WorkOrderDetail/ActivityTab';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,10 +23,17 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
+type CurrentUser = {
+  id: string;
+  role: string;
+  isSuperAdmin: boolean;
+};
+
 type WorkOrder = {
   id: string;
   title: string;
   description: string | null;
+  notes: string | null; // NUEVO
   status: string;
   mantType: string;
   priority: string;
@@ -39,6 +46,8 @@ type WorkOrder = {
   completionMileage: number | null;
   isPackageWork: boolean;
   packageName: string | null;
+  costCenterId: string | null;
+  costCenterRef: { id: string; name: string } | null;
   vehicle: {
     id: string;
     licensePlate: string;
@@ -58,8 +67,6 @@ type WorkOrder = {
     email: string | null;
     phone: string | null;
   } | null;
-  costCenterId: string | null;
-  costCenterRef: { id: string; name: string } | null;
   maintenanceAlerts: Array<{
     id: string;
     itemName: string;
@@ -76,6 +83,9 @@ type WorkOrder = {
     quantity: number;
     totalCost: number;
     status: string;
+    itemSource: string | null; // NUEVO
+    closureType: string | null; // NUEVO
+    notes: string | null; // NUEVO
     mantItem: {
       id: string;
       name: string;
@@ -88,10 +98,7 @@ type WorkOrder = {
     invoiceDate: string;
     totalAmount: number;
     status: string;
-    supplier: {
-      id: string;
-      name: string;
-    } | null;
+    supplier: { id: string; name: string } | null;
   }>;
   workOrderExpenses: Array<{
     id: string;
@@ -106,9 +113,37 @@ type WorkOrder = {
   approvals: Array<{
     id: string;
     status: string;
-    approvedBy: number | null;
+    approvedBy: string | null;
     approvedAt: string | null;
-    comments: string | null;
+    notes: string | null;
+  }>;
+  internalWorkTickets: Array<{
+    // NUEVO
+    id: string;
+    status: string;
+    notes: string | null;
+    laborEntries: Array<{
+      id: string;
+      workOrderItemId: string | null;
+      hours: number;
+      laborCost: number;
+      notes: string | null;
+    }>;
+    partEntries: Array<{
+      id: string;
+      workOrderItemId: string | null;
+      quantity: number;
+      unitCost: number;
+      totalCost: number;
+    }>;
+  }>;
+  purchaseOrders: Array<{
+    // NUEVO
+    id: string;
+    orderNumber: string;
+    status: string;
+    totalAmount: number;
+    notes: string | null;
   }>;
 };
 
@@ -120,6 +155,14 @@ export default function WorkOrderDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then((data: CurrentUser) => setCurrentUser(data))
+      .catch(() => {});
+  }, []);
 
   const workOrderId = params.id as string;
 
@@ -214,96 +257,52 @@ export default function WorkOrderDetailPage() {
     );
   }
 
-  const canDelete = workOrder.status !== 'COMPLETED';
-
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="flex justify-between items-start mb-6">
-        <div className="flex items-start gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push('/dashboard/maintenance/work-orders')}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">{workOrder.title}</h1>
-            <p className="text-muted-foreground mt-1">
-              {workOrder.vehicle.licensePlate} - {workOrder.vehicle.brand.name}{' '}
-              {workOrder.vehicle.line.name}
-            </p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          {canDelete && (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setShowDeleteDialog(true)}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Cancelar Orden
-            </Button>
-          )}
-        </div>
-      </div>
+      <WorkOrderHeader
+        workOrder={workOrder}
+        currentUser={currentUser}
+        onUpdate={handleUpdate}
+        onDelete={() => setShowDeleteDialog(true)}
+      />
 
       {/* Tabs */}
-      <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="general">Info General</TabsTrigger>
-          <TabsTrigger value="taller-propio">Taller Propio</TabsTrigger>
-          <TabsTrigger value="servicios-ext">
-            Servicios Externos
-          </TabsTrigger>
-          <TabsTrigger value="parts">
-            Repuestos (
-            {
-              workOrder.workOrderItems.filter(i => i.mantItem.type === 'PART')
-                .length
-            }
-            )
-          </TabsTrigger>
-          <TabsTrigger value="expenses">
-            Gastos ({workOrder.workOrderExpenses.length})
-          </TabsTrigger>
-          {/* <TabsTrigger value="purchase-orders">Órdenes Compra</TabsTrigger> */}
-          {/* <TabsTrigger value="history">Historial</TabsTrigger> */}
+      <Tabs defaultValue="work" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="general">Información General</TabsTrigger>
+          <TabsTrigger value="work">Trabajo (Interno/Ext)</TabsTrigger>
+          <TabsTrigger value="costs">Costos y Gastos</TabsTrigger>
+          <TabsTrigger value="actividad">Actividad</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="mt-6">
-          <GeneralInfoTab workOrder={workOrder} onUpdate={handleUpdate} />
+          <GeneralInfoTab
+            workOrder={workOrder}
+            onUpdate={handleUpdate}
+            currentUser={currentUser}
+          />
         </TabsContent>
 
-        <TabsContent value="taller-propio" className="mt-6">
-          <InternalWorkTab workOrderId={workOrder.id} onRefresh={fetchWorkOrder} />
-        </TabsContent>
-
-        <TabsContent value="servicios-ext" className="mt-6">
-          <ServicesTab workOrderId={workOrder.id} onRefresh={fetchWorkOrder} />
-        </TabsContent>
-
-        <TabsContent value="parts" className="mt-6">
-          <PartsTab
-            workOrderId={workOrder.id}
-            vehicleId={workOrder.vehicle.id}
+        <TabsContent value="work" className="mt-6">
+          <WorkTab
+            workOrder={workOrder}
+            currentUser={currentUser}
             onRefresh={fetchWorkOrder}
           />
         </TabsContent>
 
-        <TabsContent value="expenses" className="mt-6">
-          <ExpensesTab workOrder={workOrder} onRefresh={fetchWorkOrder} />
+        <TabsContent value="costs" className="mt-6">
+          <CostsTab
+            workOrder={workOrder}
+            currentUser={currentUser}
+            onRefresh={fetchWorkOrder}
+          />
         </TabsContent>
 
-        {/* <TabsContent value="purchase-orders" className="mt-6">
-          <PurchaseOrdersTab workOrderId={workOrder.id} />
+        <TabsContent value="actividad" className="mt-6">
+          <ActivityTab workOrder={workOrder} onRefresh={fetchWorkOrder} />
         </TabsContent>
-
-        <TabsContent value="history" className="mt-6">
-          <HistoryTab workOrder={workOrder} />
-        </TabsContent> */}
       </Tabs>
 
       {/* Delete Confirmation Dialog */}

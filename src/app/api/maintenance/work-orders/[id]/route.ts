@@ -144,6 +144,37 @@ export async function GET(
         },
         workOrderExpenses: true,
         approvals: true,
+        internalWorkTickets: {
+          include: {
+            laborEntries: {
+              select: {
+                id: true,
+                workOrderItemId: true,
+                hours: true,
+                laborCost: true,
+                notes: true,
+              },
+            },
+            partEntries: {
+              select: {
+                id: true,
+                workOrderItemId: true,
+                quantity: true,
+                unitCost: true,
+                totalCost: true,
+              },
+            },
+          },
+        },
+        purchaseOrders: {
+          select: {
+            id: true,
+            orderNumber: true,
+            status: true,
+            total: true, // ANTES totalAmount
+            notes: true,
+          },
+        },
         costCenterRef: {
           select: {
             id: true,
@@ -259,6 +290,9 @@ export async function PATCH(
       technicianId,
       providerId,
       costCenterId,
+      priority, // NUEVO
+      description, // NUEVO
+      notes, // NUEVO
     } = body;
 
     // Preparar datos para actualizar
@@ -267,6 +301,18 @@ export async function PATCH(
 
     if (costCenterId !== undefined) {
       updateData.costCenterId = costCenterId;
+    }
+
+    if (priority !== undefined) {
+      updateData.priority = priority;
+    }
+
+    if (description !== undefined) {
+      updateData.description = description;
+    }
+
+    if (notes !== undefined) {
+      updateData.notes = notes;
     }
 
     if (status) {

@@ -277,6 +277,16 @@ export function canCloseWorkOrder(user: User | null): boolean {
   return isSuperAdmin(user) || isOwner(user) || isManager(user);
 }
 
+/**
+ * SUPER_ADMIN, OWNER, MANAGER, TECHNICIAN pueden acceder a la vista "Mi Taller".
+ * PURCHASER y DRIVER NO tienen acceso.
+ */
+export function canAccessTaller(user: User | null): boolean {
+  return (
+    isSuperAdmin(user) || isOwner(user) || isManager(user) || isTechnician(user)
+  );
+}
+
 // ========================================
 // CONSTANTES
 // ========================================

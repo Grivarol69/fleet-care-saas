@@ -56,6 +56,7 @@ type AddItemDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  defaultItemSource?: 'EXTERNAL' | 'INTERNAL_STOCK'; // NUEVO
 };
 
 type MantItem = {
@@ -93,6 +94,7 @@ export function AddItemDialog({
   open,
   onOpenChange,
   onSuccess,
+  defaultItemSource, // NUEVO
 }: AddItemDialogProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -123,11 +125,18 @@ export function AddItemDialog({
     defaultValues: {
       quantity: 1,
       unitPrice: 0,
-      itemSource: 'EXTERNAL',
+      itemSource: defaultItemSource || 'EXTERNAL', // USAR PROP
       description: '',
       masterPartId: '',
     },
   });
+
+  // Reset itemSource when defaultItemSource changes or dialog opens
+  useEffect(() => {
+    if (open && defaultItemSource) {
+      form.setValue('itemSource', defaultItemSource);
+    }
+  }, [open, defaultItemSource, form]);
 
   // Fetch providers on mount
   useEffect(() => {
@@ -135,7 +144,7 @@ export function AddItemDialog({
       try {
         const res = await axios.get('/api/people/providers');
         setProviders(res.data || []);
-      } catch (e) { }
+      } catch (e) {}
     }
     if (open) fetchProviders();
   }, [open]);
@@ -515,10 +524,11 @@ export function AddItemDialog({
             {/* Stock Info (Parts only) */}
             {type === 'PART' && selectedItem && (
               <div
-                className={`p-3 rounded border text-sm flex items-center gap-2 ${stock && Number(stock.quantity) > 0
+                className={`p-3 rounded border text-sm flex items-center gap-2 ${
+                  stock && Number(stock.quantity) > 0
                     ? 'bg-green-50 border-green-200 text-green-700'
                     : 'bg-amber-50 border-amber-200 text-amber-700'
-                  }`}
+                }`}
               >
                 <Box className="h-4 w-4" />
                 {stock ? (
@@ -577,7 +587,7 @@ export function AddItemDialog({
                 name="itemSource"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Fuente / Origen</FormLabel>
+                    <FormLabel>Destino del trabajo</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -585,19 +595,12 @@ export function AddItemDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="EXTERNAL">
-                          Proveedor Externo (Compra)
+                        <SelectItem value="INTERNAL_STOCK">
+                          Taller Propio (interno)
                         </SelectItem>
-                        {type === 'PART' && (
-                          <SelectItem value="INTERNAL_STOCK">
-                            Inventario Interno
-                          </SelectItem>
-                        )}
-                        {type === 'SERVICE' && (
-                          <SelectItem value="INTERNAL_STOCK">
-                            Taller Propio (Interno)
-                          </SelectItem>
-                        )}
+                        <SelectItem value="EXTERNAL">
+                          Proveedor Externo (compra)
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

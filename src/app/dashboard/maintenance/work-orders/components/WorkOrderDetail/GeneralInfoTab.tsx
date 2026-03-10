@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,13 +16,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Calendar, User, DollarSign, Package } from 'lucide-react';
+import { Calendar, User, DollarSign, Package, FileText } from 'lucide-react';
 import { useCostCenters } from '@/lib/hooks/usePeople';
 
 type WorkOrder = {
   id: string;
   title: string;
   description: string | null;
+  notes: string | null; // NUEVO
   status: string;
   mantType: string;
   priority: string;
@@ -66,14 +67,16 @@ type WorkOrder = {
   }>;
 };
 
-type GeneralInfoTabProps = {
-  workOrder: WorkOrder;
-  onUpdate: (updates: Partial<WorkOrder>) => Promise<void>;
-};
-
 type CurrentUser = {
+  id: string;
   role: string;
   isSuperAdmin: boolean;
+};
+
+type GeneralInfoTabProps = {
+  workOrder: WorkOrder;
+  onUpdate: (updates: any) => Promise<void>;
+  currentUser?: CurrentUser | null;
 };
 
 const statusConfig: Record<
@@ -97,7 +100,7 @@ const priorityConfig = {
   LOW: { label: 'Baja', color: 'text-gray-600' },
   MEDIUM: { label: 'Media', color: 'text-yellow-600' },
   HIGH: { label: 'Alta', color: 'text-red-600' },
-  CRITICAL: { label: 'Crítica', color: 'text-red-700 font-bold' },
+  URGENT: { label: 'Urgente', color: 'text-red-700 font-bold' },
 };
 
 const mantTypeConfig = {
@@ -106,50 +109,23 @@ const mantTypeConfig = {
   PREDICTIVE: { label: 'Predictivo' },
 };
 
-/**
- * Determines whether the user can approve/reject/send-to-approval WOs.
- * MANAGER, OWNER, SUPER_ADMIN → true.
- */
-function isManagerOrAbove(user: CurrentUser): boolean {
-  return user.isSuperAdmin || user.role === 'OWNER' || user.role === 'MANAGER';
-}
-
-/**
- * Determines whether the user can start/execute work.
- * TECHNICIAN, MANAGER, OWNER, SUPER_ADMIN → true.
- */
-function canExecute(user: CurrentUser): boolean {
-  return (
-    user.isSuperAdmin ||
-    user.role === 'OWNER' ||
-    user.role === 'MANAGER' ||
-    user.role === 'TECHNICIAN'
-  );
-}
-
-export function GeneralInfoTab({ workOrder, onUpdate }: GeneralInfoTabProps) {
+export function GeneralInfoTab({
+  workOrder,
+  onUpdate,
+  currentUser: _currentUser,
+}: GeneralInfoTabProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [pendingStatus, setPendingStatus] = useState<string | null>(null);
-  const [completionMileageInput, setCompletionMileageInput] = useState(
-    workOrder.completionMileage?.toString() || ''
-  );
+  const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
-    priority: workOrder.priority,
+    title: workOrder.title,
     description: workOrder.description || '',
-    actualCost: workOrder.actualCost?.toString() || '',
+    notes: workOrder.notes || '', // NUEVO
+    priority: workOrder.priority,
     costCenterId: workOrder.costCenterId || '',
+    actualCost: workOrder.actualCost?.toString() || '',
   });
-  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 
   const { data: costCenters = [] } = useCostCenters();
-
-  useEffect(() => {
-    fetch('/api/auth/me')
-      .then(res => res.json())
-      .then((data: CurrentUser) => setCurrentUser(data))
-      .catch(() => { });
-  }, []);
 
   const statusInfo = statusConfig[workOrder.status] ?? {
     label: workOrder.status,
@@ -160,149 +136,31 @@ export function GeneralInfoTab({ workOrder, onUpdate }: GeneralInfoTabProps) {
   const mantTypeInfo =
     mantTypeConfig[workOrder.mantType as keyof typeof mantTypeConfig];
 
-  /** Perform a status transition, optionally including completionMileage */
-  const handleTransition = async (toStatus: string) => {
-    setIsTransitioning(true);
+  const handleSave = async () => {
+    setIsSaving(true);
     try {
       const updates: Record<string, string | number | null> = {
-        status: toStatus,
+        title: formData.title,
+        priority: formData.priority,
+        description: formData.description || null,
+        notes: formData.notes || null,
       };
-      if (toStatus === 'COMPLETED' && completionMileageInput) {
-        updates.completionMileage = parseInt(completionMileageInput, 10);
+
+      if (formData.actualCost) {
+        updates.actualCost = parseFloat(formData.actualCost);
       }
+
+      if (formData.costCenterId) {
+        updates.costCenterId = formData.costCenterId;
+      } else {
+        updates.costCenterId = null;
+      }
+
       await onUpdate(updates);
-      setPendingStatus(null);
+      setIsEditing(false);
     } finally {
-      setIsTransitioning(false);
+      setIsSaving(false);
     }
-  };
-
-  const handleSave = async () => {
-    const updates: Record<string, string | number | null> = {
-      priority: formData.priority,
-      description: formData.description || null,
-    };
-
-    if (formData.actualCost) {
-      updates.actualCost = parseFloat(formData.actualCost);
-    }
-
-    if (formData.costCenterId) {
-      updates.costCenterId = formData.costCenterId;
-    } else {
-      updates.costCenterId = null;
-    }
-
-    await onUpdate(updates);
-    setIsEditing(false);
-  };
-
-  /** Render contextual action buttons based on status + user role */
-  const renderActionButtons = () => {
-    if (!currentUser) return null;
-
-    const status = workOrder.status;
-
-    // PENDING → TECHNICIAN or MANAGER/OWNER can start
-    if (status === 'PENDING') {
-      return (
-        <div className="flex gap-2 flex-wrap">
-          {canExecute(currentUser) && (
-            <Button
-              size="sm"
-              disabled={isTransitioning}
-              onClick={() => handleTransition('IN_PROGRESS')}
-            >
-              {isTransitioning ? 'Procesando...' : 'Iniciar trabajo'}
-            </Button>
-          )}
-          {isManagerOrAbove(currentUser) && (
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={isTransitioning}
-              onClick={() => handleTransition('PENDING_APPROVAL')}
-            >
-              {isTransitioning ? 'Procesando...' : 'Enviar a aprobación'}
-            </Button>
-          )}
-        </div>
-      );
-    }
-
-    // PENDING_APPROVAL → MANAGER/OWNER can approve or reject
-    if (status === 'PENDING_APPROVAL' && isManagerOrAbove(currentUser)) {
-      return (
-        <div className="flex gap-2 flex-wrap">
-          <Button
-            size="sm"
-            disabled={isTransitioning}
-            onClick={() => handleTransition('APPROVED')}
-          >
-            {isTransitioning ? 'Procesando...' : 'Aprobar'}
-          </Button>
-          <Button
-            size="sm"
-            variant="destructive"
-            disabled={isTransitioning}
-            onClick={() => handleTransition('REJECTED')}
-          >
-            {isTransitioning ? 'Procesando...' : 'Rechazar'}
-          </Button>
-        </div>
-      );
-    }
-
-    // APPROVED → TECHNICIAN or MANAGER/OWNER can start work
-    if (status === 'APPROVED' && canExecute(currentUser)) {
-      return (
-        <Button
-          size="sm"
-          disabled={isTransitioning}
-          onClick={() => handleTransition('IN_PROGRESS')}
-        >
-          {isTransitioning ? 'Procesando...' : 'Iniciar trabajo'}
-        </Button>
-      );
-    }
-
-    // PENDING_INVOICE → MANAGER/OWNER can close the WO
-    if (status === 'PENDING_INVOICE' && isManagerOrAbove(currentUser)) {
-      return (
-        <div className="flex flex-col gap-2">
-          <div className="flex gap-2 items-end flex-wrap">
-            <div className="flex flex-col gap-1">
-              <Label className="text-sm">Kilometraje al cierre</Label>
-              <Input
-                type="number"
-                value={completionMileageInput}
-                onChange={e => setCompletionMileageInput(e.target.value)}
-                placeholder={workOrder.vehicle.mileage.toString()}
-                className="w-40"
-              />
-            </div>
-            <Button
-              size="sm"
-              disabled={isTransitioning}
-              onClick={() => {
-                setPendingStatus('COMPLETED');
-                handleTransition('COMPLETED');
-              }}
-            >
-              {isTransitioning ? 'Cerrando...' : 'Cerrar OT'}
-            </Button>
-          </div>
-          {pendingStatus === 'COMPLETED' && (
-            <p className="text-xs text-muted-foreground">
-              Se calculará el costo real automáticamente.
-            </p>
-          )}
-        </div>
-      );
-    }
-
-    // No action available for this role/status combination
-    return null;
   };
 
   return (
@@ -325,7 +183,9 @@ export function GeneralInfoTab({ workOrder, onUpdate }: GeneralInfoTabProps) {
                 <Button variant="outline" onClick={() => setIsEditing(false)}>
                   Cancelar
                 </Button>
-                <Button onClick={handleSave}>Guardar Cambios</Button>
+                <Button onClick={handleSave} disabled={isSaving}>
+                  {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+                </Button>
               </div>
             )}
           </div>
@@ -355,7 +215,7 @@ export function GeneralInfoTab({ workOrder, onUpdate }: GeneralInfoTabProps) {
                     <SelectItem value="LOW">Baja</SelectItem>
                     <SelectItem value="MEDIUM">Media</SelectItem>
                     <SelectItem value="HIGH">Alta</SelectItem>
-                    <SelectItem value="CRITICAL">Crítica</SelectItem>
+                    <SelectItem value="URGENT">Urgente</SelectItem>
                   </SelectContent>
                 </Select>
               ) : (
@@ -371,7 +231,10 @@ export function GeneralInfoTab({ workOrder, onUpdate }: GeneralInfoTabProps) {
                 <Select
                   value={formData.costCenterId || 'NONE'}
                   onValueChange={val =>
-                    setFormData({ ...formData, costCenterId: val === 'NONE' ? '' : val })
+                    setFormData({
+                      ...formData,
+                      costCenterId: val === 'NONE' ? '' : val,
+                    })
                   }
                 >
                   <SelectTrigger className="mt-2">
@@ -394,9 +257,6 @@ export function GeneralInfoTab({ workOrder, onUpdate }: GeneralInfoTabProps) {
             </div>
           </div>
 
-          {/* Contextual action buttons */}
-          {!isEditing && <div>{renderActionButtons()}</div>}
-
           <div>
             <Label>Descripción</Label>
             {isEditing ? (
@@ -411,6 +271,37 @@ export function GeneralInfoTab({ workOrder, onUpdate }: GeneralInfoTabProps) {
             ) : (
               <p className="mt-2 text-sm text-muted-foreground">
                 {workOrder.description || 'Sin descripción'}
+              </p>
+            )}
+          </div>
+
+          {/* Notas Internas (NUEVO) */}
+          <div className="pt-4 border-t">
+            <h3 className="text-sm font-medium flex items-center gap-2 mb-3">
+              <FileText className="h-4 w-4" />
+              Notas Internas
+            </h3>
+            {isEditing ? (
+              <div className="space-y-2">
+                <Label
+                  htmlFor="notes"
+                  className="text-xs text-muted-foreground"
+                >
+                  Instrucciones para el equipo de taller
+                </Label>
+                <Textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, notes: e.target.value }))
+                  }
+                  placeholder="Agregá detalles relevantes para el taller..."
+                  rows={4}
+                />
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted/30 p-3 rounded-md">
+                {workOrder.notes || 'Sin notas internas.'}
               </p>
             )}
           </div>
@@ -459,19 +350,6 @@ export function GeneralInfoTab({ workOrder, onUpdate }: GeneralInfoTabProps) {
                 {workOrder.vehicle.mileage.toLocaleString()} km
               </p>
             </div>
-
-            {/* completionMileage: show editable input when WO is COMPLETED + editing mode */}
-            {isEditing && workOrder.status === 'COMPLETED' && (
-              <div>
-                <Label>Kilometraje Completado</Label>
-                <Input
-                  type="number"
-                  value={completionMileageInput}
-                  onChange={e => setCompletionMileageInput(e.target.value)}
-                  placeholder={workOrder.vehicle.mileage.toString()}
-                />
-              </div>
-            )}
 
             {!isEditing && workOrder.completionMileage && (
               <div>

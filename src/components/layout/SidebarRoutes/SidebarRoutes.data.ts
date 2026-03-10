@@ -16,6 +16,7 @@ import {
   Plug2,
   Landmark,
   Clock,
+  Hammer,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -173,6 +174,17 @@ export const dataAdminSidebar: SidebarItem[] = [
           UserRole.TECHNICIAN,
         ],
       }, // TECHNICIAN ejecuta OT, PURCHASER ve para gestión de compras
+      {
+        label: 'Mi Taller',
+        icon: Hammer,
+        href: '/dashboard/maintenance/taller',
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.TECHNICIAN,
+        ],
+      },
       {
         label: 'Facturas',
         icon: FileText,

@@ -28,13 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Wrench,
-  ShoppingCart,
-  Loader2,
-  AlertCircle,
-  Plus,
-} from 'lucide-react';
+import { Wrench, ShoppingCart, Loader2, AlertCircle, Plus } from 'lucide-react';
 import { useToast } from '@/components/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
 import axios from 'axios';
@@ -108,7 +102,9 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
       const fetchedItems = (res.data.items || []) as ServiceItem[];
 
       const externalItems = fetchedItems.filter(
-        i => i.itemSource === 'EXTERNAL' || (i.closureType === 'PENDING' && i.itemSource !== 'INTERNAL')
+        i =>
+          i.itemSource === 'EXTERNAL' ||
+          (i.closureType === 'PENDING' && i.itemSource !== 'INTERNAL_STOCK')
       );
 
       setItems(externalItems);
@@ -162,8 +158,8 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
 
   // Calculate totals
   const pendingItems = items.filter(i => i.closureType === 'PENDING');
-  const externalSelected = items.filter(
-    item => selectedItems.has(item.workOrderItemId)
+  const externalSelected = items.filter(item =>
+    selectedItems.has(item.workOrderItemId)
   );
   const totalEstimated = items.reduce((sum, i) => sum + i.totalCost, 0);
 
@@ -264,9 +260,10 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
                         </TableCell>
                         <TableCell>
                           <span
-                            className={`text-xs px-1.5 py-0.5 rounded-full ${typeConfig[item.mantItemType]?.className ||
+                            className={`text-xs px-1.5 py-0.5 rounded-full ${
+                              typeConfig[item.mantItemType]?.className ||
                               'bg-gray-100 text-gray-700'
-                              }`}
+                            }`}
                           >
                             {typeConfig[item.mantItemType]?.label ||
                               item.mantItemType}
@@ -460,7 +457,8 @@ export function ServicesTab({ workOrderId, onRefresh }: ServicesTabProps) {
                     : 'Error al crear OC';
                   toast({
                     title: 'Error',
-                    description: message || 'No se pudo crear la orden de compra',
+                    description:
+                      message || 'No se pudo crear la orden de compra',
                     variant: 'destructive',
                   });
                 } finally {

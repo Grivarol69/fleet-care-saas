@@ -43,13 +43,13 @@ const formSchema = z.object({
   title: z.string().min(3, 'El título es requerido'),
   description: z.string().optional(),
   mantType: z.enum(['PREVENTIVE', 'CORRECTIVE']),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']),
-  alertIds: z.array(z.number()).optional(),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
+  alertIds: z.array(z.string()).optional(),
   technicianId: z.string().optional(),
 });
 
 type Vehicle = {
-  id: number;
+  id: string;
   licensePlate: string;
   brand: { name: string };
   line: { name: string };
@@ -57,7 +57,7 @@ type Vehicle = {
 };
 
 type MaintenanceAlert = {
-  id: number;
+  id: string;
   itemName: string;
   priority: string;
   status: string;
@@ -91,7 +91,7 @@ export function WorkOrderCreateWizard() {
   useEffect(() => {
     if (vehicleId) {
       // Find selected vehicle object
-      const v = vehicles.find(veh => veh.id.toString() === vehicleId);
+      const v = vehicles.find(veh => veh.id === vehicleId);
       setSelectedVehicle(v || null);
 
       // Fetch alerts if any
@@ -145,15 +145,13 @@ export function WorkOrderCreateWizard() {
     setIsLoading(true);
     try {
       const payload = {
-        vehicleId: parseInt(values.vehicleId),
+        vehicleId: values.vehicleId,
         title: values.title,
         description: values.description,
         mantType: values.mantType,
         priority: values.priority,
         alertIds: values.alertIds || [],
-        technicianId: values.technicianId
-          ? parseInt(values.technicianId)
-          : undefined,
+        technicianId: values.technicianId || undefined,
       };
 
       const res = await axios.post('/api/maintenance/work-orders', payload);
@@ -219,12 +217,12 @@ export function WorkOrderCreateWizard() {
                           <div
                             key={vehicle.id}
                             className={`cursor-pointer border rounded-lg p-4 flex flex-col gap-1 transition-all hover:bg-muted ${
-                              field.value === vehicle.id.toString()
+                              field.value === vehicle.id
                                 ? 'border-primary bg-primary/5 ring-1 ring-primary'
                                 : 'border-border'
                             }`}
                             onClick={() => {
-                              field.onChange(vehicle.id.toString());
+                              field.onChange(vehicle.id);
                               // Auto-advance logic could go here if desired
                             }}
                           >
@@ -461,7 +459,7 @@ export function WorkOrderCreateWizard() {
                           <SelectItem value="LOW">Baja</SelectItem>
                           <SelectItem value="MEDIUM">Media</SelectItem>
                           <SelectItem value="HIGH">Alta</SelectItem>
-                          <SelectItem value="CRITICAL">Crítica</SelectItem>
+                          <SelectItem value="URGENT">Urgente</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

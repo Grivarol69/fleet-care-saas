@@ -82,6 +82,7 @@ export async function POST(req: Request) {
     const vehicle = await tenantPrisma.vehicle.create({
       data: {
         ...body,
+        tenantId: user.tenantId,
       },
     });
 

@@ -655,6 +655,7 @@ model WorkOrder {
   startDate         DateTime?
   endDate           DateTime?
   completionMileage Float? // Kilometraje al momento de cierre de la OT
+  notes             String?   @db.Text // Notas de contexto a nivel OT (ej: incidentes, demoras)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 

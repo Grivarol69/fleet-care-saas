@@ -106,6 +106,7 @@ export async function POST(req: Request) {
 
     const part = await tenantPrisma.masterPart.create({
       data: {
+        tenantId: user.tenantId,
         code: data.code,
         description: data.description,
         category: data.category,

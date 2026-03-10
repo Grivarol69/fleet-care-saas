@@ -43,9 +43,11 @@ import {
   AlertCircle,
   FileText,
   ChevronDown,
+  Plus,
 } from 'lucide-react';
 import { useToast } from '@/components/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
+import { AddItemDialog } from './AddItemDialog';
 
 export type SubTask = {
   id: string;
@@ -165,6 +167,7 @@ export function InternalWorkTab({ workOrderId, onRefresh }: Props) {
 
   // Dialog
   const [showDialog, setShowDialog] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -177,7 +180,7 @@ export function InternalWorkTab({ workOrderId, onRefresh }: Props) {
       const fetchedItems = (res.data.items || []) as ServiceItem[];
 
       const internalItems = fetchedItems.filter(
-        i => i.itemSource === 'INTERNAL' || i.closureType === 'PENDING'
+        i => i.itemSource === 'INTERNAL_STOCK' || i.closureType === 'PENDING'
       );
       setItems(internalItems);
     } catch (error) {
@@ -359,7 +362,7 @@ export function InternalWorkTab({ workOrderId, onRefresh }: Props) {
           axios.patch(
             `/api/maintenance/work-orders/${workOrderId}/items/${item.workOrderItemId}`,
             {
-              itemSource: 'INTERNAL',
+              itemSource: 'INTERNAL_STOCK',
               closureType: 'INTERNAL_TICKET',
             }
           )
@@ -426,9 +429,29 @@ export function InternalWorkTab({ workOrderId, onRefresh }: Props) {
               Items de Taller
             </CardTitle>
             {pendingItemsIds.length > 0 && (
-              <Button size="sm" onClick={() => setShowDialog(true)}>
-                <FileText className="mr-2 h-4 w-4" />
-                Crear Ticket Interno ({pendingItemsIds.length})
+              <div className="flex gap-2">
+                <Button size="sm" onClick={() => setShowDialog(true)}>
+                  <FileText className="mr-2 h-4 w-4" />
+                  Crear Ticket Interno ({pendingItemsIds.length})
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowAddDialog(true)}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Agregar Item de Taller
+                </Button>
+              </div>
+            )}
+            {pendingItemsIds.length === 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowAddDialog(true)}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Agregar Item de Taller
               </Button>
             )}
           </div>
@@ -953,6 +976,17 @@ export function InternalWorkTab({ workOrderId, onRefresh }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <AddItemDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        workOrderId={workOrderId}
+        type="SERVICE"
+        onSuccess={() => {
+          fetchItems();
+          fetchSubTasks();
+          onRefresh();
+        }}
+      />
     </div>
   );
 }
