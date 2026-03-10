@@ -6,23 +6,21 @@ import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { User } from 'lucide-react';
 
-type WorkOrderSummary = {
-  id: string;
-  title: string;
-  status: string;
-  priority: string;
-  vehicle: {
-    id: string;
-    licensePlate: string;
-    brand: { name: string };
-    line: { name: string };
-  };
-  technician: { id: string; name: string } | null;
-  workOrderItems: Array<{ id: string; status: string }>;
-};
-
 type TallerCardProps = {
-  workOrder: WorkOrderSummary;
+  workOrder: {
+    id: string;
+    title: string;
+    status: string;
+    priority: string;
+    vehicle: {
+      id: string;
+      licensePlate: string;
+      brand: { name: string };
+      line: { name: string };
+    };
+    technician: { id: string; name: string } | null;
+    workOrderItems: Array<{ id: string; status: string }>;
+  };
   isSelected: boolean;
   onClick: () => void;
 };
@@ -99,21 +97,21 @@ export function TallerCard({
           </p>
         </div>
 
-        {/* Progreso de Subtareas */}
+        {/* Progreso de Items */}
         <div className="space-y-2">
           <div className="flex justify-between items-center text-xs">
             <span className="font-medium">Progreso de tareas</span>
             <span className="text-muted-foreground">
               {totalCount > 0
                 ? `${completedCount} / ${totalCount} completadas`
-                : 'Sin subtareas'}
+                : 'Sin items'}
             </span>
           </div>
           {totalCount > 0 ? (
             <Progress value={progressPercent} className="h-2" />
           ) : (
             <p className="text-[10px] italic text-muted-foreground py-1">
-              Sin subtareas registradas
+              Sin items registrados
             </p>
           )}
         </div>
