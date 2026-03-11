@@ -48,7 +48,7 @@ export function CostSummaryCard({
     (acc: number, i: any) => acc + (i.totalCost || 0),
     0
   );
-  const totalExpenses = (workOrder.expenses || []).reduce(
+  const totalExpenses = (workOrder.workOrderExpenses || []).reduce(
     (acc: number, e: any) => acc + (e.amount || 0),
     0
   );

@@ -13,6 +13,20 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -98,6 +112,7 @@ export function AddItemDialog({
 }: AddItemDialogProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [comboOpen, setComboOpen] = useState(false);
   const [items, setItems] = useState<MantItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<MantItem | null>(null);
@@ -367,40 +382,61 @@ export function AddItemDialog({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             {/* Item Search */}
             <div className="space-y-2">
-              <FormLabel>Buscar Item</FormLabel>
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Escribe para buscar..."
-                  className="pl-8"
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                />
-              </div>
               <FormField
                 control={form.control}
                 name="mantItemId"
                 render={({ field }) => (
                   <FormItem>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona un resultado" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {items.slice(0, 10).map(item => (
-                          <SelectItem key={item.id} value={item.id.toString()}>
-                            {item.name}
-                          </SelectItem>
-                        ))}
-                        {items.length === 0 && (
-                          <SelectItem value="none" disabled>
-                            No se encontraron resultados
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>
+                      Buscar {type === 'SERVICE' ? 'Servicio' : 'Repuesto'}
+                    </FormLabel>
+                    <Popover open={comboOpen} onOpenChange={setComboOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className="w-full justify-between font-normal"
+                          >
+                            {field.value
+                              ? (items.find(
+                                  i => i.id.toString() === field.value
+                                )?.name ?? 'Seleccionar...')
+                              : 'Buscar y seleccionar...'}
+                            <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[460px] p-0" align="start">
+                        <Command>
+                          <CommandInput
+                            placeholder="Escribir para filtrar..."
+                            value={searchQuery}
+                            onValueChange={setSearchQuery}
+                          />
+                          <CommandList>
+                            <CommandEmpty>Sin resultados.</CommandEmpty>
+                            <CommandGroup>
+                              {items.slice(0, 50).map(item => (
+                                <CommandItem
+                                  key={item.id}
+                                  value={item.id.toString()}
+                                  onSelect={val => {
+                                    form.setValue('mantItemId', val);
+                                    setComboOpen(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={`mr-2 h-4 w-4 ${field.value === item.id.toString() ? 'opacity-100' : 'opacity-0'}`}
+                                  />
+                                  {item.name}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}

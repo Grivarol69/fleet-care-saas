@@ -13,70 +13,19 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Calendar, User, DollarSign, Package, FileText } from 'lucide-react';
+import { Calendar, User, Package, FileText } from 'lucide-react';
 import { useCostCenters } from '@/lib/hooks/usePeople';
+import { CostSummaryCard } from './CostSummaryCard';
+import { canViewCosts } from '@/lib/permissions';
+import { formatCurrency } from '@/lib/utils';
 
-type WorkOrder = {
-  id: string;
-  title: string;
-  description: string | null;
-  notes: string | null; // NUEVO
-  status: string;
-  mantType: string;
-  priority: string;
-  estimatedCost: number | null;
-  actualCost: number | null;
-  costCenterId: string | null;
-  costCenterRef: { id: string; name: string } | null;
-  createdAt: string;
-  startDate: string | null;
-  endDate: string | null;
-  creationMileage: number;
-  completionMileage: number | null;
-  isPackageWork: boolean;
-  packageName: string | null;
-  vehicle: {
-    id: string;
-    licensePlate: string;
-    brand: { name: string };
-    line: { name: string };
-    mileage: number;
-  };
-  technician: {
-    id: string;
-    name: string;
-    email: string | null;
-    phone: string | null;
-  } | null;
-  provider: {
-    id: string;
-    name: string;
-    email: string | null;
-    phone: string | null;
-  } | null;
-  maintenanceAlerts: Array<{
-    id: string;
-    itemName: string;
-    status: string;
-    priority: string;
-    scheduledKm?: number | null;
-    estimatedCost?: number | null;
-  }>;
-};
-
-type CurrentUser = {
-  id: string;
-  role: string;
-  isSuperAdmin: boolean;
-};
-
-type GeneralInfoTabProps = {
-  workOrder: WorkOrder;
+type ResumenTabProps = {
+  workOrder: any;
+  currentUser: any;
+  onRefresh: () => void;
   onUpdate: (updates: any) => Promise<void>;
-  currentUser?: CurrentUser | null;
 };
 
 const statusConfig: Record<
@@ -109,20 +58,20 @@ const mantTypeConfig = {
   PREDICTIVE: { label: 'Predictivo' },
 };
 
-export function GeneralInfoTab({
+export function ResumenTab({
   workOrder,
+  currentUser,
+  onRefresh: _onRefresh,
   onUpdate,
-  currentUser: _currentUser,
-}: GeneralInfoTabProps) {
+}: ResumenTabProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
     title: workOrder.title,
     description: workOrder.description || '',
-    notes: workOrder.notes || '', // NUEVO
+    notes: workOrder.notes || '',
     priority: workOrder.priority,
     costCenterId: workOrder.costCenterId || '',
-    actualCost: workOrder.actualCost?.toString() || '',
   });
 
   const { data: costCenters = [] } = useCostCenters();
@@ -146,10 +95,6 @@ export function GeneralInfoTab({
         notes: formData.notes || null,
       };
 
-      if (formData.actualCost) {
-        updates.actualCost = parseFloat(formData.actualCost);
-      }
-
       if (formData.costCenterId) {
         updates.costCenterId = formData.costCenterId;
       } else {
@@ -163,9 +108,83 @@ export function GeneralInfoTab({
     }
   };
 
+  // Mini-panel calculations
+  const items = workOrder.workOrderItems || [];
+  const completedItems = items.filter(
+    (i: any) => i.status === 'COMPLETED' || i.status === 'CANCELLED'
+  ).length;
+  const totalItems = items.length;
+
+  const expenses = workOrder.workOrderExpenses || [];
+  const totalCostValue =
+    items.reduce((acc: number, i: any) => acc + (i.totalCost || 0), 0) +
+    expenses.reduce((acc: number, e: any) => acc + (e.amount || 0), 0);
+
+  const purchaseOrders = workOrder.purchaseOrders || [];
+  const pendingOCs = purchaseOrders.filter(
+    (po: any) => po.status !== 'INVOICED' && po.status !== 'CANCELLED'
+  ).length;
+
+  const isReadyToClose =
+    pendingOCs === 0 && completedItems === totalItems && totalItems > 0;
+
   return (
     <div className="space-y-6">
-      {/* Estado y Acciones */}
+      {/* Mini-panel */}
+      <div className="grid grid-cols-4 gap-4 mb-6">
+        <Card>
+          <CardContent className="p-4 flex flex-col justify-center">
+            <span className="text-sm text-muted-foreground font-semibold">
+              Costo Acumulado
+            </span>
+            <span className="text-xl font-bold">
+              {canViewCosts(currentUser) ? formatCurrency(totalCostValue) : '—'}
+            </span>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 flex flex-col justify-center">
+            <span className="text-sm text-muted-foreground font-semibold">
+              Ítems
+            </span>
+            <span className="text-xl font-bold">
+              {completedItems}/{totalItems}
+            </span>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 flex flex-col justify-center">
+            <span className="text-sm text-muted-foreground font-semibold">
+              OCs pendientes
+            </span>
+            <span className="text-xl font-bold">{pendingOCs}</span>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 flex flex-col justify-center items-start">
+            <span className="text-sm text-muted-foreground font-semibold mb-1">
+              Estado cierre
+            </span>
+            <Badge
+              variant={isReadyToClose ? 'default' : 'secondary'}
+              className={
+                isReadyToClose
+                  ? 'bg-green-600 hover:bg-green-700'
+                  : 'bg-yellow-500 hover:bg-yellow-600'
+              }
+            >
+              {isReadyToClose ? 'Listo para cerrar' : 'Pendiente'}
+            </Badge>
+          </CardContent>
+        </Card>
+      </div>
+
+      <CostSummaryCard workOrder={workOrder} currentUser={currentUser} />
+
+      {/* Copied from GeneralInfoTab */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
@@ -427,48 +446,6 @@ export function GeneralInfoTab({
         </CardContent>
       </Card>
 
-      {/* Costos */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
-            Costos
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label className="text-muted-foreground">Costo Estimado</Label>
-              <p className="text-2xl font-bold">
-                {workOrder.estimatedCost
-                  ? `$${workOrder.estimatedCost.toLocaleString('es-CO')}`
-                  : '-'}
-              </p>
-            </div>
-
-            <div>
-              <Label className="text-muted-foreground">Costo Real</Label>
-              {isEditing ? (
-                <Input
-                  type="number"
-                  value={formData.actualCost}
-                  onChange={e =>
-                    setFormData({ ...formData, actualCost: e.target.value })
-                  }
-                  placeholder="0"
-                />
-              ) : (
-                <p className="text-2xl font-bold">
-                  {workOrder.actualCost
-                    ? `$${workOrder.actualCost.toLocaleString('es-CO')}`
-                    : '-'}
-                </p>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Fechas */}
       <Card>
         <CardHeader>
@@ -541,7 +518,7 @@ export function GeneralInfoTab({
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {workOrder.maintenanceAlerts.map(alert => (
+              {workOrder.maintenanceAlerts.map((alert: any) => (
                 <div
                   key={alert.id}
                   className="flex justify-between items-center p-3 border rounded-lg"

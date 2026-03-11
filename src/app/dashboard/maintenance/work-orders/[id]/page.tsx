@@ -7,11 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/hooks/use-toast';
 import { ArrowLeft } from 'lucide-react';
-import { GeneralInfoTab } from '../components/WorkOrderDetail/GeneralInfoTab';
-import { WorkTab } from '../components/WorkOrderDetail/WorkTab';
-import { CostsTab } from '../components/WorkOrderDetail/CostsTab';
+
 import { WorkOrderHeader } from '../components/WorkOrderDetail/WorkOrderHeader';
 import { ActivityTab } from '../components/WorkOrderDetail/ActivityTab';
+import { ResumenTab } from '../components/WorkOrderDetail/ResumenTab';
+import { TallerPropioTab } from '../components/WorkOrderDetail/TallerPropioTab';
+import { TrabajosExternosTab } from '../components/WorkOrderDetail/TrabajosExternosTab';
+import { ComprasTab } from '../components/WorkOrderDetail/ComprasTab';
+import { CierreTab } from '../components/WorkOrderDetail/CierreTab';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -268,32 +271,51 @@ export default function WorkOrderDetailPage() {
       />
 
       {/* Tabs */}
-      <Tabs defaultValue="work" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="general">Información General</TabsTrigger>
-          <TabsTrigger value="work">Trabajo (Interno/Ext)</TabsTrigger>
-          <TabsTrigger value="costs">Costos y Gastos</TabsTrigger>
+      <Tabs defaultValue="resumen" className="w-full">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="resumen">Resumen</TabsTrigger>
+          <TabsTrigger value="taller">Taller Propio</TabsTrigger>
+          <TabsTrigger value="externos">Trabajos Externos</TabsTrigger>
+          <TabsTrigger value="compras">Compras</TabsTrigger>
+          <TabsTrigger value="cierre">Cierre</TabsTrigger>
           <TabsTrigger value="actividad">Actividad</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="general" className="mt-6">
-          <GeneralInfoTab
+        <TabsContent value="resumen" className="mt-6">
+          <ResumenTab
             workOrder={workOrder}
-            onUpdate={handleUpdate}
             currentUser={currentUser}
+            onRefresh={fetchWorkOrder}
+            onUpdate={handleUpdate}
           />
         </TabsContent>
 
-        <TabsContent value="work" className="mt-6">
-          <WorkTab
+        <TabsContent value="taller" className="mt-6">
+          <TallerPropioTab
             workOrder={workOrder}
             currentUser={currentUser}
             onRefresh={fetchWorkOrder}
           />
         </TabsContent>
 
-        <TabsContent value="costs" className="mt-6">
-          <CostsTab
+        <TabsContent value="externos" className="mt-6">
+          <TrabajosExternosTab
+            workOrder={workOrder}
+            currentUser={currentUser}
+            onRefresh={fetchWorkOrder}
+          />
+        </TabsContent>
+
+        <TabsContent value="compras" className="mt-6">
+          <ComprasTab
+            workOrder={workOrder}
+            currentUser={currentUser}
+            onRefresh={fetchWorkOrder}
+          />
+        </TabsContent>
+
+        <TabsContent value="cierre" className="mt-6">
+          <CierreTab
             workOrder={workOrder}
             currentUser={currentUser}
             onRefresh={fetchWorkOrder}
