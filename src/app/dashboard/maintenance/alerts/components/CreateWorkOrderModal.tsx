@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import {
@@ -21,15 +22,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useMaintenanceAlerts } from '@/lib/hooks/useMaintenanceAlerts';
 import { CheckCircle2, Clock, DollarSign, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/hooks/use-toast';
-import { useTechnicians, useProviders } from '@/lib/hooks/usePeople';
+import { useTechnicians } from '@/lib/hooks/usePeople';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  selectedAlertIds: number[];
+  selectedAlertIds: string[];
   onSuccess: () => void;
 }
 
@@ -40,20 +42,17 @@ export function CreateWorkOrderModal({
   onSuccess,
 }: Props) {
   const { toast } = useToast();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { data: allAlerts } = useMaintenanceAlerts();
 
-  // Real Data Hooks
   const { data: technicians = [] } = useTechnicians();
-  const { data: providers = [] } = useProviders();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [technicianId, setTechnicianId] = useState<string | undefined>(
-    undefined
-  );
-  const [providerId, setProviderId] = useState<string | undefined>(undefined);
+  const [technicianId, setTechnicianId] = useState<string | undefined>(undefined);
+  const [modality, setModality] = useState<'INTERNAL' | 'EXTERNAL'>('INTERNAL');
   const [scheduledDate, setScheduledDate] = useState('');
   const [priority, setPriority] = useState('MEDIUM');
 
@@ -76,7 +75,6 @@ export function CreateWorkOrderModal({
       const vehicle = selectedAlerts[0];
       if (vehicle) {
         const packages = [...new Set(selectedAlerts.map(a => a.packageName))];
-
         if (packages.length === 1) {
           setTitle(`${packages[0]} - ${vehicle.vehiclePlate}`);
         } else {
@@ -118,18 +116,14 @@ export function CreateWorkOrderModal({
     setIsSubmitting(true);
 
     try {
-      // Crear WorkOrder
       const response = await axios.post('/api/maintenance/work-orders', {
         vehicleId: selectedAlerts[0]?.vehicleId,
         alertIds: selectedAlertIds,
         title,
         description,
         technicianId:
-          technicianId && technicianId !== 'NONE'
-            ? parseInt(technicianId)
-            : null,
-        providerId:
-          providerId && providerId !== 'NONE' ? parseInt(providerId) : null,
+          technicianId && technicianId !== 'NONE' ? technicianId : null,
+        modality,
         scheduledDate: scheduledDate || null,
         priority,
       });
@@ -139,11 +133,11 @@ export function CreateWorkOrderModal({
         description: `WorkOrder #${response.data.id} creada exitosamente`,
       });
 
-      // Invalidar queries
       queryClient.invalidateQueries({ queryKey: ['maintenance-alerts'] });
       queryClient.invalidateQueries({ queryKey: ['work-orders'] });
 
       onSuccess();
+      router.push(`/dashboard/maintenance/work-orders/${response.data.id}`);
     } catch (error: unknown) {
       console.error('Error creating work order:', error);
       const errorMessage =
@@ -197,25 +191,23 @@ export function CreateWorkOrderModal({
             </div>
 
             {/* Totales */}
-            <div className="mt-4 pt-4 border-t flex justify-between items-center">
-              <div className="flex gap-6">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5 text-blue-600" />
-                  <div>
-                    <p className="text-xs text-gray-500">Costo estimado</p>
-                    <p className="text-lg font-bold text-blue-600">
-                      ${Math.round(totalCost).toLocaleString()}
-                    </p>
-                  </div>
+            <div className="mt-4 pt-4 border-t flex gap-6">
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-blue-600" />
+                <div>
+                  <p className="text-xs text-gray-500">Costo estimado</p>
+                  <p className="text-lg font-bold text-blue-600">
+                    ${Math.round(totalCost).toLocaleString()}
+                  </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-purple-600" />
-                  <div>
-                    <p className="text-xs text-gray-500">Tiempo estimado</p>
-                    <p className="text-lg font-bold text-purple-600">
-                      {totalDuration.toFixed(1)} hrs
-                    </p>
-                  </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-purple-600" />
+                <div>
+                  <p className="text-xs text-gray-500">Tiempo estimado</p>
+                  <p className="text-lg font-bold text-purple-600">
+                    {totalDuration.toFixed(1)} hrs
+                  </p>
                 </div>
               </div>
             </div>
@@ -223,6 +215,35 @@ export function CreateWorkOrderModal({
 
           {/* Formulario */}
           <div className="space-y-4">
+            {/* Modalidad */}
+            <div className="space-y-2">
+              <Label>Modalidad de Trabajo</Label>
+              <ToggleGroup
+                type="single"
+                variant="outline"
+                value={modality}
+                onValueChange={(val: string) => {
+                  if (val) setModality(val as 'INTERNAL' | 'EXTERNAL');
+                }}
+                className="justify-start"
+              >
+                <ToggleGroupItem
+                  value="INTERNAL"
+                  aria-label="Taller Propio"
+                  className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                >
+                  🔧 Taller Propio
+                </ToggleGroupItem>
+                <ToggleGroupItem
+                  value="EXTERNAL"
+                  aria-label="Servicio Externo"
+                  className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                >
+                  🚛 Servicio Externo
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+
             {/* Título */}
             <div className="space-y-2">
               <Label htmlFor="title">Título de la orden *</Label>
@@ -271,32 +292,6 @@ export function CreateWorkOrderModal({
                 </Select>
               </div>
 
-              {/* Proveedor */}
-              <div className="space-y-2">
-                <Label htmlFor="provider">Proveedor</Label>
-                <Select
-                  value={providerId || 'NONE'}
-                  onValueChange={val =>
-                    setProviderId(val === 'NONE' ? undefined : val)
-                  }
-                >
-                  <SelectTrigger id="provider">
-                    <SelectValue placeholder="Seleccionar proveedor..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NONE">Sin asignar</SelectItem>
-                    {providers.map(provider => (
-                      <SelectItem
-                        key={provider.id}
-                        value={provider.id.toString()}
-                      >
-                        {provider.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
               {/* Fecha programada */}
               <div className="space-y-2">
                 <Label htmlFor="scheduledDate">Fecha programada</Label>
@@ -326,7 +321,7 @@ export function CreateWorkOrderModal({
             </div>
           </div>
 
-          {/* Footer con acciones */}
+          {/* Footer */}
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
               Cancelar

@@ -1,6 +1,5 @@
-import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { canManagePurchases } from '@/lib/permissions';
 
 interface RouteParams {
@@ -12,16 +11,16 @@ interface RouteParams {
  */
 export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
 
     // Verificar que OC existe y pertenece al tenant
-    const purchaseOrder = await prisma.purchaseOrder.findUnique({
-      where: { id, tenantId: user.tenantId },
+    const purchaseOrder = await tenantPrisma.purchaseOrder.findUnique({
+      where: { id },
     });
 
     if (!purchaseOrder) {
@@ -31,7 +30,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const items = await prisma.purchaseOrderItem.findMany({
+    const items = await tenantPrisma.purchaseOrderItem.findMany({
       where: { purchaseOrderId: id },
       include: {
         workOrderItem: true,
@@ -55,9 +54,9 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
  */
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManagePurchases(user)) {
@@ -71,8 +70,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const body = await request.json();
 
     // Verificar OC y estado
-    const purchaseOrder = await prisma.purchaseOrder.findUnique({
-      where: { id, tenantId: user.tenantId },
+    const purchaseOrder = await tenantPrisma.purchaseOrder.findUnique({
+      where: { id },
     });
 
     if (!purchaseOrder) {
@@ -108,7 +107,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const itemTotal = Number(quantity) * Number(unitPrice);
 
     // Crear item y actualizar totales
-    const result = await prisma.$transaction(async tx => {
+    const result = await tenantPrisma.$transaction(async tx => {
       const newItem = await tx.purchaseOrderItem.create({
         data: {
           tenantId: user.tenantId,

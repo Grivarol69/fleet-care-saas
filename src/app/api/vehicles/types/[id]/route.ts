@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { requireMasterDataMutationPermission } from '@/lib/permissions';
 
@@ -9,10 +9,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
-
+    const { user } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -52,10 +51,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -100,7 +98,7 @@ export async function PUT(
     }
 
     // Verificar duplicados en el mismo scope
-    const duplicateType = await prisma.vehicleType.findFirst({
+    const duplicateType = await tenantPrisma.vehicleType.findFirst({
       where: {
         tenantId: existingType.tenantId,
         name: name.trim(),
@@ -112,7 +110,7 @@ export async function PUT(
       return NextResponse.json({ error: 'El tipo ya existe' }, { status: 409 });
     }
 
-    const updatedType = await prisma.vehicleType.update({
+    const updatedType = await tenantPrisma.vehicleType.update({
       where: { id: typeId },
       data: { name: name.trim() },
     });
@@ -133,10 +131,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -171,10 +168,9 @@ export async function DELETE(
     }
 
     // Verificar que no tenga vehículos dependientes
-    const hasVehicles = await prisma.vehicle.findFirst({
+    const hasVehicles = await tenantPrisma.vehicle.findFirst({
       where: {
         typeId: typeId,
-        tenantId: user.tenantId,
       },
     });
 
@@ -189,7 +185,7 @@ export async function DELETE(
     }
 
     // Soft delete - cambiar status a INACTIVE
-    await prisma.vehicleType.update({
+    await tenantPrisma.vehicleType.update({
       where: { id: typeId },
       data: { status: 'INACTIVE' },
     });

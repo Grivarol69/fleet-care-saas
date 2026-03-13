@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { requireCurrentUser } from '@/lib/auth';
 import { z } from 'zod';
 
 // Schema for invoice update validation - only allow specific fields
+export const maxDuration = 60;
+
 const updateInvoiceSchema = z
   .object({
     invoiceNumber: z.string().min(1).max(100).optional(),
     invoiceDate: z.string().datetime().optional(),
     dueDate: z.string().datetime().nullable().optional(),
-    supplierId: z.number().int().positive().optional(),
-    workOrderId: z.number().int().positive().nullable().optional(),
+    supplierId: z.string().uuid().optional(),
+    workOrderId: z.string().uuid().nullable().optional(),
     subtotal: z.number().positive().optional(),
     taxAmount: z.number().min(0).optional(),
     totalAmount: z.number().positive().optional(),
@@ -35,10 +36,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -51,10 +51,9 @@ export async function GET(
       );
     }
 
-    const invoice = await prisma.invoice.findUnique({
+    const invoice = await tenantPrisma.invoice.findUnique({
       where: {
         id,
-        tenantId: user.tenantId,
       },
       include: {
         supplier: {
@@ -136,10 +135,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Validar permisos
@@ -172,10 +170,9 @@ export async function PATCH(
     }
 
     // Verificar que la factura pertenezca al tenant
-    const existingInvoice = await prisma.invoice.findUnique({
+    const existingInvoice = await tenantPrisma.invoice.findUnique({
       where: {
         id,
-        tenantId: user.tenantId,
       },
     });
 
@@ -233,10 +230,30 @@ export async function PATCH(
     }
 
     // Actualizar factura
-    const updatedInvoice = await prisma.invoice.update({
+    const updatedInvoice = await tenantPrisma.invoice.update({
       where: { id },
-      data: updateData,
+      data: {
+        ...updateData,
+        ...(validatedData.status === 'APPROVED' && existingInvoice.status !== 'APPROVED' ? { siigoSyncStatus: 'PENDING' } : {})
+      },
     });
+
+    if (validatedData.status === 'APPROVED' && existingInvoice.status !== 'APPROVED') {
+      const { after } = await import('next/server');
+      after(async () => {
+        const { SiigoSyncService } = await import('@/lib/services/siigo');
+        await SiigoSyncService.syncInvoiceApproved(id, user.tenantId);
+      });
+    }
+
+    if (validatedData.status === 'PAID' && existingInvoice.status !== 'PAID' && existingInvoice.siigoId) {
+      const { after } = await import('next/server');
+      after(async () => {
+        const { SiigoSyncService } = await import('@/lib/services/siigo');
+        await SiigoSyncService.syncInvoicePaid(id, user.tenantId);
+      });
+    }
+
 
     return NextResponse.json(updatedInvoice);
   } catch (error: unknown) {
@@ -253,10 +270,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Validar permisos
@@ -278,10 +294,9 @@ export async function DELETE(
     }
 
     // Verificar que la factura pertenezca al tenant
-    const existingInvoice = await prisma.invoice.findUnique({
+    const existingInvoice = await tenantPrisma.invoice.findUnique({
       where: {
         id,
-        tenantId: user.tenantId,
       },
       include: {
         workOrder: true,
@@ -296,7 +311,7 @@ export async function DELETE(
     }
 
     // Validar que no tenga pagos
-    const paymentsCount = await prisma.invoicePayment.count({
+    const paymentsCount = await tenantPrisma.invoicePayment.count({
       where: { invoiceId: id },
     });
 
@@ -308,7 +323,7 @@ export async function DELETE(
     }
 
     // Eliminar en transacción
-    await prisma.$transaction(async tx => {
+    await tenantPrisma.$transaction(async tx => {
       // 1. Eliminar items
       await tx.invoiceItem.deleteMany({
         where: { invoiceId: id },

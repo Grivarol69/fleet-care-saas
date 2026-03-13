@@ -10,7 +10,7 @@ const globalForPrisma = globalThis as unknown as {
 // Crear pool de conexiones PostgreSQL para Neon
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  connectionTimeoutMillis: 10000, // 10s max para establecer conexión (cold start Neon)
+  connectionTimeoutMillis: 30000, // 30s max para establecer conexión (cold start Neon)
   idleTimeoutMillis: 30000, // 30s antes de cerrar conexiones idle
   max: 10, // máximo de conexiones en el pool
 });
@@ -24,7 +24,7 @@ export const prisma =
     adapter,
     log:
       process.env.NODE_ENV === 'development'
-        ? ['query', 'info', 'warn', 'error']
+        ? ['warn', 'error']
         : ['error'],
   });
 

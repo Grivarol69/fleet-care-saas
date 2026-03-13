@@ -35,10 +35,10 @@ const failures: string[] = [];
 
 // IDs para cleanup
 const cleanup: {
-  vehicleId?: number;
+  vehicleId?: string;
   documentId?: string;
-  documentTypeId?: number;
-  odometerId?: number;
+  documentTypeId?: string;
+  odometerId?: string;
   document2Id?: string;
 } = {};
 

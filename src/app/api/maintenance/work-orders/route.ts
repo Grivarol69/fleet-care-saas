@@ -1,7 +1,6 @@
-import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
-import { Prisma } from '@prisma/client';
+import { requireCurrentUser } from '@/lib/auth';
+import { Prisma, WorkOrderStatus } from '@prisma/client';
 import { canCreateWorkOrders } from '@/lib/permissions';
 
 /**
@@ -9,9 +8,9 @@ import { canCreateWorkOrders } from '@/lib/permissions';
  */
 export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -19,26 +18,51 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const mantType = searchParams.get('mantType');
     const limit = searchParams.get('limit');
+    const hasInternalWork = searchParams.get('hasInternalWork');
+    const assignedToMe = searchParams.get('assignedToMe');
 
     // Construir filtros
-    const where: Prisma.WorkOrderWhereInput = {
-      tenantId: user.tenantId,
-    };
+    const where: Prisma.WorkOrderWhereInput = {};
 
     if (vehicleId) {
       where.vehicleId = vehicleId;
     }
 
     if (status) {
-      where.status = status as Prisma.EnumWorkOrderStatusFilter<'WorkOrder'>;
+      const statusList = status.split(',').map(s => s.trim());
+      if (statusList.length === 1) {
+        where.status =
+          statusList[0] as Prisma.EnumWorkOrderStatusFilter<'WorkOrder'>;
+      } else {
+        where.status = { in: statusList as WorkOrderStatus[] };
+      }
     }
 
     if (mantType) {
       where.mantType = mantType as Prisma.EnumMantTypeFilter<'WorkOrder'>;
     }
 
+    if (hasInternalWork === 'true') {
+      where.workOrderItems = {
+        some: {
+          itemSource: 'INTERNAL_STOCK',
+        },
+      };
+    }
+
+    if (assignedToMe === 'true') {
+      // Resolver el technicanId del usuario actual server-side
+      const technician = await tenantPrisma.technician.findFirst({
+        where: { userId: user.id },
+        select: { id: true },
+      });
+      if (technician) {
+        where.technicianId = technician.id;
+      }
+    }
+
     // Obtener WorkOrders con relaciones
-    const workOrders = await prisma.workOrder.findMany({
+    const workOrders = await tenantPrisma.workOrder.findMany({
       where,
       include: {
         vehicle: {
@@ -75,6 +99,14 @@ export async function GET(request: NextRequest) {
             description: true,
             totalCost: true,
             status: true,
+            itemSource: true,
+            _count: {
+              select: { workOrderSubTasks: true },
+            },
+            workOrderSubTasks: {
+              where: { status: 'DONE' },
+              select: { id: true },
+            },
           },
         },
         invoices: {
@@ -83,6 +115,12 @@ export async function GET(request: NextRequest) {
             invoiceNumber: true,
             totalAmount: true,
             status: true,
+          },
+        },
+        costCenterRef: {
+          select: {
+            id: true,
+            name: true,
           },
         },
       },
@@ -112,9 +150,9 @@ export async function POST(request: NextRequest) {
   try {
     console.log('====== [POST WO] STARTING REQUEST ======');
 
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     console.log('[POST WO] User found:', user?.email);
@@ -145,6 +183,8 @@ export async function POST(request: NextRequest) {
       priority = 'MEDIUM',
       mantType = 'PREVENTIVE',
       workType = 'EXTERNAL',
+      costCenterId,
+      modality = 'INTERNAL',
     } = body;
 
     // Sanitize IDs
@@ -177,12 +217,11 @@ export async function POST(request: NextRequest) {
     // 1. Obtener las alertas seleccionadas con precios de referencia de partes
     let alerts: any[] = [];
     if (alertIds && alertIds.length > 0) {
-      alerts = await prisma.maintenanceAlert.findMany({
+      alerts = await tenantPrisma.maintenanceAlert.findMany({
         where: {
           id: { in: alertIds },
           status: { in: ['PENDING', 'ACKNOWLEDGED', 'SNOOZED'] },
           vehicleId,
-          tenantId: user.tenantId,
         },
         include: {
           programItem: {
@@ -255,9 +294,10 @@ export async function POST(request: NextRequest) {
 
     const estimatedCost = alertCosts.reduce((sum, cost) => sum + cost, 0);
 
-    // 3. Obtener km actual del vehículo
-    const vehicle = await prisma.vehicle.findUnique({
-      where: { id: vehicleId, tenantId: user.tenantId },
+    // 3. Obtener km actual del vehículo y su costCenterId
+    const vehicle = await tenantPrisma.vehicle.findUnique({
+      where: { id: vehicleId },
+      select: { mileage: true, costCenterId: true },
     });
 
     if (!vehicle) {
@@ -268,7 +308,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. Crear WorkOrder
-    const workOrder = await prisma.workOrder.create({
+    const workOrder = await tenantPrisma.workOrder.create({
       data: {
         tenantId: user.tenantId,
         vehicleId,
@@ -286,6 +326,7 @@ export async function POST(request: NextRequest) {
         startDate: scheduledDate ? new Date(scheduledDate) : null,
         isPackageWork: alerts.length > 1,
         packageName: alerts.length > 1 ? title : null,
+        costCenterId: costCenterId || vehicle.costCenterId || null,
       },
     });
 
@@ -299,7 +340,7 @@ export async function POST(request: NextRequest) {
         (now.getTime() - alertCreatedAt.getTime()) / (1000 * 60)
       );
 
-      await prisma.maintenanceAlert.updateMany({
+      await tenantPrisma.maintenanceAlert.updateMany({
         where: { id: { in: alertIds } },
         data: {
           status: 'IN_PROGRESS',
@@ -316,7 +357,7 @@ export async function POST(request: NextRequest) {
       .map(a => a.programItemId)
       .filter((id): id is string => !!id);
     if (programItemIds.length > 0) {
-      await prisma.vehicleProgramItem.updateMany({
+      await tenantPrisma.vehicleProgramItem.updateMany({
         where: { id: { in: programItemIds } },
         data: { status: 'IN_PROGRESS' },
       });
@@ -326,18 +367,20 @@ export async function POST(request: NextRequest) {
     await Promise.all(
       alerts.map((alert, index) => {
         const itemCost = alertCosts[index] ?? 0;
-        return prisma.workOrderItem.create({
+        return tenantPrisma.workOrderItem.create({
           data: {
             tenantId: user.tenantId,
             workOrderId: workOrder.id,
             mantItemId: alert.programItem.mantItemId,
             description: alert.itemName,
-            supplier: providerId ? 'from-provider' : 'N/A',
+            supplier: 'N/A',
             unitPrice: itemCost,
             quantity: 1,
             totalCost: itemCost,
             purchasedBy: user.id,
             status: 'PENDING',
+            itemSource: modality === 'EXTERNAL' ? 'EXTERNAL' : 'INTERNAL_STOCK',
+            providerId: null,
           },
         });
       })

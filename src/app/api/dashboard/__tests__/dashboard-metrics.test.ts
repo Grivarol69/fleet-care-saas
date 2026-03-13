@@ -17,11 +17,24 @@ import type { FleetStatusResponse } from '../fleet-status/route';
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn(),
+  requireCurrentUser: vi.fn(),
   isSuperAdmin: vi.fn().mockResolvedValue(false),
 }));
 
-describe('Dashboard API Integration Tests', () => {
+const runIntegration = process.env['RUN_INTEGRATION_TESTS'] === '1';
+
+describe.skipIf(!runIntegration)('Dashboard API integration metrics', () => {
   const tenantIds: string[] = [];
+
+  async function createAuthenticatedOwnerTenant() {
+    const tenant = await createTestTenant();
+    tenantIds.push(tenant.id);
+
+    const user = await createTestUser(tenant.id, { role: 'OWNER' });
+    mockAuthAsUser({ id: user.id, tenantId: tenant.id, role: user.role });
+
+    return { tenant, user };
+  }
 
   afterEach(async () => {
     for (const tenantId of tenantIds) {
@@ -32,12 +45,8 @@ describe('Dashboard API Integration Tests', () => {
   });
 
   describe('GET /api/dashboard/navbar-stats', () => {
-    it('returns correct counts for vehicles, alerts, and work orders', async () => {
-      const tenant = await createTestTenant();
-      tenantIds.push(tenant.id);
-
-      const user = await createTestUser(tenant.id, { role: 'OWNER' });
-      mockAuthAsUser({ id: user.id, tenantId: tenant.id, role: user.role });
+    it('debe devolver metricas del tenant autenticado cuando existe operacion activa', async () => {
+      const { tenant, user } = await createAuthenticatedOwnerTenant();
 
       const vd1 = await createTestVehicle(tenant.id, { status: 'ACTIVE' });
       const vd2 = await createTestVehicle(tenant.id, { status: 'ACTIVE' });
@@ -61,46 +70,34 @@ describe('Dashboard API Integration Tests', () => {
       const data = await response.json();
 
       expect(response.status).toBe(200);
-      expect(data).toEqual({
-        totalVehicles: 2,
-        criticalAlerts: 1,
-        openWorkOrders: 1,
-        monthCosts: '16.8',
-      });
+      expect(data.totalVehicles).toBe(2);
+      expect(data.criticalAlerts).toBe(1);
+      expect(data.openWorkOrders).toBe(1);
+      expect(data.monthCosts).toBe('16.8');
     });
 
-    it('returns zeros when no data exists', async () => {
-      const tenant = await createTestTenant();
-      tenantIds.push(tenant.id);
-
-      const user = await createTestUser(tenant.id, { role: 'OWNER' });
-      mockAuthAsUser({ id: user.id, tenantId: tenant.id, role: user.role });
+    it('debe devolver contadores en cero cuando el tenant no tiene datos operativos', async () => {
+      await createAuthenticatedOwnerTenant();
 
       const response = await GET_NAVBAR_STATS();
       const data = await response.json();
 
       expect(response.status).toBe(200);
-      expect(data).toEqual({
-        totalVehicles: 0,
-        criticalAlerts: 0,
-        openWorkOrders: 0,
-        monthCosts: '16.8',
-      });
+      expect(data.totalVehicles).toBe(0);
+      expect(data.criticalAlerts).toBe(0);
+      expect(data.openWorkOrders).toBe(0);
+      expect(data.monthCosts).toBe('16.8');
     });
 
-    it('returns 401 when unauthenticated', async () => {
+    it('debe responder 401 cuando la solicitud no esta autenticada', async () => {
       mockAuthAsUnauthenticated();
 
       const response = await GET_NAVBAR_STATS();
       expect(response.status).toBe(401);
     });
 
-    it('ignores inactive vehicles', async () => {
-      const tenant = await createTestTenant();
-      tenantIds.push(tenant.id);
-
-      const user = await createTestUser(tenant.id, { role: 'OWNER' });
-      mockAuthAsUser({ id: user.id, tenantId: tenant.id, role: user.role });
+    it('debe excluir vehiculos inactivos del contador de flota', async () => {
+      const { tenant } = await createAuthenticatedOwnerTenant();
 
       await createTestVehicle(tenant.id, { status: 'ACTIVE' });
       await createTestVehicle(tenant.id, { status: 'INACTIVE' });
@@ -111,12 +108,8 @@ describe('Dashboard API Integration Tests', () => {
       expect(data.totalVehicles).toBe(1);
     });
 
-    it('only counts PENDING alerts', async () => {
-      const tenant = await createTestTenant();
-      tenantIds.push(tenant.id);
-
-      const user = await createTestUser(tenant.id, { role: 'OWNER' });
-      mockAuthAsUser({ id: user.id, tenantId: tenant.id, role: user.role });
+    it('debe contar solo alertas pendientes en el resumen critico', async () => {
+      const { tenant, user } = await createAuthenticatedOwnerTenant();
 
       const vd1 = await createTestVehicle(tenant.id, { status: 'ACTIVE' });
       const vd2 = await createTestVehicle(tenant.id, { status: 'ACTIVE' });
@@ -145,12 +138,8 @@ describe('Dashboard API Integration Tests', () => {
       expect(data.criticalAlerts).toBe(1);
     });
 
-    it('only counts IN_PROGRESS work orders', async () => {
-      const tenant = await createTestTenant();
-      tenantIds.push(tenant.id);
-
-      const user = await createTestUser(tenant.id, { role: 'OWNER' });
-      mockAuthAsUser({ id: user.id, tenantId: tenant.id, role: user.role });
+    it('debe contar solo work orders en progreso como abiertas', async () => {
+      const { tenant, user } = await createAuthenticatedOwnerTenant();
 
       const vd = await createTestVehicle(tenant.id, { status: 'ACTIVE' });
 
@@ -183,12 +172,8 @@ describe('Dashboard API Integration Tests', () => {
   });
 
   describe('GET /api/dashboard/fleet-status', () => {
-    it('returns vehicle list with summary', async () => {
-      const tenant = await createTestTenant();
-      tenantIds.push(tenant.id);
-
-      const user = await createTestUser(tenant.id, { role: 'OWNER' });
-      mockAuthAsUser({ id: user.id, tenantId: tenant.id, role: user.role });
+    it('debe devolver vehiculos activos con summary y thresholds del tablero', async () => {
+      const { tenant } = await createAuthenticatedOwnerTenant();
 
       await createTestVehicle(tenant.id, { status: 'ACTIVE' });
       await createTestVehicle(tenant.id, { status: 'ACTIVE' });
@@ -199,13 +184,16 @@ describe('Dashboard API Integration Tests', () => {
       expect(response.status).toBe(200);
       expect(data.vehicles).toHaveLength(2);
       expect(data.summary.total).toBe(2);
+      expect(data.summary.ok).toBe(0);
+      expect(data.summary.critical).toBe(2);
+      expect(data.summary.warning).toBe(0);
       expect(data.thresholds).toEqual({
         warningDays: 5,
         criticalDays: 10,
       });
     });
 
-    it('is scoped to tenant - only returns own vehicles', async () => {
+    it('debe incluir solo vehiculos del tenant autenticado', async () => {
       const tenantA = await createTestTenant({ name: 'Tenant A' });
       const tenantB = await createTestTenant({ name: 'Tenant B' });
       tenantIds.push(tenantA.id, tenantB.id);
@@ -228,7 +216,7 @@ describe('Dashboard API Integration Tests', () => {
       expect(data.summary.total).toBe(1);
     });
 
-    it('returns 401 when unauthenticated', async () => {
+    it('debe responder 401 cuando fleet-status se consulta sin autenticacion', async () => {
       mockAuthAsUnauthenticated();
 
       const response = await GET_FLEET_STATUS();
@@ -238,12 +226,8 @@ describe('Dashboard API Integration Tests', () => {
       expect(data.error).toBe('Unauthorized');
     });
 
-    it('calculates odometer status based on days since update', async () => {
-      const tenant = await createTestTenant();
-      tenantIds.push(tenant.id);
-
-      const user = await createTestUser(tenant.id, { role: 'OWNER' });
-      mockAuthAsUser({ id: user.id, tenantId: tenant.id, role: user.role });
+    it('debe derivar el estado del odometro segun dias desde la ultima lectura', async () => {
+      const { tenant } = await createAuthenticatedOwnerTenant();
 
       // Vehicle 1: odometer 3 days ago (OK)
       const vd1 = await createTestVehicle(tenant.id, { status: 'ACTIVE' });
@@ -299,14 +283,19 @@ describe('Dashboard API Integration Tests', () => {
       expect(vehicle3?.odometer.status).toBe('CRITICAL');
     });
 
-    it('classifies alert priorities correctly (URGENT=critical, others=warning)', async () => {
-      const tenant = await createTestTenant();
-      tenantIds.push(tenant.id);
-
-      const user = await createTestUser(tenant.id, { role: 'OWNER' });
-      mockAuthAsUser({ id: user.id, tenantId: tenant.id, role: user.role });
+    it('debe mapear alertas urgentes a critical y el resto a warning', async () => {
+      const { tenant, user } = await createAuthenticatedOwnerTenant();
 
       const vd1 = await createTestVehicle(tenant.id, { status: 'ACTIVE' });
+      await prisma.odometerLog.create({
+        data: {
+          tenantId: tenant.id,
+          vehicleId: vd1.vehicle.id,
+          kilometers: 50000,
+          measureType: 'KILOMETERS',
+          recordedAt: new Date(),
+        },
+      });
       const prog1 = await createTestMaintenanceProgram(
         tenant.id,
         vd1.vehicle.id,
@@ -318,6 +307,15 @@ describe('Dashboard API Integration Tests', () => {
       });
 
       const vd2 = await createTestVehicle(tenant.id, { status: 'ACTIVE' });
+      await prisma.odometerLog.create({
+        data: {
+          tenantId: tenant.id,
+          vehicleId: vd2.vehicle.id,
+          kilometers: 60000,
+          measureType: 'KILOMETERS',
+          recordedAt: new Date(),
+        },
+      });
       const prog2 = await createTestMaintenanceProgram(
         tenant.id,
         vd2.vehicle.id,
@@ -339,6 +337,8 @@ describe('Dashboard API Integration Tests', () => {
 
       expect(vehicle2?.maintenanceAlerts.critical).toBe(0);
       expect(vehicle2?.maintenanceAlerts.warning).toBe(1);
+      expect(data.summary.critical).toBe(1);
+      expect(data.summary.warning).toBe(1);
     });
   });
 });

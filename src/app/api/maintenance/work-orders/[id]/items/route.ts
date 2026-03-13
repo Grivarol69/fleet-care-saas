@@ -1,6 +1,5 @@
-import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { FinancialWatchdogService } from '@/lib/services/FinancialWatchdogService';
 import { InventoryService } from '@/lib/services/InventoryService';
 import { ItemType } from '@prisma/client';
@@ -14,9 +13,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -29,8 +28,8 @@ export async function GET(
     const typeParam = searchParams.get('type');
 
     // Verify parent WorkOrder belongs to tenant
-    const workOrder = await prisma.workOrder.findUnique({
-      where: { id: workOrderId, tenantId: user.tenantId },
+    const workOrder = await tenantPrisma.workOrder.findUnique({
+      where: { id: workOrderId },
     });
     if (!workOrder) {
       return NextResponse.json({ error: 'Not Found' }, { status: 404 });
@@ -48,10 +47,9 @@ export async function GET(
       }
     }
 
-    const items = await prisma.workOrderItem.findMany({
+    const items = await tenantPrisma.workOrderItem.findMany({
       where: {
         workOrderId,
-        tenantId: user.tenantId,
         ...(typeFilter ? { mantItem: { type: { in: typeFilter } } } : {}),
       },
       include: {
@@ -105,9 +103,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -128,7 +126,7 @@ export async function POST(
     } = body;
 
     // 2. Fetch MantItem details
-    const mantItem = await prisma.mantItem.findUnique({
+    const mantItem = await tenantPrisma.mantItem.findUnique({
       where: { id: mantItemId },
       include: { parts: { include: { masterPart: true } } },
     });
@@ -182,7 +180,7 @@ export async function POST(
     }
 
     // 5. Create Work Order Item
-    const newItem = await prisma.workOrderItem.create({
+    const newItem = await tenantPrisma.workOrderItem.create({
       data: {
         tenantId: user.tenantId,
         workOrderId,

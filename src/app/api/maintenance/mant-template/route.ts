@@ -1,23 +1,17 @@
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { canManageMaintenancePrograms } from '@/lib/permissions';
 
 export async function GET() {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Devolver templates GLOBALES + del tenant
-    const mantTemplates = await prisma.maintenanceTemplate.findMany({
+    // Devolver templates globales y del tenant — el interceptor tenant-prisma aplica OR[tenantId, isGlobal]
+    const mantTemplates = await tenantPrisma.maintenanceTemplate.findMany({
       where: {
-        OR: [
-          { isGlobal: true }, // Templates globales (Knowledge Base)
-          { tenantId: user.tenantId }, // Templates custom del tenant
-        ],
         status: 'ACTIVE',
       },
       include: {
@@ -73,9 +67,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManageMaintenancePrograms(user)) {
@@ -96,14 +90,14 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!vehicleBrandId || vehicleBrandId <= 0) {
+    if (!vehicleBrandId || vehicleBrandId.trim() === '') {
       return NextResponse.json(
         { error: 'La marca del vehículo es requerida' },
         { status: 400 }
       );
     }
 
-    if (!vehicleLineId || vehicleLineId <= 0) {
+    if (!vehicleLineId || vehicleLineId.trim() === '') {
       return NextResponse.json(
         { error: 'La línea del vehículo es requerida' },
         { status: 400 }
@@ -134,10 +128,9 @@ export async function POST(req: Request) {
     }
 
     // Verificar que la marca existe (global o del tenant)
-    const brand = await prisma.vehicleBrand.findFirst({
+    const brand = await tenantPrisma.vehicleBrand.findFirst({
       where: {
         id: vehicleBrandId,
-        OR: [{ isGlobal: true }, { tenantId: targetTenant }],
       },
     });
 
@@ -149,11 +142,10 @@ export async function POST(req: Request) {
     }
 
     // Verificar que la línea existe (global o del tenant) y pertenece a la marca
-    const line = await prisma.vehicleLine.findFirst({
+    const line = await tenantPrisma.vehicleLine.findFirst({
       where: {
         id: vehicleLineId,
         brandId: vehicleBrandId,
-        OR: [{ isGlobal: true }, { tenantId: targetTenant }],
       },
     });
 
@@ -168,7 +160,7 @@ export async function POST(req: Request) {
     }
 
     // Verificar que no exista un template con el mismo nombre para la misma marca/línea en el scope
-    const existingTemplate = await prisma.maintenanceTemplate.findFirst({
+    const existingTemplate = await tenantPrisma.maintenanceTemplate.findFirst({
       where: {
         tenantId: targetTenant,
         vehicleBrandId,
@@ -188,7 +180,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const mantTemplate = await prisma.maintenanceTemplate.create({
+    const mantTemplate = await tenantPrisma.maintenanceTemplate.create({
       data: {
         name: name.trim(),
         description: description?.trim() || null,

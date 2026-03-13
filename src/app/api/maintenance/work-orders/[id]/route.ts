@@ -1,6 +1,5 @@
-import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { ItemClosureType, WorkOrderStatus } from '@prisma/client';
 import {
   canExecuteWorkOrders,
@@ -67,9 +66,9 @@ export async function GET(
   try {
     const { id } = await params;
     console.log(`====== [GET WO] STARTING REQUEST ID: ${id} ======`);
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const workOrderId = id;
@@ -77,10 +76,9 @@ export async function GET(
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
-    const workOrder = await prisma.workOrder.findUnique({
+    const workOrder = await tenantPrisma.workOrder.findUnique({
       where: {
         id: workOrderId,
-        tenantId: user.tenantId,
       },
       include: {
         vehicle: {
@@ -127,6 +125,12 @@ export async function GET(
                 type: true,
               },
             },
+            provider: {
+              select: { id: true, name: true },
+            },
+            purchaseOrderItems: {
+              select: { id: true },
+            },
           },
         },
         invoices: {
@@ -146,6 +150,43 @@ export async function GET(
         },
         workOrderExpenses: true,
         approvals: true,
+        internalWorkTickets: {
+          include: {
+            laborEntries: {
+              select: {
+                id: true,
+                workOrderItemId: true,
+                hours: true,
+                laborCost: true,
+                notes: true,
+              },
+            },
+            partEntries: {
+              select: {
+                id: true,
+                workOrderItemId: true,
+                quantity: true,
+                unitCost: true,
+                totalCost: true,
+              },
+            },
+          },
+        },
+        purchaseOrders: {
+          select: {
+            id: true,
+            orderNumber: true,
+            status: true,
+            total: true, // ANTES totalAmount
+            notes: true,
+          },
+        },
+        costCenterRef: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 
@@ -198,7 +239,7 @@ Stack: ${error instanceof Error ? error.stack : 'N/A'}
  */
 function checkRoleGuard(
   guard: RoleGuard,
-  user: Awaited<ReturnType<typeof getCurrentUser>>
+  user: NonNullable<Awaited<ReturnType<typeof requireCurrentUser>>['user']>
 ): boolean {
   if (!user) return false;
   switch (guard) {
@@ -221,9 +262,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -235,8 +276,8 @@ export async function PATCH(
     const body = await request.json();
 
     // Validar que la WO existe y pertenece al tenant
-    const existingWO = await prisma.workOrder.findUnique({
-      where: { id: workOrderId, tenantId: user.tenantId },
+    const existingWO = await tenantPrisma.workOrder.findUnique({
+      where: { id: workOrderId },
       include: { maintenanceAlerts: true },
     });
 
@@ -254,11 +295,31 @@ export async function PATCH(
       completionMileage,
       technicianId,
       providerId,
+      costCenterId,
+      priority, // NUEVO
+      description, // NUEVO
+      notes, // NUEVO
     } = body;
 
     // Preparar datos para actualizar
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateData: Record<string, any> = {};
+
+    if (costCenterId !== undefined) {
+      updateData.costCenterId = costCenterId;
+    }
+
+    if (priority !== undefined) {
+      updateData.priority = priority;
+    }
+
+    if (description !== undefined) {
+      updateData.description = description;
+    }
+
+    if (notes !== undefined) {
+      updateData.notes = notes;
+    }
 
     if (status) {
       const fromStatus = existingWO.status as WorkOrderStatus;
@@ -300,7 +361,7 @@ export async function PATCH(
       // ──────────────────────────────────────────────────────────────
       if (toStatus === 'COMPLETED') {
         // FASE 6.7: Validar que no haya items pendientes de cierre
-        const pendingItems = await prisma.workOrderItem.count({
+        const pendingItems = await tenantPrisma.workOrderItem.count({
           where: {
             workOrderId,
             closureType: ItemClosureType.PENDING,
@@ -318,7 +379,7 @@ export async function PATCH(
         }
 
         // TASK 2.4: Auto-compute actualCost inside a transaction
-        const result = await prisma.$transaction(async tx => {
+        const result = await tenantPrisma.$transaction(async tx => {
           // Sum WorkOrderItem costs
           const itemsAgg = await tx.workOrderItem.aggregate({
             where: { workOrderId, status: { not: 'CANCELLED' } },
@@ -401,7 +462,7 @@ export async function PATCH(
       } else if (toStatus === 'REJECTED') {
         // TASK 2.3: REJECTED — revert linked MaintenanceAlerts from CLOSED → PENDING
         // (mirrors the CANCELLED logic in DELETE handler)
-        await prisma.$transaction(async tx => {
+        await tenantPrisma.$transaction(async tx => {
           await tx.workOrder.update({
             where: { id: workOrderId },
             data: { status: 'REJECTED' },
@@ -430,7 +491,7 @@ export async function PATCH(
         });
 
         // Fetch updated WO to return
-        const updatedWO = await prisma.workOrder.findUnique({
+        const updatedWO = await tenantPrisma.workOrder.findUnique({
           where: { id: workOrderId },
           include: {
             vehicle: { select: { id: true, licensePlate: true } },
@@ -473,7 +534,7 @@ export async function PATCH(
     }
 
     // Actualizar WorkOrder
-    const workOrder = await prisma.workOrder.update({
+    const workOrder = await tenantPrisma.workOrder.update({
       where: { id: workOrderId },
       data: updateData,
       include: {
@@ -515,9 +576,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Validar permisos (solo OWNER/MANAGER pueden cancelar)
@@ -536,8 +597,8 @@ export async function DELETE(
     }
 
     // Validar que existe
-    const existingWO = await prisma.workOrder.findUnique({
-      where: { id: workOrderId, tenantId: user.tenantId },
+    const existingWO = await tenantPrisma.workOrder.findUnique({
+      where: { id: workOrderId },
       include: {
         maintenanceAlerts: true,
       },
@@ -559,7 +620,7 @@ export async function DELETE(
     }
 
     // Cancelar WorkOrder y revertir alertas a PENDING
-    await prisma.$transaction(async tx => {
+    await tenantPrisma.$transaction(async tx => {
       // 1. Cambiar WO a CANCELLED
       await tx.workOrder.update({
         where: { id: workOrderId },

@@ -1,7 +1,6 @@
-import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { z } from 'zod';
 import { canExecuteWorkOrders } from '@/lib/permissions';
 
@@ -36,9 +35,9 @@ const updateAlertSchema = z
  */
 export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = request.nextUrl;
@@ -48,8 +47,7 @@ export async function GET(request: NextRequest) {
 
     // Construir filtros dinámicos
     const where: Prisma.MaintenanceAlertWhereInput = {
-      tenantId: user.tenantId,
-    };
+      };
 
     // Safe parse vehicleId
     if (vehicleIdParam) {
@@ -98,7 +96,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Obtener alertas desde la tabla MaintenanceAlert
-    const alerts = await prisma.maintenanceAlert.findMany({
+    const alerts = await tenantPrisma.maintenanceAlert.findMany({
       where,
       include: {
         vehicle: {
@@ -201,9 +199,9 @@ export async function GET(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canExecuteWorkOrders(user)) {
@@ -228,11 +226,10 @@ export async function PATCH(request: NextRequest) {
       validation.data;
 
     // Verify alert belongs to tenant
-    const existingAlert = await prisma.maintenanceAlert.findFirst({
+    const existingAlert = await tenantPrisma.maintenanceAlert.findFirst({
       where: {
         id: alertId,
-        tenantId: user.tenantId,
-      },
+        },
     });
 
     if (!existingAlert) {
@@ -266,7 +263,7 @@ export async function PATCH(request: NextRequest) {
       if (cancelReason) updateData.cancelReason = cancelReason;
     }
 
-    const updatedAlert = await prisma.maintenanceAlert.update({
+    const updatedAlert = await tenantPrisma.maintenanceAlert.update({
       where: { id: alertId },
       data: updateData,
     });

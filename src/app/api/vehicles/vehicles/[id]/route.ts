@@ -1,5 +1,4 @@
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { canManageVehicles, canDeleteVehicles } from '@/lib/permissions';
 
@@ -10,10 +9,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const vehicleId = id;
@@ -24,11 +22,10 @@ export async function GET(
       );
     }
 
-    const vehicle = await prisma.vehicle.findUnique({
+    const vehicle = await tenantPrisma.vehicle.findUnique({
       where: {
         id: vehicleId,
-        tenantId: user.tenantId,
-      },
+        },
       include: {
         brand: true,
         line: true,
@@ -61,10 +58,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canDeleteVehicles(user)) {
@@ -82,11 +78,10 @@ export async function DELETE(
       );
     }
 
-    const vehicleToDelete = await prisma.vehicle.findUnique({
+    const vehicleToDelete = await tenantPrisma.vehicle.findUnique({
       where: {
         id: vehicleId,
-        tenantId: user.tenantId,
-      },
+        },
     });
 
     if (!vehicleToDelete) {
@@ -97,11 +92,10 @@ export async function DELETE(
     }
 
     // Soft delete - cambiar status a INACTIVE
-    await prisma.vehicle.update({
+    await tenantPrisma.vehicle.update({
       where: {
         id: vehicleId,
-        tenantId: user.tenantId,
-      },
+        },
       data: {
         status: 'INACTIVE',
       },
@@ -127,10 +121,9 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManageVehicles(user)) {
@@ -151,11 +144,10 @@ export async function PATCH(
     const body = await req.json();
     const { licensePlate, ...otherData } = body;
 
-    const vehicleToUpdate = await prisma.vehicle.findUnique({
+    const vehicleToUpdate = await tenantPrisma.vehicle.findUnique({
       where: {
         id: vehicleId,
-        tenantId: user.tenantId,
-      },
+        },
     });
 
     if (!vehicleToUpdate) {
@@ -167,13 +159,10 @@ export async function PATCH(
 
     // If license plate is being changed, check for duplicates
     if (licensePlate && licensePlate !== vehicleToUpdate.licensePlate) {
-      const existingVehicle = await prisma.vehicle.findUnique({
-        where: {
-          tenantId_licensePlate: {
-            tenantId: user.tenantId,
+      const existingVehicle = await tenantPrisma.vehicle.findFirst({
+      where: {
             licensePlate: licensePlate,
           },
-        },
       });
 
       if (existingVehicle) {
@@ -184,11 +173,10 @@ export async function PATCH(
       }
     }
 
-    const updatedVehicle = await prisma.vehicle.update({
+    const updatedVehicle = await tenantPrisma.vehicle.update({
       where: {
         id: vehicleId,
-        tenantId: user.tenantId,
-      },
+        },
       data: {
         licensePlate,
         ...otherData,

@@ -1,16 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { POST } from '../route';
 import { prisma } from '@/lib/prisma';
+import { getTenantPrisma } from '@/lib/tenant-prisma';
 import { NextRequest } from 'next/server';
 // Prisma enums used as string literals in test data
 
 // Mock auth
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn(),
+  requireCurrentUser: vi.fn(),
   isSuperAdmin: vi.fn().mockResolvedValue(false),
 }));
 
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, requireCurrentUser } from '@/lib/auth';
 
 describe('Work Order Integration (API Route)', () => {
   // Test Data IDs
@@ -46,7 +48,9 @@ describe('Work Order Integration (API Route)', () => {
     userId = user.id;
 
     // Mock Auth to return this user
-    (getCurrentUser as any).mockResolvedValue({ ...user, isSuperAdmin: false });
+    const mockUser = { ...user, isSuperAdmin: false };
+    (getCurrentUser as any).mockResolvedValue(mockUser);
+    (requireCurrentUser as any).mockResolvedValue({ user: mockUser, tenantPrisma: getTenantPrisma(mockUser.tenantId) });
 
     // Create Vehicle
     const brand = await prisma.vehicleBrand.create({

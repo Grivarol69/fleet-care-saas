@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireMasterDataMutationPermission } from '@/lib/permissions';
 
@@ -9,9 +9,9 @@ import { requireMasterDataMutationPermission } from '@/lib/permissions';
  */
 export async function GET(req: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = req.nextUrl;
@@ -23,11 +23,11 @@ export async function GET(req: NextRequest) {
       OR: [{ isGlobal: true }, { tenantId: user.tenantId }],
     };
 
-    if (mantItemId) where.mantItemId = parseInt(mantItemId);
-    if (vehicleBrandId) where.vehicleBrandId = parseInt(vehicleBrandId);
-    if (vehicleLineId) where.vehicleLineId = parseInt(vehicleLineId);
+    if (mantItemId) where.mantItemId = mantItemId;
+    if (vehicleBrandId) where.vehicleBrandId = vehicleBrandId;
+    if (vehicleLineId) where.vehicleLineId = vehicleLineId;
 
-    const items = await prisma.mantItemVehiclePart.findMany({
+    const items = await tenantPrisma.mantItemVehiclePart.findMany({
       where,
       include: {
         mantItem: { select: { id: true, name: true, type: true } },
@@ -39,10 +39,33 @@ export async function GET(req: NextRequest) {
         { vehicleBrand: { name: 'asc' } },
         { vehicleLine: { name: 'asc' } },
         { yearFrom: 'asc' },
+        { isGlobal: 'asc' }, // ensures tenant overrides (false) come before global (true) in sorting
       ],
     });
 
-    return NextResponse.json(items);
+    // Deduplication Map: key -> mantItemId_brandId_lineId
+    // We want to keep the tenant specific (isGlobal: false) version over the global one.
+    // Since we ordered by `isGlobal: 'asc'`, tenant-specific items (false) are processed first.
+    const map = new Map();
+
+    items.forEach(item => {
+      // Create a unique key for the relation (excluding the specific masterPartId to allow overriding the part itself)
+      const key = `${item.mantItemId}_${item.vehicleBrandId}_${item.vehicleLineId}_${item.yearFrom || 'all'}`;
+
+      if (!map.has(key)) {
+        map.set(key, item);
+      } else {
+        // If the map already has it, we only replace it if the stored one is Global and the new one is Tenant
+        const existing = map.get(key);
+        if (existing.isGlobal && !item.isGlobal) {
+          map.set(key, item);
+        }
+      }
+    });
+
+    const deduplicatedItems = Array.from(map.values());
+
+    return NextResponse.json(deduplicatedItems);
   } catch (error) {
     console.error('[VEHICLE_PARTS_GET]', error);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
@@ -56,9 +79,9 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await req.json();
@@ -115,7 +138,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Verificar que MasterPart existe
-    const masterPart = await prisma.masterPart.findUnique({
+    const masterPart = await tenantPrisma.masterPart.findUnique({
       where: { id: masterPartId },
     });
     if (!masterPart) {
@@ -126,7 +149,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Verificar duplicados
-    const existing = await prisma.mantItemVehiclePart.findFirst({
+    const existing = await tenantPrisma.mantItemVehiclePart.findFirst({
       where: {
         mantItemId,
         vehicleBrandId,
@@ -142,7 +165,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const created = await prisma.mantItemVehiclePart.create({
+    const created = await tenantPrisma.mantItemVehiclePart.create({
       data: {
         tenantId: isGlobal ? null : user.tenantId,
         isGlobal: isGlobal || false,

@@ -5,6 +5,13 @@ export type ProviderListProps = {
   phone: string | null;
   address: string | null;
   specialty: string | null;
+  nit: string | null;
+  siigoIdType: string | null;
+  siigoPersonType: string | null;
+  stateCode: string | null;
+  cityCode: string | null;
+  fiscalResponsibilities: string[];
+  vatResponsible: boolean;
   status: 'ACTIVE' | 'INACTIVE';
   createdAt: string;
   updatedAt: string;

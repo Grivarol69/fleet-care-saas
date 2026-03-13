@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { requireCurrentUser } from '@/lib/auth';
 import { InvoiceStatus, ItemSource, ItemClosureType } from '@prisma/client';
 import { canApproveInvoices } from '@/lib/permissions';
 
@@ -18,10 +17,9 @@ interface InvoiceItemInput {
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -29,9 +27,8 @@ export async function GET(request: NextRequest) {
     const workOrderId = searchParams.get('workOrderId');
     const limit = searchParams.get('limit');
 
-    const invoices = await prisma.invoice.findMany({
+    const invoices = await tenantPrisma.invoice.findMany({
       where: {
-        tenantId: user.tenantId,
         ...(status && { status: status as InvoiceStatus }),
         ...(workOrderId && {
           workOrderId: workOrderId,
@@ -76,10 +73,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Validar permisos
@@ -123,12 +119,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Validar que el número de factura no exista para este tenant
-    const existingInvoice = await prisma.invoice.findUnique({
+    const existingInvoice = await tenantPrisma.invoice.findFirst({
       where: {
-        tenantId_invoiceNumber: {
-          tenantId: user.tenantId,
-          invoiceNumber,
-        },
+        invoiceNumber,
       },
     });
 
@@ -141,10 +134,9 @@ export async function POST(request: NextRequest) {
 
     // Si tiene workOrderId, validar que existe y pertenece al tenant
     if (workOrderId) {
-      const workOrder = await prisma.workOrder.findUnique({
+      const workOrder = await tenantPrisma.workOrder.findUnique({
         where: {
           id: workOrderId,
-          tenantId: user.tenantId,
         },
       });
 
@@ -157,10 +149,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Validar que el proveedor existe y pertenece al tenant
-    const provider = await prisma.provider.findUnique({
+    const provider = await tenantPrisma.provider.findUnique({
       where: {
         id: supplierId,
-        tenantId: user.tenantId,
       },
     });
 
@@ -174,10 +165,9 @@ export async function POST(request: NextRequest) {
     // Si tiene purchaseOrderId, validar que existe y está en estado SENT
     let purchaseOrder = null;
     if (purchaseOrderId) {
-      purchaseOrder = await prisma.purchaseOrder.findUnique({
+      purchaseOrder = await tenantPrisma.purchaseOrder.findUnique({
         where: {
           id: purchaseOrderId,
-          tenantId: user.tenantId,
         },
         include: { items: true },
       });
@@ -198,7 +188,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Crear Invoice + InvoiceItems en transacción
-    const invoice = await prisma.$transaction(async tx => {
+    const invoice = await tenantPrisma.$transaction(async tx => {
       // 1. Crear Invoice
       const newInvoice = await tx.invoice.create({
         data: {

@@ -128,13 +128,8 @@ const dataAdminSidebar: SidebarItem[] = [
         roles: ['SUPER_ADMIN'],
       },
       {
-        label: 'Plantillas Planes Mantenimiento',
+        label: 'Planes de Mantenimiento',
         href: '/dashboard/maintenance/mant-template',
-        roles: ['SUPER_ADMIN', 'OWNER', 'MANAGER'],
-      },
-      {
-        label: 'Paquetes de Mantenimiento',
-        href: '/dashboard/maintenance/packages',
         roles: ['SUPER_ADMIN', 'OWNER', 'MANAGER'],
       },
       {
@@ -420,12 +415,8 @@ function test_2_2_superAdmin() {
     'SUPER_ADMIN ve Mantto > Categorias'
   );
   assert(
-    hasSubItem(filtered, 'Mantenimiento', 'Plantillas Planes Mantenimiento'),
+    hasSubItem(filtered, 'Mantenimiento', 'Planes de Mantenimiento'),
     'SUPER_ADMIN ve Mantto > Plantillas'
-  );
-  assert(
-    hasSubItem(filtered, 'Mantenimiento', 'Paquetes de Mantenimiento'),
-    'SUPER_ADMIN ve Mantto > Paquetes'
   );
   assert(
     hasSubItem(filtered, 'Mantenimiento', 'Programas Vehículos'),
@@ -467,10 +458,10 @@ function test_2_2_superAdmin() {
   for (const item of filtered) {
     if (item.subItems) totalSubItems += item.subItems.length;
   }
-  // Dashboard no tiene subItems, 3+7+8+3+3+3+4 = 31 sub-items
+  // Dashboard no tiene subItems, 3+7+8+3+3+3+4 = 30 sub-items
   assert(
-    totalSubItems === 31,
-    `SUPER_ADMIN ve 31 sub-items total (got ${totalSubItems})`
+    totalSubItems === 30,
+    `SUPER_ADMIN ve 30 sub-items total (got ${totalSubItems})`
   );
 }
 
@@ -625,12 +616,8 @@ function test_2_4_manager() {
     'MANAGER ve Mantto > Alertas'
   );
   assert(
-    hasSubItem(filtered, 'Mantenimiento', 'Plantillas Planes Mantenimiento'),
+    hasSubItem(filtered, 'Mantenimiento', 'Planes de Mantenimiento'),
     'MANAGER ve Mantto > Plantillas'
-  );
-  assert(
-    hasSubItem(filtered, 'Mantenimiento', 'Paquetes de Mantenimiento'),
-    'MANAGER ve Mantto > Paquetes'
   );
   assert(
     hasSubItem(filtered, 'Mantenimiento', 'Programas Vehículos'),
@@ -719,12 +706,8 @@ function test_2_5_technician() {
     'TECHNICIAN NO ve Mantto > Categorias'
   );
   assert(
-    !hasSubItem(filtered, 'Mantenimiento', 'Plantillas Planes Mantenimiento'),
+    !hasSubItem(filtered, 'Mantenimiento', 'Planes de Mantenimiento'),
     'TECHNICIAN NO ve Mantto > Plantillas'
-  );
-  assert(
-    !hasSubItem(filtered, 'Mantenimiento', 'Paquetes de Mantenimiento'),
-    'TECHNICIAN NO ve Mantto > Paquetes'
   );
   assert(
     !hasSubItem(filtered, 'Mantenimiento', 'Programas Vehículos'),

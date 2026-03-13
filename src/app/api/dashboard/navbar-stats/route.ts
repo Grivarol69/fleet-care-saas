@@ -1,34 +1,30 @@
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get total active vehicles
-    const totalVehicles = await prisma.vehicle.count({
+    const totalVehicles = await tenantPrisma.vehicle.count({
       where: {
-        tenantId: user.tenantId,
         status: 'ACTIVE',
       },
     });
 
     // Get critical alerts (PENDING status)
-    const criticalAlerts = await prisma.maintenanceAlert.count({
+    const criticalAlerts = await tenantPrisma.maintenanceAlert.count({
       where: {
-        tenantId: user.tenantId,
         status: 'PENDING',
       },
     });
 
     // Get open work orders (IN_PROGRESS status)
-    const openWorkOrders = await prisma.workOrder.count({
+    const openWorkOrders = await tenantPrisma.workOrder.count({
       where: {
-        tenantId: user.tenantId,
         status: 'IN_PROGRESS',
       },
     });
@@ -40,10 +36,9 @@ export async function GET() {
     currentMonth.setHours(0, 0, 0, 0);
 
     // Mock calculation - will be replaced with:
-    // const monthCostsRaw = await prisma.invoice.aggregate({
+    // const monthCostsRaw = await tenantPrisma.invoice.aggregate({
     //     where: {
-    //         tenantId: user.tenantId,
-    //         status: "APPROVED",
+    //         //         status: "APPROVED",
     //         createdAt: { gte: currentMonth }
     //     },
     //     _sum: { totalAmount: true }

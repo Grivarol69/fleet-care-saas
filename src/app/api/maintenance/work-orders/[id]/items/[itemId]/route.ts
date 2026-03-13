@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { requireCurrentUser } from '@/lib/auth';
 import { ItemSource, ItemClosureType, WorkOrderStatus } from '@prisma/client';
 import { z } from 'zod';
 import { canExecuteWorkOrders } from '@/lib/permissions';
@@ -10,7 +9,7 @@ const updateItemSchema = z.object({
     .enum(['EXTERNAL', 'INTERNAL_STOCK', 'INTERNAL_PURCHASE'])
     .optional(),
   closureType: z
-    .enum(['PENDING', 'EXTERNAL_INVOICE', 'INTERNAL_TICKET', 'NOT_APPLICABLE'])
+    .enum(['PENDING', 'EXTERNAL_INVOICE', 'INTERNAL_TICKET', 'NOT_APPLICABLE', 'PURCHASE_ORDER'])
     .optional(),
   status: z
     .enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'])
@@ -18,6 +17,7 @@ const updateItemSchema = z.object({
   supplier: z.string().optional(),
   unitPrice: z.number().min(0).optional(),
   quantity: z.number().positive().optional(),
+  providerId: z.string().nullable().optional(),
 });
 
 /**
@@ -29,9 +29,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canExecuteWorkOrders(user)) {
@@ -63,7 +63,7 @@ export async function PATCH(
     const updates = validation.data;
 
     // Verificar que el item existe y pertenece al tenant
-    const existingItem = await prisma.workOrderItem.findUnique({
+    const existingItem = await tenantPrisma.workOrderItem.findUnique({
       where: { id: workOrderItemId },
       include: {
         workOrder: { select: { tenantId: true, id: true } },
@@ -93,6 +93,7 @@ export async function PATCH(
       unitPrice?: number;
       quantity?: number;
       totalCost?: number;
+      providerId?: string | null;
     } = {};
 
     if (updates.itemSource) {
@@ -113,6 +114,9 @@ export async function PATCH(
     if (updates.quantity !== undefined) {
       updateData.quantity = updates.quantity;
     }
+    if (updates.providerId !== undefined) {
+      updateData.providerId = updates.providerId;
+    }
 
     // Recalcular totalCost si cambia precio o cantidad
     if (updates.unitPrice !== undefined || updates.quantity !== undefined) {
@@ -121,7 +125,7 @@ export async function PATCH(
       updateData.totalCost = newPrice * newQty;
     }
 
-    const updatedItem = await prisma.workOrderItem.update({
+    const updatedItem = await tenantPrisma.workOrderItem.update({
       where: { id: workOrderItemId },
       data: updateData,
       include: {
@@ -130,6 +134,9 @@ export async function PATCH(
         },
         masterPart: {
           select: { id: true, code: true, description: true },
+        },
+        provider: {
+          select: { id: true, name: true },
         },
       },
     });
@@ -140,13 +147,13 @@ export async function PATCH(
     // the WO status to PENDING_INVOICE (only if currently IN_PROGRESS).
     let woPendingInvoiceTriggered = false;
     if (updates.closureType !== undefined) {
-      const currentWO = await prisma.workOrder.findUnique({
+      const currentWO = await tenantPrisma.workOrder.findUnique({
         where: { id: workOrderId },
         select: { status: true },
       });
 
       if (currentWO?.status === 'IN_PROGRESS') {
-        const pendingCount = await prisma.workOrderItem.count({
+        const pendingCount = await tenantPrisma.workOrderItem.count({
           where: {
             workOrderId,
             closureType: ItemClosureType.PENDING,
@@ -155,7 +162,7 @@ export async function PATCH(
         });
 
         if (pendingCount === 0) {
-          await prisma.workOrder.update({
+          await tenantPrisma.workOrder.update({
             where: { id: workOrderId },
             data: { status: 'PENDING_INVOICE' },
           });
@@ -177,6 +184,10 @@ export async function PATCH(
         quantity: updatedItem.quantity,
         unitPrice: Number(updatedItem.unitPrice),
         totalCost: Number(updatedItem.totalCost),
+        providerId: updatedItem.providerId,
+        provider: updatedItem.provider
+          ? { id: updatedItem.provider.id, name: updatedItem.provider.name }
+          : null,
       },
       ...(woPendingInvoiceTriggered
         ? { workOrderStatusChanged: 'PENDING_INVOICE' }
@@ -200,9 +211,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id, itemId } = await params;
@@ -214,7 +225,7 @@ export async function GET(
       return NextResponse.json({ error: 'IDs inválidos' }, { status: 400 });
     }
 
-    const item = await prisma.workOrderItem.findUnique({
+    const item = await tenantPrisma.workOrderItem.findUnique({
       where: { id: workOrderItemId },
       include: {
         workOrder: { select: { tenantId: true, id: true } },

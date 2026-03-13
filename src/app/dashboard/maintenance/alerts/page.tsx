@@ -20,7 +20,7 @@ export default function MaintenanceAlertsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [priorityFilter, setPriorityFilter] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedAlertIds, setSelectedAlertIds] = useState<number[]>([]);
+  const [selectedAlertIds, setSelectedAlertIds] = useState<string[]>([]);
 
   // Fetch data
   const { groupedAlerts, isLoading } = useAlertsGroupedByVehicle(

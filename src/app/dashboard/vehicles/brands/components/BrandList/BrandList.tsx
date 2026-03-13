@@ -38,7 +38,7 @@ export function BrandList() {
       .then(data => {
         if (data.isSuperAdmin) setIsSuperAdmin(true);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const fetchBrands = useCallback(async () => {
@@ -109,10 +109,6 @@ export function BrandList() {
 
   const columns: ColumnDef<BrandListProps>[] = [
     {
-      accessorKey: 'id',
-      header: 'ID',
-    },
-    {
       accessorKey: 'name',
       header: 'Nombre',
     },
@@ -121,11 +117,10 @@ export function BrandList() {
       header: 'Origen',
       cell: ({ row }) => (
         <span
-          className={`px-2 py-1 rounded-full text-xs ${
-            row.original.isGlobal
+          className={`px-2 py-1 rounded-full text-xs ${row.original.isGlobal
               ? 'bg-purple-100 text-purple-800'
               : 'bg-slate-100 text-slate-700'
-          }`}
+            }`}
         >
           {row.original.isGlobal ? 'Global' : 'Empresa'}
         </span>

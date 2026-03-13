@@ -11,6 +11,9 @@ export const formSchema = z.object({
     .min(0, 'El precio debe ser mayor o igual a 0')
     .optional()
     .or(z.literal('')),
+  accountGroup: z.coerce.number().optional().nullable(),
+  siigoTaxClassification: z.enum(['Gravado', 'Exento', 'Excluido']).optional().nullable().or(z.literal('')),
+  siigoUnit: z.coerce.number().optional().nullable(),
 });
 
 export type FormEditPartValues = z.infer<typeof formSchema>;

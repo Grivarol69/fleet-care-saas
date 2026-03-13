@@ -1,23 +1,17 @@
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
     // Obtener usuario actual
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Devolver marcas GLOBALES + del tenant (solo activas)
-    const brands = await prisma.vehicleBrand.findMany({
+    // Devolver marcas globales y del tenant confiando en el interceptor `tenant-prisma.ts`
+    const brands = await tenantPrisma.vehicleBrand.findMany({
       where: {
-        OR: [
-          { isGlobal: true }, // Marcas globales (Knowledge Base)
-          { tenantId: user.tenantId }, // Marcas custom del tenant
-        ],
         status: 'ACTIVE',
       },
       orderBy: {
@@ -37,10 +31,9 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     // Obtener usuario actual
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { name, isGlobal } = await req.json();
@@ -78,7 +71,7 @@ export async function POST(req: Request) {
     }
 
     // Verificar que no exista una marca con el mismo nombre en el scope
-    const existingBrand = await prisma.vehicleBrand.findFirst({
+    const existingBrand = await tenantPrisma.vehicleBrand.findFirst({
       where: {
         tenantId: targetTenant,
         name: name.trim(),
@@ -92,7 +85,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const brand = await prisma.vehicleBrand.create({
+    const brand = await tenantPrisma.vehicleBrand.create({
       data: {
         name: name.trim(),
         tenantId: targetTenant,

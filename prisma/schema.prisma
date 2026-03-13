@@ -13,65 +13,100 @@ datasource db {
 // ========================================
 
 model Tenant {
-  id                 String             @id @default(uuid())
-  name               String
-  slug               String             @unique // Para subdominios
-  domain             String?            @unique // Dominio personalizado opcional
-  logo               String?
-  country            String             @default("CO") // ISO 3166-1 alpha-2
-  currency           String             @default("COP") // Moneda local
-  
-  onboardingStatus   OnboardingStatus   @default(PENDING)
-  
+  id       String  @id @default(uuid())
+  name     String
+  slug     String  @unique // Para subdominios
+  domain   String? @unique // Dominio personalizado opcional
+  logo     String?
+  country  String  @default("CO") // ISO 3166-1 alpha-2
+  currency String  @default("COP") // Moneda local
+
+  onboardingStatus OnboardingStatus @default(PENDING)
+
   settings           Json? // Configuraciones específicas del tenant
   subscriptionId     String?            @unique
   subscriptionStatus SubscriptionStatus @default(TRIAL)
+  plan               TenantPlan         @default(ENTERPRISE) // ENTERPRISE por defecto hasta definir tiers
   trialEndsAt        DateTime?
   billingEmail       String?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 
   // Relaciones
-  users                     User[]
-  vehicles                  Vehicle[]
-  vehicleBrands             VehicleBrand[]
-  vehicleLines              VehicleLine[]
-  vehicleTypes              VehicleType[]
-  mantCategories            MantCategory[]
-  mantItems                 MantItem[]
-  maintenanceTemplates      MaintenanceTemplate[] // ✅ CURRENT
-  vehicleMantPrograms       VehicleMantProgram[] // ✅ CURRENT ARCHITECTURE
-  vehicleProgramPackages    VehicleProgramPackage[] // ✅ CURRENT ARCHITECTURE
-  vehicleProgramItems       VehicleProgramItem[] // ✅ CURRENT ARCHITECTURE
-  workOrders                WorkOrder[]
-  technicians               Technician[]
-  providers                 Provider[]
-  documents                 Document[]
-  subscriptions             Subscription[]
-  drivers                   Driver[]
-  vehicleDrivers            VehicleDriver[]
-  maintenanceAlerts         MaintenanceAlert[]
-  financialAlerts           FinancialAlert[] // ✅ Nueva relación
-  invoices                  Invoice[]
-  inventoryItems            InventoryItem[]
-  inventoryMovements        InventoryMovement[]
-  internalWorkTickets       InternalWorkTicket[]
-  documentTypeConfigs       DocumentTypeConfig[]
-  purchaseOrders            PurchaseOrder[]
-  mantItemRequests          MantItemRequest[]
-  mantItemVehicleParts      MantItemVehiclePart[]
-  odometerLogs              OdometerLog[]
-  workOrderItems            WorkOrderItem[]
-  workOrderExpenses         WorkOrderExpense[]
-  workOrderApprovals        WorkOrderApproval[]
-  expenseAuditLogs          ExpenseAuditLog[]
-  invoiceItems              InvoiceItem[]
-  purchaseOrderItems        PurchaseOrderItem[]
-  ticketLaborEntries        TicketLaborEntry[]
-  ticketPartEntries         TicketPartEntry[]
+  users                  User[]
+  vehicles               Vehicle[]
+  vehicleBrands          VehicleBrand[]
+  vehicleLines           VehicleLine[]
+  vehicleTypes           VehicleType[]
+  mantCategories         MantCategory[]
+  mantItems              MantItem[]
+  maintenanceTemplates   MaintenanceTemplate[] // ✅ CURRENT
+  vehicleMantPrograms    VehicleMantProgram[] // ✅ CURRENT ARCHITECTURE
+  vehicleProgramPackages VehicleProgramPackage[] // ✅ CURRENT ARCHITECTURE
+  vehicleProgramItems    VehicleProgramItem[] // ✅ CURRENT ARCHITECTURE
+  workOrders             WorkOrder[]
+  technicians            Technician[]
+  providers              Provider[]
+  documents              Document[]
+  subscriptions          Subscription[]
+  drivers                Driver[]
+  vehicleDrivers         VehicleDriver[]
+  maintenanceAlerts      MaintenanceAlert[]
+  financialAlerts        FinancialAlert[] // ✅ Nueva relación
+  invoices               Invoice[]
+  inventoryItems         InventoryItem[]
+  inventoryMovements     InventoryMovement[]
+  internalWorkTickets    InternalWorkTicket[]
+  documentTypeConfigs    DocumentTypeConfig[]
+  purchaseOrders         PurchaseOrder[]
+  mantItemRequests       MantItemRequest[]
+  mantItemVehicleParts   MantItemVehiclePart[]
+  odometerLogs           OdometerLog[]
+  workOrderItems         WorkOrderItem[]
+  workOrderExpenses      WorkOrderExpense[]
+  workOrderApprovals     WorkOrderApproval[]
+  expenseAuditLogs       ExpenseAuditLog[]
+  invoiceItems           InvoiceItem[]
+  purchaseOrderItems     PurchaseOrderItem[]
+  ticketLaborEntries     TicketLaborEntry[]
+  ticketPartEntries      TicketPartEntry[]
+  costCenters            CostCenter[]
+  mantItemProcedures     MantItemProcedure[]
+  temparios              Tempario[]
 
   @@index([slug])
   @@index([subscriptionStatus])
+}
+
+model CostCenter {
+  id          String  @id @default(uuid())
+  tenantId    String
+  code        String // Código interno ej: "CC-001"
+  name        String // Nombre ej: "Transportes García S.A."
+  description String?
+  isActive    Boolean @default(true)
+
+  // Datos de facturación / contacto
+  taxId        String? // NIT o CUIT
+  billingEmail String?
+  phone        String?
+  address      String?
+
+  // Campos Siigo (para futura integración AR)
+  siigoId         String?
+  siigoIdType     SiigoIdType?
+  siigoPersonType SiigoPersonType?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicles   Vehicle[]
+  workOrders WorkOrder[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([isActive])
 }
 
 model User {
@@ -95,6 +130,9 @@ model User {
   priceHistoryApproved  PartPriceHistory[] @relation("PriceHistoryApprover")
   priceHistoryPurchased PartPriceHistory[] @relation("PriceHistoryPurchaser")
   paymentsRegistered    InvoicePayment[]   @relation("PaymentRegistrar")
+
+  technicianProfile Technician?
+  driverProfile     Driver?
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -169,6 +207,7 @@ model VehicleBrand {
   vehicles             Vehicle[]
   maintenanceTemplates MaintenanceTemplate[] // ✅ CURRENT
   mantItemVehicleParts MantItemVehiclePart[] // KB: repuestos por marca
+  mantItemProcedures   MantItemProcedure[]   // KB: procedimientos de labor
 
   @@unique([tenantId, name])
   @@index([isGlobal])
@@ -190,6 +229,7 @@ model VehicleLine {
   vehicles             Vehicle[]
   maintenanceTemplates MaintenanceTemplate[] // ✅ CURRENT
   mantItemVehicleParts MantItemVehiclePart[] // KB: repuestos por línea
+  mantItemProcedures   MantItemProcedure[]   // KB: procedimientos de labor
 
   @@unique([tenantId, brandId, name])
   @@index([brandId])
@@ -248,16 +288,18 @@ model Vehicle {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant                    Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  brand                     VehicleBrand               @relation(fields: [brandId], references: [id])
-  line                      VehicleLine                @relation(fields: [lineId], references: [id])
-  type                      VehicleType                @relation(fields: [typeId], references: [id])
-  documents                 Document[]
-  workOrders                WorkOrder[]
-  odometerLogs              OdometerLog[]
-  maintenanceAlerts         MaintenanceAlert[]
-  vehicleDrivers            VehicleDriver[]
-  vehicleMantProgram        VehicleMantProgram? // ✅ CURRENT ARCHITECTURE
+  tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  brand              VehicleBrand        @relation(fields: [brandId], references: [id])
+  line               VehicleLine         @relation(fields: [lineId], references: [id])
+  type               VehicleType         @relation(fields: [typeId], references: [id])
+  documents          Document[]
+  workOrders         WorkOrder[]
+  odometerLogs       OdometerLog[]
+  maintenanceAlerts  MaintenanceAlert[]
+  vehicleDrivers     VehicleDriver[]
+  vehicleMantProgram VehicleMantProgram? // ✅ CURRENT ARCHITECTURE
+  costCenterId       String?
+  costCenter         CostCenter?         @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
 
   @@unique([tenantId, licensePlate])
   @@index([tenantId])
@@ -309,14 +351,15 @@ model MantItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant              Tenant?              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  category            MantCategory         @relation(fields: [categoryId], references: [id])
+  tenant              Tenant?               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category            MantCategory          @relation(fields: [categoryId], references: [id])
   packageItems        PackageItem[] // ✅ CURRENT (Template items)
   workOrderItems      WorkOrderItem[]
   vehicleProgramItems VehicleProgramItem[] // ✅ CURRENT ARCHITECTURE
   parts               MantItemPart[] // Legacy: vínculo genérico sin contexto vehículo
   vehicleParts        MantItemVehiclePart[] // KB: repuestos por marca/línea/año
   purchaseOrderItems  PurchaseOrderItem[]
+  procedures          MantItemProcedure[]   // KB: procedimientos de labor
 
   @@unique([tenantId, name])
   @@index([categoryId])
@@ -326,8 +369,8 @@ model MantItem {
 
 // Solicitudes de nuevos MantItems (TECHNICIAN/PURCHASER → OWNER/MANAGER aprueba)
 model MantItemRequest {
-  id        String @id @default(uuid())
-  tenantId  String
+  id       String @id @default(uuid())
+  tenantId String
 
   // Datos del item solicitado
   suggestedName String
@@ -341,11 +384,11 @@ model MantItemRequest {
   similarItems Json? // [{ id, name, score }] - para auditoría
 
   // Workflow
-  status     MantItemRequestStatus @default(PENDING)
-  requestedBy String // User ID
-  resolvedBy  String? // User ID OWNER/MANAGER
-  resolvedAt  DateTime?
-  rejectionReason String? @db.Text
+  status          MantItemRequestStatus @default(PENDING)
+  requestedBy     String // User ID
+  resolvedBy      String? // User ID OWNER/MANAGER
+  resolvedAt      DateTime?
+  rejectionReason String?               @db.Text
 
   // Referencia al item creado si fue aprobado
   createdMantItemId String?
@@ -367,43 +410,129 @@ model MantItemRequest {
 // ========================================
 
 model MantItemVehiclePart {
-  id               String   @id @default(uuid())
-  tenantId         String?
-  isGlobal         Boolean  @default(false)
+  id       String  @id @default(uuid())
+  tenantId String?
+  isGlobal Boolean @default(false)
 
   // Item de mantenimiento (ej: "Cambio de filtro de aire")
-  mantItemId       String
-  mantItem         MantItem @relation(fields: [mantItemId], references: [id])
+  mantItemId String
+  mantItem   MantItem @relation(fields: [mantItemId], references: [id])
 
   // Contexto vehículo (todo por FK, cero strings libres)
-  vehicleBrandId   String
-  vehicleBrand     VehicleBrand @relation(fields: [vehicleBrandId], references: [id])
-  vehicleLineId    String
-  vehicleLine      VehicleLine @relation(fields: [vehicleLineId], references: [id])
-  yearFrom         Int? // Año desde (ej: 2020)
-  yearTo           Int? // Año hasta (ej: 2024, null = vigente)
+  vehicleBrandId String
+  vehicleBrand   VehicleBrand @relation(fields: [vehicleBrandId], references: [id])
+  vehicleLineId  String
+  vehicleLine    VehicleLine  @relation(fields: [vehicleLineId], references: [id])
+  yearFrom       Int? // Año desde (ej: 2020)
+  yearTo         Int? // Año hasta (ej: 2024, null = vigente)
 
   // Repuesto específico (FK a MasterPart)
-  masterPartId     String
-  masterPart       MasterPart @relation("VehiclePartSpec", fields: [masterPartId], references: [id])
+  masterPartId String
+  masterPart   MasterPart @relation("VehiclePartSpec", fields: [masterPartId], references: [id])
 
   // Equivalentes informativos (texto libre, NO formalizados)
   alternativePartNumbers String? @db.Text // "BOSCH F026400391, MANN C2443"
-  notes            String?
+  notes                  String?
 
   // Cantidad necesaria (ej: 4.5 litros de aceite)
-  quantity         Decimal  @default(1) @db.Decimal(10, 2)
+  quantity Decimal @default(1) @db.Decimal(10, 2)
 
-  tenant           Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([mantItemId, vehicleBrandId, vehicleLineId, yearFrom, masterPartId])
   @@index([mantItemId])
   @@index([vehicleBrandId, vehicleLineId])
   @@index([masterPartId])
   @@index([isGlobal])
+}
+
+// ========================================
+// TEMPARIO: Catálogo de Operaciones Automotrices
+// ========================================
+
+model Tempario {
+  id          String   @id @default(uuid())
+  tenantId    String?
+  isGlobal    Boolean  @default(false)
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant Tenant?        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  items  TemparioItem[]
+
+  @@index([tenantId])
+  @@index([isGlobal])
+}
+
+model TemparioItem {
+  id             String   @id @default(uuid())
+  temparioId     String
+  code           String
+  description    String
+  category       String?
+  referenceHours Decimal  @db.Decimal(6, 2)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tempario       Tempario               @relation(fields: [temparioId], references: [id], onDelete: Cascade)
+  procedureSteps MantItemProcedureStep[]
+  subTasks       WorkOrderSubTask[]
+
+  @@unique([temparioId, code])
+  @@index([temparioId])
+  @@index([code])
+}
+
+// ========================================
+// KNOWLEDGE BASE: Procedimientos de Labor (Tempario)
+// Vincula MantItem + Marca? + Línea? → Procedimiento con pasos y horas estándar
+// ========================================
+
+model MantItemProcedure {
+  id       String  @id @default(uuid())
+  tenantId String?
+  isGlobal Boolean @default(false)
+
+  mantItemId String
+  mantItem   MantItem @relation(fields: [mantItemId], references: [id])
+
+  vehicleBrandId String?
+  vehicleBrand   VehicleBrand? @relation(fields: [vehicleBrandId], references: [id])
+  vehicleLineId  String?
+  vehicleLine    VehicleLine?  @relation(fields: [vehicleLineId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant            Tenant?                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  workOrderSubTasks WorkOrderSubTask[]
+  steps             MantItemProcedureStep[]
+
+  @@index([mantItemId])
+  @@index([vehicleBrandId, vehicleLineId])
+  @@index([isGlobal])
+  @@index([tenantId])
+}
+
+model MantItemProcedureStep {
+  id             String  @id @default(uuid())
+  procedureId    String
+  temparioItemId String
+  order          Int
+  standardHours  Decimal @db.Decimal(6, 2)
+
+  procedure    MantItemProcedure @relation(fields: [procedureId], references: [id], onDelete: Cascade)
+  temparioItem TemparioItem      @relation(fields: [temparioItemId], references: [id])
+
+  @@unique([procedureId, order])
+  @@index([procedureId])
+  @@index([temparioItemId])
 }
 
 // ========================================
@@ -489,7 +618,6 @@ model PackageItem {
   @@index([status])
 }
 
-
 // ========================================
 // WORK ORDERS (EXTENDIDO)
 // ========================================
@@ -526,7 +654,8 @@ model WorkOrder {
 
   startDate         DateTime?
   endDate           DateTime?
-  completionMileage Float?    // Kilometraje al momento de cierre de la OT
+  completionMileage Float? // Kilometraje al momento de cierre de la OT
+  notes             String?   @db.Text // Notas de contexto a nivel OT (ej: incidentes, demoras)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
@@ -544,6 +673,8 @@ model WorkOrder {
   invoices               Invoice[] // ✅ Facturas vinculadas a esta WO
   internalWorkTickets    InternalWorkTicket[]
   purchaseOrders         PurchaseOrder[]
+  costCenterId           String?
+  costCenterRef          CostCenter?             @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
 
   @@index([tenantId])
   @@index([vehicleId])
@@ -566,9 +697,10 @@ model WorkOrderItem {
   supplier    String
 
   // Costos detallados
-  unitPrice Decimal @db.Decimal(10, 2)
-  quantity  Int     @default(1)
-  totalCost Decimal @db.Decimal(10, 2)
+  unitPrice    Decimal  @db.Decimal(10, 2)
+  billingPrice Decimal? @db.Decimal(10, 2)
+  quantity     Int      @default(1)
+  totalCost    Decimal  @db.Decimal(10, 2)
 
   // Trazabilidad
   purchasedBy   String // User ID quien compró
@@ -589,51 +721,62 @@ model WorkOrderItem {
   // Fuente del item
   itemSource ItemSource @default(EXTERNAL) // EXTERNAL | INTERNAL_STOCK | INTERNAL_PURCHASE
 
+  // Proveedor (asignado post-creación en TrabajosExternosTab)
+  providerId String?
+  provider   Provider? @relation(fields: [providerId], references: [id])
+
   // Campos legacy
   cost             Decimal?        @db.Decimal(10, 2)
   executionMileage Int?
   notes            String?
   status           WorkOrderStatus @default(PENDING)
+  technicianId          String?
+  indirectHours         Decimal? @db.Decimal(6, 2)
+  indirectJustification String?
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
-  workOrder          WorkOrder          @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
-  mantItem           MantItem           @relation(fields: [mantItemId], references: [id])
-  tenant             Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  workOrder          WorkOrder           @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  mantItem           MantItem            @relation(fields: [mantItemId], references: [id])
+  tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   invoiceItems       InvoiceItem[] // ✅ Items de factura vinculados
   ticketLaborEntries TicketLaborEntry[]
   ticketPartEntries  TicketPartEntry[]
   purchaseOrderItems PurchaseOrderItem[]
+  workOrderSubTasks  WorkOrderSubTask[]
+  technician Technician? @relation(fields: [technicianId], references: [id])
 
+  @@index([technicianId])
   @@index([workOrderId])
   @@index([mantItemId])
   @@index([supplier])
   @@index([purchasedBy])
   @@index([tenantId])
+  @@index([providerId])
 }
 
 model WorkOrderExpense {
-  id            String      @id @default(cuid())
-  workOrderId   String
-  tenantId      String
-  expenseType   ExpenseType
-  description   String
-  amount        Decimal     @db.Decimal(10, 2)
+  id          String      @id @default(cuid())
+  workOrderId String
+  tenantId    String
+  expenseType ExpenseType
+  description String
+  amount      Decimal     @db.Decimal(10, 2)
 
   // Proveedor (Opcional: puede ser externo sin registrar o registrado)
-  vendor        String?     // Nombre texto libre (fallback)
-  providerId    String?
-  provider      Provider?   @relation(fields: [providerId], references: [id])
+  vendor     String? // Nombre texto libre (fallback)
+  providerId String?
+  provider   Provider? @relation(fields: [providerId], references: [id])
 
   invoiceNumber String?
   receiptUrl    String? // URL del recibo escaneado
-  expenseDate   DateTime    @default(now())
+  expenseDate   DateTime @default(now())
   recordedBy    String // User ID quien registró
 
-  status        ApprovalStatus @default(PENDING) // ✅ Nuevo campo para aprobación
+  status ApprovalStatus @default(PENDING) // ✅ Nuevo campo para aprobación
 
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
   tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -701,9 +844,10 @@ model ExpenseAuditLog {
 model MasterPart {
   id       String  @id @default(cuid())
   tenantId String? // NULL = compartido globalmente, FK = específico del tenant
+  isGlobal Boolean @default(false) // Global Knowledge Base flag
 
   // Identificación
-  code        String  @unique // "BOSCH-123", "SHELL-5W40-SYNT"
+  code        String // "BOSCH-123", "SHELL-5W40-SYNT"
   description String // "Filtro aceite motor BOSCH"
   category    String // "FILTROS", "ACEITES", "LUBRICANTES"
   subcategory String? // "FILTROS_ACEITE", "FILTROS_AIRE"
@@ -721,6 +865,13 @@ model MasterPart {
   alternativePart MasterPart?  @relation("Alternatives", fields: [alternativeFor], references: [id], onDelete: SetNull)
   alternatives    MasterPart[] @relation("Alternatives")
 
+  // ============ CAMPOS SIIGO (FASE contable) ============
+  siigoProductId         String?
+  accountGroup           Int?
+  siigoTaxClassification SiigoTaxClassification?
+  siigoUnit              Int?
+  siigoSyncedAt          DateTime?
+
   // Metadata
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -737,10 +888,12 @@ model MasterPart {
   workOrderItems       WorkOrderItem[]
   purchaseOrderItems   PurchaseOrderItem[]
 
+  @@unique([tenantId, code])
   @@index([category])
   @@index([tenantId])
   @@index([code])
   @@index([isActive])
+  @@index([isGlobal])
 }
 
 // 2. Tabla intermedia: MantItem ↔ MasterPart (many-to-many)
@@ -818,14 +971,22 @@ model Invoice {
   ocrProcessedAt DateTime?
   needsReview    Boolean   @default(false) // true si confianza < 70%
 
+  // ============ CAMPOS SIIGO ============
+  siigoId          String?
+  siigoSyncStatus  SiigoSyncStatus?
+  siigoSyncedAt    DateTime?
+  siigoError       String?          @db.Text
+  paymentMeanSiigo Int?
+  siigoSyncedBy    String?
+
   // Metadata
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relaciones
-  items        InvoiceItem[]
-  payments     InvoicePayment[] // FASE 2
-  priceHistory PartPriceHistory[]
+  items           InvoiceItem[]
+  payments        InvoicePayment[] // FASE 2
+  priceHistory    PartPriceHistory[]
   financialAlerts FinancialAlert[] // ✅ Relación inversa
 
   @@unique([tenantId, invoiceNumber])
@@ -939,16 +1100,16 @@ model InvoicePayment {
 // ========================================
 
 model PurchaseOrder {
-  id        String @id @default(cuid())
-  tenantId  String
-  tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // Relacion con OT
   workOrderId String
   workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
 
   // Numero y tipo
-  orderNumber String            // "OC-2026-000001"
+  orderNumber String // "OC-2026-000001"
   type        PurchaseOrderType // SERVICES | PARTS
 
   // Proveedor
@@ -966,8 +1127,8 @@ model PurchaseOrder {
 
   // Montos
   subtotal  Decimal @db.Decimal(12, 2)
-  taxRate   Decimal @db.Decimal(5, 2) @default(0)
-  taxAmount Decimal @db.Decimal(12, 2) @default(0)
+  taxRate   Decimal @default(0) @db.Decimal(5, 2)
+  taxAmount Decimal @default(0) @db.Decimal(12, 2)
   total     Decimal @db.Decimal(12, 2)
 
   // Items y facturas
@@ -1011,7 +1172,7 @@ model PurchaseOrderItem {
 
   // Estado de recepcion/facturacion
   status      POItemStatus @default(PENDING)
-  receivedQty Decimal      @db.Decimal(10, 2) @default(0)
+  receivedQty Decimal      @default(0) @db.Decimal(10, 2)
 
   // Referencia a factura que cancela este item
   invoiceItemId String?
@@ -1081,11 +1242,15 @@ model Technician {
   vehicleProgramItems    VehicleProgramItem[] // ✅ CURRENT ARCHITECTURE
   internalWorkTickets    InternalWorkTicket[]
   ticketLaborEntries     TicketLaborEntry[]
+  workOrderItems         WorkOrderItem[]
 
   // Datos para Taller Interno
   employmentType EmploymentType @default(INTERNAL)
   hourlyRate     Decimal?       @db.Decimal(10, 2)
   location       String?
+
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id])
 
   @@unique([tenantId, name])
   @@index([tenantId])
@@ -1100,8 +1265,20 @@ model Provider {
   address   String?
   specialty ProviderSpecialty?
   status    Status             @default(ACTIVE)
-  createdAt DateTime           @default(now())
-  updatedAt DateTime           @updatedAt
+
+  // ============ CAMPOS SIIGO / DIAN ============
+  nit                    String?
+  siigoIdType            SiigoIdType?
+  siigoPersonType        SiigoPersonType?
+  stateCode              String?
+  cityCode               String?
+  fiscalResponsibilities String[]
+  vatResponsible         Boolean?
+  siigoId                String?
+  siigoSyncedAt          DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   tenant                 Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   workOrders             WorkOrder[]
@@ -1111,6 +1288,7 @@ model Provider {
   priceHistory           PartPriceHistory[] // ✅ Histórico de precios
   workOrderExpenses      WorkOrderExpense[] // ✅ Gastos asignados
   purchaseOrders         PurchaseOrder[]
+  workOrderItems         WorkOrderItem[]
 
   @@unique([tenantId, name])
   @@index([tenantId])
@@ -1131,6 +1309,9 @@ model Driver {
   tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   odometerLogs   OdometerLog[]
   vehicleDrivers VehicleDriver[]
+
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id])
 
   @@unique([tenantId, licenseNumber])
   @@index([tenantId])
@@ -1177,9 +1358,9 @@ model OdometerLog {
   recordedAt  DateTime            @default(now())
   createdAt   DateTime            @default(now())
 
-  vehicle Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-  driver  Driver?  @relation(fields: [driverId], references: [id])
-  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  driver  Driver? @relation(fields: [driverId], references: [id])
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([vehicleId])
   @@index([driverId])
@@ -1282,35 +1463,35 @@ model MaintenanceAlert {
 // ========================================
 
 model FinancialAlert {
-  id            String   @id @default(uuid())
-  tenantId      String
+  id       String @id @default(uuid())
+  tenantId String
 
   // Relaciones Opciónales
-  invoiceId     String?
-  invoice       Invoice? @relation(fields: [invoiceId], references: [id])
-  workOrderId   String?
-  workOrder     WorkOrder? @relation(fields: [workOrderId], references: [id])
-  masterPartId  String?
-  masterPart    MasterPart? @relation(fields: [masterPartId], references: [id])
-  
-  type          AlertType // PRICE_DEVIATION, BUDGET_OVERRUN
-  severity      AlertLevel // HIGH, CRITICAL, FINANCIAL
-  status        AlertStatus @default(PENDING)
-  
-  message       String   // "Precio de Filtro Aceite (20.00) excede referencia (10.00) en 100%"
-  details       Json?    // { expected: 10, actual: 20, deviation: 100 }
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
+  invoiceId    String?
+  invoice      Invoice?    @relation(fields: [invoiceId], references: [id])
+  workOrderId  String?
+  workOrder    WorkOrder?  @relation(fields: [workOrderId], references: [id])
+  masterPartId String?
+  masterPart   MasterPart? @relation(fields: [masterPartId], references: [id])
+
+  type     AlertType // PRICE_DEVIATION, BUDGET_OVERRUN
+  severity AlertLevel // HIGH, CRITICAL, FINANCIAL
+  status   AlertStatus @default(PENDING)
+
+  message String // "Precio de Filtro Aceite (20.00) excede referencia (10.00) en 100%"
+  details Json? // { expected: 10, actual: 20, deviation: 100 }
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Gestión
   acknowledgedBy String?
   acknowledgedAt DateTime?
   resolvedBy     String?
   resolvedAt     DateTime?
   resolution     String? // "Precio aceptado por urgencia"
-  
-  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([status])
@@ -1530,6 +1711,7 @@ enum UserRole {
   SUPER_ADMIN // Dueño del SaaS - acceso total + tablas maestras
   OWNER // Dueño empresa cliente - acceso total a su tenant
   MANAGER // Gerente/Supervisor - gestión + costos
+  COORDINATOR // Coordinador - soporte administrativo y gestión
   PURCHASER // Comprador - Gestión de facturas, gastos y proveedores
   TECHNICIAN // Mecánico/Técnico - operación sin costos
   DRIVER // Conductor - solo odómetro
@@ -1542,6 +1724,12 @@ enum SubscriptionStatus {
   PAST_DUE
   CANCELED
   INCOMPLETE
+}
+
+enum TenantPlan {
+  STARTER    // Flota básica + mantenimiento
+  GROWTH     // + Inventario + OC + Facturación
+  ENTERPRISE // + Integraciones + Multi-sucursal + Reportes avanzados
 }
 
 enum PaymentStatus {
@@ -1570,6 +1758,7 @@ enum VehicleOwner {
   OWN
   LEASED
   RENTED
+  THIRD_PARTY
 }
 
 enum PlateType {
@@ -1699,7 +1888,6 @@ enum ProviderSpecialty {
   GRUA
   SEGUROS
 }
-
 
 enum AlertStatus {
   PENDING // Generada, esperando atención
@@ -1946,6 +2134,7 @@ enum ItemClosureType {
   EXTERNAL_INVOICE // Cerrado con factura
   INTERNAL_TICKET // Cerrado con comprobante interno
   NOT_APPLICABLE // No requiere cierre
+  PURCHASE_ORDER // Cerrado con orden de compra
 }
 
 enum EmploymentType {
@@ -2003,4 +2192,73 @@ enum OnboardingStatus {
   PROFILE_COMPLETED
   FLEET_CONFIGURED
   COMPLETED
+}
+
+// ========================================
+// SIIGO INTEGRATION ENUMS
+// ========================================
+
+enum SiigoSyncStatus {
+  PENDING // Encolado para sync, aún no intentado
+  SYNCING // En vuelo (set justo antes de after())
+  SYNCED // Enviado exitosamente a Siigo
+  FAILED // Todos los reintentos agotados, error en siigoError
+  SKIPPED // Faltan datos fiscales requeridos (ej: NIT nulo)
+}
+
+enum SiigoTaxClassification {
+  TAXED // Gravado — aplica IVA
+  EXEMPT // Exento — IVA explícitamente 0%
+  EXCLUDED // Excluido — fuera del ámbito de IVA
+}
+
+enum SiigoIdType {
+  NIT // "31" — Empresa con NIT
+  CC // "13" — Cédula ciudadanía
+  CE // "22" — Cédula extranjería
+  PASSPORT // "41" — Pasaporte
+}
+
+enum SiigoPersonType {
+  PERSON // Persona natural
+  COMPANY // Persona jurídica
+}
+
+// ========================================
+// WORK ORDER SUB-TASKS (Runtime del Tempario)
+// ========================================
+
+model WorkOrderSubTask {
+  id              String  @id @default(uuid())
+  workOrderItemId String
+  procedureId     String?
+  temparioItemId  String?
+
+  description   String?
+  standardHours Decimal? @db.Decimal(6, 2)
+  directHours   Decimal? @db.Decimal(6, 2)
+
+  status    WorkOrderSubTaskStatus @default(PENDING)
+  sequence  Int                    @default(0)
+  notes     String?
+
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  workOrderItem WorkOrderItem      @relation(fields: [workOrderItemId], references: [id], onDelete: Cascade)
+  procedure     MantItemProcedure? @relation(fields: [procedureId], references: [id])
+  temparioItem  TemparioItem?      @relation(fields: [temparioItemId], references: [id])
+
+  @@index([workOrderItemId])
+  @@index([procedureId])
+  @@index([temparioItemId])
+  @@index([status])
+}
+
+enum WorkOrderSubTaskStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+  CANCELLED
 }

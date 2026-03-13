@@ -6,9 +6,17 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import axios from 'axios';
-import { Loader2, Search, Car, AlertTriangle, Wrench } from 'lucide-react';
+import {
+  Loader2,
+  Car,
+  AlertTriangle,
+  Wrench,
+  Check,
+  ChevronsUpDown,
+} from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Input } from '@/components/ui/input';
 import {
   Card,
@@ -36,6 +44,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 // Schema for the form
 const formSchema = z.object({
@@ -43,13 +65,14 @@ const formSchema = z.object({
   title: z.string().min(3, 'El título es requerido'),
   description: z.string().optional(),
   mantType: z.enum(['PREVENTIVE', 'CORRECTIVE']),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']),
-  alertIds: z.array(z.number()).optional(),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
+  alertIds: z.array(z.string()).optional(),
   technicianId: z.string().optional(),
+  modality: z.enum(['INTERNAL', 'EXTERNAL']).default('INTERNAL'),
 });
 
 type Vehicle = {
-  id: number;
+  id: string;
   licensePlate: string;
   brand: { name: string };
   line: { name: string };
@@ -57,7 +80,7 @@ type Vehicle = {
 };
 
 type MaintenanceAlert = {
-  id: number;
+  id: string;
   itemName: string;
   priority: string;
   status: string;
@@ -71,17 +94,19 @@ export function WorkOrderCreateWizard() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [alerts, setAlerts] = useState<MaintenanceAlert[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [openCombobox, setOpenCombobox] = useState(false);
 
   // 1. Initialize form
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      vehicleId: '',
       title: '',
       description: '',
       mantType: 'CORRECTIVE',
       priority: 'MEDIUM',
       alertIds: [],
+      modality: 'INTERNAL',
     },
   });
 
@@ -91,7 +116,7 @@ export function WorkOrderCreateWizard() {
   useEffect(() => {
     if (vehicleId) {
       // Find selected vehicle object
-      const v = vehicles.find(veh => veh.id.toString() === vehicleId);
+      const v = vehicles.find(veh => veh.id === vehicleId);
       setSelectedVehicle(v || null);
 
       // Fetch alerts if any
@@ -99,34 +124,18 @@ export function WorkOrderCreateWizard() {
     }
   }, [vehicleId, vehicles]);
 
-  // Fetch vehicles for search
+  // Fetch all vehicles at start for local search in Combobox
   useEffect(() => {
     const fetchVehicles = async () => {
       try {
         const res = await axios.get('/api/vehicles/vehicles');
-        const allVehicles: Vehicle[] = res.data || [];
-        // Filtrar en cliente por búsqueda (placa, marca, línea)
-        if (searchQuery.trim()) {
-          const q = searchQuery.toLowerCase();
-          setVehicles(
-            allVehicles.filter(
-              v =>
-                v.licensePlate.toLowerCase().includes(q) ||
-                v.brand.name.toLowerCase().includes(q) ||
-                v.line.name.toLowerCase().includes(q)
-            )
-          );
-        } else {
-          setVehicles(allVehicles);
-        }
+        setVehicles(res.data || []);
       } catch (error) {
         console.error('Error fetching vehicles', error);
       }
     };
-    // Debounce ideally, but for now just simple effect
-    const timeoutId = setTimeout(() => fetchVehicles(), 500);
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
+    fetchVehicles();
+  }, []);
 
   const fetchAlerts = async (vehId: string) => {
     try {
@@ -145,15 +154,14 @@ export function WorkOrderCreateWizard() {
     setIsLoading(true);
     try {
       const payload = {
-        vehicleId: parseInt(values.vehicleId),
+        vehicleId: values.vehicleId,
         title: values.title,
         description: values.description,
         mantType: values.mantType,
         priority: values.priority,
         alertIds: values.alertIds || [],
-        technicianId: values.technicianId
-          ? parseInt(values.technicianId)
-          : undefined,
+        technicianId: values.technicianId || undefined,
+        modality: values.modality,
       };
 
       const res = await axios.post('/api/maintenance/work-orders', payload);
@@ -189,102 +197,194 @@ export function WorkOrderCreateWizard() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Step 1: Vehicle Selection */}
-          <Card className={step === 1 ? 'border-primary' : ''}>
+          {/* Paso 1: Selección de Vehículo */}
+          <Card className={cn(step === 1 && 'border-primary')}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Car className="h-5 w-5" />
                 Paso 1: Seleccionar Vehículo
               </CardTitle>
             </CardHeader>
-            {step === 1 && (
-              <CardContent className="space-y-4">
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="search"
-                    placeholder="Buscar por placa, marca o línea..."
-                    className="pl-8"
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
+            <CardContent className="space-y-4">
+              {step === 1 ? (
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="vehicleId"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Vehículo</FormLabel>
+                        <Popover
+                          open={openCombobox}
+                          onOpenChange={setOpenCombobox}
+                        >
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={openCombobox}
+                                className={cn(
+                                  'w-full justify-between',
+                                  !field.value && 'text-muted-foreground'
+                                )}
+                              >
+                                {field.value
+                                  ? vehicles.find(v => v.id === field.value)
+                                    ?.licensePlate
+                                  : 'Buscar vehículo por placa...'}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                            <Command>
+                              <CommandInput placeholder="Placa, marca o línea..." />
+                              <CommandList>
+                                <CommandEmpty>
+                                  No se encontró el vehículo.
+                                </CommandEmpty>
+                                <CommandGroup>
+                                  {vehicles.map(vehicle => (
+                                    <CommandItem
+                                      key={vehicle.id}
+                                      value={`${vehicle.licensePlate} ${vehicle.brand.name} ${vehicle.line.name}`}
+                                      onSelect={() => {
+                                        field.onChange(vehicle.id);
+                                        setOpenCombobox(false);
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          'mr-2 h-4 w-4',
+                                          vehicle.id === field.value
+                                            ? 'opacity-100'
+                                            : 'opacity-0'
+                                        )}
+                                      />
+                                      <div className="flex flex-col">
+                                        <span className="font-bold">
+                                          {vehicle.licensePlate}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground">
+                                          {vehicle.brand.name}{' '}
+                                          {vehicle.line.name} —{' '}
+                                          {Number(
+                                            vehicle.mileage
+                                          ).toLocaleString()}{' '}
+                                          km
+                                        </span>
+                                      </div>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
-                <FormField
-                  control={form.control}
-                  name="vehicleId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                        {vehicles.slice(0, 6).map(vehicle => (
-                          <div
-                            key={vehicle.id}
-                            className={`cursor-pointer border rounded-lg p-4 flex flex-col gap-1 transition-all hover:bg-muted ${
-                              field.value === vehicle.id.toString()
-                                ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                                : 'border-border'
-                            }`}
-                            onClick={() => {
-                              field.onChange(vehicle.id.toString());
-                              // Auto-advance logic could go here if desired
-                            }}
-                          >
-                            <div className="font-bold text-lg">
-                              {vehicle.licensePlate}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {vehicle.brand.name} {vehicle.line.name}
-                            </div>
-                            <Badge variant="outline" className="w-fit mt-2">
-                              {Number(vehicle.mileage).toLocaleString()} km
-                            </Badge>
-                          </div>
-                        ))}
+
+                  {selectedVehicle && (
+                    <div className="bg-muted/30 border border-border rounded-lg p-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground uppercase mb-1">
+                            Vehículo Seleccionado
+                          </p>
+                          <h3 className="text-xl font-bold">
+                            {selectedVehicle.licensePlate}
+                          </h3>
+                          <p className="text-sm">
+                            {selectedVehicle.brand.name}{' '}
+                            {selectedVehicle.line.name}
+                          </p>
+                        </div>
+                        <Badge variant="secondary" className="font-mono">
+                          {Number(selectedVehicle.mileage).toLocaleString()} km
+                        </Badge>
                       </div>
-                      <FormMessage />
-                    </FormItem>
+                    </div>
                   )}
-                />
-              </CardContent>
-            )}
-            {step > 1 && selectedVehicle && (
-              <CardContent className="pt-0 pb-4">
-                <div className="flex items-center justify-between bg-muted/50 p-3 rounded-md">
-                  <div>
-                    <span className="font-bold">
-                      {selectedVehicle.licensePlate}
-                    </span>{' '}
-                    - {selectedVehicle.brand.name} {selectedVehicle.line.name}
-                  </div>
-                  <Button variant="ghost" size="sm" onClick={() => setStep(1)}>
-                    Cambiar
-                  </Button>
                 </div>
-              </CardContent>
-            )}
+              ) : (
+                selectedVehicle && (
+                  <div className="flex items-center justify-between bg-muted/50 p-3 rounded-md">
+                    <div className="text-sm">
+                      <span className="font-bold">
+                        {selectedVehicle.licensePlate}
+                      </span>{' '}
+                      - {selectedVehicle.brand.name} {selectedVehicle.line.name}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8"
+                      onClick={() => setStep(1)}
+                    >
+                      Cambiar
+                    </Button>
+                  </div>
+                )
+              )}
+            </CardContent>
             {step === 1 && (
-              <CardFooter className="flex justify-end">
+              <CardFooter className="flex justify-end pt-0">
                 <Button
                   type="button"
                   disabled={!vehicleId}
                   onClick={() => setStep(2)}
+                  className="gap-2"
                 >
-                  Siguiente
+                  Continuar
                 </Button>
               </CardFooter>
             )}
           </Card>
 
-          {/* Step 2: Alerts & Type */}
-          <Card className={step === 2 ? 'border-primary' : 'opacity-80'}>
+          {/* Paso 2: Detalles de la Orden (Alertas, Tipo, Título, Prioridad, Descripción) */}
+          <Card className={cn(step === 2 ? 'border-primary' : 'opacity-80')}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5" />
-                Paso 2: Tipo de Mantenimiento
+                <Wrench className="h-5 w-5" />
+                Paso 2: Detalles de la Orden
               </CardTitle>
             </CardHeader>
+
             {step === 2 && (
               <CardContent className="space-y-6">
-                {/* Alerts Detection */}
+                <FormField
+                  control={form.control}
+                  name="modality"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>Modalidad de Trabajo</FormLabel>
+                      <FormControl>
+                        <ToggleGroup
+                          type="single"
+                          variant="outline"
+                          value={field.value}
+                          onValueChange={(val: string) => {
+                            if (val) field.onChange(val);
+                          }}
+                          className="justify-start"
+                        >
+                          <ToggleGroupItem value="INTERNAL" aria-label="Taller Propio" className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+                            🔧 Taller Propio
+                          </ToggleGroupItem>
+                          <ToggleGroupItem value="EXTERNAL" aria-label="Servicio Externo" className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+                            🚛 Servicio Externo
+                          </ToggleGroupItem>
+                        </ToggleGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Bloque Alertas Detectadas */}
                 {alerts.length > 0 && (
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                     <h4 className="flex items-center gap-2 font-semibold text-amber-800 mb-2">
@@ -319,14 +419,12 @@ export function WorkOrderCreateWizard() {
                                           false
                                         }
                                         onCheckedChange={checked => {
-                                          // Logic to handle multiple selection
                                           const current = field.value || [];
                                           if (checked) {
                                             field.onChange([
                                               ...current,
                                               alert.id,
                                             ]);
-                                            // If alerts selected, suggest Preventive
                                             form.setValue(
                                               'mantType',
                                               'PREVENTIVE'
@@ -350,7 +448,7 @@ export function WorkOrderCreateWizard() {
                                         {alert.itemName}{' '}
                                         <Badge
                                           variant="outline"
-                                          className="ml-2 text-xs"
+                                          className="ml-2 text-[10px] h-4 bg-white"
                                         >
                                           {alert.priority}
                                         </Badge>
@@ -367,63 +465,66 @@ export function WorkOrderCreateWizard() {
                   </div>
                 )}
 
-                <FormField
-                  control={form.control}
-                  name="mantType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tipo de Orden</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona tipo" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="CORRECTIVE">
-                            Correctivo (Falla imprevista)
-                          </SelectItem>
-                          <SelectItem value="PREVENTIVE">
-                            Preventivo (Programado)
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            )}
-            {step === 2 && (
-              <CardFooter className="flex justify-between">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setStep(1)}
-                >
-                  Atrás
-                </Button>
-                <Button type="button" onClick={() => setStep(3)}>
-                  Siguiente
-                </Button>
-              </CardFooter>
-            )}
-          </Card>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="mantType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tipo de Mantenimiento</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecciona tipo" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="CORRECTIVE">
+                              Correctivo (Falla)
+                            </SelectItem>
+                            <SelectItem value="PREVENTIVE">
+                              Preventivo (Programado)
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-          {/* Step 3: Details */}
-          <Card className={step === 3 ? 'border-primary' : 'opacity-80'}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Wrench className="h-5 w-5" />
-                Paso 3: Detalles de la Orden
-              </CardTitle>
-            </CardHeader>
-            {step === 3 && (
-              <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="priority"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Prioridad</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecciona prioridad" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="LOW">Baja</SelectItem>
+                            <SelectItem value="MEDIUM">Media</SelectItem>
+                            <SelectItem value="HIGH">Alta</SelectItem>
+                            <SelectItem value="URGENT">Urgente</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <FormField
                   control={form.control}
                   name="title"
@@ -443,41 +544,13 @@ export function WorkOrderCreateWizard() {
 
                 <FormField
                   control={form.control}
-                  name="priority"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Prioridad</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Prioridad" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="LOW">Baja</SelectItem>
-                          <SelectItem value="MEDIUM">Media</SelectItem>
-                          <SelectItem value="HIGH">Alta</SelectItem>
-                          <SelectItem value="CRITICAL">Crítica</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
                   name="description"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Descripción Adicional</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="Detalles adicionales sobre el trabajo a realizar..."
+                          placeholder="Detalles sobre el trabajo a realizar..."
                           className="resize-none"
                           {...field}
                         />
@@ -488,18 +561,19 @@ export function WorkOrderCreateWizard() {
                 />
               </CardContent>
             )}
-            {step === 3 && (
+
+            {step === 2 && (
               <CardFooter className="flex justify-between">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setStep(2)}
+                  onClick={() => setStep(1)}
                 >
                   Atrás
                 </Button>
-                <Button type="submit" disabled={isLoading}>
+                <Button type="submit" disabled={isLoading} className="gap-2">
                   {isLoading && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   )}
                   Crear Orden
                 </Button>

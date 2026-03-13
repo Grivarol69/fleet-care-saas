@@ -37,3 +37,19 @@ export function useProviders() {
     },
   });
 }
+
+export interface CostCenterOption {
+  id: string;
+  code: string;
+  name: string;
+}
+
+export function useCostCenters() {
+  return useQuery({
+    queryKey: ['cost-centers'],
+    queryFn: async (): Promise<CostCenterOption[]> => {
+      const { data } = await axios.get('/api/cost-centers');
+      return data;
+    },
+  });
+}

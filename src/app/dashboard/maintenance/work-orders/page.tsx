@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
-import { WorkOrdersList } from './components/WorkOrdersList/WorkOrdersList';
+import { WorkOrdersList, statusConfig } from './components/WorkOrdersList/WorkOrdersList';
 import { WorkOrdersFilters } from './components/WorkOrdersList/WorkOrdersFilters';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
@@ -52,9 +52,16 @@ export default function WorkOrdersPage() {
     mantType: 'all',
     priority: 'all',
   });
+  const [activeTab, setActiveTab] = useState('all');
   const { toast } = useToast();
 
+  const [currentUser, setCurrentUser] = useState<{ id: string; role: string; isSuperAdmin: boolean } | null>(null);
+
   useEffect(() => {
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => setCurrentUser(data))
+      .catch(() => { });
     fetchWorkOrders();
   }, []);
 
@@ -92,23 +99,14 @@ export default function WorkOrdersPage() {
     router.push(`/dashboard/maintenance/work-orders/${id}`);
   };
 
-  const handleStartWork = async (id: string) => {
+  const handleStatusChange = async (id: string, newStatus: string) => {
     try {
-      await axios.patch(`/api/maintenance/work-orders/${id}`, {
-        status: 'IN_PROGRESS',
-      });
-      toast({
-        title: 'Trabajo iniciado',
-        description: 'La orden de trabajo se ha marcado como En Progreso',
-      });
+      await axios.patch(`/api/maintenance/work-orders/${id}`, { status: newStatus });
+      toast({ title: 'Estado actualizado', description: `La OT pasó a ${newStatus}` });
       fetchWorkOrders();
-    } catch (error) {
-      console.error('Error starting work order:', error);
-      toast({
-        title: 'Error',
-        description: 'No se pudo iniciar el trabajo',
-        variant: 'destructive',
-      });
+    } catch (error: any) {
+      const msg = error.response?.data?.error || 'No tenés los permisos necesarios para esta acción.';
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
     }
   };
 
@@ -125,7 +123,12 @@ export default function WorkOrdersPage() {
         if (!matchesTitle && !matchesPlate) return false;
       }
 
-      // Filtro por estado
+      // Filtro por tab (estado)
+      if (activeTab !== 'all' && wo.status !== activeTab) {
+        return false;
+      }
+
+      // Filtro por estado del select
       if (filters.status !== 'all' && wo.status !== filters.status) {
         return false;
       }
@@ -142,7 +145,7 @@ export default function WorkOrdersPage() {
 
       return true;
     });
-  }, [workOrders, filters]);
+  }, [workOrders, filters, activeTab]);
 
   return (
     <div className="p-6">
@@ -161,6 +164,51 @@ export default function WorkOrdersPage() {
         </Button>
       </div>
 
+      {/* Tabs por estado */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        <button
+          onClick={() => {
+            setActiveTab('all');
+            setFilters(prev => ({ ...prev, status: 'all' }));
+          }}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${activeTab === 'all'
+              ? 'bg-primary text-primary-foreground border-primary'
+              : 'bg-background border-border text-muted-foreground hover:bg-muted'
+            }`}
+        >
+          Todas
+          <span className={`px-1.5 py-0.5 rounded-full text-xs ${activeTab === 'all' ? 'bg-background/20' : 'bg-muted-foreground/10'}`}>
+            {workOrders.length}
+          </span>
+        </button>
+        {Object.entries(statusConfig).map(([key, config]) => {
+          const count = workOrders.filter(wo => wo.status === key).length;
+          const isActive = activeTab === key;
+
+          return (
+            <button
+              key={key}
+              onClick={() => {
+                setActiveTab(key);
+                setFilters(prev => ({ ...prev, status: 'all' }));
+              }}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${isActive
+                  ? config.color
+                  : 'bg-background border-border text-muted-foreground hover:bg-muted'
+                }`}
+            >
+              {config.label}
+              <span
+                className={`px-1.5 py-0.5 rounded-full text-xs ${isActive ? 'bg-background/50' : 'bg-muted-foreground/10'
+                  }`}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       <WorkOrdersFilters
         filters={filters}
         onFilterChange={handleFilterChange}
@@ -170,8 +218,9 @@ export default function WorkOrdersPage() {
       <WorkOrdersList
         workOrders={filteredWorkOrders}
         isLoading={isLoading}
+        currentUser={currentUser ?? { id: '', role: '', isSuperAdmin: false }}
         onViewDetail={handleViewDetail}
-        onStartWork={handleStartWork}
+        onStatusChange={handleStatusChange}
       />
     </div>
   );

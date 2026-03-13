@@ -1,25 +1,25 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { FinancialWatchdogService } from '@/lib/services/FinancialWatchdogService';
 
 export async function POST(_req: Request) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // 1. Create a Dummy Master Part with reference price
-    const dummyPart = await prisma.masterPart.upsert({
-      where: { code: 'TEST-PART-001' },
+    const dummyPart = await tenantPrisma.masterPart.upsert({
+      where: {
+        tenantId_code: { tenantId: user.tenantId, code: 'TEST-PART-001' },
+      },
       update: { referencePrice: 100 },
       create: {
         code: 'TEST-PART-001',
         description: 'Test Watchdog Part',
         category: 'TEST',
         referencePrice: 100, // Reference is $100
-        tenantId: user.tenantId,
       },
     });
 

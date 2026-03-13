@@ -1,18 +1,16 @@
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { canManageVehicles } from '@/lib/permissions';
 
 export async function GET() {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const drivers = await prisma.driver.findMany({
+    const drivers = await tenantPrisma.driver.findMany({
       where: {
-        tenantId: user.tenantId,
         status: 'ACTIVE',
       },
       orderBy: {
@@ -31,10 +29,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManageVehicles(user)) {
@@ -56,12 +53,9 @@ export async function POST(req: Request) {
 
     // Verificar que no exista un conductor con la misma licencia (si se proporciona)
     if (licenseNumber && licenseNumber.trim() !== '') {
-      const existingDriverWithLicense = await prisma.driver.findUnique({
+      const existingDriverWithLicense = await tenantPrisma.driver.findFirst({
         where: {
-          tenantId_licenseNumber: {
-            tenantId: user.tenantId,
-            licenseNumber: licenseNumber.trim(),
-          },
+          licenseNumber: licenseNumber.trim(),
         },
       });
 
@@ -73,14 +67,14 @@ export async function POST(req: Request) {
       }
     }
 
-    const driver = await prisma.driver.create({
+    const driver = await tenantPrisma.driver.create({
       data: {
+        tenantId: user.tenantId,
         name: name.trim(),
         email: email?.trim() || null,
         phone: phone?.trim() || null,
         licenseNumber: licenseNumber?.trim() || null,
         licenseExpiry: licenseExpiry ? new Date(licenseExpiry) : null,
-        tenantId: user.tenantId,
       },
     });
 

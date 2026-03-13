@@ -168,17 +168,25 @@ export default function NewPurchasePage() {
     }
 
     try {
+      const parsedItems = items.map(item => ({
+        masterPartId: item.masterPartId,
+        description: item.description,
+        quantity: Number(item.quantity),
+        unitPrice: Number(item.unitPrice),
+        taxRate: Number(item.taxRate),
+      }));
+
       await axios.post('/api/inventory/purchases', {
         invoiceNumber,
         invoiceDate,
-        supplierId: parseInt(supplierId),
-        items,
+        supplierId: supplierId,
+        items: parsedItems,
       });
       toast({
         title: 'Compra Registrada',
         description: 'El inventario ha sido actualizado.',
       });
-      router.push('/dashboard/inventory');
+      router.push('/dashboard/inventory/parts');
     } catch (error) {
       console.error(error);
       toast({

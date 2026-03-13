@@ -25,8 +25,8 @@ interface VehicleGroup {
 
 interface Props {
   vehicle: VehicleGroup;
-  selectedAlertIds: number[];
-  onToggleAlert: (alertId: number) => void;
+  selectedAlertIds: string[];
+  onToggleAlert: (alertId: string) => void;
   onTogglePackage: (alerts: MaintenanceAlert[]) => void;
 }
 
@@ -201,13 +201,12 @@ export function VehicleAlertRow({
               {nextAlert && (
                 <div>
                   <p
-                    className={`text-lg font-bold ${
-                      nextAlert.kmToMaintenance <= 0
+                    className={`text-lg font-bold ${nextAlert.kmToMaintenance <= 0
                         ? 'text-red-600'
                         : nextAlert.kmToMaintenance <= 500
                           ? 'text-amber-600'
                           : 'text-gray-900'
-                    }`}
+                      }`}
                   >
                     {nextAlert.kmToMaintenance <= 0
                       ? `VENCIDO`
@@ -362,13 +361,12 @@ export function VehicleAlertRow({
                               className={`
                               flex items-center gap-3 px-4 py-3 rounded-lg text-sm
                               transition-all duration-200
-                              ${
-                                isInProgress
+                              ${isInProgress
                                   ? 'bg-purple-50 border-2 border-purple-300 opacity-75'
                                   : isSelected
                                     ? 'bg-blue-50 border-2 border-blue-400 shadow-sm'
                                     : 'bg-white border-2 border-gray-200 hover:border-gray-300'
-                              }
+                                }
                               ${isOverdue && !isInProgress ? 'border-l-4 !border-l-red-500' : ''}
                               ${isUrgent && !isInProgress ? 'border-l-4 !border-l-amber-500' : ''}
                               ${isInProgress ? 'border-l-4 !border-l-purple-500' : ''}
@@ -390,13 +388,12 @@ export function VehicleAlertRow({
                                 {/* Km Restantes */}
                                 <div className="min-w-[140px]">
                                   <span
-                                    className={`font-bold text-base ${
-                                      isOverdue
+                                    className={`font-bold text-base ${isOverdue
                                         ? 'text-red-600'
                                         : isUrgent
                                           ? 'text-amber-600'
                                           : 'text-gray-700'
-                                    }`}
+                                      }`}
                                   >
                                     {isOverdue
                                       ? `${Math.abs(alert.kmToMaintenance)} km VENCIDO`
@@ -426,8 +423,7 @@ export function VehicleAlertRow({
                               <div className="flex gap-2">
                                 {/* Badge de Estado */}
                                 <Badge
-                                  className={`text-xs font-bold ${
-                                    alert.status === 'IN_PROGRESS'
+                                  className={`text-xs font-bold ${alert.status === 'IN_PROGRESS'
                                       ? 'bg-purple-500 hover:bg-purple-600'
                                       : alert.status === 'PENDING'
                                         ? 'bg-gray-400 hover:bg-gray-500'
@@ -438,7 +434,7 @@ export function VehicleAlertRow({
                                             : alert.status === 'COMPLETED'
                                               ? 'bg-green-500 hover:bg-green-600'
                                               : 'bg-gray-400'
-                                  }`}
+                                    }`}
                                 >
                                   {alert.status === 'IN_PROGRESS' &&
                                     '🔧 EN PROGRESO'}

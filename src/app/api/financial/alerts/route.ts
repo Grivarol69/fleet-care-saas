@@ -1,27 +1,25 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { AlertStatus } from '@prisma/client';
 
 export async function GET(req: Request) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const searchParams = new URL(req.url).searchParams;
     const status = searchParams.get('status') as AlertStatus | null;
 
     const where: any = {
-      tenantId: user.tenantId,
       // Default to showing only PENDING/ACKNOWLEDGED if not specified,
       // or maybe just fetching all and letting frontend filter.
       // Let's fetch PENDING by default if no param.
       status: status ? status : { in: ['PENDING', 'ACKNOWLEDGED'] },
     };
 
-    const alerts = await prisma.financialAlert.findMany({
+    const alerts = await tenantPrisma.financialAlert.findMany({
       where,
       orderBy: [
         { severity: 'desc' }, // High severity first

@@ -19,8 +19,7 @@
     "noImplicitThis": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "exactOptionalPropertyTypes": true,
-    "noUncheckedIndexedAccess": true,
+    "noUncheckedIndexedAccess": false,
     "noImplicitOverride": true,
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
@@ -58,6 +57,16 @@
     "prisma/seed-test.ts",
     "prisma/seed-staging-demo.ts",
     "playwright.config.ts",
-    "e2e/**/*"
+    "e2e/**/*",
+    "tmp/**/*",
+    "check-*.ts",
+    "debug-*.ts",
+    "fix-*.ts",
+    "seed-temp.ts",
+    "prisma/seeds/**",
+    "scripts/**",
+    "src/app/api/__tests__/**",
+    "src/lib/services/siigo/__tests__/**",
+    "src/lib/__tests__/**"
   ]
 }

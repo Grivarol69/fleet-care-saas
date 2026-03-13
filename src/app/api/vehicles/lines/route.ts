@@ -1,22 +1,16 @@
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Devolver líneas GLOBALES + del tenant (solo activas)
-    const lines = await prisma.vehicleLine.findMany({
+    // Devolver marcas globales y del tenant confiando en el interceptor `tenant-prisma.ts`
+    const lines = await tenantPrisma.vehicleLine.findMany({
       where: {
-        OR: [
-          { isGlobal: true }, // Líneas globales (Knowledge Base)
-          { tenantId: user.tenantId }, // Líneas custom del tenant
-        ],
         status: 'ACTIVE',
       },
       orderBy: {
@@ -52,10 +46,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { name, brandId, isGlobal } = await req.json();
@@ -113,7 +106,7 @@ export async function POST(req: Request) {
     }
 
     // Verificar que no existe
-    const existingLine = await prisma.vehicleLine.findFirst({
+    const existingLine = await tenantPrisma.vehicleLine.findFirst({
       where: {
         tenantId: targetTenant,
         brandId: parsedBrandId,
@@ -128,11 +121,10 @@ export async function POST(req: Request) {
       );
     }
 
-    // Verificar que la marca existe (global o del tenant)
-    const brand = await prisma.vehicleBrand.findFirst({
+    // Verificar que la marca existe (global o del tenant) usando el interceptor
+    const brand = await tenantPrisma.vehicleBrand.findFirst({
       where: {
         id: parsedBrandId,
-        OR: [{ isGlobal: true }, { tenantId: targetTenant }],
       },
     });
 
@@ -143,7 +135,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const line = await prisma.vehicleLine.create({
+    const line = await tenantPrisma.vehicleLine.create({
       data: {
         name: name.trim(),
         brandId: parsedBrandId,

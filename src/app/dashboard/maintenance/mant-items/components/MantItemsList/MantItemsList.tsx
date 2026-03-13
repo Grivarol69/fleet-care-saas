@@ -124,13 +124,6 @@ export function MantItemsList() {
 
   const columns: ColumnDef<MantItemsListProps>[] = [
     {
-      accessorKey: 'id',
-      header: 'ID',
-      cell: ({ row }) => (
-        <div className="font-medium">#{row.getValue('id')}</div>
-      ),
-    },
-    {
       accessorKey: 'name',
       header: 'Nombre del Item',
       cell: ({ row }) => (
@@ -170,15 +163,6 @@ export function MantItemsList() {
           </span>
         );
       },
-    },
-    {
-      accessorKey: 'estimatedTime',
-      header: 'Tiempo Est. (h)',
-      cell: ({ row }) => (
-        <div className="text-center font-mono">
-          {Number(row.getValue('estimatedTime')).toFixed(1)}h
-        </div>
-      ),
     },
     {
       accessorKey: 'status',

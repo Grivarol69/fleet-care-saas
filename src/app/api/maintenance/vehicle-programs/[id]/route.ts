@@ -1,6 +1,5 @@
-import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { canManageMaintenancePrograms } from '@/lib/permissions';
 
 // GET - Obtener programa específico por ID
@@ -9,9 +8,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -20,11 +19,10 @@ export async function GET(
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
-    const program = await prisma.vehicleMantProgram.findUnique({
+    const program = await tenantPrisma.vehicleMantProgram.findUnique({
       where: {
         id: programId,
-        tenantId: user.tenantId,
-      },
+        },
       include: {
         vehicle: {
           include: {
@@ -65,9 +63,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManageMaintenancePrograms(user)) {
@@ -95,11 +93,10 @@ export async function PUT(
     } = body;
 
     // Verificar que el programa existe
-    const existingProgram = await prisma.vehicleMantProgram.findUnique({
+    const existingProgram = await tenantPrisma.vehicleMantProgram.findUnique({
       where: {
         id: programId,
-        tenantId: user.tenantId,
-      },
+        },
     });
 
     if (!existingProgram) {
@@ -107,7 +104,7 @@ export async function PUT(
     }
 
     // Actualizar el programa
-    const updatedProgram = await prisma.vehicleMantProgram.update({
+    const updatedProgram = await tenantPrisma.vehicleMantProgram.update({
       where: { id: programId },
       data: {
         name,
@@ -121,7 +118,7 @@ export async function PUT(
     });
 
     // Retornar programa actualizado con relaciones
-    const result = await prisma.vehicleMantProgram.findUnique({
+    const result = await tenantPrisma.vehicleMantProgram.findUnique({
       where: { id: updatedProgram.id },
       include: {
         vehicle: {
@@ -155,9 +152,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManageMaintenancePrograms(user)) {
@@ -174,11 +171,10 @@ export async function DELETE(
     }
 
     // Verificar que el programa existe
-    const existingProgram = await prisma.vehicleMantProgram.findUnique({
+    const existingProgram = await tenantPrisma.vehicleMantProgram.findUnique({
       where: {
         id: programId,
-        tenantId: user.tenantId,
-      },
+        },
       include: {
         packages: {
           include: {
@@ -204,7 +200,7 @@ export async function DELETE(
     }
 
     // Eliminar en cascada (Prisma debería manejar esto automáticamente)
-    await prisma.vehicleMantProgram.delete({
+    await tenantPrisma.vehicleMantProgram.delete({
       where: { id: programId },
     });
 

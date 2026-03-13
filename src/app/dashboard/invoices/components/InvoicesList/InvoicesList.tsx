@@ -9,6 +9,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { SiigoSyncStatusBadge } from '@/components/siigo/SiigoSyncStatusBadge';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -56,6 +57,11 @@ type Invoice = {
     amount: number;
     paymentDate: string;
   }>;
+  siigoSyncStatus?: {
+    status: 'PENDING' | 'SYNCING' | 'SYNCED' | 'FAILED' | 'SKIPPED';
+    statusMessage?: string | null;
+    siigoId?: string | null;
+  } | null;
 };
 
 type InvoicesListProps = {
@@ -116,6 +122,7 @@ export function InvoicesList({
             <TableHead>Fecha</TableHead>
             <TableHead>Vencimiento</TableHead>
             <TableHead>Estado</TableHead>
+            <TableHead>Siigo</TableHead>
             <TableHead className="text-right">Subtotal</TableHead>
             <TableHead className="text-right">IVA</TableHead>
             <TableHead className="text-right">Total</TableHead>
@@ -195,11 +202,22 @@ export function InvoicesList({
                   )}
                 </TableCell>
                 <TableCell>
-                  <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+                  <Badge variant={statusInfo.variant as any}>{statusInfo.label}</Badge>
                   {balance > 0 && invoice.status === 'PARTIAL' && (
                     <div className="text-xs text-muted-foreground mt-1">
                       Saldo: ${balance.toLocaleString('es-CO')}
                     </div>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {invoice.siigoSyncStatus ? (
+                    <SiigoSyncStatusBadge
+                      status={invoice.siigoSyncStatus.status}
+                      error={invoice.siigoSyncStatus.statusMessage || null}
+                      siigoId={invoice.siigoSyncStatus.siigoId || null}
+                    />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">-</span>
                   )}
                 </TableCell>
                 <TableCell className="text-right">
