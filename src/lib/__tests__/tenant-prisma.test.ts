@@ -2,7 +2,9 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { prisma } from '../prisma';
 import { getTenantPrisma } from '../tenant-prisma';
 
-describe('getTenantPrisma Isolation', () => {
+const runIntegration = process.env['RUN_INTEGRATION_TESTS'] === '1';
+
+describe.skipIf(!runIntegration)('getTenantPrisma integration isolation', () => {
     let tenant1Id = '';
     let tenant2Id = '';
     let tenant1Prisma: ReturnType<typeof getTenantPrisma>;
@@ -54,7 +56,7 @@ describe('getTenantPrisma Isolation', () => {
         await prisma.tenant.deleteMany({ where: { id: { in: [tenant1Id, tenant2Id] } } });
     });
 
-    it('prevents tenant 1 from seeing tenant 2 vehicles', async () => {
+    it('keeps vehicle queries scoped to the current tenant', async () => {
         const t1Vehicles = await tenant1Prisma.vehicle.findMany({ where: { licensePlate: { contains: '-ISO' } } });
         expect(t1Vehicles).toHaveLength(1);
         expect(t1Vehicles[0].licensePlate).toBe('V1-ISO');
@@ -64,7 +66,7 @@ describe('getTenantPrisma Isolation', () => {
         expect(t2Vehicles[0].licensePlate).toBe('V2-ISO');
     });
 
-    it('allows tenant to see global models (+ own models)', async () => {
+    it('returns global catalog records together with tenant-owned records', async () => {
         const t1Brands = await tenant1Prisma.vehicleBrand.findMany({ where: { name: { contains: 'IsoTest' } } });
         const brandNames = t1Brands.map(b => b.name);
         // Should see 'B1-IsoTest' and 'GlobalBrand-IsoTest', but not 'B2-IsoTest'
@@ -73,7 +75,7 @@ describe('getTenantPrisma Isolation', () => {
         expect(brandNames).not.toContain('B2-IsoTest');
     });
 
-    it('automatically injects tenantId on create', async () => {
+    it('injects tenantId automatically on create operations', async () => {
         const newBrand = await tenant1Prisma.vehicleBrand.create({ data: { name: 'AutoBrand-IsoTest' } as any });
         expect(newBrand.tenantId).toBe(tenant1Id);
 

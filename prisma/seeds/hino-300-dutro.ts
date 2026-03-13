@@ -8,26 +8,32 @@ export async function seedHino300Dutro(prisma: PrismaClient) {
   // ========================================
   console.log('1. Creando marca y línea...');
 
-  const hino = await prisma.vehicleBrand.upsert({
-    where: { name: 'Hino' },
-    update: {},
-    create: {
-      name: 'Hino',
-      isGlobal: true,
-      tenantId: null,
-    },
+  let hino = await prisma.vehicleBrand.findFirst({
+    where: { name: 'Hino', tenantId: null },
   });
+  if (!hino) {
+    hino = await prisma.vehicleBrand.create({
+      data: {
+        name: 'Hino',
+        isGlobal: true,
+        tenantId: null,
+      },
+    });
+  }
 
-  const dutro300 = await prisma.vehicleLine.upsert({
-    where: { brandId_name: { brandId: hino.id, name: '300 Dutro' } },
-    update: {},
-    create: {
-      name: '300 Dutro',
-      brandId: hino.id,
-      isGlobal: true,
-      tenantId: null,
-    },
+  let dutro300 = await prisma.vehicleLine.findFirst({
+    where: { brandId: hino.id, name: '300 Dutro', tenantId: null },
   });
+  if (!dutro300) {
+    dutro300 = await prisma.vehicleLine.create({
+      data: {
+        name: '300 Dutro',
+        brandId: hino.id,
+        isGlobal: true,
+        tenantId: null,
+      },
+    });
+  }
 
   console.log(`   ✓ Marca: ${hino.name}`);
   console.log(`   ✓ Línea: ${dutro300.name}`);
@@ -66,8 +72,8 @@ export async function seedHino300Dutro(prisma: PrismaClient) {
         name: 'Engrase general',
         description: 'Engrase de puntos de lubricación del chasís',
         mantType: 'PREVENTIVE',
-        categoryId: catLubricacion?.id || '',
-        type: 'ACTION',
+        categoryId: catLubricacion?.id || '', // FIXED
+        type: 'SERVICE', // FIXED
         isGlobal: true,
         tenantId: null,
       },
@@ -260,8 +266,8 @@ export async function seedHino300Dutro(prisma: PrismaClient) {
         name: 'Engrase rodamientos ruedas',
         description: 'Lubricar rodamientos de ruedas',
         mantType: 'PREVENTIVE',
-        categoryId: catNeumaticos?.id || '',
-        type: 'ACTION',
+        categoryId: catNeumaticos?.id || '', // FIXED
+        type: 'SERVICE', // FIXED
         isGlobal: true,
         tenantId: null,
       },
@@ -356,7 +362,7 @@ export async function seedHino300Dutro(prisma: PrismaClient) {
   const iFiltroAceite = getBaseItem('Cambio filtro aceite');
   const iFiltroAire = getBaseItem('Cambio filtro aire');
   const iFiltroComb = getBaseItem('Cambio filtro combustible');
-  const iLiquidoFreno = getBaseItem('Cambio liquido freno');
+  const iLiquidoFreno = getBaseItem('Cambio liquido frenos'); // FIXED
   const iAceiteTransm = getBaseItem('Cambio aceite transmision');
   const iAjusteEmbrague = getBaseItem('Ajuste embrague');
   const iInspFreno = getBaseItem('Inspeccion pastillas freno');

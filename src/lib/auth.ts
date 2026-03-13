@@ -2,15 +2,11 @@ import { currentUser, auth, clerkClient } from '@clerk/nextjs/server';
 
 import { prisma } from '@/lib/prisma';
 import { getTenantPrisma } from '@/lib/tenant-prisma';
-import { User, UserRole } from '@prisma/client';
+import { UserRole } from '@prisma/client';
+import { PLATFORM_TENANT_ID, UserWithSuperAdmin } from './auth-constants';
 
-// Platform Tenant ID para SUPER_ADMIN (único lugar de definición)
-export const PLATFORM_TENANT_ID = '00000000-0000-0000-0000-000000000000';
-
-// Tipo extendido de User que incluye info de SUPER_ADMIN
-export type UserWithSuperAdmin = User & {
-  isSuperAdmin: boolean;
-};
+export { PLATFORM_TENANT_ID };
+export type { UserWithSuperAdmin };
 
 /**
  * Obtiene el usuario autenticado actual

@@ -14,6 +14,8 @@ export async function GET(request: Request) {
     const search = searchParams.get('search');
     const status = searchParams.get('status');
     const masterPartId = searchParams.get('masterPartId');
+    const warehouse = searchParams.get('warehouse');
+    const lowStock = searchParams.get('lowStock') === 'true';
 
     const whereClause: any = {};
 
@@ -23,6 +25,10 @@ export async function GET(request: Request) {
 
     if (masterPartId) {
       whereClause.masterPartId = masterPartId;
+    }
+
+    if (warehouse) {
+      whereClause.warehouse = warehouse;
     }
 
     if (search) {
@@ -50,7 +56,12 @@ export async function GET(request: Request) {
       },
     });
 
-    return NextResponse.json(items);
+    let resultItems = items;
+    if (lowStock) {
+      resultItems = items.filter((i: any) => Number(i.quantity) <= Number(i.minStock));
+    }
+
+    return NextResponse.json(resultItems);
   } catch (error) {
     console.error('Error fetching inventory items:', error);
     return new NextResponse('Internal Error', { status: 500 });

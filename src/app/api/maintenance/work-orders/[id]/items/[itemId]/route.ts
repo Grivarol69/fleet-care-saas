@@ -9,7 +9,7 @@ const updateItemSchema = z.object({
     .enum(['EXTERNAL', 'INTERNAL_STOCK', 'INTERNAL_PURCHASE'])
     .optional(),
   closureType: z
-    .enum(['PENDING', 'EXTERNAL_INVOICE', 'INTERNAL_TICKET', 'NOT_APPLICABLE'])
+    .enum(['PENDING', 'EXTERNAL_INVOICE', 'INTERNAL_TICKET', 'NOT_APPLICABLE', 'PURCHASE_ORDER'])
     .optional(),
   status: z
     .enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'])
@@ -17,6 +17,7 @@ const updateItemSchema = z.object({
   supplier: z.string().optional(),
   unitPrice: z.number().min(0).optional(),
   quantity: z.number().positive().optional(),
+  providerId: z.string().nullable().optional(),
 });
 
 /**
@@ -92,6 +93,7 @@ export async function PATCH(
       unitPrice?: number;
       quantity?: number;
       totalCost?: number;
+      providerId?: string | null;
     } = {};
 
     if (updates.itemSource) {
@@ -112,6 +114,9 @@ export async function PATCH(
     if (updates.quantity !== undefined) {
       updateData.quantity = updates.quantity;
     }
+    if (updates.providerId !== undefined) {
+      updateData.providerId = updates.providerId;
+    }
 
     // Recalcular totalCost si cambia precio o cantidad
     if (updates.unitPrice !== undefined || updates.quantity !== undefined) {
@@ -129,6 +134,9 @@ export async function PATCH(
         },
         masterPart: {
           select: { id: true, code: true, description: true },
+        },
+        provider: {
+          select: { id: true, name: true },
         },
       },
     });
@@ -176,6 +184,10 @@ export async function PATCH(
         quantity: updatedItem.quantity,
         unitPrice: Number(updatedItem.unitPrice),
         totalCost: Number(updatedItem.totalCost),
+        providerId: updatedItem.providerId,
+        provider: updatedItem.provider
+          ? { id: updatedItem.provider.id, name: updatedItem.provider.name }
+          : null,
       },
       ...(woPendingInvoiceTriggered
         ? { workOrderStatusChanged: 'PENDING_INVOICE' }

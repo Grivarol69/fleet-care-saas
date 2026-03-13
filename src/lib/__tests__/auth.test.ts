@@ -1,12 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { getCurrentUser } from '../auth';
 import { prisma } from '@/lib/prisma';
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { auth, currentUser, clerkClient } from '@clerk/nextjs/server';
 
 // Mock Clerk
 vi.mock('@clerk/nextjs/server', () => ({
   auth: vi.fn(),
   currentUser: vi.fn(),
+  clerkClient: vi.fn(),
 }));
 
 // Mock Prisma
@@ -31,6 +32,11 @@ describe('Auth Service (Multi-tenancy)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
+    (clerkClient as any).mockResolvedValue({
+      organizations: {
+        getOrganizationMembershipList: vi.fn().mockResolvedValue({ data: [] }),
+      },
+    });
   });
 
   afterEach(() => {
@@ -46,6 +52,7 @@ describe('Auth Service (Multi-tenancy)', () => {
   it('should return null if user has no active organization', async () => {
     (auth as any).mockResolvedValue({ userId: mockUserId, orgId: null });
     (currentUser as any).mockResolvedValue({
+      id: mockUserId,
       emailAddresses: [{ emailAddress: mockEmail }],
     });
     // Mock DB returning null for SuperAdmin check
@@ -61,6 +68,7 @@ describe('Auth Service (Multi-tenancy)', () => {
       orgId: mockTenantId,
     });
     (currentUser as any).mockResolvedValue({
+      id: mockUserId,
       emailAddresses: [{ emailAddress: mockEmail }],
     });
 
@@ -82,32 +90,45 @@ describe('Auth Service (Multi-tenancy)', () => {
     );
   });
 
-  it('should retry once and return JIT created user if NOT found in DB (Webhook latency)', async () => {
+  it('creates the tenant and user just in time when Clerk session exists but DB sync is missing', async () => {
     (auth as any).mockResolvedValue({
       userId: mockUserId,
       orgId: mockTenantId,
     });
     (currentUser as any).mockResolvedValue({
+      id: mockUserId,
+      firstName: null,
+      lastName: null,
       emailAddresses: [{ emailAddress: mockEmail }],
     });
 
     // Mock FindFirst to always return null
     (prisma.user.findFirst as any).mockResolvedValue(null);
 
-    // Start the promise
-    const promise = getCurrentUser();
-
-    // Fast-forward time to skip the 1.5s delay
-    await vi.advanceTimersByTimeAsync(1600);
-
-    const result = await promise;
+    const result = await getCurrentUser();
 
     expect(result).not.toBeNull();
     expect(result?.id).toBe('dummy_user_id');
-    // Should be called 2 times:
-    // 1. SuperAdmin check
-    // 2. Initial check
     expect(prisma.user.findFirst).toHaveBeenCalledTimes(2);
+    expect(prisma.tenant.findUnique).toHaveBeenCalledWith({
+      where: { id: mockTenantId },
+    });
+    expect(prisma.tenant.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        id: mockTenantId,
+        slug: mockTenantId.toLowerCase(),
+        onboardingStatus: 'PENDING',
+      }),
+    });
     expect(prisma.user.create).toHaveBeenCalledTimes(1);
+    expect(prisma.user.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        id: mockUserId,
+        email: mockEmail,
+        tenantId: mockTenantId,
+        role: 'OWNER',
+        isActive: true,
+      }),
+    });
   });
 });

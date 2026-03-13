@@ -7,6 +7,7 @@ import {
   isTechnician,
   isPurchaser,
   isDriver,
+  isCoordinator,
   canManageMasterData,
   canViewCosts,
   canCreateWorkOrders,
@@ -60,7 +61,15 @@ function mockUserWithSuperAdmin(
   };
 }
 
-const ALL_ROLES = ['SUPER_ADMIN', 'OWNER', 'MANAGER', 'TECHNICIAN', 'PURCHASER', 'DRIVER'] as const;
+const ALL_ROLES = [
+  'SUPER_ADMIN',
+  'OWNER',
+  'MANAGER',
+  'COORDINATOR',
+  'TECHNICIAN',
+  'PURCHASER',
+  'DRIVER',
+] as const;
 
 // ========================================
 // INDIVIDUAL ROLE VALIDATORS
@@ -103,6 +112,12 @@ describe('Individual Role Validators', () => {
     expect(isDriver(mockUser('OWNER'))).toBe(false);
     expect(isDriver(null)).toBe(false);
   });
+
+  it('isCoordinator returns true only for COORDINATOR', () => {
+    expect(isCoordinator(mockUser('COORDINATOR'))).toBe(true);
+    expect(isCoordinator(mockUser('MANAGER'))).toBe(false);
+    expect(isCoordinator(null)).toBe(false);
+  });
 });
 
 // ========================================
@@ -110,10 +125,11 @@ describe('Individual Role Validators', () => {
 // ========================================
 
 describe('canManageMasterData', () => {
-  it('allows SUPER_ADMIN, OWNER, MANAGER', () => {
+  it('allows SUPER_ADMIN, OWNER, MANAGER, COORDINATOR', () => {
     expect(canManageMasterData(mockUser('SUPER_ADMIN'))).toBe(true);
     expect(canManageMasterData(mockUser('OWNER'))).toBe(true);
     expect(canManageMasterData(mockUser('MANAGER'))).toBe(true);
+    expect(canManageMasterData(mockUser('COORDINATOR'))).toBe(true);
   });
 
   it('denies TECHNICIAN, PURCHASER, DRIVER', () => {
@@ -128,10 +144,11 @@ describe('canManageMasterData', () => {
 });
 
 describe('canViewCosts', () => {
-  it('allows SUPER_ADMIN, OWNER, MANAGER, PURCHASER', () => {
+  it('allows SUPER_ADMIN, OWNER, MANAGER, COORDINATOR, PURCHASER', () => {
     expect(canViewCosts(mockUser('SUPER_ADMIN'))).toBe(true);
     expect(canViewCosts(mockUser('OWNER'))).toBe(true);
     expect(canViewCosts(mockUser('MANAGER'))).toBe(true);
+    expect(canViewCosts(mockUser('COORDINATOR'))).toBe(true);
     expect(canViewCosts(mockUser('PURCHASER'))).toBe(true);
   });
 
@@ -142,10 +159,11 @@ describe('canViewCosts', () => {
 });
 
 describe('canCreateWorkOrders', () => {
-  it('allows SUPER_ADMIN, OWNER, MANAGER', () => {
+  it('allows SUPER_ADMIN, OWNER, MANAGER, COORDINATOR', () => {
     expect(canCreateWorkOrders(mockUser('SUPER_ADMIN'))).toBe(true);
     expect(canCreateWorkOrders(mockUser('OWNER'))).toBe(true);
     expect(canCreateWorkOrders(mockUser('MANAGER'))).toBe(true);
+    expect(canCreateWorkOrders(mockUser('COORDINATOR'))).toBe(true);
   });
 
   it('denies TECHNICIAN, PURCHASER, DRIVER', () => {
@@ -156,10 +174,11 @@ describe('canCreateWorkOrders', () => {
 });
 
 describe('canExecuteWorkOrders', () => {
-  it('allows SUPER_ADMIN, OWNER, MANAGER, TECHNICIAN', () => {
+  it('allows SUPER_ADMIN, OWNER, MANAGER, COORDINATOR, TECHNICIAN', () => {
     expect(canExecuteWorkOrders(mockUser('SUPER_ADMIN'))).toBe(true);
     expect(canExecuteWorkOrders(mockUser('OWNER'))).toBe(true);
     expect(canExecuteWorkOrders(mockUser('MANAGER'))).toBe(true);
+    expect(canExecuteWorkOrders(mockUser('COORDINATOR'))).toBe(true);
     expect(canExecuteWorkOrders(mockUser('TECHNICIAN'))).toBe(true);
   });
 
@@ -184,10 +203,11 @@ describe('canManageUsers', () => {
 });
 
 describe('canApproveInvoices', () => {
-  it('allows SUPER_ADMIN, OWNER, MANAGER, PURCHASER', () => {
+  it('allows SUPER_ADMIN, OWNER, MANAGER, COORDINATOR, PURCHASER', () => {
     expect(canApproveInvoices(mockUser('SUPER_ADMIN'))).toBe(true);
     expect(canApproveInvoices(mockUser('OWNER'))).toBe(true);
     expect(canApproveInvoices(mockUser('MANAGER'))).toBe(true);
+    expect(canApproveInvoices(mockUser('COORDINATOR'))).toBe(true);
     expect(canApproveInvoices(mockUser('PURCHASER'))).toBe(true);
   });
 
@@ -198,10 +218,11 @@ describe('canApproveInvoices', () => {
 });
 
 describe('canManagePurchases', () => {
-  it('allows SUPER_ADMIN, OWNER, MANAGER, PURCHASER', () => {
+  it('allows SUPER_ADMIN, OWNER, MANAGER, COORDINATOR, PURCHASER', () => {
     expect(canManagePurchases(mockUser('SUPER_ADMIN'))).toBe(true);
     expect(canManagePurchases(mockUser('OWNER'))).toBe(true);
     expect(canManagePurchases(mockUser('MANAGER'))).toBe(true);
+    expect(canManagePurchases(mockUser('COORDINATOR'))).toBe(true);
     expect(canManagePurchases(mockUser('PURCHASER'))).toBe(true);
   });
 
@@ -212,10 +233,11 @@ describe('canManagePurchases', () => {
 });
 
 describe('canManageProviders', () => {
-  it('allows SUPER_ADMIN, OWNER, MANAGER, PURCHASER', () => {
+  it('allows SUPER_ADMIN, OWNER, MANAGER, COORDINATOR, PURCHASER', () => {
     expect(canManageProviders(mockUser('SUPER_ADMIN'))).toBe(true);
     expect(canManageProviders(mockUser('OWNER'))).toBe(true);
     expect(canManageProviders(mockUser('MANAGER'))).toBe(true);
+    expect(canManageProviders(mockUser('COORDINATOR'))).toBe(true);
     expect(canManageProviders(mockUser('PURCHASER'))).toBe(true);
   });
 
@@ -226,10 +248,11 @@ describe('canManageProviders', () => {
 });
 
 describe('canManageVehicles / canDeleteVehicles', () => {
-  it('canManageVehicles allows SUPER_ADMIN, OWNER, MANAGER', () => {
+  it('canManageVehicles allows SUPER_ADMIN, OWNER, MANAGER, COORDINATOR', () => {
     expect(canManageVehicles(mockUser('SUPER_ADMIN'))).toBe(true);
     expect(canManageVehicles(mockUser('OWNER'))).toBe(true);
     expect(canManageVehicles(mockUser('MANAGER'))).toBe(true);
+    expect(canManageVehicles(mockUser('COORDINATOR'))).toBe(true);
   });
 
   it('canManageVehicles denies TECHNICIAN, PURCHASER, DRIVER', () => {
@@ -246,10 +269,11 @@ describe('canManageVehicles / canDeleteVehicles', () => {
 });
 
 describe('canViewDashboard', () => {
-  it('allows SUPER_ADMIN, OWNER, MANAGER', () => {
+  it('allows SUPER_ADMIN, OWNER, MANAGER, COORDINATOR', () => {
     expect(canViewDashboard(mockUser('SUPER_ADMIN'))).toBe(true);
     expect(canViewDashboard(mockUser('OWNER'))).toBe(true);
     expect(canViewDashboard(mockUser('MANAGER'))).toBe(true);
+    expect(canViewDashboard(mockUser('COORDINATOR'))).toBe(true);
   });
 
   it('denies TECHNICIAN, PURCHASER, DRIVER', () => {
@@ -272,10 +296,11 @@ describe('canRegisterOdometer', () => {
 });
 
 describe('canManageMaintenancePrograms', () => {
-  it('allows SUPER_ADMIN, OWNER, MANAGER', () => {
+  it('allows SUPER_ADMIN, OWNER, MANAGER, COORDINATOR', () => {
     expect(canManageMaintenancePrograms(mockUser('SUPER_ADMIN'))).toBe(true);
     expect(canManageMaintenancePrograms(mockUser('OWNER'))).toBe(true);
     expect(canManageMaintenancePrograms(mockUser('MANAGER'))).toBe(true);
+    expect(canManageMaintenancePrograms(mockUser('COORDINATOR'))).toBe(true);
   });
 
   it('denies TECHNICIAN, PURCHASER, DRIVER', () => {
@@ -286,10 +311,11 @@ describe('canManageMaintenancePrograms', () => {
 });
 
 describe('canViewAlerts', () => {
-  it('allows SUPER_ADMIN, OWNER, MANAGER, TECHNICIAN', () => {
+  it('allows SUPER_ADMIN, OWNER, MANAGER, COORDINATOR, TECHNICIAN', () => {
     expect(canViewAlerts(mockUser('SUPER_ADMIN'))).toBe(true);
     expect(canViewAlerts(mockUser('OWNER'))).toBe(true);
     expect(canViewAlerts(mockUser('MANAGER'))).toBe(true);
+    expect(canViewAlerts(mockUser('COORDINATOR'))).toBe(true);
     expect(canViewAlerts(mockUser('TECHNICIAN'))).toBe(true);
   });
 
@@ -307,11 +333,13 @@ describe('canCreateMantItems / canResolveMantItemRequests', () => {
   it('OWNER and MANAGER can create mant items', () => {
     expect(canCreateMantItems(mockUser('OWNER'))).toBe(true);
     expect(canCreateMantItems(mockUser('MANAGER'))).toBe(true);
+    expect(canCreateMantItems(mockUser('COORDINATOR'))).toBe(true);
   });
 
   it('OWNER and MANAGER can resolve mant item requests', () => {
     expect(canResolveMantItemRequests(mockUser('OWNER'))).toBe(true);
     expect(canResolveMantItemRequests(mockUser('MANAGER'))).toBe(true);
+    expect(canResolveMantItemRequests(mockUser('COORDINATOR'))).toBe(true);
   });
 
   it('TECHNICIAN cannot resolve requests', () => {
@@ -332,10 +360,11 @@ describe('Knowledge Base Permissions', () => {
     expect(canViewGlobalKnowledgeBase(null)).toBe(false);
   });
 
-  it('SUPER_ADMIN, OWNER, MANAGER can manage tenant data', () => {
+  it('SUPER_ADMIN, OWNER, MANAGER, COORDINATOR can manage tenant data', () => {
     expect(canManageTenantData(mockUser('SUPER_ADMIN'))).toBe(true);
     expect(canManageTenantData(mockUser('OWNER'))).toBe(true);
     expect(canManageTenantData(mockUser('MANAGER'))).toBe(true);
+    expect(canManageTenantData(mockUser('COORDINATOR'))).toBe(true);
     expect(canManageTenantData(mockUser('TECHNICIAN'))).toBe(false);
   });
 });
@@ -355,10 +384,11 @@ describe('requireAuthenticated', () => {
 });
 
 describe('requireManagementRole', () => {
-  it('does not throw for SUPER_ADMIN, OWNER, MANAGER', () => {
+  it('does not throw for SUPER_ADMIN, OWNER, MANAGER, COORDINATOR', () => {
     expect(() => requireManagementRole(mockUser('SUPER_ADMIN'))).not.toThrow();
     expect(() => requireManagementRole(mockUser('OWNER'))).not.toThrow();
     expect(() => requireManagementRole(mockUser('MANAGER'))).not.toThrow();
+    expect(() => requireManagementRole(mockUser('COORDINATOR'))).not.toThrow();
   });
 
   it('throws for TECHNICIAN, PURCHASER, DRIVER', () => {
@@ -401,7 +431,7 @@ describe('requireMasterDataMutationPermission', () => {
     const user = mockUserWithSuperAdmin('TECHNICIAN', false, 'tenant-1');
     const item = { isGlobal: false, tenantId: 'tenant-1' };
     expect(() => requireMasterDataMutationPermission(user, item)).toThrow(
-      'Se requiere rol OWNER o MANAGER'
+      'Se requiere rol OWNER, MANAGER o COORDINATOR'
     );
   });
 });

@@ -70,7 +70,8 @@ type AddItemDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
-  defaultItemSource?: 'EXTERNAL' | 'INTERNAL_STOCK'; // NUEVO
+  defaultItemSource?: 'EXTERNAL' | 'INTERNAL_STOCK';
+  lockItemSource?: boolean; // Si true, oculta el select de fuente
 };
 
 type MantItem = {
@@ -108,7 +109,8 @@ export function AddItemDialog({
   open,
   onOpenChange,
   onSuccess,
-  defaultItemSource, // NUEVO
+  defaultItemSource,
+  lockItemSource,
 }: AddItemDialogProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -146,10 +148,31 @@ export function AddItemDialog({
     },
   });
 
-  // Reset itemSource when defaultItemSource changes or dialog opens
+  // Reset states when dialog opens/closes
   useEffect(() => {
-    if (open && defaultItemSource) {
-      form.setValue('itemSource', defaultItemSource);
+    if (!open) {
+      // Clear all states when closing
+      setSearchQuery('');
+      setSelectedItem(null);
+      setStock(null);
+      setSuggestions([]);
+      setCatalogSearch('');
+      setCatalogParts([]);
+      setShowCatalogFallback(false);
+      form.reset({
+        quantity: 1,
+        unitPrice: 0,
+        itemSource: defaultItemSource || 'EXTERNAL',
+        description: '',
+        masterPartId: '',
+        mantItemId: '',
+        providerId: '',
+      });
+    } else {
+      // Ensure defaults are set when opening
+      if (defaultItemSource) {
+        form.setValue('itemSource', defaultItemSource);
+      }
     }
   }, [open, defaultItemSource, form]);
 
@@ -159,7 +182,7 @@ export function AddItemDialog({
       try {
         const res = await axios.get('/api/people/providers');
         setProviders(res.data || []);
-      } catch (e) {}
+      } catch (e) { }
     }
     if (open) fetchProviders();
   }, [open]);
@@ -169,14 +192,27 @@ export function AddItemDialog({
     if (!open) return;
     const searchItems = async () => {
       try {
-        const url = searchQuery.trim()
-          ? `/api/maintenance/mant-items?search=${encodeURIComponent(searchQuery.trim())}`
-          : '/api/maintenance/mant-items';
+        const baseUrl = '/api/maintenance/mant-items';
+        const queryParams = new URLSearchParams();
+        if (searchQuery.trim()) {
+          queryParams.append('search', searchQuery.trim());
+        }
+        if (type === 'PART') {
+          queryParams.append('type', 'PART');
+        } else if (type === 'SERVICE') {
+          // we could send type=SERVICE, but the backend accepts typeFilter: 'ACTION' | 'PART' | 'SERVICE'
+          // and we want both SERVICE and ACTION. The best way is to send nothing and filter on the frontend for now,
+          // or modify the backend to accept an array of types. Given the prompt, the main issue is PART bringing SERVICES.
+          // By filtering PART on the backend, we fix the issue. For SERVICES we can just filter on frontend, 
+          // since stock check doesn't apply to services so the impact is just UI clutter.
+        }
+
+        const url = `${baseUrl}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
         const res = await axios.get(url);
         const allItems: MantItem[] = Array.isArray(res.data)
           ? res.data
           : res.data.items || [];
-        // Filtrar por tipo en cliente: SERVICE/ACTION para servicios, PART para repuestos
+        // Filtrar por tipo en cliente: SERVICE/ACTION para servicios, PART para repuestos (redundante pero seguro)
         const typeFilters =
           type === 'SERVICE' ? ['SERVICE', 'ACTION'] : ['PART'];
         setItems(allItems.filter(i => typeFilters.includes(i.type)));
@@ -400,15 +436,15 @@ export function AddItemDialog({
                           >
                             {field.value
                               ? (items.find(
-                                  i => i.id.toString() === field.value
-                                )?.name ?? 'Seleccionar...')
+                                i => i.id.toString() === field.value
+                              )?.name ?? 'Seleccionar...')
                               : 'Buscar y seleccionar...'}
                             <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
                       <PopoverContent className="w-[460px] p-0" align="start">
-                        <Command>
+                        <Command shouldFilter={false}>
                           <CommandInput
                             placeholder="Escribir para filtrar..."
                             value={searchQuery}
@@ -560,11 +596,10 @@ export function AddItemDialog({
             {/* Stock Info (Parts only) */}
             {type === 'PART' && selectedItem && (
               <div
-                className={`p-3 rounded border text-sm flex items-center gap-2 ${
-                  stock && Number(stock.quantity) > 0
-                    ? 'bg-green-50 border-green-200 text-green-700'
-                    : 'bg-amber-50 border-amber-200 text-amber-700'
-                }`}
+                className={`p-3 rounded border text-sm flex items-center gap-2 ${stock && Number(stock.quantity) > 0
+                  ? 'bg-green-50 border-green-200 text-green-700'
+                  : 'bg-amber-50 border-amber-200 text-amber-700'
+                  }`}
               >
                 <Box className="h-4 w-4" />
                 {stock ? (
@@ -618,31 +653,33 @@ export function AddItemDialog({
             </div>
 
             <div className="grid grid-cols-1 gap-4">
-              <FormField
-                control={form.control}
-                name="itemSource"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Destino del trabajo</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="INTERNAL_STOCK">
-                          Taller Propio (interno)
-                        </SelectItem>
-                        <SelectItem value="EXTERNAL">
-                          Proveedor Externo (compra)
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {!lockItemSource && (
+                <FormField
+                  control={form.control}
+                  name="itemSource"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Destino del trabajo</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="INTERNAL_STOCK">
+                            Taller Propio (interno)
+                          </SelectItem>
+                          <SelectItem value="EXTERNAL">
+                            Proveedor Externo (compra)
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               {form.watch('itemSource') === 'EXTERNAL' && (
                 <FormField

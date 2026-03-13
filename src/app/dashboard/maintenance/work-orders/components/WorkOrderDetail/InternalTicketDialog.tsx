@@ -111,6 +111,7 @@ export function InternalTicketDialog({
                       id={item.id}
                       checked={selectedIds.includes(item.id)}
                       onCheckedChange={() => toggleItem(item.id)}
+                      onClick={(e) => e.stopPropagation()}
                     />
                     <div className="grid gap-1.5 leading-none">
                       <label

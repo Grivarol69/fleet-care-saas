@@ -6,7 +6,7 @@ async function main() {
   console.log('🔍 Checking Work Order #10...');
 
   const workOrder = await prisma.workOrder.findFirst({
-    where: { id: 10 },
+    where: { id: '10' },
     include: {
       workOrderItems: true,
       maintenanceAlerts: {

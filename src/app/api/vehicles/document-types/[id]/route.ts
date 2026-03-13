@@ -110,7 +110,7 @@ export async function PUT(
           { status: 403 }
         );
       }
-      if (!['SUPER_ADMIN', 'OWNER', 'MANAGER'].includes(user.role)) {
+      if (!['SUPER_ADMIN', 'OWNER', 'MANAGER', 'COORDINATOR'].includes(user.role)) {
         return NextResponse.json(
           { error: 'No tienes permisos' },
           { status: 403 }

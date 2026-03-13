@@ -31,7 +31,9 @@ function mapClerkRoleToDbRole(clerkRoleRaw: string): UserRole {
   const role = clerkRoleRaw.replace('org:', '');
   const mapping: Record<string, UserRole> = {
     admin: 'OWNER',
+    owner: 'OWNER', // Soporte para rol personalizado 'org:owner'
     manager: 'MANAGER',
+    coordinator: 'COORDINATOR',
     technician: 'TECHNICIAN',
     purchaser: 'PURCHASER',
     driver: 'DRIVER',
@@ -63,8 +65,7 @@ export async function POST(req: Request) {
   }
 
   // Get the body
-  const payload = await req.json();
-  const body = JSON.stringify(payload);
+  const body = await req.text();
 
   // Create a new Svix instance with your secret.
   const wh = new Webhook(WEBHOOK_SECRET);
@@ -90,7 +91,6 @@ export async function POST(req: Request) {
     console.log(`[WEBHOOK] Duplicate event ${svix_id} skipped`);
     return new Response('', { status: 200 });
   }
-  processedEvents.set(svix_id, Date.now());
 
   // Handle the event
   const eventType = evt.type;
@@ -102,42 +102,37 @@ export async function POST(req: Request) {
       case 'user.updated': {
         const { id, email_addresses, first_name, last_name } = evt.data;
         const email = email_addresses[0]?.email_address;
+        console.log(`[WEBHOOK] User event for ${email} (ID: ${id})`);
 
         if (!email) {
-          console.log('No email found for user', id);
+          console.log('[WEBHOOK] No email found for user', id);
           break;
         }
 
-        // En un modelo multi-tenant donde el usuario pertenece a una organización,
-        // el usuario se crea realmente cuando se une a la organización (organizationMembership.created).
-        // Sin embargo, podemos actualizar sus datos básicos si ya existe en algun tenant.
-
-        // Estrategia: Actualizar el usuario en TODOS los tenants donde exista ese email.
-        // Esto es costoso pero correcto. O alternativamente, solo loguear.
-
-        // Por ahora, actualizaremos si encontramos:
-        await prisma.user.updateMany({
+        const updatedCount = await prisma.user.updateMany({
           where: { email },
           data: {
             firstName: first_name,
             lastName: last_name,
           },
         });
+        console.log(`[WEBHOOK] Updated ${updatedCount.count} user records for email ${email}`);
         break;
       }
 
       case 'organization.created':
       case 'organization.updated': {
         const { id, name, slug } = evt.data;
+        console.log(`[WEBHOOK] Organization event for ${name} (ID: ${id})`);
 
-        await prisma.tenant.upsert({
+        const tenant = await prisma.tenant.upsert({
           where: { id },
           create: {
             id,
             name,
-            slug: slug || id.toLowerCase(), // Slug es opcional en Clerk, fallback al ID
-            domain: slug ? `${slug}.localhost` : null, // Placeholder domain
-            subscriptionStatus: 'TRIAL', // Default para nuevos
+            slug: slug || id.toLowerCase(),
+            domain: slug ? `${slug}.localhost` : null,
+            subscriptionStatus: 'TRIAL',
             onboardingStatus: 'PENDING',
           },
           update: {
@@ -145,6 +140,7 @@ export async function POST(req: Request) {
             slug: slug || id.toLowerCase(),
           },
         });
+        console.log(`[WEBHOOK] Tenant upserted: ${tenant.id}`);
         break;
       }
 
@@ -152,9 +148,28 @@ export async function POST(req: Request) {
         const { organization, public_user_data, role } = evt.data;
         const email = public_user_data.identifier;
         const dbRole = mapClerkRoleToDbRole(role);
+        console.log(`[WEBHOOK] Membership created for ${email} in org ${organization.id} as ${dbRole}`);
 
-        // Upsert: si el usuario fue soft-deleted previamente, lo reactiva
-        await prisma.user.upsert({
+        if (!email) {
+          console.error('[WEBHOOK] No email (identifier) found in public_user_data');
+          break;
+        }
+
+        // Garantizar que el Tenant existe antes del User (FK constraint).
+        // Puede ocurrir que organization.created haya fallado o llegue después.
+        await prisma.tenant.upsert({
+          where: { id: organization.id },
+          create: {
+            id: organization.id,
+            name: organization.name,
+            slug: organization.slug || organization.id.toLowerCase(),
+            subscriptionStatus: 'TRIAL',
+            onboardingStatus: 'PENDING',
+          },
+          update: {},
+        });
+
+        const user = await prisma.user.upsert({
           where: {
             tenantId_email: {
               tenantId: organization.id,
@@ -162,18 +177,22 @@ export async function POST(req: Request) {
             },
           },
           create: {
+            id: public_user_data.user_id, // Usar el ID de Clerk para consistencia completa
             tenantId: organization.id,
             email: email,
-            firstName: public_user_data.first_name,
-            lastName: public_user_data.last_name,
+            firstName: public_user_data.first_name || 'Usuario',
+            lastName: public_user_data.last_name || 'Invitado',
             role: dbRole,
             isActive: true,
           },
           update: {
             role: dbRole,
             isActive: true,
+            // Podríamos actualizar el id aquí si queremos forzarlo, 
+            // pero Prisma no recomienda cambiar IDs en upsert/update.
           },
         });
+        console.log(`[WEBHOOK] User upserted via membership: ${user.id}`);
         break;
       }
 
@@ -182,7 +201,7 @@ export async function POST(req: Request) {
         const email = public_user_data.identifier;
         const dbRole = mapClerkRoleToDbRole(role);
 
-        await prisma.user.updateMany({
+        const updated = await prisma.user.updateMany({
           where: {
             tenantId: organization.id,
             email: email,
@@ -191,6 +210,7 @@ export async function POST(req: Request) {
             role: dbRole,
           },
         });
+        console.log(`[WEBHOOK] Membership updated for ${email} (${updated.count} records)`);
         break;
       }
 
@@ -198,9 +218,7 @@ export async function POST(req: Request) {
         const { organization, public_user_data } = evt.data;
         const email = public_user_data.identifier;
 
-        // Soft-delete: desactivar en vez de borrar para preservar audit trail
-        // (facturas aprobadas, OTs creadas, etc. mantienen referencia al usuario)
-        await prisma.user.updateMany({
+        const updated = await prisma.user.updateMany({
           where: {
             tenantId: organization.id,
             email: email,
@@ -209,13 +227,16 @@ export async function POST(req: Request) {
             isActive: false,
           },
         });
+        console.log(`[WEBHOOK] Membership deleted (soft) for ${email} (${updated.count} records)`);
         break;
       }
     }
-  } catch (error) {
-    console.error('Error processing webhook logic:', error);
-    return new Response('Error processing logic', { status: 500 });
+  } catch (error: any) {
+    console.error('[WEBHOOK ERROR] Error processing webhook logic:', error);
+    // Log detailed error info
+    return new Response(`Error processing logic: ${error.message}`, { status: 500 });
   }
 
+  processedEvents.set(svix_id, Date.now());
   return new Response('', { status: 200 });
 }

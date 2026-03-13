@@ -47,29 +47,29 @@ export function CierreTab({ workOrder, currentUser, onRefresh }: any) {
       (i: any) =>
         i.itemSource === 'INTERNAL_STOCK' && i.mantItem.type === 'SERVICE'
     )
-    .reduce((a: number, i: any) => a + (i.totalCost || 0), 0);
+    .reduce((a: number, i: any) => a + Number(i.totalCost || 0), 0);
 
   const totalRepInt = items
     .filter(
       (i: any) =>
         i.itemSource === 'INTERNAL_STOCK' && i.mantItem.type === 'PART'
     )
-    .reduce((a: number, i: any) => a + (i.totalCost || 0), 0);
+    .reduce((a: number, i: any) => a + Number(i.totalCost || 0), 0);
 
   const totalServExt = items
     .filter(
       (i: any) => i.itemSource === 'EXTERNAL' && i.mantItem.type === 'SERVICE'
     )
-    .reduce((a: number, i: any) => a + (i.totalCost || 0), 0);
+    .reduce((a: number, i: any) => a + Number(i.totalCost || 0), 0);
 
   const totalRepExt = items
     .filter(
       (i: any) => i.itemSource === 'EXTERNAL' && i.mantItem.type === 'PART'
     )
-    .reduce((a: number, i: any) => a + (i.totalCost || 0), 0);
+    .reduce((a: number, i: any) => a + Number(i.totalCost || 0), 0);
 
   const totalGastos = expenses.reduce(
-    (a: number, e: any) => a + (e.amount || 0),
+    (a: number, e: any) => a + Number(e.amount || 0),
     0
   );
 
@@ -254,9 +254,8 @@ export function CierreTab({ workOrder, currentUser, onRefresh }: any) {
                   </span>
                   <span className="text-muted-foreground">→</span>
                   <span
-                    className={`font-semibold flex items-center gap-1 ${
-                      Math.abs(variacion) > 15 ? 'text-red-600' : ''
-                    }`}
+                    className={`font-semibold flex items-center gap-1 ${Math.abs(variacion) > 15 ? 'text-red-600' : ''
+                      }`}
                   >
                     {Math.abs(variacion) > 15 && (
                       <AlertTriangle className="h-4 w-4" />

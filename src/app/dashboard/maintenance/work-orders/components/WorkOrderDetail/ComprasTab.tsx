@@ -18,7 +18,7 @@ export function ComprasTab({ workOrder, currentUser, onRefresh }: any) {
 
   const pos = workOrder.purchaseOrders || [];
   const totalOCs = pos.reduce(
-    (a: number, p: any) => a + (p.totalAmount || 0),
+    (a: number, p: any) => a + Number(p.totalAmount || 0),
     0
   );
 
@@ -42,6 +42,8 @@ export function ComprasTab({ workOrder, currentUser, onRefresh }: any) {
               <TableHeader>
                 <TableRow>
                   <TableHead>N° Orden</TableHead>
+                  <TableHead>Proveedor</TableHead>
+                  <TableHead>Tipo</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Monto</TableHead>
                   <TableHead>Notas</TableHead>
@@ -81,6 +83,22 @@ export function ComprasTab({ workOrder, currentUser, onRefresh }: any) {
                       <TableCell className="font-medium text-xs font-mono">
                         {po.orderNumber}
                       </TableCell>
+                      <TableCell className="text-sm">
+                        {po.provider?.name ?? '—'}
+                      </TableCell>
+                      <TableCell>
+                        {po.type === 'PARTS' ? (
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                            Repuestos
+                          </Badge>
+                        ) : po.type === 'SERVICES' ? (
+                          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                            Servicios
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Badge variant={badgeVariant} className={badgeClass}>
@@ -104,7 +122,7 @@ export function ComprasTab({ workOrder, currentUser, onRefresh }: any) {
                   );
                 })}
                 <TableRow>
-                  <TableCell colSpan={2} className="text-right font-semibold">
+                  <TableCell colSpan={4} className="text-right font-semibold">
                     Total comprometido
                   </TableCell>
                   <TableCell colSpan={2} className="font-bold font-mono">
@@ -176,8 +194,8 @@ export function ComprasTab({ workOrder, currentUser, onRefresh }: any) {
                       <TableCell className="text-muted-foreground text-xs">
                         {inv.invoiceDate
                           ? new Date(inv.invoiceDate).toLocaleDateString(
-                              'es-CO'
-                            )
+                            'es-CO'
+                          )
                           : '—'}
                       </TableCell>
                       <TableCell className="font-mono text-xs">

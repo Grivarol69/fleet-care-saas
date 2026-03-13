@@ -89,6 +89,9 @@ type WorkOrder = {
     itemSource: string | null; // NUEVO
     closureType: string | null; // NUEVO
     notes: string | null; // NUEVO
+    providerId: string | null;
+    provider: { id: string; name: string } | null;
+    purchaseOrderItems: Array<{ id: string }>;
     mantItem: {
       id: string;
       name: string;
@@ -164,7 +167,7 @@ export default function WorkOrderDetailPage() {
     fetch('/api/auth/me')
       .then(res => res.json())
       .then((data: CurrentUser) => setCurrentUser(data))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const workOrderId = params.id as string;
@@ -175,7 +178,9 @@ export default function WorkOrderDetailPage() {
 
   const fetchWorkOrder = async () => {
     try {
-      setIsLoading(true);
+      if (!workOrder) {
+        setIsLoading(true);
+      }
       const response = await axios.get(
         `/api/maintenance/work-orders/${workOrderId}`
       );

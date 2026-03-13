@@ -117,8 +117,8 @@ export function ResumenTab({
 
   const expenses = workOrder.workOrderExpenses || [];
   const totalCostValue =
-    items.reduce((acc: number, i: any) => acc + (i.totalCost || 0), 0) +
-    expenses.reduce((acc: number, e: any) => acc + (e.amount || 0), 0);
+    items.reduce((acc: number, i: any) => acc + Number(i.totalCost || 0), 0) +
+    expenses.reduce((acc: number, e: any) => acc + Number(e.amount || 0), 0);
 
   const purchaseOrders = workOrder.purchaseOrders || [];
   const pendingOCs = purchaseOrders.filter(
@@ -414,27 +414,6 @@ export function ResumenTab({
                   {workOrder.technician.phone && (
                     <p className="text-sm text-muted-foreground">
                       {workOrder.technician.phone}
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No asignado</p>
-              )}
-            </div>
-
-            <div>
-              <Label className="text-muted-foreground">Proveedor</Label>
-              {workOrder.provider ? (
-                <div>
-                  <p className="font-semibold">{workOrder.provider.name}</p>
-                  {workOrder.provider.email && (
-                    <p className="text-sm text-muted-foreground">
-                      {workOrder.provider.email}
-                    </p>
-                  )}
-                  {workOrder.provider.phone && (
-                    <p className="text-sm text-muted-foreground">
-                      {workOrder.provider.phone}
                     </p>
                   )}
                 </div>

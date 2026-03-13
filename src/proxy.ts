@@ -51,18 +51,10 @@ export default clerkMiddleware(async (auth, request) => {
       return NextResponse.redirect(new URL('/sign-in', request.url));
     }
 
-    // /admin requiere cuenta personal (sin org) — solo SUPER_ADMIN puede acceder.
-    // La verificación final del rol ocurre en getCurrentUser(), pero aquí bloqueamos
-    // a cualquier usuario con org activa como primera capa de defensa.
     if (isAdminRoute(request) && orgId) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
-    // Rutas que NO requieren organización:
-    // - /admin: ya verificado arriba (sin org = posible SUPER_ADMIN)
-    // - /dashboard: verificación en el layout con getCurrentUser()
-    // - /api: cada endpoint verifica permisos via getCurrentUser() + permissions.ts
-    // - /onboarding: es la propia pagina de onboarding
     const skipOrgCheck =
       isAdminRoute(request) ||
       url.pathname.startsWith('/dashboard') ||
@@ -71,6 +63,12 @@ export default clerkMiddleware(async (auth, request) => {
 
     if (!skipOrgCheck && !orgId) {
       return NextResponse.redirect(new URL('/onboarding', request.url));
+    }
+  } else {
+    // Si es una ruta pública de API (como el webhook), evitamos el rewrite
+    // para no alterar la firma ni el flujo del body.
+    if (url.pathname.startsWith('/api')) {
+      return NextResponse.next();
     }
   }
 

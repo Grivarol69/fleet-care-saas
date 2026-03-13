@@ -29,7 +29,9 @@ vi.mock('@/lib/auth', () => ({
   isSuperAdmin: vi.fn().mockResolvedValue(false),
 }));
 
-describe('Multi-Tenant Security', () => {
+const runIntegration = process.env['RUN_INTEGRATION_TESTS'] === '1';
+
+describe.skipIf(!runIntegration)('Multi-tenant integration security', () => {
   let tenantA: Awaited<ReturnType<typeof createTestTenant>>;
   let tenantB: Awaited<ReturnType<typeof createTestTenant>>;
   let userA: Awaited<ReturnType<typeof createTestUser>>;
@@ -66,12 +68,17 @@ describe('Multi-Tenant Security', () => {
   });
 
   afterEach(async () => {
-    await cleanupTenants([tenantA.id, tenantB.id]);
+    const tenantIds = [tenantA?.id, tenantB?.id].filter(
+      (tenantId): tenantId is string => Boolean(tenantId)
+    );
+    if (tenantIds.length > 0) {
+      await cleanupTenants(tenantIds);
+    }
     vi.clearAllMocks();
   });
 
-  describe('Vehicle Isolation', () => {
-    it('Tenant A cannot see Tenant B vehicles in listing', async () => {
+  describe('vehicle isolation', () => {
+    it('returns only the authenticated tenant vehicles in the listing', async () => {
       mockAuthAsUser({ id: userA.id, tenantId: tenantA.id, role: 'OWNER' });
 
       const res = await GET_VEHICLES();
@@ -84,8 +91,8 @@ describe('Multi-Tenant Security', () => {
     });
   });
 
-  describe('Work Order Isolation', () => {
-    it('Tenant A cannot see Tenant B work orders', async () => {
+  describe('work order isolation', () => {
+    it('returns only the authenticated tenant work orders', async () => {
       mockAuthAsUser({ id: userA.id, tenantId: tenantA.id, role: 'OWNER' });
 
       const res = await GET_WORK_ORDERS(
@@ -99,7 +106,7 @@ describe('Multi-Tenant Security', () => {
       expect(woIds).not.toContain(workOrderB.id);
     });
 
-    it('Tenant A cannot PATCH Tenant B work order', async () => {
+    it('rejects updates against a work order owned by another tenant', async () => {
       mockAuthAsUser({ id: userA.id, tenantId: tenantA.id, role: 'OWNER' });
 
       const res = await PATCH_WORK_ORDER(
@@ -117,8 +124,8 @@ describe('Multi-Tenant Security', () => {
     });
   });
 
-  describe('Purchase Order Isolation', () => {
-    it('Tenant A cannot see Tenant B purchase orders', async () => {
+  describe('purchase order isolation', () => {
+    it('returns only purchase orders owned by the authenticated tenant', async () => {
       // Create PO for each tenant (directly in DB)
       const provA = await prisma.provider.findFirst({
         where: { tenantId: tenantA.id },
@@ -173,8 +180,8 @@ describe('Multi-Tenant Security', () => {
     });
   });
 
-  describe('Invoice Isolation', () => {
-    it('Tenant A cannot see Tenant B invoices', async () => {
+  describe('invoice isolation', () => {
+    it('returns only invoices owned by the authenticated tenant', async () => {
       const provA = await prisma.provider.findFirst({
         where: { tenantId: tenantA.id },
       });
@@ -224,8 +231,8 @@ describe('Multi-Tenant Security', () => {
     });
   });
 
-  describe('Alert Isolation', () => {
-    it('Tenant A cannot see Tenant B maintenance alerts', async () => {
+  describe('alert isolation', () => {
+    it('keeps maintenance alerts partitioned by tenant in persistence', async () => {
       const progA = await createTestMaintenanceProgram(
         tenantA.id,
         vehicleA.vehicle.id,
@@ -269,8 +276,8 @@ describe('Multi-Tenant Security', () => {
     });
   });
 
-  describe('Cross-tenant creation prevention', () => {
-    it('cannot create WO with vehicle from another tenant', async () => {
+  describe('cross-tenant creation prevention', () => {
+    it('rejects creating a work order with a vehicle from another tenant', async () => {
       mockAuthAsUser({ id: userA.id, tenantId: tenantA.id, role: 'OWNER' });
 
       const { POST } = await import('@/app/api/maintenance/work-orders/route');
@@ -294,8 +301,8 @@ describe('Multi-Tenant Security', () => {
     });
   });
 
-  describe('Inventory Isolation', () => {
-    it('Tenant A cannot consume Tenant B inventory', async () => {
+  describe('inventory isolation', () => {
+    it('rejects inventory consumption when the stock belongs to another tenant', async () => {
       const partB = await createTestMasterPart(tenantB.id);
       const invB = await createTestInventoryItem(tenantB.id, partB.id, {
         quantity: 100,

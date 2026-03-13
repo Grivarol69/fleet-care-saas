@@ -23,7 +23,9 @@ vi.mock('@/lib/auth', () => ({
   isSuperAdmin: vi.fn().mockResolvedValue(false),
 }));
 
-describe('Inventory Lifecycle', () => {
+const runIntegration = process.env['RUN_INTEGRATION_TESTS'] === '1';
+
+describe.skipIf(!runIntegration)('Inventory integration lifecycle', () => {
   let tenant: Awaited<ReturnType<typeof createTestTenant>>;
   let user: Awaited<ReturnType<typeof createTestUser>>;
   let provider: Awaited<ReturnType<typeof createTestProvider>>;
@@ -41,12 +43,14 @@ describe('Inventory Lifecycle', () => {
   });
 
   afterEach(async () => {
-    await cleanupTenant(tenant.id);
+    if (tenant?.id) {
+      await cleanupTenant(tenant.id);
+    }
     vi.clearAllMocks();
   });
 
   describe('InventoryService.checkAvailability', () => {
-    it('returns true when stock is sufficient', async () => {
+    it('returns available=true when stock is sufficient', async () => {
       const inv = await createTestInventoryItem(tenant.id, masterPart.id, {
         quantity: 100,
       });
@@ -62,7 +66,7 @@ describe('Inventory Lifecycle', () => {
       expect(result.inventoryItemId).toBe(inv.id);
     });
 
-    it('returns false when stock is insufficient', async () => {
+    it('returns available=false when stock is insufficient', async () => {
       await createTestInventoryItem(tenant.id, masterPart.id, {
         quantity: 10,
       });
@@ -77,7 +81,7 @@ describe('Inventory Lifecycle', () => {
       expect(result.currentStock).toBe(10);
     });
 
-    it('returns false when no inventory item exists', async () => {
+    it('returns available=false when no inventory item exists', async () => {
       const result = await InventoryService.checkAvailability(
         tenant.id,
         'non-existent-id',
@@ -90,7 +94,7 @@ describe('Inventory Lifecycle', () => {
   });
 
   describe('InventoryService.consumeStockForWorkOrder', () => {
-    it('decrements stock and creates movement', async () => {
+    it('decrements stock and records the consumption movement', async () => {
       await createTestInventoryItem(tenant.id, masterPart.id, {
         quantity: 100,
         averageCost: 50000,
@@ -121,7 +125,7 @@ describe('Inventory Lifecycle', () => {
       expect(Number(item?.quantity)).toBe(90);
     });
 
-    it('throws on insufficient stock', async () => {
+    it('throws when attempting to consume more stock than available', async () => {
       await createTestInventoryItem(tenant.id, masterPart.id, {
         quantity: 5,
       });
@@ -143,7 +147,7 @@ describe('Inventory Lifecycle', () => {
   });
 
   describe('POST /inventory/purchases', () => {
-    it('creates purchase entry and updates stock with WAC', async () => {
+    it('creates a purchase entry and updates stock with weighted average cost', async () => {
       // First create existing inventory at $50
       await createTestInventoryItem(tenant.id, masterPart.id, {
         quantity: 100,
@@ -187,7 +191,7 @@ describe('Inventory Lifecycle', () => {
       expect(movements.length).toBeGreaterThanOrEqual(1);
     });
 
-    it('first purchase sets avgCost = unitPrice', async () => {
+    it('sets the average cost to the unit price on the first purchase', async () => {
       const newPart = await createTestMasterPart(tenant.id, {
         referencePrice: 0,
       });
@@ -221,7 +225,7 @@ describe('Inventory Lifecycle', () => {
       expect(Number(inv?.averageCost)).toBe(80000);
     });
 
-    it('creates price alert when price exceeds 10% of reference', async () => {
+    it('creates a price deviation alert when the purchase exceeds the reference price threshold', async () => {
       // masterPart has referencePrice=50000
       const res = await PURCHASE(
         new NextRequest('http://localhost:3000/api/inventory/purchases', {
@@ -253,7 +257,7 @@ describe('Inventory Lifecycle', () => {
   });
 
   describe('POST /inventory/consume', () => {
-    it('consumes stock from inventory for work order', async () => {
+    it('consumes inventory stock for a work order item', async () => {
       const inv = await createTestInventoryItem(tenant.id, masterPart.id, {
         quantity: 50,
         averageCost: 40000,
@@ -313,7 +317,7 @@ describe('Inventory Lifecycle', () => {
       expect(updatedWoItem?.closureType).toBe('INTERNAL_TICKET');
     });
 
-    it('rejects consumption when stock is insufficient', async () => {
+    it('rejects inventory consumption when stock is insufficient', async () => {
       const inv = await createTestInventoryItem(tenant.id, masterPart.id, {
         quantity: 5,
       });

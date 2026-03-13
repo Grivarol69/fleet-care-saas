@@ -7,6 +7,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,6 +57,10 @@ type WorkOrderItemSummary = {
   unitPrice: number;
   quantity: number;
   totalCost: number;
+  providerId: string | null;
+  provider: { id: string; name: string } | null;
+  purchaseOrderItems: Array<{ id: string }>;
+  supplier?: string | null;
   mantItem: {
     id: string;
     name: string;
@@ -69,6 +79,8 @@ type WorkItemRowProps = {
   item: WorkOrderItemSummary;
   currentUser: CurrentUser;
   onRefresh: () => void;
+  showSubtasks?: boolean;
+  providers?: Array<{ id: string; name: string }>;
 };
 
 const closureTypeLabels: Record<string, string> = {
@@ -95,6 +107,8 @@ export function WorkItemRow({
   item,
   currentUser,
   onRefresh,
+  showSubtasks = true,
+  providers,
 }: WorkItemRowProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
@@ -102,7 +116,37 @@ export function WorkItemRow({
   const [isLoadingSubtasks, setIsLoadingSubtasks] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
 
+  const [isTogglingSource, setIsTogglingSource] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
+  const [isUpdatingProvider, setIsUpdatingProvider] = useState(false);
+
+  const hasActivePO = (item.purchaseOrderItems?.length ?? 0) > 0;
+
   const showCosts = canViewCosts(currentUser as any);
+
+  const handleToggleSource = async (e: React.MouseEvent, targetSource: string) => {
+    e.stopPropagation();
+    if (hasActivePO) return;
+
+    setIsHidden(true);
+    setIsTogglingSource(true);
+    try {
+      await axios.patch(`/api/maintenance/work-orders/${workOrderId}/items/${item.id}`, {
+        itemSource: targetSource,
+        providerId: null,
+      });
+      onRefresh();
+    } catch (error) {
+      setIsHidden(false);
+      toast({
+        title: 'Error',
+        description: 'No se pudo cambiar la modalidad',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsTogglingSource(false);
+    }
+  };
 
   const fetchSubtasks = async () => {
     try {
@@ -164,6 +208,8 @@ export function WorkItemRow({
     }
   };
 
+  if (isHidden) return null;
+
   return (
     <>
       <Collapsible
@@ -171,9 +217,38 @@ export function WorkItemRow({
         onOpenChange={handleToggle}
         className="border rounded-md overflow-hidden bg-card"
       >
-        <CollapsibleTrigger className="w-full">
-          <div className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
+        <CollapsibleTrigger asChild>
+          <div className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors cursor-pointer">
             <div className="flex items-center gap-3">
+              {item.itemSource === 'INTERNAL_STOCK' || item.itemSource === 'EXTERNAL' ? (
+                <TooltipProvider delayDuration={300}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div
+                        role="button"
+                        aria-disabled={hasActivePO || isTogglingSource}
+                        className={`flex items-center transition-opacity ${hasActivePO || isTogglingSource ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!hasActivePO && !isTogglingSource) {
+                            handleToggleSource(e as any, item.itemSource === 'INTERNAL_STOCK' ? 'EXTERNAL' : 'INTERNAL_STOCK');
+                          }
+                        }}
+                      >
+                        <Badge variant="default" className="pointer-events-none flex items-center gap-1">
+                          {isTogglingSource && <Loader2 className="h-3 w-3 animate-spin" />}
+                          {item.itemSource === 'INTERNAL_STOCK' ? 'Taller Propio' : 'Externo'}
+                        </Badge>
+                      </div>
+                    </TooltipTrigger>
+                    {hasActivePO && (
+                      <TooltipContent>
+                        <p>Ya tiene OC generada</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
+              ) : null}
               <ChevronDown
                 className={`h-4 w-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
               />
@@ -190,6 +265,53 @@ export function WorkItemRow({
                 >
                   {closureTypeLabels[item.closureType] || item.closureType}
                 </Badge>
+              )}
+              {item.itemSource === 'EXTERNAL' && (
+                <div className="flex items-center gap-2 ml-2" onClick={(e) => e.stopPropagation()}>
+                  {item.providerId === null && (
+                    <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                      Sin proveedor
+                    </Badge>
+                  )}
+                  {providers && providers.length > 0 && !hasActivePO ? (
+                    <div className="flex items-center relative gap-2">
+                      {isUpdatingProvider && <Loader2 className="h-3 w-3 animate-spin absolute -left-5" />}
+                      <Select
+                        value={item.providerId || ''}
+                        onValueChange={async (val) => {
+                          try {
+                            setIsUpdatingProvider(true);
+                            await axios.patch(`/api/maintenance/work-orders/${workOrderId}/items/${item.id}`, {
+                              providerId: val,
+                            });
+                            onRefresh();
+                          } catch (error) {
+                            toast({
+                              title: 'Error',
+                              description: 'No se pudo actualizar el proveedor',
+                              variant: 'destructive',
+                            });
+                          } finally {
+                            setIsUpdatingProvider(false);
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="h-6 text-xs w-[140px]">
+                          <SelectValue placeholder="Seleccionar..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {providers.map(p => (
+                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground ml-1">
+                      {item.provider?.name ?? item.supplier ?? '—'}
+                    </span>
+                  )}
+                </div>
               )}
             </div>
 
@@ -237,119 +359,121 @@ export function WorkItemRow({
               </div>
             )}
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between px-1">
-                <h4 className="text-sm font-bold flex items-center gap-2">
-                  Hoja de Trabajo / Subtareas
-                  {isLoadingSubtasks && (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  )}
-                </h4>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    className="h-8 text-[11px]"
-                    onClick={e => {
-                      e.stopPropagation();
-                      setShowPicker(true);
-                    }}
-                  >
-                    <Search className="h-3 w-3 mr-1" />
-                    Agregar desde Tempario
-                  </Button>
+            {showSubtasks && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between px-1">
+                  <h4 className="text-sm font-bold flex items-center gap-2">
+                    Hoja de Trabajo / Subtareas
+                    {isLoadingSubtasks && (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    )}
+                  </h4>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="h-8 text-[11px]"
+                      onClick={e => {
+                        e.stopPropagation();
+                        setShowPicker(true);
+                      }}
+                    >
+                      <Search className="h-3 w-3 mr-1" />
+                      Agregar desde Tempario
+                    </Button>
+                  </div>
                 </div>
-              </div>
 
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead>Descripción</TableHead>
-                    <TableHead className="w-[100px]">Est. (hs)</TableHead>
-                    <TableHead className="w-[100px]">Dir. (hs)</TableHead>
-                    <TableHead className="w-[140px]">Estado</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {subtasks.length === 0 && !isLoadingSubtasks && (
-                    <TableRow>
-                      <TableCell
-                        colSpan={5}
-                        className="text-center py-4 text-muted-foreground text-xs italic"
-                      >
-                        Sin subtareas. Agregá desde el Tempario o manualmente.
-                      </TableCell>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead>Descripción</TableHead>
+                      <TableHead className="w-[100px]">Est. (hs)</TableHead>
+                      <TableHead className="w-[100px]">Dir. (hs)</TableHead>
+                      <TableHead className="w-[140px]">Estado</TableHead>
+                      <TableHead className="w-[50px]"></TableHead>
                     </TableRow>
-                  )}
-                  {subtasks.map(task => (
-                    <TableRow key={task.id}>
-                      <TableCell>
-                        <Input
-                          className="h-8 text-xs bg-transparent border-transparent hover:border-input focus:bg-background"
-                          defaultValue={task.description}
-                          onBlur={e => {
-                            if (e.target.value !== task.description)
-                              handleUpdateSubtask(task.id, {
-                                description: e.target.value,
-                              });
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell className="text-xs font-mono text-muted-foreground">
-                        {task.standardHours || '—'}
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          className="h-8 text-xs w-20"
-                          defaultValue={task.directHours || ''}
-                          onBlur={e => {
-                            const val = e.target.value
-                              ? parseFloat(e.target.value)
-                              : null;
-                            if (val !== task.directHours)
-                              handleUpdateSubtask(task.id, {
-                                directHours: val,
-                              });
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          value={task.status}
-                          onValueChange={val =>
-                            handleUpdateSubtask(task.id, { status: val })
-                          }
+                  </TableHeader>
+                  <TableBody>
+                    {subtasks.length === 0 && !isLoadingSubtasks && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={5}
+                          className="text-center py-4 text-muted-foreground text-xs italic"
                         >
-                          <SelectTrigger className="h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="PENDING">Pendiente</SelectItem>
-                            <SelectItem value="IN_PROGRESS">
-                              En Progreso
-                            </SelectItem>
-                            <SelectItem value="DONE">Completado</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={() => handleDeleteSubtask(task.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                          Sin subtareas. Agregá desde el Tempario o manualmente.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {subtasks.map(task => (
+                      <TableRow key={task.id}>
+                        <TableCell>
+                          <Input
+                            className="h-8 text-xs bg-transparent border-transparent hover:border-input focus:bg-background"
+                            defaultValue={task.description}
+                            onBlur={e => {
+                              if (e.target.value !== task.description)
+                                handleUpdateSubtask(task.id, {
+                                  description: e.target.value,
+                                });
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell className="text-xs font-mono text-muted-foreground">
+                          {task.standardHours || '—'}
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            step="0.1"
+                            className="h-8 text-xs w-20"
+                            defaultValue={task.directHours || ''}
+                            onBlur={e => {
+                              const val = e.target.value
+                                ? parseFloat(e.target.value)
+                                : null;
+                              if (val !== task.directHours)
+                                handleUpdateSubtask(task.id, {
+                                  directHours: val,
+                                });
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Select
+                            value={task.status}
+                            onValueChange={val =>
+                              handleUpdateSubtask(task.id, { status: val })
+                            }
+                          >
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="PENDING">Pendiente</SelectItem>
+                              <SelectItem value="IN_PROGRESS">
+                                En Progreso
+                              </SelectItem>
+                              <SelectItem value="DONE">Completado</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => handleDeleteSubtask(task.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </div>
         </CollapsibleContent>
       </Collapsible>

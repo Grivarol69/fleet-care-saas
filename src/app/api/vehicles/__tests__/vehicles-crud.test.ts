@@ -33,7 +33,9 @@ vi.mock('@/lib/services/MaintenanceAlertService', () => ({
   },
 }));
 
-describe('Vehicle CRUD Integration Tests', () => {
+const runIntegration = process.env['RUN_INTEGRATION_TESTS'] === '1';
+
+describe.skipIf(!runIntegration)('Vehicle API integration CRUD', () => {
   let tenant1: Awaited<ReturnType<typeof createTestTenant>>;
   let tenant2: Awaited<ReturnType<typeof createTestTenant>>;
   let user1: Awaited<ReturnType<typeof createTestUser>>;
@@ -51,13 +53,17 @@ describe('Vehicle CRUD Integration Tests', () => {
   });
 
   afterEach(async () => {
-    await cleanupTenant(tenant1.id);
-    await cleanupTenant(tenant2.id);
+    const tenantIds = [tenant1?.id, tenant2?.id].filter(
+      (tenantId): tenantId is string => Boolean(tenantId)
+    );
+    for (const tenantId of tenantIds) {
+      await cleanupTenant(tenantId);
+    }
     vi.clearAllMocks();
   });
 
-  describe('POST /api/vehicles/vehicles - Create Vehicle', () => {
-    it('creates vehicle with all required fields (201)', async () => {
+  describe('POST /api/vehicles/vehicles', () => {
+    it('creates a vehicle with the required fields', async () => {
       mockAuthAsUser({ id: user1.id, tenantId: tenant1.id, role: user1.role });
 
       const brand = await prisma.vehicleBrand.create({
@@ -106,7 +112,7 @@ describe('Vehicle CRUD Integration Tests', () => {
       expect(data.id).toBeDefined();
     });
 
-    it('rejects duplicate licensePlate in same tenant (409)', async () => {
+    it('rejects duplicate license plates within the same tenant', async () => {
       mockAuthAsUser({ id: user1.id, tenantId: tenant1.id, role: user1.role });
 
       const { brand, line, type } = await createTestVehicle(tenant1.id, {
@@ -138,7 +144,7 @@ describe('Vehicle CRUD Integration Tests', () => {
       expect(data.error).toContain('Ya existe un vehículo con esta placa');
     });
 
-    it('allows same licensePlate in different tenant', async () => {
+    it('allows the same license plate in another tenant', async () => {
       await createTestVehicle(tenant1.id, { licensePlate: 'SHARED-001' });
 
       mockAuthAsUser({ id: user2.id, tenantId: tenant2.id, role: user2.role });
@@ -179,7 +185,7 @@ describe('Vehicle CRUD Integration Tests', () => {
       expect(data.tenantId).toBe(tenant2.id);
     });
 
-    it('DRIVER cannot create vehicles (403)', async () => {
+    it('rejects vehicle creation for a driver role', async () => {
       mockAuthAsUser({
         id: driverUser.id,
         tenantId: tenant1.id,
@@ -214,8 +220,8 @@ describe('Vehicle CRUD Integration Tests', () => {
     });
   });
 
-  describe('GET /api/vehicles/vehicles - List Vehicles', () => {
-    it('lists only ACTIVE vehicles for tenant', async () => {
+  describe('GET /api/vehicles/vehicles', () => {
+    it('lists only active vehicles for the authenticated tenant', async () => {
       mockAuthAsUser({ id: user1.id, tenantId: tenant1.id, role: user1.role });
 
       const { vehicle: activeVehicle } = await createTestVehicle(tenant1.id, {
@@ -245,8 +251,8 @@ describe('Vehicle CRUD Integration Tests', () => {
     });
   });
 
-  describe('GET /api/vehicles/vehicles/[id] - Get Vehicle', () => {
-    it('returns 404 for wrong tenant', async () => {
+  describe('GET /api/vehicles/vehicles/[id]', () => {
+    it('returns 404 when the vehicle belongs to another tenant', async () => {
       const { vehicle } = await createTestVehicle(tenant1.id);
 
       mockAuthAsUser({ id: user2.id, tenantId: tenant2.id, role: user2.role });
@@ -264,8 +270,8 @@ describe('Vehicle CRUD Integration Tests', () => {
     });
   });
 
-  describe('PATCH /api/vehicles/vehicles/[id] - Update Vehicle', () => {
-    it('updates vehicle fields', async () => {
+  describe('PATCH /api/vehicles/vehicles/[id]', () => {
+    it('updates mutable vehicle fields', async () => {
       mockAuthAsUser({ id: user1.id, tenantId: tenant1.id, role: user1.role });
 
       const { vehicle } = await createTestVehicle(tenant1.id, {
@@ -290,7 +296,7 @@ describe('Vehicle CRUD Integration Tests', () => {
       expect(data.licensePlate).toBe('PATCH-001');
     });
 
-    it('rejects duplicate license plate on change (409)', async () => {
+    it('rejects changing the license plate to one already used in the tenant', async () => {
       mockAuthAsUser({ id: user1.id, tenantId: tenant1.id, role: user1.role });
 
       await createTestVehicle(tenant1.id, { licensePlate: 'EXISTING-001' });
@@ -316,8 +322,8 @@ describe('Vehicle CRUD Integration Tests', () => {
     });
   });
 
-  describe('DELETE /api/vehicles/vehicles/[id] - Soft Delete', () => {
-    it('soft-deletes vehicle (sets INACTIVE)', async () => {
+  describe('DELETE /api/vehicles/vehicles/[id]', () => {
+    it('soft deletes the vehicle by setting it to INACTIVE', async () => {
       mockAuthAsUser({ id: user1.id, tenantId: tenant1.id, role: user1.role });
 
       const { vehicle } = await createTestVehicle(tenant1.id, {
@@ -344,8 +350,8 @@ describe('Vehicle CRUD Integration Tests', () => {
     });
   });
 
-  describe('POST /api/vehicles/odometer - Create Odometer Log', () => {
-    it('odometer log updates vehicle mileage', async () => {
+  describe('POST /api/vehicles/odometer', () => {
+    it('updates the vehicle mileage when an odometer log is created', async () => {
       mockAuthAsUser({ id: user1.id, tenantId: tenant1.id, role: user1.role });
 
       const { vehicle } = await createTestVehicle(tenant1.id, {
@@ -390,7 +396,7 @@ describe('Vehicle CRUD Integration Tests', () => {
       expect(updatedVehicle?.mileage).toBe(52000);
     });
 
-    it('validates new reading >= previous reading', async () => {
+    it('rejects odometer readings lower than the previous reading', async () => {
       mockAuthAsUser({ id: user1.id, tenantId: tenant1.id, role: user1.role });
 
       const { vehicle } = await createTestVehicle(tenant1.id, {
@@ -429,7 +435,7 @@ describe('Vehicle CRUD Integration Tests', () => {
       expect(text).toContain('cannot be less than previous reading');
     });
 
-    it('validates vehicle belongs to tenant', async () => {
+    it('rejects odometer logs for vehicles from another tenant', async () => {
       const { vehicle } = await createTestVehicle(tenant1.id);
 
       mockAuthAsUser({ id: user2.id, tenantId: tenant2.id, role: user2.role });

@@ -37,19 +37,19 @@ export function CostSummaryCard({
 
   // Simple totals
   const totalInternalLabor = internalLaborItems.reduce(
-    (acc: number, i: any) => acc + (i.totalCost || 0),
+    (acc: number, i: any) => acc + Number(i.totalCost || 0),
     0
   );
   const totalInternalParts = internalPartItems.reduce(
-    (acc: number, i: any) => acc + (i.totalCost || 0),
+    (acc: number, i: any) => acc + Number(i.totalCost || 0),
     0
   );
   const totalExternal = externalItems.reduce(
-    (acc: number, i: any) => acc + (i.totalCost || 0),
+    (acc: number, i: any) => acc + Number(i.totalCost || 0),
     0
   );
   const totalExpenses = (workOrder.workOrderExpenses || []).reduce(
-    (acc: number, e: any) => acc + (e.amount || 0),
+    (acc: number, e: any) => acc + Number(e.amount || 0),
     0
   );
 

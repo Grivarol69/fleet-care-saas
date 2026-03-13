@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = req.nextUrl;
     const temparioId = searchParams.get('temparioId');
+    const search = searchParams.get('search');
 
     const where: Prisma.TemparioItemWhereInput = {
       tempario: {
@@ -19,6 +20,14 @@ export async function GET(req: NextRequest) {
 
     if (temparioId) {
       where.temparioId = temparioId;
+    }
+
+    if (search && search.trim().length >= 2) {
+      const q = search.trim();
+      where.OR = [
+        { description: { contains: q, mode: 'insensitive' } },
+        { code: { contains: q, mode: 'insensitive' } },
+      ];
     }
 
     const items = await tenantPrisma.temparioItem.findMany({

@@ -52,7 +52,7 @@ export async function POST(
     const { id: workOrderId } = await params;
 
     const body = await req.json();
-    const { workOrderItemId, description, directHours, notes, sequence } = body;
+    const { workOrderItemId, description, directHours, notes, sequence, standardHours, temparioItemId } = body;
 
     if (!description)
       return NextResponse.json(
@@ -74,7 +74,8 @@ export async function POST(
         workOrderItemId,
         description,
         procedureId: null,
-        standardHours: null,
+        temparioItemId: temparioItemId ?? null,
+        standardHours: standardHours ?? null,
         directHours: directHours ?? null,
         notes: notes ?? null,
         sequence: sequence ?? 0,

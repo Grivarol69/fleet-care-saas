@@ -99,6 +99,14 @@ export async function GET(request: NextRequest) {
             description: true,
             totalCost: true,
             status: true,
+            itemSource: true,
+            _count: {
+              select: { workOrderSubTasks: true },
+            },
+            workOrderSubTasks: {
+              where: { status: 'DONE' },
+              select: { id: true },
+            },
           },
         },
         invoices: {
@@ -176,6 +184,7 @@ export async function POST(request: NextRequest) {
       mantType = 'PREVENTIVE',
       workType = 'EXTERNAL',
       costCenterId,
+      modality = 'INTERNAL',
     } = body;
 
     // Sanitize IDs
@@ -364,12 +373,14 @@ export async function POST(request: NextRequest) {
             workOrderId: workOrder.id,
             mantItemId: alert.programItem.mantItemId,
             description: alert.itemName,
-            supplier: providerId ? 'from-provider' : 'N/A',
+            supplier: 'N/A',
             unitPrice: itemCost,
             quantity: 1,
             totalCost: itemCost,
             purchasedBy: user.id,
             status: 'PENDING',
+            itemSource: modality === 'EXTERNAL' ? 'EXTERNAL' : 'INTERNAL_STOCK',
+            providerId: null,
           },
         });
       })

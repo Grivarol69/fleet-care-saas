@@ -721,6 +721,10 @@ model WorkOrderItem {
   // Fuente del item
   itemSource ItemSource @default(EXTERNAL) // EXTERNAL | INTERNAL_STOCK | INTERNAL_PURCHASE
 
+  // Proveedor (asignado post-creación en TrabajosExternosTab)
+  providerId String?
+  provider   Provider? @relation(fields: [providerId], references: [id])
+
   // Campos legacy
   cost             Decimal?        @db.Decimal(10, 2)
   executionMileage Int?
@@ -748,6 +752,7 @@ model WorkOrderItem {
   @@index([supplier])
   @@index([purchasedBy])
   @@index([tenantId])
+  @@index([providerId])
 }
 
 model WorkOrderExpense {
@@ -1283,6 +1288,7 @@ model Provider {
   priceHistory           PartPriceHistory[] // ✅ Histórico de precios
   workOrderExpenses      WorkOrderExpense[] // ✅ Gastos asignados
   purchaseOrders         PurchaseOrder[]
+  workOrderItems         WorkOrderItem[]
 
   @@unique([tenantId, name])
   @@index([tenantId])
@@ -1705,6 +1711,7 @@ enum UserRole {
   SUPER_ADMIN // Dueño del SaaS - acceso total + tablas maestras
   OWNER // Dueño empresa cliente - acceso total a su tenant
   MANAGER // Gerente/Supervisor - gestión + costos
+  COORDINATOR // Coordinador - soporte administrativo y gestión
   PURCHASER // Comprador - Gestión de facturas, gastos y proveedores
   TECHNICIAN // Mecánico/Técnico - operación sin costos
   DRIVER // Conductor - solo odómetro
@@ -2127,6 +2134,7 @@ enum ItemClosureType {
   EXTERNAL_INVOICE // Cerrado con factura
   INTERNAL_TICKET // Cerrado con comprobante interno
   NOT_APPLICABLE // No requiere cierre
+  PURCHASE_ORDER // Cerrado con orden de compra
 }
 
 enum EmploymentType {

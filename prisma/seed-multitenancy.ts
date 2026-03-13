@@ -489,7 +489,55 @@ async function main() {
         isGlobal: true,
         tenantId: null,
       },
-    }),
+    }), // [10]
+    prisma.mantCategory.create({
+      data: {
+        name: 'Direccion',
+        description: 'Sistema de dirección',
+        isGlobal: true,
+        tenantId: null,
+      },
+    }), // [11]
+    prisma.mantCategory.create({
+      data: {
+        name: 'Aire Acondicionado',
+        description: 'Sistema de climatización',
+        isGlobal: true,
+        tenantId: null,
+      },
+    }), // [12]
+    prisma.mantCategory.create({
+      data: {
+        name: 'Embrague',
+        description: 'Sistema de embrague',
+        isGlobal: true,
+        tenantId: null,
+      },
+    }), // [13]
+    prisma.mantCategory.create({
+      data: {
+        name: 'Escape',
+        description: 'Sistema de escape',
+        isGlobal: true,
+        tenantId: null,
+      },
+    }), // [14]
+    prisma.mantCategory.create({
+      data: {
+        name: 'Varios',
+        description: 'Otros mantenimientos',
+        isGlobal: true,
+        tenantId: null,
+      },
+    }), // [15]
+    prisma.mantCategory.create({
+      data: {
+        name: 'Refrigeracion',
+        description: 'Sistema de enfriamiento de motor',
+        isGlobal: true,
+        tenantId: null,
+      },
+    }), // [16]
   ]);
   const [
     catMotor,
@@ -503,6 +551,7 @@ async function main() {
     catCarroceria,
     catTermicoEV,
     catAltaTensionEV,
+    catDireccion,
   ] = cats;
 
   // --- MANT ITEMS (17 preventivos + 16 correctivos = 33) ---
@@ -512,7 +561,7 @@ async function main() {
     // Motor [0-2]
     prisma.mantItem.create({
       data: {
-        name: 'Cambio aceite motor',
+        name: 'Aceite motor sintetico',
         description: 'Cambio de aceite motor sintetico',
         mantType: 'PREVENTIVE',
         categoryId: catMotor.id,
@@ -544,7 +593,7 @@ async function main() {
     // Filtros [3-5]
     prisma.mantItem.create({
       data: {
-        name: 'Cambio filtro aceite',
+        name: 'Filtro aceite',
         mantType: 'PREVENTIVE',
         categoryId: catFiltros.id,
         type: 'PART',
@@ -554,7 +603,7 @@ async function main() {
     }),
     prisma.mantItem.create({
       data: {
-        name: 'Cambio filtro aire',
+        name: 'Filtro aire',
         mantType: 'PREVENTIVE',
         categoryId: catFiltros.id,
         type: 'PART',
@@ -564,7 +613,7 @@ async function main() {
     }),
     prisma.mantItem.create({
       data: {
-        name: 'Cambio filtro combustible',
+        name: 'Filtro combustible',
         mantType: 'PREVENTIVE',
         categoryId: catFiltros.id,
         type: 'PART',
@@ -585,7 +634,7 @@ async function main() {
     }),
     prisma.mantItem.create({
       data: {
-        name: 'Cambio liquido frenos',
+        name: 'Liquido frenos',
         mantType: 'PREVENTIVE',
         categoryId: catFrenos.id,
         type: 'PART',
@@ -638,7 +687,7 @@ async function main() {
     // Transmision preventivo [12-13]
     prisma.mantItem.create({
       data: {
-        name: 'Cambio aceite transmision',
+        name: 'Aceite transmision',
         mantType: 'PREVENTIVE',
         categoryId: catTransmision.id,
         type: 'PART',
@@ -680,7 +729,7 @@ async function main() {
     // Lubricacion preventivo [16]
     prisma.mantItem.create({
       data: {
-        name: 'Cambio liquido direccion hidraulica',
+        name: 'Liquido direccion hidraulica',
         mantType: 'PREVENTIVE',
         categoryId: catLubricacion.id,
         type: 'PART',
@@ -691,7 +740,7 @@ async function main() {
     // SUV/Duster Especificos Preventivos
     prisma.mantItem.create({
       data: {
-        name: 'Cambio filtro habitaculo',
+        name: 'Filtro habitaculo',
         mantType: 'PREVENTIVE',
         categoryId: catFiltros.id,
         type: 'PART',
@@ -701,7 +750,7 @@ async function main() {
     }),
     prisma.mantItem.create({
       data: {
-        name: 'Cambio correa accesorios',
+        name: 'Correa accesorios',
         mantType: 'PREVENTIVE',
         categoryId: catMotor.id,
         type: 'PART',
@@ -722,7 +771,7 @@ async function main() {
     }),
     prisma.mantItem.create({
       data: {
-        name: 'Cambio aceite engranaje reductor EV',
+        name: 'Aceite engranaje reductor EV',
         mantType: 'PREVENTIVE',
         categoryId: catTransmision.id,
         type: 'PART',
@@ -745,7 +794,7 @@ async function main() {
     // Frenos [17-20]
     prisma.mantItem.create({
       data: {
-        name: 'Cambio pastillas freno delanteras',
+        name: 'Pastillas freno delanteras',
         description: 'Reemplazo de pastillas desgastadas delanteras',
         mantType: 'CORRECTIVE',
         categoryId: catFrenos.id,
@@ -756,7 +805,7 @@ async function main() {
     }),
     prisma.mantItem.create({
       data: {
-        name: 'Cambio pastillas freno traseras',
+        name: 'Pastillas freno traseras',
         description: 'Reemplazo de pastillas desgastadas traseras',
         mantType: 'CORRECTIVE',
         categoryId: catFrenos.id,
@@ -767,7 +816,7 @@ async function main() {
     }),
     prisma.mantItem.create({
       data: {
-        name: 'Cambio discos freno',
+        name: 'Discos freno',
         description: 'Reemplazo de discos de freno desgastados',
         mantType: 'CORRECTIVE',
         categoryId: catFrenos.id,
@@ -789,7 +838,7 @@ async function main() {
     // Motor [21-23]
     prisma.mantItem.create({
       data: {
-        name: 'Cambio correa distribucion',
+        name: 'Correa distribucion',
         mantType: 'CORRECTIVE',
         categoryId: catMotor.id,
         type: 'PART',
@@ -809,7 +858,7 @@ async function main() {
     }),
     prisma.mantItem.create({
       data: {
-        name: 'Cambio bomba agua',
+        name: 'Bomba agua',
         mantType: 'CORRECTIVE',
         categoryId: catMotor.id,
         type: 'PART',
@@ -820,7 +869,7 @@ async function main() {
     // Suspension [24-26]
     prisma.mantItem.create({
       data: {
-        name: 'Cambio amortiguadores',
+        name: 'Amortiguadores',
         mantType: 'CORRECTIVE',
         categoryId: catSuspension.id,
         type: 'PART',
@@ -830,7 +879,7 @@ async function main() {
     }),
     prisma.mantItem.create({
       data: {
-        name: 'Cambio rotulas',
+        name: 'Rotulas',
         mantType: 'CORRECTIVE',
         categoryId: catSuspension.id,
         type: 'PART',
@@ -840,7 +889,7 @@ async function main() {
     }),
     prisma.mantItem.create({
       data: {
-        name: 'Cambio bujes suspension',
+        name: 'Bujes suspension',
         mantType: 'CORRECTIVE',
         categoryId: catSuspension.id,
         type: 'PART',
@@ -851,7 +900,7 @@ async function main() {
     // Electrico [27-29]
     prisma.mantItem.create({
       data: {
-        name: 'Cambio bateria',
+        name: 'Bateria',
         mantType: 'CORRECTIVE',
         categoryId: catElectrico.id,
         type: 'PART',
@@ -861,7 +910,7 @@ async function main() {
     }),
     prisma.mantItem.create({
       data: {
-        name: 'Cambio alternador',
+        name: 'Alternador',
         mantType: 'CORRECTIVE',
         categoryId: catElectrico.id,
         type: 'PART',
@@ -871,7 +920,7 @@ async function main() {
     }),
     prisma.mantItem.create({
       data: {
-        name: 'Cambio motor arranque',
+        name: 'Motor arranque',
         mantType: 'CORRECTIVE',
         categoryId: catElectrico.id,
         type: 'PART',
@@ -882,7 +931,7 @@ async function main() {
     // Transmision [30-31]
     prisma.mantItem.create({
       data: {
-        name: 'Cambio kit embrague',
+        name: 'Kit embrague',
         mantType: 'CORRECTIVE',
         categoryId: catTransmision.id,
         type: 'PART',
@@ -903,7 +952,7 @@ async function main() {
     // Neumaticos [32]
     prisma.mantItem.create({
       data: {
-        name: 'Cambio neumaticos',
+        name: 'Neumaticos',
         mantType: 'CORRECTIVE',
         categoryId: catNeumaticos.id,
         type: 'PART',
@@ -936,6 +985,174 @@ async function main() {
   const iAceiteReductorEV = items[20];
   const iFlushRefriEV = items[21];
   const iPastillasDelant = items[22];
+
+  // --- ITEMS DE SERVICIO (mano de obra) ---
+  console.log('   Creando items de servicio (mano de obra)...');
+  const serviceItems = await Promise.all([
+    prisma.mantItem.create({
+      data: {
+        name: 'Cambio aceite motor',
+        description: 'Drenado, limpieza y llenado aceite motor',
+        mantType: 'PREVENTIVE',
+        categoryId: catMotor.id,
+        type: 'SERVICE',
+        isGlobal: true,
+        tenantId: null,
+      },
+    }), // [0]
+    prisma.mantItem.create({
+      data: {
+        name: 'Cambio filtro aceite',
+        description: 'Reemplazo filtro de aceite motor',
+        mantType: 'PREVENTIVE',
+        categoryId: catFiltros.id,
+        type: 'SERVICE',
+        isGlobal: true,
+        tenantId: null,
+      },
+    }), // [1]
+    prisma.mantItem.create({
+      data: {
+        name: 'Cambio filtro aire',
+        description: 'Reemplazo filtro de aire motor',
+        mantType: 'PREVENTIVE',
+        categoryId: catFiltros.id,
+        type: 'SERVICE',
+        isGlobal: true,
+        tenantId: null,
+      },
+    }), // [2]
+    prisma.mantItem.create({
+      data: {
+        name: 'Cambio filtro combustible',
+        description: 'Reemplazo filtro de combustible',
+        mantType: 'PREVENTIVE',
+        categoryId: catFiltros.id,
+        type: 'SERVICE',
+        isGlobal: true,
+        tenantId: null,
+      },
+    }), // [3]
+    prisma.mantItem.create({
+      data: {
+        name: 'Cambio liquido frenos',
+        description: 'Purga y reemplazo liquido de frenos DOT4',
+        mantType: 'PREVENTIVE',
+        categoryId: catFrenos.id,
+        type: 'SERVICE',
+        isGlobal: true,
+        tenantId: null,
+      },
+    }), // [4]
+    prisma.mantItem.create({
+      data: {
+        name: 'Cambio aceite transmision',
+        description: 'Reemplazo aceite caja de cambios',
+        mantType: 'PREVENTIVE',
+        categoryId: catTransmision.id,
+        type: 'SERVICE',
+        isGlobal: true,
+        tenantId: null,
+      },
+    }), // [5]
+    prisma.mantItem.create({
+      data: {
+        name: 'Cambio liquido direccion hidraulica',
+        description: 'Reemplazo liquido de la dirección hidráulica',
+        mantType: 'PREVENTIVE',
+        categoryId: catDireccion.id,
+        type: 'SERVICE',
+        isGlobal: true,
+        tenantId: null,
+      },
+    }), // [6]
+    prisma.mantItem.create({
+      data: {
+        name: 'Cambio filtro habitaculo',
+        description: 'Reemplazo filtro de habitáculo / cabina',
+        mantType: 'PREVENTIVE',
+        categoryId: catFiltros.id,
+        type: 'SERVICE',
+        isGlobal: true,
+        tenantId: null,
+      },
+    }), // [7]
+    prisma.mantItem.create({
+      data: {
+        name: 'Cambio correa accesorios',
+        description: 'Reemplazo correa poly-V de accesorios',
+        mantType: 'PREVENTIVE',
+        categoryId: catMotor.id,
+        type: 'SERVICE',
+        isGlobal: true,
+        tenantId: null,
+      },
+    }), // [8]
+    prisma.mantItem.create({
+      data: {
+        name: 'Cambio aceite reductor EV',
+        description: 'Reemplazo aceite engranaje reductor EV',
+        mantType: 'PREVENTIVE',
+        categoryId: catTransmision.id,
+        type: 'SERVICE',
+        isGlobal: true,
+        tenantId: null,
+      },
+    }), // [9]
+    prisma.mantItem.create({
+      data: {
+        name: 'Cambio pastillas freno delanteras',
+        description: 'Reemplazo pastillas freno delanteras',
+        mantType: 'CORRECTIVE',
+        categoryId: catFrenos.id,
+        type: 'SERVICE',
+        isGlobal: true,
+        tenantId: null,
+      },
+    }), // [10]
+    prisma.mantItem.create({
+      data: {
+        name: 'Cambio pastillas freno traseras',
+        description: 'Reemplazo pastillas freno traseras',
+        mantType: 'CORRECTIVE',
+        categoryId: catFrenos.id,
+        type: 'SERVICE',
+        isGlobal: true,
+        tenantId: null,
+      },
+    }), // [11]
+    prisma.mantItem.create({
+      data: {
+        name: 'Cambio discos freno',
+        description: 'Reemplazo discos de freno desgastados',
+        mantType: 'CORRECTIVE',
+        categoryId: catFrenos.id,
+        type: 'SERVICE',
+        isGlobal: true,
+        tenantId: null,
+      },
+    }), // [12]
+  ]);
+  const [
+    iSvcCambioAceite,
+    iSvcFiltroAceite,
+    iSvcFiltroAire,
+    iSvcFiltroComb,
+    iSvcLiqFreno,
+    iSvcAceiteTransm,
+    iSvcLiqDireccion,
+    iSvcFiltroHabitaculo,
+    iSvcCorreaAcc,
+    iSvcAceiteRedEV,
+    iSvcPastillasDelant,
+    iSvcPastillasTraseras,
+    iSvcDiscosFreno,
+  ] = serviceItems;
+  void iSvcAceiteTransm;
+  void iSvcLiqDireccion;
+  void iSvcPastillasTraseras;
+  void iSvcDiscosFreno;
+  console.log(`   ${serviceItems.length} items de servicio creados.`);
 
   // --- MASTER PARTS ---
   console.log('   Creando master parts...');
@@ -1144,6 +1361,143 @@ async function main() {
     pEvCoolant,
   ] = parts;
   console.log(`   ${parts.length} master parts creados`);
+
+  // --- VINCULOS MantItemPart: SERVICE → MasterPart ---
+  console.log('   Creando vinculos MantItemPart (servicio → autoparte)...');
+  const mantItemParts = await Promise.all([
+    // Cambio aceite motor → aceites (primary + alternativas)
+    prisma.mantItemPart.create({
+      data: {
+        mantItemId: iSvcCambioAceite.id,
+        masterPartId: pShell.id,
+        quantity: 5.5,
+        isRequired: true,
+        isPrimary: true,
+        notes: 'Shell Helix HX7 10W-40',
+      },
+    }),
+    prisma.mantItemPart.create({
+      data: {
+        mantItemId: iSvcCambioAceite.id,
+        masterPartId: pMobil.id,
+        quantity: 5.5,
+        isRequired: false,
+        isPrimary: false,
+        notes: 'Alternativa: Mobil Super 3000 5W-40',
+      },
+    }),
+    prisma.mantItemPart.create({
+      data: {
+        mantItemId: iSvcCambioAceite.id,
+        masterPartId: pCastrolGTX.id,
+        quantity: 5.5,
+        isRequired: false,
+        isPrimary: false,
+        notes: 'Alternativa: Castrol GTX 15W-40',
+      },
+    }),
+    // Cambio filtro aceite
+    prisma.mantItemPart.create({
+      data: {
+        mantItemId: iSvcFiltroAceite.id,
+        masterPartId: pBoschFiltAce.id,
+        quantity: 1,
+        isRequired: true,
+        isPrimary: true,
+      },
+    }),
+    prisma.mantItemPart.create({
+      data: {
+        mantItemId: iSvcFiltroAceite.id,
+        masterPartId: pMannFiltAce.id,
+        quantity: 1,
+        isRequired: false,
+        isPrimary: false,
+        notes: 'Alternativa: MANN W920/21',
+      },
+    }),
+    // Cambio filtro aire
+    prisma.mantItemPart.create({
+      data: {
+        mantItemId: iSvcFiltroAire.id,
+        masterPartId: pBoschFiltAire.id,
+        quantity: 1,
+        isRequired: true,
+        isPrimary: true,
+      },
+    }),
+    prisma.mantItemPart.create({
+      data: {
+        mantItemId: iSvcFiltroAire.id,
+        masterPartId: pMannFiltAire.id,
+        quantity: 1,
+        isRequired: false,
+        isPrimary: false,
+        notes: 'Alternativa: MANN C25114',
+      },
+    }),
+    // Cambio filtro combustible
+    prisma.mantItemPart.create({
+      data: {
+        mantItemId: iSvcFiltroComb.id,
+        masterPartId: pBoschFiltComb.id,
+        quantity: 1,
+        isRequired: true,
+        isPrimary: true,
+      },
+    }),
+    // Cambio liquido frenos
+    prisma.mantItemPart.create({
+      data: {
+        mantItemId: iSvcLiqFreno.id,
+        masterPartId: pCastrolDOT4.id,
+        quantity: 2,
+        isRequired: true,
+        isPrimary: true,
+      },
+    }),
+    // Cambio filtro habitaculo
+    prisma.mantItemPart.create({
+      data: {
+        mantItemId: iSvcFiltroHabitaculo.id,
+        masterPartId: pRenHabitaculo.id,
+        quantity: 1,
+        isRequired: true,
+        isPrimary: true,
+      },
+    }),
+    // Cambio correa accesorios
+    prisma.mantItemPart.create({
+      data: {
+        mantItemId: iSvcCorreaAcc.id,
+        masterPartId: pRenCorrea.id,
+        quantity: 1,
+        isRequired: true,
+        isPrimary: true,
+      },
+    }),
+    // Cambio aceite reductor EV
+    prisma.mantItemPart.create({
+      data: {
+        mantItemId: iSvcAceiteRedEV.id,
+        masterPartId: pDfReductor.id,
+        quantity: 1,
+        isRequired: true,
+        isPrimary: true,
+      },
+    }),
+    // Cambio pastillas freno delanteras
+    prisma.mantItemPart.create({
+      data: {
+        mantItemId: iSvcPastillasDelant.id,
+        masterPartId: pBoschPastillas.id,
+        quantity: 1,
+        isRequired: true,
+        isPrimary: true,
+      },
+    }),
+  ]);
+  console.log(`   ${mantItemParts.length} vinculos MantItemPart creados.`);
 
   // --- TEMPLATES (3) with packages ---
   console.log('   Creando templates (3) con paquetes (12)...');
@@ -2505,7 +2859,7 @@ async function main() {
           vehicleBrandId: e.brandId,
           vehicleLineId: e.lineId,
           yearFrom: 2018,
-          yearTo: 2025,
+          yearTo: 2030,
           masterPartId: e.masterPartId,
           quantity: e.qty,
         },
@@ -4150,7 +4504,9 @@ async function main() {
 
   console.log('KNOWLEDGE BASE GLOBAL (tenantId: null):');
   console.log('  - 7 Brands, 17 Lines, 5 Types');
-  console.log('  - 11 Categories, 38 MantItems');
+  console.log('  - 17 Categories, 38 MantItems + 13 ServiceItems');
+  console.log('  - 13 MantItemPart (servicio → autoparte)');
+  console.log('  - 2 Procedimientos KB con pasos de tempario');
   console.log('  - 14 MasterParts');
   console.log('  - 5 Templates con paquetes');
   console.log('  - 5 DocumentTypeConfigs (CO)');
@@ -4189,7 +4545,59 @@ async function main() {
   await seedInternational7400WorkStar(prisma);
 
   // Tempario Automotriz
-  await seedTemparioAutomotriz(prisma);
+  const { temparioItemsMap } = await seedTemparioAutomotriz(prisma);
+
+  // --- PROCEDIMIENTOS KB (MantItemProcedure) ---
+  console.log('   Creando procedimientos KB (MantItemProcedure)...');
+
+  const procAceite = await prisma.mantItemProcedure.create({
+    data: {
+      mantItemId: iCambioAceite.id,
+      isGlobal: true,
+      tenantId: null,
+    },
+  });
+  await prisma.mantItemProcedureStep.createMany({
+    data: [
+      {
+        procedureId: procAceite.id,
+        temparioItemId: temparioItemsMap['M001']!,
+        order: 1,
+        standardHours: 0.5,
+      },
+      {
+        procedureId: procAceite.id,
+        temparioItemId: temparioItemsMap['M002']!,
+        order: 2,
+        standardHours: 0.25,
+      },
+    ],
+  });
+
+  const procPastillas = await prisma.mantItemProcedure.create({
+    data: {
+      mantItemId: iPastillasDelant.id,
+      isGlobal: true,
+      tenantId: null,
+    },
+  });
+  await prisma.mantItemProcedureStep.createMany({
+    data: [
+      {
+        procedureId: procPastillas.id,
+        temparioItemId: temparioItemsMap['F019']!,
+        order: 1,
+        standardHours: 1.0,
+      },
+      {
+        procedureId: procPastillas.id,
+        temparioItemId: temparioItemsMap['F001']!,
+        order: 2,
+        standardHours: 0.8,
+      },
+    ],
+  });
+  console.log('   Procedimientos KB creados.');
 
   console.log('\nAISLAMIENTO:');
   console.log('  - Demo tenant tiene datos propios');

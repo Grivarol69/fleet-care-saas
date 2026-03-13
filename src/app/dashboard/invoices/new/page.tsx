@@ -251,25 +251,26 @@ function NewInvoiceContent() {
           );
 
           interface WOItemResponse {
-            id: string;
+            workOrderItemId: string;
             description: string;
             mantItemId?: string;
-            category?: { name: string };
-            cost?: number;
-            quantity?: number;
+            categoryName?: string;
+            unitPrice: number;
+            totalCost: number;
+            quantity: number;
             [key: string]: unknown;
           }
           const woItems = woItemsRes.data.items.map((item: WOItemResponse) => ({
             id: crypto.randomUUID(),
             workOrderItemId: item.workOrderItemId,
             description: item.description,
-            details: item.details,
-            category: item.category,
+            details: '', // API no lo devuelve directamente pero podria
+            category: item.categoryName,
             quantity: item.quantity,
-            estimatedUnitPrice: item.estimatedUnitPrice,
-            estimatedTotal: item.estimatedTotal,
-            realUnitPrice: item.estimatedUnitPrice,
-            realTotal: item.estimatedTotal,
+            estimatedUnitPrice: item.unitPrice,
+            estimatedTotal: item.totalCost,
+            realUnitPrice: item.unitPrice,
+            realTotal: item.totalCost,
             taxRate: 19,
             taxAmount: 0,
             total: 0,
@@ -657,7 +658,7 @@ function NewInvoiceContent() {
             <div className="text-right">
               <p className="text-sm text-muted-foreground">Total OC</p>
               <p className="text-2xl font-bold text-blue-600">
-                ${Number(selectedPO.total).toLocaleString('es-CO')}
+                ${(Number(selectedPO.total) || 0).toLocaleString('es-CO')}
               </p>
             </div>
           )}
@@ -735,7 +736,7 @@ function NewInvoiceContent() {
                           <SelectItem key={po.id} value={po.id}>
                             {po.orderNumber} — {po.workOrder.title} —{' '}
                             {po.workOrder.vehicle.licensePlate} — $
-                            {Number(po.total).toLocaleString('es-CO')}
+                            {(Number(po.total) || 0).toLocaleString('es-CO')}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -958,12 +959,12 @@ function NewInvoiceContent() {
                           {/* Estimado */}
                           <TableCell className="text-right">
                             <div className="text-muted-foreground text-sm">
-                              ${item.estimatedUnitPrice.toLocaleString('es-CO')}
+                              ${(item.estimatedUnitPrice || 0).toLocaleString('es-CO')}
                             </div>
                             {item.estimatedTotal > 0 && (
                               <div className="text-xs text-muted-foreground">
                                 Total: $
-                                {item.estimatedTotal.toLocaleString('es-CO')}
+                                {(item.estimatedTotal || 0).toLocaleString('es-CO')}
                               </div>
                             )}
                           </TableCell>
@@ -1010,7 +1011,7 @@ function NewInvoiceContent() {
 
                           {/* Total Real */}
                           <TableCell className="text-right font-semibold">
-                            ${item.realTotal.toLocaleString('es-CO')}
+                            ${(item.realTotal || 0).toLocaleString('es-CO')}
                           </TableCell>
 
                           {/* Variación */}
@@ -1173,20 +1174,20 @@ function NewInvoiceContent() {
                   <div className="flex justify-between text-lg">
                     <span>Subtotal:</span>
                     <span className="font-semibold">
-                      ${totals.realSubtotal.toLocaleString('es-CO')}
+                      ${(totals.realSubtotal || 0).toLocaleString('es-CO')}
                     </span>
                   </div>
                 )}
                 <div className="flex justify-between text-lg">
                   <span>IVA (19%):</span>
                   <span className="font-semibold">
-                    ${totals.taxAmount.toLocaleString('es-CO')}
+                    ${(totals.taxAmount || 0).toLocaleString('es-CO')}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-2xl font-bold pt-3 border-t-2">
                   <span>TOTAL:</span>
                   <span className="text-blue-600">
-                    ${totals.total.toLocaleString('es-CO')}
+                    ${(totals.total || 0).toLocaleString('es-CO')}
                   </span>
                 </div>
               </div>
@@ -1369,7 +1370,7 @@ function NewInvoiceContent() {
                 {ocrResult.total !== undefined && (
                   <p>
                     <span className="font-medium">Total:</span> $
-                    {ocrResult.total.toLocaleString('es-CO')}
+                    {(ocrResult.total || 0).toLocaleString('es-CO')}
                   </p>
                 )}
               </div>
@@ -1410,10 +1411,10 @@ function NewInvoiceContent() {
                               {item.quantity}
                             </td>
                             <td className="px-3 py-1.5 text-right text-gray-600">
-                              ${item.unitPrice.toLocaleString('es-CO')}
+                              ${(item.unitPrice || 0).toLocaleString('es-CO')}
                             </td>
                             <td className="px-3 py-1.5 text-right text-gray-600">
-                              ${item.total.toLocaleString('es-CO')}
+                              ${(item.total || 0).toLocaleString('es-CO')}
                             </td>
                           </tr>
                         ))}

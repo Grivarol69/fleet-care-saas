@@ -125,6 +125,12 @@ export async function GET(
                 type: true,
               },
             },
+            provider: {
+              select: { id: true, name: true },
+            },
+            purchaseOrderItems: {
+              select: { id: true },
+            },
           },
         },
         invoices: {

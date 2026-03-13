@@ -339,7 +339,6 @@ export function FormEditOdometer({
                       type="number"
                       step={measureType === 'HOURS' ? '0.1' : '1'}
                       {...field}
-                      onChange={e => field.onChange(e.target.value)}
                     />
                   </FormControl>
                   <FormMessage />

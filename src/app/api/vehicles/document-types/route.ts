@@ -30,7 +30,7 @@ export async function GET() {
         status: 'ACTIVE',
         OR: [
           { isGlobal: true, countryCode: tenant.country },
-          { },
+          { isGlobal: false, tenantId: user.tenantId },
         ],
       },
       orderBy: { sortOrder: 'asc' },
@@ -95,7 +95,7 @@ export async function POST(req: Request) {
     }
 
     // OWNER/MANAGER can create tenant-specific types
-    if (!isGlobal && !['SUPER_ADMIN', 'OWNER', 'MANAGER'].includes(user.role)) {
+    if (!isGlobal && !['SUPER_ADMIN', 'OWNER', 'MANAGER', 'COORDINATOR'].includes(user.role)) {
       return NextResponse.json(
         { error: 'No tienes permisos para crear tipos de documento' },
         { status: 403 }
