@@ -29,7 +29,11 @@
     "test": "dotenv -e .env.test -- vitest run",
     "test:watch": "dotenv -e .env.test -- vitest",
     "db:test:push": "dotenv -e .env.test -- prisma db push",
-    "db:test:seed": "dotenv -e .env.test -- tsx prisma/seed-multitenancy.ts"
+    "db:test:seed": "dotenv -e .env.test -- tsx prisma/seed-multitenancy.ts",
+    "e2e": "dotenv -e .env.e2e -- playwright test",
+    "e2e:ui": "dotenv -e .env.e2e -- playwright test --ui",
+    "e2e:report": "playwright show-report",
+    "e2e:setup": "dotenv -e .env.e2e -- playwright test --project=setup"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
@@ -98,6 +102,7 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@clerk/testing": "^2.0.4",
     "@eslint/eslintrc": "^3",
     "@next/bundle-analyzer": "^15.5.2",
     "@playwright/test": "^1.58.2",
