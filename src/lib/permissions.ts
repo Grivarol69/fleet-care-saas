@@ -42,7 +42,12 @@ export function isCoordinator(user: User | null): boolean {
  * SUPER_ADMIN además puede gestionar datos globales (isGlobal=true).
  */
 export function canManageMasterData(user: User | null): boolean {
-  return isSuperAdmin(user) || isOwner(user) || isManager(user) || isCoordinator(user);
+  return (
+    isSuperAdmin(user) ||
+    isOwner(user) ||
+    isManager(user) ||
+    isCoordinator(user)
+  );
 }
 
 /**
@@ -51,7 +56,11 @@ export function canManageMasterData(user: User | null): boolean {
  */
 export function canViewCosts(user: User | null): boolean {
   return (
-    isSuperAdmin(user) || isOwner(user) || isManager(user) || isCoordinator(user) || isPurchaser(user)
+    isSuperAdmin(user) ||
+    isOwner(user) ||
+    isManager(user) ||
+    isCoordinator(user) ||
+    isPurchaser(user)
   );
 }
 
@@ -59,7 +68,13 @@ export function canViewCosts(user: User | null): boolean {
  * SUPER_ADMIN, OWNER, MANAGER pueden crear Work Orders
  */
 export function canCreateWorkOrders(user: User | null): boolean {
-  return isSuperAdmin(user) || isOwner(user) || isManager(user) || isCoordinator(user);
+  return (
+    isSuperAdmin(user) ||
+    isOwner(user) ||
+    isManager(user) ||
+    isCoordinator(user) ||
+    isTechnician(user)
+  );
 }
 
 /**
@@ -67,7 +82,11 @@ export function canCreateWorkOrders(user: User | null): boolean {
  */
 export function canExecuteWorkOrders(user: User | null): boolean {
   return (
-    isSuperAdmin(user) || isOwner(user) || isManager(user) || isCoordinator(user) || isTechnician(user)
+    isSuperAdmin(user) ||
+    isOwner(user) ||
+    isManager(user) ||
+    isCoordinator(user) ||
+    isTechnician(user)
   );
 }
 
@@ -83,7 +102,11 @@ export function canManageUsers(user: User | null): boolean {
  */
 export function canApproveInvoices(user: User | null): boolean {
   return (
-    isSuperAdmin(user) || isOwner(user) || isManager(user) || isCoordinator(user) || isPurchaser(user)
+    isSuperAdmin(user) ||
+    isOwner(user) ||
+    isManager(user) ||
+    isCoordinator(user) ||
+    isPurchaser(user)
   );
 }
 
@@ -91,7 +114,12 @@ export function canApproveInvoices(user: User | null): boolean {
  * SUPER_ADMIN, OWNER, MANAGER pueden ver dashboard con métricas de costos
  */
 export function canViewDashboard(user: User | null): boolean {
-  return isSuperAdmin(user) || isOwner(user) || isManager(user) || isCoordinator(user);
+  return (
+    isSuperAdmin(user) ||
+    isOwner(user) ||
+    isManager(user) ||
+    isCoordinator(user)
+  );
 }
 
 /**
@@ -105,7 +133,12 @@ export function canRegisterOdometer(user: User | null): boolean {
  * SUPER_ADMIN, OWNER, MANAGER pueden gestionar programas de mantenimiento
  */
 export function canManageMaintenancePrograms(user: User | null): boolean {
-  return isSuperAdmin(user) || isOwner(user) || isManager(user) || isCoordinator(user);
+  return (
+    isSuperAdmin(user) ||
+    isOwner(user) ||
+    isManager(user) ||
+    isCoordinator(user)
+  );
 }
 
 /**
@@ -113,7 +146,11 @@ export function canManageMaintenancePrograms(user: User | null): boolean {
  */
 export function canViewAlerts(user: User | null): boolean {
   return (
-    isSuperAdmin(user) || isOwner(user) || isManager(user) || isCoordinator(user) || isTechnician(user)
+    isSuperAdmin(user) ||
+    isOwner(user) ||
+    isManager(user) ||
+    isCoordinator(user) ||
+    isTechnician(user)
   );
 }
 
@@ -121,14 +158,24 @@ export function canViewAlerts(user: User | null): boolean {
  * SUPER_ADMIN, OWNER, MANAGER pueden enviar CV de vehículos
  */
 export function canSendVehicleCV(user: User | null): boolean {
-  return isSuperAdmin(user) || isOwner(user) || isManager(user) || isCoordinator(user);
+  return (
+    isSuperAdmin(user) ||
+    isOwner(user) ||
+    isManager(user) ||
+    isCoordinator(user)
+  );
 }
 
 /**
  * SUPER_ADMIN, OWNER, MANAGER pueden crear/editar vehículos
  */
 export function canManageVehicles(user: User | null): boolean {
-  return isSuperAdmin(user) || isOwner(user) || isManager(user) || isCoordinator(user);
+  return (
+    isSuperAdmin(user) ||
+    isOwner(user) ||
+    isManager(user) ||
+    isCoordinator(user)
+  );
 }
 
 /**
@@ -143,7 +190,11 @@ export function canDeleteVehicles(user: User | null): boolean {
  */
 export function canManagePurchases(user: User | null): boolean {
   return (
-    isSuperAdmin(user) || isOwner(user) || isManager(user) || isCoordinator(user) || isPurchaser(user)
+    isSuperAdmin(user) ||
+    isOwner(user) ||
+    isManager(user) ||
+    isCoordinator(user) ||
+    isPurchaser(user)
   );
 }
 
@@ -151,7 +202,12 @@ export function canManagePurchases(user: User | null): boolean {
  * SUPER_ADMIN, OWNER, MANAGER pueden gestionar centros de costos
  */
 export function canManageCostCenters(user: User | null): boolean {
-  return isSuperAdmin(user) || isOwner(user) || isManager(user) || isCoordinator(user);
+  return (
+    isSuperAdmin(user) ||
+    isOwner(user) ||
+    isManager(user) ||
+    isCoordinator(user)
+  );
 }
 
 /**
@@ -159,7 +215,11 @@ export function canManageCostCenters(user: User | null): boolean {
  */
 export function canManageProviders(user: User | null): boolean {
   return (
-    isSuperAdmin(user) || isOwner(user) || isManager(user) || isCoordinator(user) || isPurchaser(user)
+    isSuperAdmin(user) ||
+    isOwner(user) ||
+    isManager(user) ||
+    isCoordinator(user) ||
+    isPurchaser(user)
   );
 }
 
@@ -174,8 +234,15 @@ export function requireSuperAdmin(user: User | null): void {
 }
 
 export function requireManagementRole(user: User | null): void {
-  if (!isSuperAdmin(user) && !isOwner(user) && !isManager(user) && !isCoordinator(user)) {
-    throw new Error('Acceso denegado: Se requiere rol OWNER, MANAGER o COORDINATOR');
+  if (
+    !isSuperAdmin(user) &&
+    !isOwner(user) &&
+    !isManager(user) &&
+    !isCoordinator(user)
+  ) {
+    throw new Error(
+      'Acceso denegado: Se requiere rol OWNER, MANAGER o COORDINATOR'
+    );
   }
 }
 
@@ -224,14 +291,24 @@ export function requireMasterDataMutationPermission(
  * TECHNICIAN y PURCHASER deben usar el flujo de solicitud (MantItemRequest).
  */
 export function canCreateMantItems(user: User | null): boolean {
-  return isSuperAdmin(user) || isOwner(user) || isManager(user) || isCoordinator(user);
+  return (
+    isSuperAdmin(user) ||
+    isOwner(user) ||
+    isManager(user) ||
+    isCoordinator(user)
+  );
 }
 
 /**
  * SUPER_ADMIN, OWNER, MANAGER pueden aprobar/rechazar solicitudes de items.
  */
 export function canResolveMantItemRequests(user: User | null): boolean {
-  return isSuperAdmin(user) || isOwner(user) || isManager(user) || isCoordinator(user);
+  return (
+    isSuperAdmin(user) ||
+    isOwner(user) ||
+    isManager(user) ||
+    isCoordinator(user)
+  );
 }
 
 // ========================================
@@ -259,7 +336,12 @@ export function canViewGlobalKnowledgeBase(user: User | null): boolean {
  * (isGlobal = false, tenantId = su tenant)
  */
 export function canManageTenantData(user: User | null): boolean {
-  return isSuperAdmin(user) || isOwner(user) || isManager(user) || isCoordinator(user);
+  return (
+    isSuperAdmin(user) ||
+    isOwner(user) ||
+    isManager(user) ||
+    isCoordinator(user)
+  );
 }
 
 // ========================================
@@ -271,7 +353,12 @@ export function canManageTenantData(user: User | null): boolean {
  * TECHNICIAN NO puede aprobar — solo ejecutar.
  */
 export function canApproveWorkOrder(user: User | null): boolean {
-  return isSuperAdmin(user) || isOwner(user) || isManager(user) || isCoordinator(user);
+  return (
+    isSuperAdmin(user) ||
+    isOwner(user) ||
+    isManager(user) ||
+    isCoordinator(user)
+  );
 }
 
 /**
@@ -279,9 +366,14 @@ export function canApproveWorkOrder(user: User | null): boolean {
  * TECHNICIAN puede marcar trabajo terminado pero NO cerrar.
  */
 export function canCloseWorkOrder(user: User | null): boolean {
-  // El COORDINATOR puede cerrar OTs? Depende de la política. 
+  // El COORDINATOR puede cerrar OTs? Depende de la política.
   // Por ahora lo habilitamos como soporte administrativo.
-  return isSuperAdmin(user) || isOwner(user) || isManager(user) || isCoordinator(user);
+  return (
+    isSuperAdmin(user) ||
+    isOwner(user) ||
+    isManager(user) ||
+    isCoordinator(user)
+  );
 }
 
 /**
@@ -290,7 +382,11 @@ export function canCloseWorkOrder(user: User | null): boolean {
  */
 export function canAccessTaller(user: User | null): boolean {
   return (
-    isSuperAdmin(user) || isOwner(user) || isManager(user) || isCoordinator(user) || isTechnician(user)
+    isSuperAdmin(user) ||
+    isOwner(user) ||
+    isManager(user) ||
+    isCoordinator(user) ||
+    isTechnician(user)
   );
 }
 

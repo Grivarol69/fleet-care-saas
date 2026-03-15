@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { GET as GET_ITEMS, POST as POST_ITEM } from '../mant-items/route';
-import { GET as GET_REQUESTS, POST as POST_REQUEST } from '../mant-item-requests/route';
+import {
+  GET as GET_REQUESTS,
+  POST as POST_REQUEST,
+} from '../mant-item-requests/route';
 import { PATCH as PATCH_REQUEST } from '../mant-item-requests/[id]/route';
 import { prisma } from '@/lib/prisma';
 import {
@@ -46,11 +49,15 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
     vi.clearAllMocks();
   });
 
-  function authenticateAs(user: { id: string; role: 'OWNER' | 'MANAGER' | 'TECHNICIAN' }) {
+  function authenticateAs(user: { id: string; role: string }) {
     mockAuthAsUser({ id: user.id, tenantId: tenant.id, role: user.role });
   }
 
-  function createJsonRequest(url: string, method: 'POST' | 'PATCH', body: unknown) {
+  function createJsonRequest(
+    url: string,
+    method: 'POST' | 'PATCH',
+    body: unknown
+  ) {
     return new Request(url, {
       method,
       body: JSON.stringify(body),
@@ -195,7 +202,9 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
         },
       });
 
-      const request = new NextRequest('http://localhost:3000/api/maintenance/mant-items');
+      const request = new NextRequest(
+        'http://localhost:3000/api/maintenance/mant-items'
+      );
       const response = await GET_ITEMS(request);
       const items = await response.json();
 
@@ -228,7 +237,9 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
         },
       });
 
-      const request = new NextRequest('http://localhost:3000/api/maintenance/mant-items?search=oil');
+      const request = new NextRequest(
+        'http://localhost:3000/api/maintenance/mant-items?search=oil'
+      );
       const response = await GET_ITEMS(request);
       const items = await response.json();
 
@@ -392,7 +403,9 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
       expect(response.status).toBe(200);
       expect(data.status).toBe('REJECTED');
       expect(data.resolvedBy).toBe(managerUser.id);
-      expect(data.rejectionReason).toBe('We already have a standard wash service item');
+      expect(data.rejectionReason).toBe(
+        'We already have a standard wash service item'
+      );
       expect(persistedRequest?.resolvedAt).toBeTruthy();
       expect(createdItems).toHaveLength(0);
     });
@@ -523,7 +536,9 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
 
       authenticateAs(managerUser);
 
-      const request = new NextRequest('http://localhost:3000/api/maintenance/mant-item-requests');
+      const request = new NextRequest(
+        'http://localhost:3000/api/maintenance/mant-item-requests'
+      );
       const response = await GET_REQUESTS(request);
       const requests = await response.json();
 
@@ -557,7 +572,9 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
 
       authenticateAs(technicianUser);
 
-      const request = new NextRequest('http://localhost:3000/api/maintenance/mant-item-requests');
+      const request = new NextRequest(
+        'http://localhost:3000/api/maintenance/mant-item-requests'
+      );
       const response = await GET_REQUESTS(request);
       const requests = await response.json();
 

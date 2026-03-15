@@ -581,9 +581,9 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Validar permisos (solo OWNER/MANAGER pueden cancelar)
-    const { canManageVehicles } = await import('@/lib/permissions');
-    if (!canManageVehicles(user)) {
+    // Validar permisos (solo OWNER/MANAGER/COORDINATOR pueden cancelar OTs)
+    const { canApproveWorkOrder } = await import('@/lib/permissions');
+    if (!canApproveWorkOrder(user)) {
       return NextResponse.json(
         { error: 'No tienes permisos para cancelar órdenes de trabajo' },
         { status: 403 }
