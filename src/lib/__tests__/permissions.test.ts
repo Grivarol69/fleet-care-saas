@@ -159,15 +159,15 @@ describe('canViewCosts', () => {
 });
 
 describe('canCreateWorkOrders', () => {
-  it('allows SUPER_ADMIN, OWNER, MANAGER, COORDINATOR', () => {
+  it('allows SUPER_ADMIN, OWNER, MANAGER, COORDINATOR, TECHNICIAN', () => {
     expect(canCreateWorkOrders(mockUser('SUPER_ADMIN'))).toBe(true);
     expect(canCreateWorkOrders(mockUser('OWNER'))).toBe(true);
     expect(canCreateWorkOrders(mockUser('MANAGER'))).toBe(true);
     expect(canCreateWorkOrders(mockUser('COORDINATOR'))).toBe(true);
+    expect(canCreateWorkOrders(mockUser('TECHNICIAN'))).toBe(true);
   });
 
-  it('denies TECHNICIAN, PURCHASER, DRIVER', () => {
-    expect(canCreateWorkOrders(mockUser('TECHNICIAN'))).toBe(false);
+  it('denies PURCHASER, DRIVER', () => {
     expect(canCreateWorkOrders(mockUser('PURCHASER'))).toBe(false);
     expect(canCreateWorkOrders(mockUser('DRIVER'))).toBe(false);
   });

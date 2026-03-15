@@ -499,7 +499,7 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
   const iBalanceo = getBaseItem('Balanceo y alineacion');
   const iLiqDireccion = getBaseItem('Cambio liquido direccion hidraulica');
   const iInspBateria = getBaseItem('Inspeccion bateria');
-  const iLimpTerminale = getBaseItem('Limpieza terminales bateria');
+
   // const iTensionCorreas = getBaseItem('Tension correas'); // REMOVED (no existe en KB)
 
   console.log(`   ✓ ${baseItems.length} MantItems base encontrados`);

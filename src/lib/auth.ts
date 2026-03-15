@@ -113,11 +113,12 @@ async function getCurrentUserInternal(): Promise<UserWithSuperAdmin | null> {
 
         try {
           const client = await clerkClient();
-          const memberships = await client.organizations.getOrganizationMembershipList({
-            organizationId: orgId,
-          });
+          const memberships =
+            await client.organizations.getOrganizationMembershipList({
+              organizationId: orgId,
+            });
           const membership = memberships.data.find(
-            (m) => m.publicUserData?.identifier === email
+            m => m.publicUserData?.identifier === email
           );
           if (membership) {
             jitOrgName = membership.organization.name;
@@ -125,6 +126,7 @@ async function getCurrentUserInternal(): Promise<UserWithSuperAdmin | null> {
             const jitRoleMapping: Record<string, UserRole> = {
               admin: 'OWNER',
               manager: 'MANAGER',
+              coordinator: 'COORDINATOR',
               technician: 'TECHNICIAN',
               purchaser: 'PURCHASER',
               driver: 'DRIVER',
@@ -132,21 +134,26 @@ async function getCurrentUserInternal(): Promise<UserWithSuperAdmin | null> {
             dbRole = jitRoleMapping[roleName] ?? 'DRIVER';
           }
         } catch (clerkApiErr) {
-          console.error('[AUTH] Failed to fetch org membership from Clerk API, defaulting to OWNER:', clerkApiErr);
+          console.error(
+            '[AUTH] Failed to fetch org membership from Clerk API, defaulting to OWNER:',
+            clerkApiErr
+          );
         }
 
         // Validar que el Tenant también exista antes de crear el usuario
         let tenant = await prisma.tenant.findUnique({ where: { id: orgId } });
 
         if (!tenant) {
-          console.warn(`[AUTH] Tenant ${orgId} not found in DB. Webhook delayed/failed. Creating JIT...`);
+          console.warn(
+            `[AUTH] Tenant ${orgId} not found in DB. Webhook delayed/failed. Creating JIT...`
+          );
           tenant = await prisma.tenant.create({
             data: {
               id: orgId,
               name: jitOrgName ?? 'Empresa (Auto-creada)',
               slug: orgId.toLowerCase(),
               onboardingStatus: 'PENDING',
-            }
+            },
           });
         }
 
@@ -159,7 +166,7 @@ async function getCurrentUserInternal(): Promise<UserWithSuperAdmin | null> {
             tenantId: orgId,
             role: dbRole,
             isActive: true,
-          }
+          },
         });
         console.log(`[AUTH] JIT User created successfully:`, user.id);
       }
@@ -191,9 +198,9 @@ export async function requireCurrentUser() {
 
   // Si es SUPER_ADMIN (operando globalmente en Platform Tenant) usa el prisma base
   // De lo contrario usa el prisma con extensión de asilamiento por tenant
-  const tenantPrisma = (user.isSuperAdmin
-    ? prisma
-    : getTenantPrisma(user.tenantId)) as ReturnType<typeof getTenantPrisma>;
+  const tenantPrisma = (
+    user.isSuperAdmin ? prisma : getTenantPrisma(user.tenantId)
+  ) as ReturnType<typeof getTenantPrisma>;
 
   return { user, tenantPrisma };
 }
