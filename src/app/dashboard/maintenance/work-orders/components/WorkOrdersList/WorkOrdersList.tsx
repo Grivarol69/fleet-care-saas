@@ -114,10 +114,10 @@ function getAvailableTransitions(
   } else if (status === 'IN_PROGRESS') {
     if (canCloseWorkOrder)
       transitions.push({
-        toStatus: 'COMPLETED',
+        toStatus: 'PENDING_INVOICE',
         label: 'Cerrar OT',
         description:
-          'La OT se cerrará definitivamente. Verificá que todos los trabajos estén documentados.',
+          'La OT pasará a Por Cerrar. Se deducirá stock y se generarán OCs para repuestos faltantes.',
       });
     if (canApproveWorkOrder)
       transitions.push({
@@ -126,6 +126,14 @@ function getAvailableTransitions(
         description:
           'La OT quedará Cancelada. Esta acción no se puede deshacer.',
         isDestructive: true,
+      });
+  } else if (status === 'PENDING_INVOICE') {
+    if (canCloseWorkOrder)
+      transitions.push({
+        toStatus: 'COMPLETED',
+        label: 'Marcar como Completada',
+        description:
+          'La OT se cerrará definitivamente. Asegurate de haber cargado las facturas correspondientes.',
       });
   }
 
@@ -248,19 +256,25 @@ export function WorkOrdersList({
   return (
     <div className="border rounded-lg">
       <div className="flex flex-wrap gap-x-4 gap-y-2 px-4 py-3 border-b text-sm text-muted-foreground bg-muted/10">
-        {(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'] as const).map(
-          key => {
-            const cfg = statusConfig[key];
-            return (
-              <span key={cfg.label} className="flex items-center gap-2">
-                <span
-                  className={`inline-block w-4 h-4 rounded border ${cfg.color} ${cfg.rowBg}`}
-                />
-                {cfg.label}
-              </span>
-            );
-          }
-        )}
+        {(
+          [
+            'PENDING',
+            'IN_PROGRESS',
+            'PENDING_INVOICE',
+            'COMPLETED',
+            'CANCELLED',
+          ] as const
+        ).map(key => {
+          const cfg = statusConfig[key];
+          return (
+            <span key={cfg.label} className="flex items-center gap-2">
+              <span
+                className={`inline-block w-4 h-4 rounded border ${cfg.color} ${cfg.rowBg}`}
+              />
+              {cfg.label}
+            </span>
+          );
+        })}
       </div>
       <Table>
         <TableHeader>
