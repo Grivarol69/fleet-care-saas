@@ -74,48 +74,91 @@ type WorkOrdersListProps = {
   onStatusChange?: (id: string, newStatus: string) => Promise<void>;
 };
 
-function getAvailableTransitions(status: string, user: { role: string; isSuperAdmin: boolean }) {
+function getAvailableTransitions(
+  status: string,
+  user: { role: string; isSuperAdmin: boolean }
+) {
   const { role, isSuperAdmin } = user;
 
-  const canExecuteWorkOrders = isSuperAdmin || ['OWNER', 'MANAGER', 'COORDINATOR', 'TECHNICIAN'].includes(role);
-  const canApproveWorkOrder = isSuperAdmin || ['OWNER', 'MANAGER', 'COORDINATOR'].includes(role);
-  const canCloseWorkOrder = isSuperAdmin || ['OWNER', 'MANAGER', 'COORDINATOR'].includes(role);
+  const canExecuteWorkOrders =
+    isSuperAdmin ||
+    ['OWNER', 'MANAGER', 'COORDINATOR', 'TECHNICIAN'].includes(role);
+  const canApproveWorkOrder =
+    isSuperAdmin || ['OWNER', 'MANAGER', 'COORDINATOR'].includes(role);
+  const canCloseWorkOrder =
+    isSuperAdmin || ['OWNER', 'MANAGER', 'COORDINATOR'].includes(role);
 
-  const transitions: Array<{ toStatus: string; label: string; description: string; isDestructive?: boolean }> = [];
+  const transitions: Array<{
+    toStatus: string;
+    label: string;
+    description: string;
+    isDestructive?: boolean;
+  }> = [];
 
   if (status === 'PENDING') {
-    if (canExecuteWorkOrders) transitions.push({ toStatus: 'IN_PROGRESS', label: 'Iniciar Trabajo', description: 'La OT pasará a En Trabajo. El técnico podrá registrar horas y repuestos.' });
-    if (canApproveWorkOrder) transitions.push({ toStatus: 'PENDING_APPROVAL', label: 'Enviar a Aprobación', description: 'La OT se enviará para revisión de un aprobador antes de ejecutarse.' });
-    if (canApproveWorkOrder) transitions.push({ toStatus: 'CANCELLED', label: 'Cancelar OT', description: 'La OT quedará Cancelada. Esta acción no se puede deshacer.', isDestructive: true });
-  } else if (status === 'PENDING_APPROVAL') {
-    if (canApproveWorkOrder) {
-      transitions.push({ toStatus: 'APPROVED', label: 'Aprobar OT', description: 'La OT quedará Aprobada y lista para iniciar el trabajo.' });
-      transitions.push({ toStatus: 'REJECTED', label: 'Rechazar OT', description: 'La OT quedará Rechazada y no podrá ejecutarse.' });
-      transitions.push({ toStatus: 'CANCELLED', label: 'Cancelar OT', description: 'La OT quedará Cancelada. Esta acción no se puede deshacer.', isDestructive: true });
-    }
-  } else if (status === 'APPROVED') {
-    if (canExecuteWorkOrders) transitions.push({ toStatus: 'IN_PROGRESS', label: 'Iniciar Trabajo', description: 'La OT pasará a En Trabajo. El técnico podrá registrar horas y repuestos.' });
-    if (canApproveWorkOrder) transitions.push({ toStatus: 'CANCELLED', label: 'Cancelar OT', description: 'La OT quedará Cancelada. Esta acción no se puede deshacer.', isDestructive: true });
+    if (canExecuteWorkOrders)
+      transitions.push({
+        toStatus: 'IN_PROGRESS',
+        label: 'Iniciar Trabajo',
+        description:
+          'La OT pasará a En Trabajo. El técnico podrá registrar horas y repuestos.',
+      });
+    if (canApproveWorkOrder)
+      transitions.push({
+        toStatus: 'CANCELLED',
+        label: 'Cancelar OT',
+        description:
+          'La OT quedará Cancelada. Esta acción no se puede deshacer.',
+        isDestructive: true,
+      });
   } else if (status === 'IN_PROGRESS') {
-    if (canExecuteWorkOrders) transitions.push({ toStatus: 'PENDING_INVOICE', label: 'Enviar a Cierre', description: 'El trabajo finalizó. Quedará pendiente de carga de factura para cerrar.' });
-    if (canApproveWorkOrder) transitions.push({ toStatus: 'PENDING_APPROVAL', label: 'Enviar a Aprobación', description: 'La OT se enviará para revisión de un aprobador antes de ejecutarse.' });
-    if (canCloseWorkOrder) transitions.push({ toStatus: 'COMPLETED', label: 'Cerrar OT', description: 'La OT se cerrará definitivamente. Verificá que todos los trabajos estén documentados.' });
-    if (canApproveWorkOrder) transitions.push({ toStatus: 'CANCELLED', label: 'Cancelar OT', description: 'La OT quedará Cancelada. Esta acción no se puede deshacer.', isDestructive: true });
-  } else if (status === 'PENDING_INVOICE') {
-    if (canCloseWorkOrder) transitions.push({ toStatus: 'COMPLETED', label: 'Cerrar OT', description: 'La OT se cerrará definitivamente. Verificá que todos los trabajos estén documentados.' });
-    if (canApproveWorkOrder) transitions.push({ toStatus: 'CANCELLED', label: 'Cancelar OT', description: 'La OT quedará Cancelada. Esta acción no se puede deshacer.', isDestructive: true });
+    if (canCloseWorkOrder)
+      transitions.push({
+        toStatus: 'COMPLETED',
+        label: 'Cerrar OT',
+        description:
+          'La OT se cerrará definitivamente. Verificá que todos los trabajos estén documentados.',
+      });
+    if (canApproveWorkOrder)
+      transitions.push({
+        toStatus: 'CANCELLED',
+        label: 'Cancelar OT',
+        description:
+          'La OT quedará Cancelada. Esta acción no se puede deshacer.',
+        isDestructive: true,
+      });
   }
 
   return transitions;
 }
 
 export const statusConfig = {
+  // Estados activos del flujo simplificado
   PENDING: {
     label: 'Abierta',
     variant: 'secondary' as const,
     color: 'bg-blue-100 text-blue-700 border-blue-200',
     rowBg: 'bg-blue-50',
   },
+  IN_PROGRESS: {
+    label: 'En Trabajo',
+    variant: 'default' as const,
+    color: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+    rowBg: 'bg-yellow-50',
+  },
+  COMPLETED: {
+    label: 'Cerrada',
+    variant: 'default' as const,
+    color: 'bg-green-100 text-green-700 border-green-200',
+    rowBg: 'bg-green-50',
+  },
+  CANCELLED: {
+    label: 'Cancelada',
+    variant: 'outline' as const,
+    color: 'bg-gray-100 text-gray-500 border-gray-200',
+    rowBg: 'bg-gray-100',
+  },
+  // Legacy — para datos históricos existentes (no aparecen en leyenda ni filtros)
   PENDING_APPROVAL: {
     label: 'En Aprobación',
     variant: 'outline' as const,
@@ -128,35 +171,17 @@ export const statusConfig = {
     color: 'bg-teal-100 text-teal-700 border-teal-200',
     rowBg: 'bg-teal-50',
   },
-  IN_PROGRESS: {
-    label: 'En Trabajo',
-    variant: 'default' as const,
-    color: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-    rowBg: 'bg-yellow-50',
-  },
   PENDING_INVOICE: {
     label: 'Por Cerrar',
     variant: 'outline' as const,
     color: 'bg-orange-100 text-orange-700 border-orange-200',
     rowBg: 'bg-orange-50',
   },
-  COMPLETED: {
-    label: 'Cerrada',
-    variant: 'default' as const,
-    color: 'bg-green-100 text-green-700 border-green-200',
-    rowBg: 'bg-green-50',
-  },
   REJECTED: {
     label: 'Rechazada',
     variant: 'destructive' as const,
     color: 'bg-red-100 text-red-700 border-red-200',
     rowBg: 'bg-red-50',
-  },
-  CANCELLED: {
-    label: 'Cancelada',
-    variant: 'outline' as const,
-    color: 'bg-gray-100 text-gray-500 border-gray-200',
-    rowBg: 'bg-gray-100',
   },
 };
 
@@ -223,12 +248,19 @@ export function WorkOrdersList({
   return (
     <div className="border rounded-lg">
       <div className="flex flex-wrap gap-x-4 gap-y-2 px-4 py-3 border-b text-sm text-muted-foreground bg-muted/10">
-        {Object.entries(statusConfig).map(([, cfg]) => (
-          <span key={cfg.label} className="flex items-center gap-2">
-            <span className={`inline-block w-4 h-4 rounded border ${cfg.color} ${cfg.rowBg}`} />
-            {cfg.label}
-          </span>
-        ))}
+        {(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'] as const).map(
+          key => {
+            const cfg = statusConfig[key];
+            return (
+              <span key={cfg.label} className="flex items-center gap-2">
+                <span
+                  className={`inline-block w-4 h-4 rounded border ${cfg.color} ${cfg.rowBg}`}
+                />
+                {cfg.label}
+              </span>
+            );
+          }
+        )}
       </div>
       <Table>
         <TableHeader>
@@ -253,7 +285,10 @@ export function WorkOrdersList({
               mantTypeConfig[wo.mantType as keyof typeof mantTypeConfig];
             const priorityInfo =
               priorityConfig[wo.priority as keyof typeof priorityConfig];
-            const availableTransitions = getAvailableTransitions(wo.status, currentUser);
+            const availableTransitions = getAvailableTransitions(
+              wo.status,
+              currentUser
+            );
 
             return (
               <TableRow key={wo.id} className={statusInfo?.rowBg}>
@@ -345,21 +380,21 @@ export function WorkOrdersList({
                       </DropdownMenuItem>
                       {(wo.status === 'IN_PROGRESS' ||
                         wo.status === 'PENDING_INVOICE') && (
-                          <DropdownMenuItem
-                            onClick={() =>
-                              router.push(
-                                `/dashboard/invoices/new?workOrderId=${wo.id}`
-                              )
-                            }
-                          >
-                            <FileText className="mr-2 h-4 w-4" />
-                            Cargar Factura
-                          </DropdownMenuItem>
-                        )}
+                        <DropdownMenuItem
+                          onClick={() =>
+                            router.push(
+                              `/dashboard/invoices/new?workOrderId=${wo.id}`
+                            )
+                          }
+                        >
+                          <FileText className="mr-2 h-4 w-4" />
+                          Cargar Factura
+                        </DropdownMenuItem>
+                      )}
                       {availableTransitions.length > 0 && (
                         <>
                           <DropdownMenuSeparator />
-                          {availableTransitions.map((t) => (
+                          {availableTransitions.map(t => (
                             <DropdownMenuItem
                               key={t.toStatus}
                               onClick={() => {
@@ -368,10 +403,14 @@ export function WorkOrdersList({
                                   toStatus: t.toStatus,
                                   label: t.label,
                                   description: t.description,
-                                  isDestructive: t.isDestructive
-                                })
+                                  isDestructive: t.isDestructive,
+                                });
                               }}
-                              className={t.isDestructive ? 'text-destructive focus:text-destructive' : ''}
+                              className={
+                                t.isDestructive
+                                  ? 'text-destructive focus:text-destructive'
+                                  : ''
+                              }
                             >
                               {t.label}
                             </DropdownMenuItem>
@@ -388,7 +427,10 @@ export function WorkOrdersList({
       </Table>
 
       {/* Confirmation Dialog */}
-      <AlertDialog open={pendingAction !== null} onOpenChange={(open) => !open && setPendingAction(null)}>
+      <AlertDialog
+        open={pendingAction !== null}
+        onOpenChange={open => !open && setPendingAction(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{pendingAction?.label}</AlertDialogTitle>
@@ -397,12 +439,14 @@ export function WorkOrdersList({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>
-              Cancelar
-            </AlertDialogCancel>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmAction}
-              className={pendingAction?.isDestructive ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
+              className={
+                pendingAction?.isDestructive
+                  ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                  : ''
+              }
             >
               Confirmar
             </AlertDialogAction>

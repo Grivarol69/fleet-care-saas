@@ -114,55 +114,7 @@ export function WorkOrderHeader({
     if (!currentUser) return null;
     const status = workOrder.status;
 
-    if (status === 'PENDING') {
-      return (
-        <div className="flex gap-2 flex-wrap">
-          {canExecute(currentUser) && (
-            <Button
-              size="sm"
-              disabled={isTransitioning}
-              onClick={() => handleTransition('IN_PROGRESS')}
-            >
-              {isTransitioning ? 'Procesando...' : 'Iniciar trabajo'}
-            </Button>
-          )}
-          {isManagerOrAbove(currentUser) && (
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={isTransitioning}
-              onClick={() => handleTransition('PENDING_APPROVAL')}
-            >
-              {isTransitioning ? 'Procesando...' : 'Enviar a aprobación'}
-            </Button>
-          )}
-        </div>
-      );
-    }
-
-    if (status === 'PENDING_APPROVAL' && isManagerOrAbove(currentUser)) {
-      return (
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            disabled={isTransitioning}
-            onClick={() => handleTransition('APPROVED')}
-          >
-            {isTransitioning ? 'Procesando...' : 'Aprobar'}
-          </Button>
-          <Button
-            size="sm"
-            variant="destructive"
-            disabled={isTransitioning}
-            onClick={() => handleTransition('REJECTED')}
-          >
-            {isTransitioning ? 'Procesando...' : 'Rechazar'}
-          </Button>
-        </div>
-      );
-    }
-
-    if (status === 'APPROVED' && canExecute(currentUser)) {
+    if (status === 'PENDING' && canExecute(currentUser)) {
       return (
         <Button
           size="sm"
@@ -174,27 +126,14 @@ export function WorkOrderHeader({
       );
     }
 
-    if (status === 'IN_PROGRESS' && canExecute(currentUser)) {
-      return (
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={isTransitioning}
-          onClick={() => handleTransition('PENDING_INVOICE')}
-        >
-          {isTransitioning ? 'Procesando...' : 'Marcar como terminado'}
-        </Button>
-      );
-    }
-
-    if (status === 'PENDING_INVOICE' && isManagerOrAbove(currentUser)) {
+    if (status === 'IN_PROGRESS' && isManagerOrAbove(currentUser)) {
       return (
         <Button
           size="sm"
           disabled={isTransitioning}
           onClick={() => setShowMileageDialog(true)}
         >
-          Cerrar OT
+          {isTransitioning ? 'Procesando...' : 'Cerrar OT'}
         </Button>
       );
     }

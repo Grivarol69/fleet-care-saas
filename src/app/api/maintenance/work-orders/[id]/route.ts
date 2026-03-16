@@ -26,34 +26,23 @@ const ALLOWED_TRANSITIONS: Record<
   WorkOrderStatus,
   Partial<Record<WorkOrderStatus, TransitionRule>>
 > = {
+  // Flujo activo simplificado (4 estados)
   PENDING: {
-    IN_PROGRESS: { allowedRoles: ['canExecuteWorkOrders'] },
-    PENDING_APPROVAL: { allowedRoles: ['canApproveWorkOrder'] },
-    CANCELLED: { allowedRoles: ['canApproveWorkOrder'] },
-  },
-  PENDING_APPROVAL: {
-    APPROVED: { allowedRoles: ['canApproveWorkOrder'] },
-    REJECTED: { allowedRoles: ['canApproveWorkOrder'] },
-    CANCELLED: { allowedRoles: ['canApproveWorkOrder'] },
-  },
-  APPROVED: {
     IN_PROGRESS: { allowedRoles: ['canExecuteWorkOrders'] },
     CANCELLED: { allowedRoles: ['canApproveWorkOrder'] },
   },
   IN_PROGRESS: {
     COMPLETED: { allowedRoles: ['canCloseWorkOrder'] },
-    PENDING_INVOICE: { allowedRoles: ['canExecuteWorkOrders'] },
-    PENDING_APPROVAL: { allowedRoles: ['canApproveWorkOrder'] },
-    CANCELLED: { allowedRoles: ['canApproveWorkOrder'] },
-  },
-  PENDING_INVOICE: {
-    COMPLETED: { allowedRoles: ['canCloseWorkOrder'] },
     CANCELLED: { allowedRoles: ['canApproveWorkOrder'] },
   },
   // Terminal states — no transitions out
   COMPLETED: {},
-  REJECTED: {},
   CANCELLED: {},
+  // Legacy states — mantenidos para datos existentes, sin nuevas transiciones
+  PENDING_APPROVAL: {},
+  APPROVED: {},
+  PENDING_INVOICE: {},
+  REJECTED: {},
 };
 
 /**

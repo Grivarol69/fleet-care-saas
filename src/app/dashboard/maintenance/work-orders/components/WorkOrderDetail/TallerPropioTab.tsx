@@ -65,6 +65,7 @@ export function TallerPropioTab({ workOrder, currentUser, onRefresh }: any) {
                   item={item}
                   currentUser={currentUser}
                   onRefresh={onRefresh}
+                  showSubtasks={false}
                 />
               ))}
             </div>
@@ -134,6 +135,7 @@ export function TallerPropioTab({ workOrder, currentUser, onRefresh }: any) {
       <InternalTicketDialog
         workOrderId={workOrder.id}
         pendingItems={pendingInternal}
+        workOrder={workOrder}
         open={isTicketDialogOpen}
         onOpenChange={setIsTicketDialogOpen}
         onSuccess={() => {
