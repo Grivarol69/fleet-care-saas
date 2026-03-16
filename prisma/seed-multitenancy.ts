@@ -14,8 +14,9 @@ const prisma = new PrismaClient({ adapter });
 // ========================================
 const PLATFORM_TENANT_ID = '00000000-0000-0000-0000-000000000000';
 const DEMO_TENANT_ID =
-  process.env.DEMO_TENANT_ID || 'org_3AaUgIFnMhblTZ83zNzyerKq9NB'; // Tu org de Clerk
-const ALL_TENANT_IDS = [PLATFORM_TENANT_ID, DEMO_TENANT_ID];
+  process.env.DEMO_TENANT_ID || 'org_3AuH8sVTPmnCYuzEyqPkFlrSVrw'; // Tu org de Clerk
+const TENANT_2_ID = 'org_demo_tenant_2_hfd_sa';
+const ALL_TENANT_IDS = [PLATFORM_TENANT_ID, DEMO_TENANT_ID, TENANT_2_ID];
 
 // ========================================
 // HELPER: Create maintenance program for a vehicle from a template
@@ -125,6 +126,15 @@ async function createProgramFromTemplate(
 }
 
 async function main() {
+  // ========================================
+  // HELPERS FOR REALISTIC DATA
+  // ========================================
+  const now = new Date(2026, 2, 15); // March 15, 2026
+  const getRelativeDate = (monthOffset: number, day: number = 15) => {
+    const d = new Date(2026, 2 - monthOffset, day);
+    return d;
+  };
+
   console.log('==============================================');
   console.log('  SEED MULTI-TENANT - Fleet Care SaaS');
   console.log('==============================================\n');
@@ -133,19 +143,6 @@ async function main() {
   // STEP 1: CLEANUP
   // ========================================
   console.log('1. CLEANUP - Borrando datos existentes...\n');
-
-  // Delete in FK-safe order
-  await prisma.purchaseOrderItem.deleteMany({});
-  await prisma.purchaseOrder.deleteMany({});
-  await prisma.ticketPartEntry.deleteMany({});
-  await prisma.ticketLaborEntry.deleteMany({});
-  await prisma.internalWorkTicket.deleteMany({});
-  await prisma.inventoryMovement.deleteMany({});
-  await prisma.inventoryItem.deleteMany({});
-  await prisma.invoicePayment.deleteMany({});
-  await prisma.partPriceHistory.deleteMany({});
-  await prisma.invoiceItem.deleteMany({});
-  await prisma.invoice.deleteMany({});
   await prisma.financialAlert.deleteMany({});
   await prisma.maintenanceAlert.deleteMany({});
   await prisma.expenseAuditLog.deleteMany({});
@@ -165,6 +162,7 @@ async function main() {
   await prisma.provider.deleteMany({});
   await prisma.mantItemRequest.deleteMany({});
   await prisma.mantItemVehiclePart.deleteMany({});
+  await prisma.mantItemProcedure.deleteMany({});
   await prisma.mantItemPart.deleteMany({});
   await prisma.packageItem.deleteMany({});
   await prisma.maintenancePackage.deleteMany({});
@@ -798,6 +796,17 @@ async function main() {
         description: 'Reemplazo de pastillas desgastadas delanteras',
         mantType: 'CORRECTIVE',
         categoryId: catFrenos.id,
+        type: 'SERVICE', // FIXED
+        isGlobal: true,
+        tenantId: null,
+      },
+    }),
+    prisma.mantItem.create({
+      data: {
+        name: 'Pastillas freno',
+        description: 'Pastillas de Freno',
+        mantType: 'CORRECTIVE',
+        categoryId: catFrenos.id,
         type: 'PART',
         isGlobal: true,
         tenantId: null,
@@ -985,6 +994,7 @@ async function main() {
   const iAceiteReductorEV = items[20];
   const iFlushRefriEV = items[21];
   const iPastillasDelant = items[22];
+  const iPastillasFrenoPart = items[23]; // ADDED
 
   // --- ITEMS DE SERVICIO (mano de obra) ---
   console.log('   Creando items de servicio (mano de obra)...');
@@ -1572,21 +1582,21 @@ async function main() {
       priority: 'MEDIUM',
       items: [
         {
-          mantItemId: iCambioAceite.id,
+          mantItemId: iSvcCambioAceite.id,
           triggerKm: 5000,
           estimatedTime: 0.5,
           order: 1,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroAceite.id,
+          mantItemId: iSvcFiltroAceite.id,
           triggerKm: 5000,
           estimatedTime: 0.3,
           order: 2,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroAire.id,
+          mantItemId: iSvcFiltroAire.id,
           triggerKm: 5000,
           estimatedTime: 0.2,
           order: 3,
@@ -1623,28 +1633,28 @@ async function main() {
       priority: 'MEDIUM',
       items: [
         {
-          mantItemId: iCambioAceite.id,
+          mantItemId: iSvcCambioAceite.id,
           triggerKm: 10000,
           estimatedTime: 0.5,
           order: 1,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroAceite.id,
+          mantItemId: iSvcFiltroAceite.id,
           triggerKm: 10000,
           estimatedTime: 0.3,
           order: 2,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroAire.id,
+          mantItemId: iSvcFiltroAire.id,
           triggerKm: 10000,
           estimatedTime: 0.2,
           order: 3,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroComb.id,
+          mantItemId: iSvcFiltroComb.id,
           triggerKm: 10000,
           estimatedTime: 0.3,
           order: 4,
@@ -1688,28 +1698,28 @@ async function main() {
       priority: 'HIGH',
       items: [
         {
-          mantItemId: iCambioAceite.id,
+          mantItemId: iSvcCambioAceite.id,
           triggerKm: 20000,
           estimatedTime: 0.5,
           order: 1,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroAceite.id,
+          mantItemId: iSvcFiltroAceite.id,
           triggerKm: 20000,
           estimatedTime: 0.3,
           order: 2,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroAire.id,
+          mantItemId: iSvcFiltroAire.id,
           triggerKm: 20000,
           estimatedTime: 0.2,
           order: 3,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroComb.id,
+          mantItemId: iSvcFiltroComb.id,
           triggerKm: 20000,
           estimatedTime: 0.3,
           order: 4,
@@ -1730,14 +1740,14 @@ async function main() {
           priority: 'HIGH',
         },
         {
-          mantItemId: iLiquidoFreno.id,
+          mantItemId: iSvcLiqFreno.id,
           triggerKm: 20000,
           estimatedTime: 0.5,
           order: 7,
           priority: 'HIGH',
         },
         {
-          mantItemId: iAceiteTransm.id,
+          mantItemId: iSvcAceiteTransm.id,
           triggerKm: 20000,
           estimatedTime: 1.2,
           order: 8,
@@ -1753,28 +1763,28 @@ async function main() {
       priority: 'HIGH',
       items: [
         {
-          mantItemId: iCambioAceite.id,
+          mantItemId: iSvcCambioAceite.id,
           triggerKm: 30000,
           estimatedTime: 0.5,
           order: 1,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroAceite.id,
+          mantItemId: iSvcFiltroAceite.id,
           triggerKm: 30000,
           estimatedTime: 0.3,
           order: 2,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroAire.id,
+          mantItemId: iSvcFiltroAire.id,
           triggerKm: 30000,
           estimatedTime: 0.2,
           order: 3,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroComb.id,
+          mantItemId: iSvcFiltroComb.id,
           triggerKm: 30000,
           estimatedTime: 0.3,
           order: 4,
@@ -1795,14 +1805,14 @@ async function main() {
           priority: 'HIGH',
         },
         {
-          mantItemId: iLiquidoFreno.id,
+          mantItemId: iSvcLiqFreno.id,
           triggerKm: 30000,
           estimatedTime: 0.5,
           order: 7,
           priority: 'HIGH',
         },
         {
-          mantItemId: iAceiteTransm.id,
+          mantItemId: iSvcAceiteTransm.id,
           triggerKm: 30000,
           estimatedTime: 1.2,
           order: 8,
@@ -1816,7 +1826,7 @@ async function main() {
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iLiqDireccion.id,
+          mantItemId: iSvcLiqDireccion.id,
           triggerKm: 30000,
           estimatedTime: 0.5,
           order: 10,
@@ -1848,21 +1858,21 @@ async function main() {
       priority: 'MEDIUM',
       items: [
         {
-          mantItemId: iCambioAceite.id,
+          mantItemId: iSvcCambioAceite.id,
           triggerKm: 5000,
           estimatedTime: 0.5,
           order: 1,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroAceite.id,
+          mantItemId: iSvcFiltroAceite.id,
           triggerKm: 5000,
           estimatedTime: 0.3,
           order: 2,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroAire.id,
+          mantItemId: iSvcFiltroAire.id,
           triggerKm: 5000,
           estimatedTime: 0.2,
           order: 3,
@@ -1885,21 +1895,21 @@ async function main() {
       priority: 'MEDIUM',
       items: [
         {
-          mantItemId: iCambioAceite.id,
+          mantItemId: iSvcCambioAceite.id,
           triggerKm: 10000,
           estimatedTime: 0.5,
           order: 1,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroAceite.id,
+          mantItemId: iSvcFiltroAceite.id,
           triggerKm: 10000,
           estimatedTime: 0.3,
           order: 2,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroComb.id,
+          mantItemId: iSvcFiltroComb.id,
           triggerKm: 10000,
           estimatedTime: 0.3,
           order: 3,
@@ -1922,28 +1932,28 @@ async function main() {
       priority: 'HIGH',
       items: [
         {
-          mantItemId: iCambioAceite.id,
+          mantItemId: iSvcCambioAceite.id,
           triggerKm: 20000,
           estimatedTime: 0.5,
           order: 1,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroAceite.id,
+          mantItemId: iSvcFiltroAceite.id,
           triggerKm: 20000,
           estimatedTime: 0.3,
           order: 2,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroAire.id,
+          mantItemId: iSvcFiltroAire.id,
           triggerKm: 20000,
           estimatedTime: 0.2,
           order: 3,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroComb.id,
+          mantItemId: iSvcFiltroComb.id,
           triggerKm: 20000,
           estimatedTime: 0.3,
           order: 4,
@@ -1957,14 +1967,14 @@ async function main() {
           priority: 'HIGH',
         },
         {
-          mantItemId: iLiquidoFreno.id,
+          mantItemId: iSvcLiqFreno.id,
           triggerKm: 20000,
           estimatedTime: 0.5,
           order: 6,
           priority: 'HIGH',
         },
         {
-          mantItemId: iAceiteTransm.id,
+          mantItemId: iSvcAceiteTransm.id,
           triggerKm: 20000,
           estimatedTime: 1.2,
           order: 7,
@@ -1980,28 +1990,28 @@ async function main() {
       priority: 'HIGH',
       items: [
         {
-          mantItemId: iCambioAceite.id,
+          mantItemId: iSvcCambioAceite.id,
           triggerKm: 30000,
           estimatedTime: 0.5,
           order: 1,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroAceite.id,
+          mantItemId: iSvcFiltroAceite.id,
           triggerKm: 30000,
           estimatedTime: 0.3,
           order: 2,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroAire.id,
+          mantItemId: iSvcFiltroAire.id,
           triggerKm: 30000,
           estimatedTime: 0.2,
           order: 3,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroComb.id,
+          mantItemId: iSvcFiltroComb.id,
           triggerKm: 30000,
           estimatedTime: 0.3,
           order: 4,
@@ -2022,14 +2032,14 @@ async function main() {
           priority: 'HIGH',
         },
         {
-          mantItemId: iLiquidoFreno.id,
+          mantItemId: iSvcLiqFreno.id,
           triggerKm: 30000,
           estimatedTime: 0.5,
           order: 7,
           priority: 'HIGH',
         },
         {
-          mantItemId: iAceiteTransm.id,
+          mantItemId: iSvcAceiteTransm.id,
           triggerKm: 30000,
           estimatedTime: 1.2,
           order: 8,
@@ -2068,21 +2078,21 @@ async function main() {
       priority: 'MEDIUM',
       items: [
         {
-          mantItemId: iCambioAceite.id,
+          mantItemId: iSvcCambioAceite.id,
           triggerKm: 5000,
           estimatedTime: 0.5,
           order: 1,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroAceite.id,
+          mantItemId: iSvcFiltroAceite.id,
           triggerKm: 5000,
           estimatedTime: 0.3,
           order: 2,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroAire.id,
+          mantItemId: iSvcFiltroAire.id,
           triggerKm: 5000,
           estimatedTime: 0.2,
           order: 3,
@@ -2105,28 +2115,28 @@ async function main() {
       priority: 'MEDIUM',
       items: [
         {
-          mantItemId: iCambioAceite.id,
+          mantItemId: iSvcCambioAceite.id,
           triggerKm: 10000,
           estimatedTime: 0.5,
           order: 1,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroAceite.id,
+          mantItemId: iSvcFiltroAceite.id,
           triggerKm: 10000,
           estimatedTime: 0.3,
           order: 2,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroComb.id,
+          mantItemId: iSvcFiltroComb.id,
           triggerKm: 10000,
           estimatedTime: 0.3,
           order: 3,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iAceiteTransm.id,
+          mantItemId: iSvcAceiteTransm.id,
           triggerKm: 10000,
           estimatedTime: 1.2,
           order: 4,
@@ -2142,28 +2152,28 @@ async function main() {
       priority: 'HIGH',
       items: [
         {
-          mantItemId: iCambioAceite.id,
+          mantItemId: iSvcCambioAceite.id,
           triggerKm: 20000,
           estimatedTime: 0.5,
           order: 1,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroAceite.id,
+          mantItemId: iSvcFiltroAceite.id,
           triggerKm: 20000,
           estimatedTime: 0.3,
           order: 2,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroAire.id,
+          mantItemId: iSvcFiltroAire.id,
           triggerKm: 20000,
           estimatedTime: 0.2,
           order: 3,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroComb.id,
+          mantItemId: iSvcFiltroComb.id,
           triggerKm: 20000,
           estimatedTime: 0.3,
           order: 4,
@@ -2177,14 +2187,14 @@ async function main() {
           priority: 'HIGH',
         },
         {
-          mantItemId: iLiquidoFreno.id,
+          mantItemId: iSvcLiqFreno.id,
           triggerKm: 20000,
           estimatedTime: 0.5,
           order: 6,
           priority: 'HIGH',
         },
         {
-          mantItemId: iAceiteTransm.id,
+          mantItemId: iSvcAceiteTransm.id,
           triggerKm: 20000,
           estimatedTime: 1.2,
           order: 7,
@@ -2200,28 +2210,28 @@ async function main() {
       priority: 'HIGH',
       items: [
         {
-          mantItemId: iCambioAceite.id,
+          mantItemId: iSvcCambioAceite.id,
           triggerKm: 30000,
           estimatedTime: 0.5,
           order: 1,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroAceite.id,
+          mantItemId: iSvcFiltroAceite.id,
           triggerKm: 30000,
           estimatedTime: 0.3,
           order: 2,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroAire.id,
+          mantItemId: iSvcFiltroAire.id,
           triggerKm: 30000,
           estimatedTime: 0.2,
           order: 3,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroComb.id,
+          mantItemId: iSvcFiltroComb.id,
           triggerKm: 30000,
           estimatedTime: 0.3,
           order: 4,
@@ -2242,14 +2252,14 @@ async function main() {
           priority: 'HIGH',
         },
         {
-          mantItemId: iLiquidoFreno.id,
+          mantItemId: iSvcLiqFreno.id,
           triggerKm: 30000,
           estimatedTime: 0.5,
           order: 7,
           priority: 'HIGH',
         },
         {
-          mantItemId: iAceiteTransm.id,
+          mantItemId: iSvcAceiteTransm.id,
           triggerKm: 30000,
           estimatedTime: 1.2,
           order: 8,
@@ -2288,14 +2298,14 @@ async function main() {
       priority: 'MEDIUM',
       items: [
         {
-          mantItemId: iCambioAceite.id,
+          mantItemId: iSvcCambioAceite.id,
           triggerKm: 10000,
           estimatedTime: 0.5,
           order: 1,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroAceite.id,
+          mantItemId: iSvcFiltroAceite.id,
           triggerKm: 10000,
           estimatedTime: 0.2,
           order: 2,
@@ -2311,28 +2321,28 @@ async function main() {
       priority: 'MEDIUM',
       items: [
         {
-          mantItemId: iCambioAceite.id,
+          mantItemId: iSvcCambioAceite.id,
           triggerKm: 20000,
           estimatedTime: 0.5,
           order: 1,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroAceite.id,
+          mantItemId: iSvcFiltroAceite.id,
           triggerKm: 20000,
           estimatedTime: 0.2,
           order: 2,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroAire.id,
+          mantItemId: iSvcFiltroAire.id,
           triggerKm: 20000,
           estimatedTime: 0.2,
           order: 3,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroHabitaculo.id,
+          mantItemId: iSvcFiltroHabitaculo.id,
           triggerKm: 20000,
           estimatedTime: 0.3,
           order: 4,
@@ -2348,35 +2358,35 @@ async function main() {
       priority: 'HIGH',
       items: [
         {
-          mantItemId: iCambioAceite.id,
+          mantItemId: iSvcCambioAceite.id,
           triggerKm: 60000,
           estimatedTime: 0.5,
           order: 1,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroAceite.id,
+          mantItemId: iSvcFiltroAceite.id,
           triggerKm: 60000,
           estimatedTime: 0.2,
           order: 2,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroAire.id,
+          mantItemId: iSvcFiltroAire.id,
           triggerKm: 60000,
           estimatedTime: 0.2,
           order: 3,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroHabitaculo.id,
+          mantItemId: iSvcFiltroHabitaculo.id,
           triggerKm: 60000,
           estimatedTime: 0.3,
           order: 4,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iCorreaAccesorios.id,
+          mantItemId: iSvcCorreaAcc.id,
           triggerKm: 60000,
           estimatedTime: 1.0,
           order: 5,
@@ -2445,7 +2455,7 @@ async function main() {
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroHabitaculo.id,
+          mantItemId: iSvcFiltroHabitaculo.id,
           triggerKm: 20000,
           estimatedTime: 0.3,
           order: 3,
@@ -2475,14 +2485,14 @@ async function main() {
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroHabitaculo.id,
+          mantItemId: iSvcFiltroHabitaculo.id,
           triggerKm: 40000,
           estimatedTime: 0.3,
           order: 3,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iLiquidoFreno.id,
+          mantItemId: iSvcLiqFreno.id,
           triggerKm: 40000,
           estimatedTime: 1.0,
           order: 4,
@@ -2512,21 +2522,21 @@ async function main() {
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iFiltroHabitaculo.id,
+          mantItemId: iSvcFiltroHabitaculo.id,
           triggerKm: 60000,
           estimatedTime: 0.3,
           order: 3,
           priority: 'MEDIUM',
         },
         {
-          mantItemId: iLiquidoFreno.id,
+          mantItemId: iSvcLiqFreno.id,
           triggerKm: 60000,
           estimatedTime: 1.0,
           order: 4,
           priority: 'HIGH',
         },
         {
-          mantItemId: iAceiteReductorEV.id,
+          mantItemId: iSvcAceiteRedEV.id,
           triggerKm: 60000,
           estimatedTime: 1.0,
           order: 5,
@@ -2753,21 +2763,21 @@ async function main() {
     },
     // Cambio pastillas freno delanteras
     {
-      mantItemId: iPastillasDelant.id,
+      mantItemId: iPastillasFrenoPart.id,
       brandId: toyota.id,
       lineId: hilux.id,
       masterPartId: pBoschPastillas.id,
       qty: 1,
     },
     {
-      mantItemId: iPastillasDelant.id,
+      mantItemId: iPastillasFrenoPart.id,
       brandId: ford.id,
       lineId: ranger.id,
       masterPartId: pBoschPastillas.id,
       qty: 1,
     },
     {
-      mantItemId: iPastillasDelant.id,
+      mantItemId: iPastillasFrenoPart.id,
       brandId: chevrolet.id,
       lineId: dmax.id,
       masterPartId: pBoschPastillas.id,
@@ -2840,13 +2850,7 @@ async function main() {
       masterPartId: pDfReductor.id,
       qty: 1,
     },
-    {
-      mantItemId: iFlushRefriEV.id,
-      brandId: dongfeng.id,
-      lineId: rich6ev.id,
-      masterPartId: pEvCoolant.id,
-      qty: 2, // 2 Gallons
-    },
+    // Removido iFlushRefriEV porque es SERVICE, no PART
   ];
 
   await Promise.all(
@@ -2920,8 +2924,7 @@ async function main() {
   });
 
   // Users - OWNER, MANAGER, TECHNICIAN, PURCHASER
-  const ownerEmail =
-    process.env.DEMO_OWNER_EMAIL || 'guillerivar69+owner@gmail.com';
+  const ownerEmail = process.env.DEMO_OWNER_EMAIL || 'guillerivar69@gmail.com';
   const managerEmail = 'dyaponter+manager@gmail.com';
   const techEmail = 'grivarol69driver+technician@gmail.com';
   const purchaserEmail = 'dyaponter+purchaser@gmail.com';
@@ -3087,7 +3090,7 @@ async function main() {
     prisma.vehicle.create({
       data: {
         tenantId: DEMO_TENANT_ID,
-        licensePlate: 'ABC-123',
+        licensePlate: 'FIN-001',
         brandId: toyota.id,
         lineId: hilux.id,
         typeId: type4x4.id,
@@ -3102,7 +3105,7 @@ async function main() {
     prisma.vehicle.create({
       data: {
         tenantId: DEMO_TENANT_ID,
-        licensePlate: 'DEF-456',
+        licensePlate: 'FIN-002',
         brandId: ford.id,
         lineId: ranger.id,
         typeId: type4x4.id,
@@ -3117,7 +3120,7 @@ async function main() {
     prisma.vehicle.create({
       data: {
         tenantId: DEMO_TENANT_ID,
-        licensePlate: 'GHI-789',
+        licensePlate: 'FIN-003',
         brandId: chevrolet.id,
         lineId: dmax.id,
         typeId: type4x4.id,
@@ -3132,7 +3135,7 @@ async function main() {
     prisma.vehicle.create({
       data: {
         tenantId: DEMO_TENANT_ID,
-        licensePlate: 'JKL-012',
+        licensePlate: 'FIN-004',
         brandId: toyota.id,
         lineId: landCruiser.id,
         typeId: typeSUV.id,
@@ -3144,8 +3147,23 @@ async function main() {
         fuelType: 'GASOLINA',
       },
     }),
+    prisma.vehicle.create({
+      data: {
+        tenantId: DEMO_TENANT_ID,
+        licensePlate: 'FIN-005',
+        brandId: toyota.id,
+        lineId: hilux.id,
+        typeId: type4x4.id,
+        year: 2023,
+        mileage: 12000,
+        color: 'Azul',
+        status: 'ACTIVE',
+        situation: 'AVAILABLE',
+        fuelType: 'DIESEL',
+      },
+    }),
   ]);
-  console.log('   4 vehiculos creados');
+  console.log('   5 vehiculos creados (FIN-001 a FIN-005)');
 
   // Vehicle-Driver assignments
   await Promise.all([
@@ -3294,455 +3312,132 @@ async function main() {
   const tallerCentral = t1TechnicianList.find(t => t.name === 'Taller Central');
   const owner = t1UsersList.find(u => u.role === 'OWNER');
 
-  if (
-    t1VehiclesList.length > 0 &&
-    repuestosToyota &&
-    lubricantesShell &&
-    owner
-  ) {
-    // WO 1: Cambio aceite ABC-123 (completado)
-    const wo1 = await prisma.workOrder.create({
-      data: {
-        tenantId: DEMO_TENANT_ID,
-        vehicleId: t1VehiclesList[0].id,
-        title: 'Mantenimiento 5,000 km - Cambio de aceite',
-        description: 'Servicio preventivo programado',
-        mantType: 'PREVENTIVE',
-        priority: 'MEDIUM',
-        status: 'COMPLETED',
-        workType: 'EXTERNAL',
-        technicianId: tallerCentral?.id,
-        providerId: lubricantesShell?.id,
-        creationMileage: 5000,
-        requestedBy: owner.id,
-        authorizedBy: owner.id,
-        estimatedCost: 450000,
-        actualCost: 485000,
-        startDate: new Date('2025-01-15'),
-        endDate: new Date('2025-01-15'),
-        completionMileage: 5000,
-      },
-    });
-
-    await prisma.workOrderItem.create({
-      data: {
-        workOrderId: wo1.id,
-        mantItemId:
-          t1MantItems.find(i => i.name === 'Cambio aceite motor')?.id || '',
-        tenantId: DEMO_TENANT_ID,
-        description: 'Aceite Shell Helix HX7 10W-40',
-        partNumber: 'SHELL-HELIX-HX7-10W40',
-        brand: 'Shell',
-        supplier: 'Lubricantes Shell',
-        unitPrice: 45000,
-        quantity: 6,
-        totalCost: 270000,
-        purchasedBy: owner.id,
-        masterPartId: pShell.id,
-        itemSource: 'EXTERNAL',
-        status: 'COMPLETED',
-      },
-    });
-
-    await prisma.workOrderItem.create({
-      data: {
-        workOrderId: wo1.id,
-        mantItemId:
-          t1MantItems.find(i => i.name === 'Cambio filtro aceite')?.id || '',
-        tenantId: DEMO_TENANT_ID,
-        description: 'Filtro Aceite BOSCH',
-        partNumber: 'BOSCH-0986AF0134',
-        brand: 'BOSCH',
-        supplier: 'Repuestos Toyota',
-        unitPrice: 28000,
-        quantity: 1,
-        totalCost: 28000,
-        purchasedBy: owner.id,
-        masterPartId: pBoschFiltAce.id,
-        itemSource: 'EXTERNAL',
-        status: 'COMPLETED',
-      },
-    });
-
-    await prisma.workOrderItem.create({
-      data: {
-        workOrderId: wo1.id,
-        mantItemId:
-          t1MantItems.find(i => i.name === 'Cambio filtro aire')?.id || '',
-        tenantId: DEMO_TENANT_ID,
-        description: 'Filtro Aire BOSCH',
-        partNumber: 'BOSCH-F026400364',
-        brand: 'BOSCH',
-        supplier: 'Repuestos Toyota',
-        unitPrice: 42000,
-        quantity: 1,
-        totalCost: 42000,
-        purchasedBy: owner.id,
-        masterPartId: pBoschFiltAire.id,
-        itemSource: 'EXTERNAL',
-        status: 'COMPLETED',
-      },
-    });
-
-    // WO 2: Cambio aceite DEF-456 (completado)
-    const wo2 = await prisma.workOrder.create({
-      data: {
-        tenantId: DEMO_TENANT_ID,
-        vehicleId: t1VehiclesList[1].id,
-        title: 'Mantenimiento 10,000 km',
-        description: 'Servicio preventivo programado',
-        mantType: 'PREVENTIVE',
-        priority: 'MEDIUM',
-        status: 'COMPLETED',
-        workType: 'EXTERNAL',
-        technicianId: tallerCentral?.id,
-        providerId: lubricantesShell?.id,
-        creationMileage: 10000,
-        requestedBy: owner.id,
-        authorizedBy: owner.id,
-        estimatedCost: 520000,
-        actualCost: 545000,
-        startDate: new Date('2025-02-20'),
-        endDate: new Date('2025-02-21'),
-        completionMileage: 10000,
-      },
-    });
-
-    await prisma.workOrderItem.create({
-      data: {
-        workOrderId: wo2.id,
-        mantItemId:
-          t1MantItems.find(i => i.name === 'Cambio aceite motor')?.id || '',
-        tenantId: DEMO_TENANT_ID,
-        description: 'Aceite Mobil Super 3000 5W-40',
-        partNumber: 'MOBIL-SUPER-3000-5W40',
-        brand: 'Mobil',
-        supplier: 'Lubricantes Shell',
-        unitPrice: 58000,
-        quantity: 6,
-        totalCost: 348000,
-        purchasedBy: owner.id,
-        masterPartId: pMobil.id,
-        itemSource: 'EXTERNAL',
-        status: 'COMPLETED',
-      },
-    });
-
-    await prisma.workOrderItem.create({
-      data: {
-        workOrderId: wo2.id,
-        mantItemId:
-          t1MantItems.find(i => i.name === 'Cambio filtro aceite')?.id || '',
-        tenantId: DEMO_TENANT_ID,
-        description: 'Filtro Aceite MANN',
-        partNumber: 'MANN-W920/21',
-        brand: 'Mann',
-        supplier: 'Repuestos Toyota',
-        unitPrice: 32000,
-        quantity: 1,
-        totalCost: 32000,
-        purchasedBy: owner.id,
-        masterPartId: pMannFiltAce.id,
-        itemSource: 'EXTERNAL',
-        status: 'COMPLETED',
-      },
-    });
-
-    // WO 3: Cambio pastillas GHI-789 (completado - correctivo)
-    const wo3 = await prisma.workOrder.create({
-      data: {
-        tenantId: DEMO_TENANT_ID,
-        vehicleId: t1VehiclesList[2].id,
-        title: 'Cambio pastillas freno',
-        description: 'Pastillas delanteras desgaste',
-        mantType: 'CORRECTIVE',
-        priority: 'HIGH',
-        status: 'COMPLETED',
-        workType: 'EXTERNAL',
-        providerId: repuestosToyota?.id,
-        creationMileage: 15000,
-        requestedBy: owner.id,
-        authorizedBy: owner.id,
-        estimatedCost: 185000,
-        actualCost: 198000,
-        startDate: new Date('2025-03-10'),
-        endDate: new Date('2025-03-10'),
-        completionMileage: 15000,
-      },
-    });
-
-    await prisma.workOrderItem.create({
-      data: {
-        workOrderId: wo3.id,
-        mantItemId:
-          t1MantItems.find(i => i.name === 'Cambio pastillas freno delanteras')
-            ?.id || '',
-        tenantId: DEMO_TENANT_ID,
-        description: 'Pastillas Freno Delanteras BOSCH',
-        partNumber: 'BOSCH-0986AB1234',
-        brand: 'BOSCH',
-        supplier: 'Repuestos Toyota',
-        unitPrice: 185000,
-        quantity: 1,
-        totalCost: 185000,
-        purchasedBy: owner.id,
-        masterPartId: pBoschPastillas.id,
-        itemSource: 'EXTERNAL',
-        status: 'COMPLETED',
-      },
-    });
-
-    // WO 4: Mantenimiento JKL-012 (en progreso)
-    const wo4 = await prisma.workOrder.create({
-      data: {
-        tenantId: DEMO_TENANT_ID,
-        vehicleId: t1VehiclesList[3].id,
-        title: 'Mantenimiento 20,000 km',
-        description: 'Servicio preventivo',
-        mantType: 'PREVENTIVE',
-        priority: 'HIGH',
-        status: 'IN_PROGRESS',
-        workType: 'MIXED',
-        technicianId: tallerCentral?.id,
-        creationMileage: 95000,
-        requestedBy: owner.id,
-        authorizedBy: owner.id,
-        estimatedCost: 750000,
-      },
-    });
-
-    await prisma.workOrderItem.create({
-      data: {
-        workOrderId: wo4.id,
-        mantItemId:
-          t1MantItems.find(i => i.name === 'Cambio aceite motor')?.id || '',
-        tenantId: DEMO_TENANT_ID,
-        description: 'Aceite Castrol GTX 15W-40',
-        partNumber: 'CASTROL-GTX-15W40',
-        brand: 'Castrol',
-        supplier: 'Lubricantes Shell',
-        unitPrice: 35000,
-        quantity: 5,
-        totalCost: 175000,
-        purchasedBy: owner.id,
-        masterPartId: pCastrolGTX.id,
-        itemSource: 'EXTERNAL',
-        status: 'PENDING',
-      },
-    });
-
-    console.log('   4 Work Orders creados');
-  }
-
   // ========================================
-  // INVOICES - Tenant 1 (facturas de proveedores)
+  // WORK ORDERS & INVOICES - Tenant 1 (Historical Data 12 Months)
   // ========================================
-  console.log(
-    '   Creando Invoices con Items, Movimientos e Historial de Precios...'
-  );
+  console.log('   Enriqueciendo historial financiero (12 meses)...');
 
-  if (
-    repuestosToyota &&
-    lubricantesShell &&
-    owner &&
-    t1VehiclesList.length > 0
-  ) {
-    // Collect created inventory items to get IDs
-    const t1DbInventory = await prisma.inventoryItem.findMany({
-      where: { tenantId: DEMO_TENANT_ID },
-    });
+  // Categorías de interés para el Dashboard
+  // Categorías de interés para el Dashboard
+  const t1CatMotor =
+    t1MantItems.find(i => i.name.includes('aceite motor'))?.id || '';
+  const t1CatFiltros =
+    t1MantItems.find(i => i.name.includes('filtro aceite'))?.id || '';
+  const t1CatFrenos =
+    t1MantItems.find(i => i.name.includes('pastillas freno'))?.id || '';
+  const t1CatLlantas =
+    t1MantItems.find(i => i.name.includes('neumaticos'))?.id || '';
+  const t1CatSuspension =
+    t1MantItems.find(i => i.name.includes('amortiguadores'))?.id || '';
 
-    const demoInvoicesData = [
-      {
-        number: 'FAC-2025-001',
-        date: '2025-01-16',
-        due: '2025-02-15',
-        supplier: repuestosToyota.id,
-        items: [
-          {
-            masterPartId: pBoschFiltAce.id,
-            desc: 'Filtro Aceite BOSCH 0986AF0134',
-            qty: 6,
-            price: 28000,
-          },
-          {
-            masterPartId: pBoschFiltAire.id,
-            desc: 'Filtro Aire BOSCH F026400364',
-            qty: 4,
-            price: 42000,
-          },
-        ],
-      },
-      {
-        number: 'FAC-2025-002',
-        date: '2025-01-20',
-        due: '2025-02-19',
-        supplier: lubricantesShell.id,
-        items: [
-          {
-            masterPartId: pShell.id,
-            desc: 'Aceite Shell Helix HX7 10W-40',
-            qty: 20,
-            price: 45000,
-          },
-        ],
-      },
-      {
-        number: 'FAC-2025-003',
-        date: '2025-02-05',
-        due: '2025-03-05',
-        supplier: repuestosToyota.id,
-        items: [
-          {
-            masterPartId: pBoschFiltComb.id,
-            desc: 'Filtro Combustible BOSCH',
-            qty: 3,
-            price: 55000,
-          },
-          {
-            masterPartId: pCastrolDOT4.id,
-            desc: 'Liq Frenos Castrol DOT4',
-            qty: 8,
-            price: 22000,
-          },
-        ],
-      },
-      {
-        number: 'FAC-2025-004',
-        date: '2025-02-15',
-        due: '2025-03-15',
-        supplier: repuestosToyota.id, // Pastillas
-        items: [
-          {
-            masterPartId: pBoschPastillas.id,
-            desc: 'Pastillas Freno Delanteras BOSCH',
-            qty: 4,
-            price: 185000,
-          },
-        ],
-      },
-      {
-        number: 'FAC-2025-005',
-        date: '2025-03-01',
-        due: '2025-03-31',
-        supplier: lubricantesShell.id,
-        // Price variation! Trigger financial alert later
-        items: [
-          {
-            masterPartId: pShell.id,
-            desc: 'Aceite Shell Helix HX7 10W-40',
-            qty: 5,
-            price: 58000,
-          },
-        ],
-      },
-      {
-        number: 'FAC-2025-006',
-        date: '2025-03-10',
-        due: '2025-04-09',
-        supplier: repuestosToyota.id,
-        items: [
-          {
-            masterPartId: pBoschFiltAce.id,
-            desc: 'Filtro Aceite BOSCH 0986AF0134',
-            qty: 2,
-            price: 29000,
-          },
-          {
-            masterPartId: pBoschFiltAire.id,
-            desc: 'Filtro Aire BOSCH F026400364',
-            qty: 2,
-            price: 44000,
-          },
-        ],
-      },
-    ];
+  const categories = [
+    { name: 'Motor', itemId: t1CatMotor, basePrice: 450000 },
+    { name: 'Filtros', itemId: t1CatFiltros, basePrice: 120000 },
+    { name: 'Frenos', itemId: t1CatFrenos, basePrice: 350000 },
+    { name: 'Llantas', itemId: t1CatLlantas, basePrice: 850000 },
+    { name: 'Suspension', itemId: t1CatSuspension, basePrice: 600000 },
+  ];
 
-    for (const invData of demoInvoicesData) {
-      let subtotal = 0;
-      invData.items.forEach(i => (subtotal += i.qty * i.price));
-      const tax = subtotal * 0.19;
-      const total = subtotal + tax;
+  if (owner && repuestosToyota && lubricantesShell) {
+    for (let m = 0; m <= 12; m++) {
+      const monthDate = getRelativeDate(m);
+      const isCurrentMonth = m === 0;
 
-      const createdInv = await prisma.invoice.create({
-        data: {
-          tenantId: DEMO_TENANT_ID,
-          invoiceNumber: invData.number,
-          invoiceDate: new Date(invData.date),
-          dueDate: new Date(invData.due),
-          supplierId: invData.supplier,
-          subtotal,
-          taxAmount: tax,
-          totalAmount: total,
-          currency: 'COP',
-          status: 'PAID',
-          approvedBy: owner.id,
-          approvedAt: new Date(invData.date),
-          registeredBy: owner.id,
-        },
-      });
+      // 2-3 OTs por mes
+      const numWOs = isCurrentMonth ? 5 : 2;
 
-      for (const item of invData.items) {
-        const itemSubtotal = item.qty * item.price;
-        const itemTax = itemSubtotal * 0.19;
+      for (let i = 0; i < numWOs; i++) {
+        const vehicle = t1Vehicles[i % t1Vehicles.length];
+        const category = categories[i % categories.length];
+        const isPreventive = i % 2 === 0;
 
+        const wo = await prisma.workOrder.create({
+          data: {
+            tenant: { connect: { id: DEMO_TENANT_ID } },
+            vehicle: { connect: { id: vehicle.id } },
+            title: `${isPreventive ? 'Mantenimiento Preventivo' : 'Reparación'} - ${category.name}`,
+            description: `Servicio mensual de ${category.name.toLowerCase()}`,
+            mantType: (isPreventive ? 'PREVENTIVE' : 'CORRECTIVE') as
+              | 'PREVENTIVE'
+              | 'CORRECTIVE',
+            priority: 'MEDIUM' as 'MEDIUM',
+            status: 'COMPLETED' as 'COMPLETED',
+            workType: 'EXTERNAL' as 'EXTERNAL',
+            provider: (i % 2 === 0 ? lubricantesShell : repuestosToyota)
+              ? {
+                  connect: {
+                    id:
+                      i % 2 === 0 ? lubricantesShell?.id : repuestosToyota?.id,
+                  },
+                }
+              : undefined,
+            creationMileage: vehicle.mileage - m * 2000 - i * 100,
+            requestedBy: owner.id,
+            authorizedBy: owner.id,
+            actualCost: category.basePrice * (1 + Math.random() * 0.2),
+            startDate: monthDate,
+            endDate: monthDate,
+            completionMileage: vehicle.mileage - m * 2000 - i * 100,
+          },
+        });
+
+        // Crear Ítem de OT vinculado
+        const woItem = await prisma.workOrderItem.create({
+          data: {
+            workOrder: { connect: { id: wo.id } },
+            mantItem: { connect: { id: category.itemId as string } },
+            tenant: { connect: { id: DEMO_TENANT_ID } },
+            description: `Servicio de ${category.name}`,
+            unitPrice: Number(wo.actualCost),
+            quantity: 1,
+            totalCost: Number(wo.actualCost),
+            itemSource: 'EXTERNAL' as 'EXTERNAL',
+            status: 'COMPLETED' as 'COMPLETED',
+            purchasedBy: owner.id,
+            supplier: i % 2 === 0 ? 'Lubricantes Shell' : 'Repuestos Toyota',
+          },
+        });
+
+        // Crear Factura VINCULADA
+        const subtotal = Number(wo.actualCost);
+        const tax = subtotal * 0.19;
+        const total = subtotal + tax;
+
+        const inv = await prisma.invoice.create({
+          data: {
+            tenant: { connect: { id: DEMO_TENANT_ID } },
+            workOrder: { connect: { id: wo.id } },
+            invoiceNumber: `FAC-${2026 - m}-${monthDate.getMonth() + 1}-${i}`,
+            invoiceDate: monthDate,
+            dueDate: monthDate,
+            supplier: { connect: { id: wo.providerId! } },
+            subtotal,
+            taxAmount: tax,
+            totalAmount: total,
+            status: isCurrentMonth && i === 0 ? 'APPROVED' : 'PAID', // Una por aprobar en el mes actual
+            approver: { connect: { id: owner.id } },
+            registrar: { connect: { id: owner.id } },
+          },
+        });
+
+        // Crear Item de Factura VINCULADO a Item de OT
         await prisma.invoiceItem.create({
           data: {
-            invoiceId: createdInv.id,
-            tenantId: DEMO_TENANT_ID,
-            masterPartId: item.masterPartId,
-            description: item.desc,
-            quantity: item.qty,
-            unitPrice: item.price,
-            subtotal: itemSubtotal,
+            invoice: { connect: { id: inv.id } },
+            workOrderItem: { connect: { id: woItem.id } }, // Vínculo CRÍTICO para el dashboard
+            tenant: { connect: { id: DEMO_TENANT_ID } },
+            description: woItem.description,
+            quantity: 1,
+            unitPrice: subtotal,
+            subtotal: subtotal,
             taxRate: 19,
-            taxAmount: itemTax,
-            total: itemSubtotal + itemTax,
+            taxAmount: tax,
+            total: total,
           },
         });
-
-        // Price History
-        await prisma.partPriceHistory.create({
-          data: {
-            tenantId: DEMO_TENANT_ID,
-            masterPartId: item.masterPartId,
-            supplierId: invData.supplier,
-            price: item.price,
-            quantity: item.qty,
-            recordedAt: new Date(invData.date),
-          },
-        });
-
-        // Inventory Movement (Simulated as IN)
-        const invItem = t1DbInventory.find(
-          inv => inv.masterPartId === item.masterPartId
-        );
-        if (invItem) {
-          await prisma.inventoryMovement.create({
-            data: {
-              tenantId: DEMO_TENANT_ID,
-              inventoryItemId: invItem.id,
-              movementType: 'PURCHASE',
-              quantity: item.qty,
-              unitCost: item.price,
-              totalCost: itemSubtotal,
-              previousStock: 0,
-              newStock: item.qty,
-              previousAvgCost: 0,
-              newAvgCost: item.price,
-              referenceType: 'INVOICE',
-              referenceId: createdInv.id,
-              performedBy: owner.id,
-              performedAt: new Date(invData.date),
-            },
-          });
-        }
       }
     }
-
-    console.log(
-      `   ${demoInvoicesData.length} Invoices creadas con historial y movimientos`
-    );
+    console.log('   Historial financiero de 12 meses generado con éxito.');
   }
 
   // ========================================
@@ -3760,12 +3455,12 @@ async function main() {
   });
 
   if (t1VehiclesWithProgram.length > 0) {
-    // Alert para ABC-123 (próximo mantenimiento)
-    const abc123 = t1VehiclesWithProgram.find(
-      v => v.licensePlate === 'ABC-123'
+    // Alert para FIN-001 (próximo mantenimiento)
+    const fin001 = t1VehiclesWithProgram.find(
+      v => v.licensePlate === 'FIN-001'
     );
-    if (abc123 && abc123.vehicleMantProgram) {
-      const nextPkg = abc123.vehicleMantProgram.packages.find(
+    if (fin001 && fin001.vehicleMantProgram) {
+      const nextPkg = fin001.vehicleMantProgram.packages.find(
         p => p.status === 'PENDING'
       );
       if (nextPkg && nextPkg.items.length > 0) {
@@ -3773,7 +3468,7 @@ async function main() {
         await prisma.maintenanceAlert.create({
           data: {
             tenantId: DEMO_TENANT_ID,
-            vehicleId: abc123.id,
+            vehicleId: fin001.id,
             programItemId: nextItem.id,
             type: 'PREVENTIVE',
             category: 'ROUTINE',
@@ -3796,17 +3491,17 @@ async function main() {
       }
     }
 
-    // Alert para DEF-456 (crítico - próximo)
-    const def456 = t1VehiclesWithProgram.find(
-      v => v.licensePlate === 'DEF-456'
+    // Alert para FIN-002 (crítico - próximo)
+    const fin002 = t1VehiclesWithProgram.find(
+      v => v.licensePlate === 'FIN-002'
     );
-    if (def456 && def456.vehicleMantProgram) {
+    if (fin002 && fin002.vehicleMantProgram) {
       await prisma.maintenanceAlert.create({
         data: {
           tenantId: DEMO_TENANT_ID,
-          vehicleId: def456.id,
+          vehicleId: fin002.id,
           programItemId:
-            def456.vehicleMantProgram.packages[0]?.items[0]?.id || '',
+            fin002.vehicleMantProgram.packages[0]?.items[0]?.id || '',
           type: 'PREVENTIVE',
           category: 'MAJOR_COMPONENT',
           itemName: 'Cambio filtro combustible',
@@ -3826,17 +3521,17 @@ async function main() {
       });
     }
 
-    // Alert para GHI-789 (pendiente)
-    const ghi789 = t1VehiclesWithProgram.find(
-      v => v.licensePlate === 'GHI-789'
+    // Alert para FIN-003 (pendiente)
+    const fin003 = t1VehiclesWithProgram.find(
+      v => v.licensePlate === 'FIN-003'
     );
-    if (ghi789 && ghi789.vehicleMantProgram) {
+    if (fin003 && fin003.vehicleMantProgram) {
       await prisma.maintenanceAlert.create({
         data: {
           tenantId: DEMO_TENANT_ID,
-          vehicleId: ghi789.id,
+          vehicleId: fin003.id,
           programItemId:
-            ghi789.vehicleMantProgram.packages[0]?.items[0]?.id || '',
+            fin003.vehicleMantProgram.packages[0]?.items[0]?.id || '',
           type: 'PREVENTIVE',
           category: 'ROUTINE',
           itemName: 'Rotación neumaticos',
@@ -3898,21 +3593,21 @@ async function main() {
 
   console.log('   1 Financial Alert creado');
 
-  console.log(
-    `\n   Demo Tenant "${(await prisma.tenant.findUnique({ where: { id: DEMO_TENANT_ID } }))?.name}" COMPLETO.\n`
-  );
+  const t1TenantSummary = await prisma.tenant.findUnique({
+    where: { id: DEMO_TENANT_ID },
+  });
+  console.log(`\n   Demo Tenant "${t1TenantSummary?.name}" COMPLETO.\n`);
 
   // ========================================
   // SUMMARY
   // ========================================
-  /*
   // STEP 5: TENANT 2 - HFD SA
   // ========================================
   console.log('5. TENANT 2 - HFD SA...\n');
 
   const tenant2 = await prisma.tenant.create({
     data: {
-      id: DEMO_TENANT_ID,
+      id: TENANT_2_ID,
       name: 'HFD SA',
       slug: 'hfd-sa',
       country: 'CO',
@@ -3924,7 +3619,7 @@ async function main() {
   // Users (emails reales de Clerk para poder loguearse)
   const t2OwnerUser = await prisma.user.create({
     data: {
-      tenantId: DEMO_TENANT_ID,
+      tenantId: TENANT_2_ID,
       email: 'grivarol69@gmail.com',
       firstName: 'Guillermo',
       lastName: 'Rivarola',
@@ -3934,7 +3629,7 @@ async function main() {
   });
   await prisma.user.create({
     data: {
-      tenantId: DEMO_TENANT_ID,
+      tenantId: TENANT_2_ID,
       email: 'grivarol69driver@gmail.com',
       firstName: 'Yeison',
       lastName: 'Montaño',
@@ -3944,7 +3639,7 @@ async function main() {
   });
   await prisma.user.create({
     data: {
-      tenantId: DEMO_TENANT_ID,
+      tenantId: TENANT_2_ID,
       email: 'grivarol1975@gmail.com',
       firstName: 'Josue',
       lastName: 'Caro',
@@ -3958,7 +3653,7 @@ async function main() {
   await Promise.all([
     prisma.provider.create({
       data: {
-        tenantId: DEMO_TENANT_ID,
+        tenantId: TENANT_2_ID,
         name: 'Filtros Col',
         specialty: 'FILTROS',
         status: 'ACTIVE',
@@ -3973,7 +3668,7 @@ async function main() {
     }),
     prisma.provider.create({
       data: {
-        tenantId: DEMO_TENANT_ID,
+        tenantId: TENANT_2_ID,
         name: 'Taller Norte',
         specialty: 'SERVICIOS_GENERALES',
         status: 'ACTIVE',
@@ -3988,7 +3683,7 @@ async function main() {
     }),
     prisma.provider.create({
       data: {
-        tenantId: DEMO_TENANT_ID,
+        tenantId: TENANT_2_ID,
         name: 'Electricidad Auto',
         specialty: 'ELECTRICO',
         status: 'ACTIVE',
@@ -4008,7 +3703,7 @@ async function main() {
   await Promise.all([
     prisma.technician.create({
       data: {
-        tenantId: DEMO_TENANT_ID,
+        tenantId: TENANT_2_ID,
         name: 'Taller Servicios',
         specialty: 'ELECTRICO',
         status: 'ACTIVE',
@@ -4017,7 +3712,7 @@ async function main() {
     }),
     prisma.technician.create({
       data: {
-        tenantId: DEMO_TENANT_ID,
+        tenantId: TENANT_2_ID,
         name: 'Mecanica Express',
         specialty: 'GENERAL',
         status: 'ACTIVE',
@@ -4031,7 +3726,7 @@ async function main() {
   const t2Drivers = await Promise.all([
     prisma.driver.create({
       data: {
-        tenantId: DEMO_TENANT_ID,
+        tenantId: TENANT_2_ID,
         name: 'Alberto Ruiz',
         licenseNumber: 'LIC-T2-001',
         status: 'ACTIVE',
@@ -4039,7 +3734,7 @@ async function main() {
     }),
     prisma.driver.create({
       data: {
-        tenantId: DEMO_TENANT_ID,
+        tenantId: TENANT_2_ID,
         name: 'Sandra Castro',
         licenseNumber: 'LIC-T2-002',
         status: 'ACTIVE',
@@ -4052,7 +3747,7 @@ async function main() {
   const t2Vehicles = await Promise.all([
     prisma.vehicle.create({
       data: {
-        tenantId: DEMO_TENANT_ID,
+        tenantId: TENANT_2_ID,
         licensePlate: 'XYZ-111',
         brandId: chevrolet.id,
         lineId: dmax.id,
@@ -4067,7 +3762,7 @@ async function main() {
     }),
     prisma.vehicle.create({
       data: {
-        tenantId: DEMO_TENANT_ID,
+        tenantId: TENANT_2_ID,
         licensePlate: 'XYZ-222',
         brandId: mitsubishi.id,
         lineId: l200.id,
@@ -4082,7 +3777,7 @@ async function main() {
     }),
     prisma.vehicle.create({
       data: {
-        tenantId: DEMO_TENANT_ID,
+        tenantId: TENANT_2_ID,
         licensePlate: 'XYZ-333',
         brandId: ford.id,
         lineId: ranger.id,
@@ -4097,7 +3792,7 @@ async function main() {
     }),
     prisma.vehicle.create({
       data: {
-        tenantId: DEMO_TENANT_ID,
+        tenantId: TENANT_2_ID,
         licensePlate: 'XYZ-444',
         brandId: toyota.id,
         lineId: hilux.id,
@@ -4117,7 +3812,7 @@ async function main() {
   await Promise.all([
     prisma.vehicleDriver.create({
       data: {
-        tenantId: DEMO_TENANT_ID,
+        tenantId: TENANT_2_ID,
         vehicleId: t2Vehicles[0].id,
         driverId: t2Drivers[0].id,
         isPrimary: true,
@@ -4126,7 +3821,7 @@ async function main() {
     }),
     prisma.vehicleDriver.create({
       data: {
-        tenantId: DEMO_TENANT_ID,
+        tenantId: TENANT_2_ID,
         vehicleId: t2Vehicles[1].id,
         driverId: t2Drivers[1].id,
         isPrimary: true,
@@ -4140,7 +3835,7 @@ async function main() {
   console.log('   Creando programas de mantenimiento...');
   // XYZ-111 D-MAX 8.5K -> 5K COMPLETED, 10K PENDING
   await createProgramFromTemplate(
-    DEMO_TENANT_ID,
+    TENANT_2_ID,
     t2Vehicles[0].id,
     'D-MAX XYZ-111',
     tplDmax.id,
@@ -4152,7 +3847,7 @@ async function main() {
   // XYZ-222 L200 35K -> no template for L200, skip
   // XYZ-333 Ranger 58K -> all COMPLETED, next ~35K
   await createProgramFromTemplate(
-    DEMO_TENANT_ID,
+    TENANT_2_ID,
     t2Vehicles[2].id,
     'Ranger XYZ-333',
     tplRanger.id,
@@ -4163,7 +3858,7 @@ async function main() {
   );
   // XYZ-444 Hilux 82K -> all COMPLETED, next ~35K
   await createProgramFromTemplate(
-    DEMO_TENANT_ID,
+    TENANT_2_ID,
     t2Vehicles[3].id,
     'Hilux XYZ-444',
     tplHilux.id,
@@ -4202,7 +3897,7 @@ async function main() {
   for (const inv of t2InventoryData) {
     await prisma.inventoryItem.create({
       data: {
-        tenantId: DEMO_TENANT_ID,
+        tenantId: TENANT_2_ID,
         masterPartId: inv.masterPartId,
         warehouse: 'PRINCIPAL',
         quantity: inv.quantity,
@@ -4219,22 +3914,32 @@ async function main() {
   // WORK ORDERS - Tenant 2
   // ========================================
   console.log('   Creando Work Orders Tenant 2...');
-  
-  const t2VehiclesList = await prisma.vehicle.findMany({ where: { tenantId: DEMO_TENANT_ID } });
-  const t2ProviderList = await prisma.provider.findMany({ where: { tenantId: DEMO_TENANT_ID } });
-  const t2TechnicianList = await prisma.technician.findMany({ where: { tenantId: DEMO_TENANT_ID } });
-  const t2UsersList = await prisma.user.findMany({ where: { tenantId: DEMO_TENANT_ID } });
-  const t2MantItems = await prisma.mantItem.findMany({ where: { isGlobal: true } });
-  
+
+  const t2VehiclesList = await prisma.vehicle.findMany({
+    where: { tenantId: TENANT_2_ID },
+  });
+  const t2ProviderList = await prisma.provider.findMany({
+    where: { tenantId: TENANT_2_ID },
+  });
+  const t2TechnicianList = await prisma.technician.findMany({
+    where: { tenantId: TENANT_2_ID },
+  });
+  const t2UsersList = await prisma.user.findMany({
+    where: { tenantId: TENANT_2_ID },
+  });
+  const t2MantItems = await prisma.mantItem.findMany({
+    where: { isGlobal: true },
+  });
+
   const filtrosCol = t2ProviderList.find(p => p.name === 'Filtros Col');
   const tallerNorte = t2ProviderList.find(p => p.name === 'Taller Norte');
   const t2OwnerUserUser = t2UsersList.find(u => u.role === 'OWNER');
-  
+
   if (t2VehiclesList.length > 0 && filtrosCol && t2OwnerUserUser) {
     // WO 1: Mantenimiento XYZ-111
     const wo1 = await prisma.workOrder.create({
       data: {
-        tenantId: DEMO_TENANT_ID,
+        tenantId: TENANT_2_ID,
         vehicleId: t2VehiclesList[0].id,
         title: 'Mantenimiento 10,000 km',
         description: 'Servicio preventivo',
@@ -4253,12 +3958,13 @@ async function main() {
         completionMileage: 10000,
       },
     });
-    
+
     await prisma.workOrderItem.create({
       data: {
         workOrderId: wo1.id,
-        mantItemId: t2MantItems.find(i => i.name === 'Cambio aceite motor')?.id || '',
-        tenantId: DEMO_TENANT_ID,
+        mantItemId:
+          t2MantItems.find(i => i.name === 'Cambio aceite motor')?.id || '',
+        tenantId: TENANT_2_ID,
         description: 'Aceite Castrol GTX 15W-40',
         partNumber: 'CASTROL-GTX-15W40',
         brand: 'Castrol',
@@ -4272,11 +3978,11 @@ async function main() {
         status: 'COMPLETED',
       },
     });
-    
+
     // WO 2: Cambio filtro
     const wo2 = await prisma.workOrder.create({
       data: {
-        tenantId: DEMO_TENANT_ID,
+        tenantId: TENANT_2_ID,
         vehicleId: t2VehiclesList[1].id,
         title: 'Cambio filtros',
         description: 'Filtros de aceite y aire',
@@ -4295,12 +4001,13 @@ async function main() {
         completionMileage: 35000,
       },
     });
-    
+
     await prisma.workOrderItem.create({
       data: {
         workOrderId: wo2.id,
-        mantItemId: t2MantItems.find(i => i.name === 'Cambio filtro aceite')?.id || '',
-        tenantId: DEMO_TENANT_ID,
+        mantItemId:
+          t2MantItems.find(i => i.name === 'Cambio filtro aceite')?.id || '',
+        tenantId: TENANT_2_ID,
         description: 'Filtro Aceite MANN',
         partNumber: 'MANN-W920/21',
         brand: 'Mann',
@@ -4314,12 +4021,13 @@ async function main() {
         status: 'COMPLETED',
       },
     });
-    
+
     await prisma.workOrderItem.create({
       data: {
         workOrderId: wo2.id,
-        mantItemId: t2MantItems.find(i => i.name === 'Cambio filtro aire')?.id || '',
-        tenantId: DEMO_TENANT_ID,
+        mantItemId:
+          t2MantItems.find(i => i.name === 'Cambio filtro aire')?.id || '',
+        tenantId: TENANT_2_ID,
         description: 'Filtro Aire MANN',
         partNumber: 'MANN-C25114',
         brand: 'Mann',
@@ -4333,11 +4041,11 @@ async function main() {
         status: 'COMPLETED',
       },
     });
-    
+
     // WO 3: Ranger XYZ-333
     const wo3 = await prisma.workOrder.create({
       data: {
-        tenantId: DEMO_TENANT_ID,
+        tenantId: TENANT_2_ID,
         vehicleId: t2VehiclesList[2].id,
         title: 'Mantenimiento 60,000 km',
         description: 'Servicio mayor',
@@ -4357,7 +4065,7 @@ async function main() {
         completionMileage: 60000,
       },
     });
-    
+
     console.log('   3 Work Orders Tenant 2 creados');
   }
 
@@ -4365,11 +4073,11 @@ async function main() {
   // INVOICES - Tenant 2
   // ========================================
   console.log('   Creando Invoices Tenant 2...');
-  
+
   if (filtrosCol && t2OwnerUser) {
     const inv1 = await prisma.invoice.create({
       data: {
-        tenantId: DEMO_TENANT_ID,
+        tenantId: TENANT_2_ID,
         invoiceNumber: 'FAC-HFD-2025-001',
         invoiceDate: new Date('2025-02-02'),
         dueDate: new Date('2025-03-02'),
@@ -4384,11 +4092,11 @@ async function main() {
         registeredBy: t2OwnerUser.id,
       },
     });
-    
+
     await prisma.invoiceItem.create({
       data: {
         invoiceId: inv1.id,
-        tenantId: DEMO_TENANT_ID,
+        tenantId: TENANT_2_ID,
         masterPartId: pCastrolGTX.id,
         description: 'Aceite Castrol GTX 15W-40',
         quantity: 5,
@@ -4399,10 +4107,10 @@ async function main() {
         total: 208250,
       },
     });
-    
+
     const inv2 = await prisma.invoice.create({
       data: {
-        tenantId: DEMO_TENANT_ID,
+        tenantId: TENANT_2_ID,
         invoiceNumber: 'FAC-HFD-2025-002',
         invoiceDate: new Date('2025-02-16'),
         dueDate: new Date('2025-03-16'),
@@ -4417,11 +4125,11 @@ async function main() {
         registeredBy: t2OwnerUser.id,
       },
     });
-    
+
     await prisma.invoiceItem.create({
       data: {
         invoiceId: inv2.id,
-        tenantId: DEMO_TENANT_ID,
+        tenantId: TENANT_2_ID,
         masterPartId: pMannFiltAce.id,
         description: 'Filtro Aceite MANN W920/21',
         quantity: 1,
@@ -4432,11 +4140,11 @@ async function main() {
         total: 38080,
       },
     });
-    
+
     await prisma.invoiceItem.create({
       data: {
         invoiceId: inv2.id,
-        tenantId: DEMO_TENANT_ID,
+        tenantId: TENANT_2_ID,
         masterPartId: pMannFiltAire.id,
         description: 'Filtro Aire MANN C25114',
         quantity: 1,
@@ -4447,7 +4155,7 @@ async function main() {
         total: 57120,
       },
     });
-    
+
     console.log('   2 Invoices Tenant 2 creadas');
   }
 
@@ -4455,20 +4163,27 @@ async function main() {
   // MAINTENANCE ALERTS - Tenant 2
   // ========================================
   console.log('   Creando Maintenance Alerts Tenant 2...');
-  
+
   const t2VehiclesWithProgram = await prisma.vehicle.findMany({
-    where: { tenantId: DEMO_TENANT_ID },
-    include: { vehicleMantProgram: { include: { packages: { include: { items: true } } } } }
+    where: { tenantId: TENANT_2_ID },
+    include: {
+      vehicleMantProgram: {
+        include: { packages: { include: { items: true } } },
+      },
+    },
   });
-  
+
   if (t2VehiclesWithProgram.length > 0) {
-    const xyz111 = t2VehiclesWithProgram.find(v => v.licensePlate === 'XYZ-111');
+    const xyz111 = t2VehiclesWithProgram.find(
+      v => v.licensePlate === 'XYZ-111'
+    );
     if (xyz111 && xyz111.vehicleMantProgram) {
       await prisma.maintenanceAlert.create({
         data: {
-          tenantId: DEMO_TENANT_ID,
+          tenantId: TENANT_2_ID,
           vehicleId: xyz111.id,
-          programItemId: xyz111.vehicleMantProgram.packages[0]?.items[0]?.id || '',
+          programItemId:
+            xyz111.vehicleMantProgram.packages[0]?.items[0]?.id || '',
           type: 'PREVENTIVE',
           category: 'ROUTINE',
           itemName: 'Cambio filtro combustible',
@@ -4485,12 +4200,11 @@ async function main() {
         },
       });
     }
-    
+
     console.log('   1 Maintenance Alert Tenant 2 creado');
   }
 
   console.log(`\n   Tenant 2 COMPLETO.\n`);
-  */
 
   // Suppress unused variable warnings
   void ALL_TENANT_IDS;
@@ -4519,7 +4233,7 @@ async function main() {
   console.log('  - SUPER_ADMIN: grivarol69@gmail.com');
 
   console.log('\nDEMO TENANT:');
-  console.log(`  - ID: ${DEMO_TENANT_ID}`);
+  console.log(`  - ID: ${TENANT_2_ID}`);
   console.log(`  - OWNER: ${ownerEmail}`);
   console.log(`  - MANAGER: ${managerEmail}`);
   console.log(`  - TECHNICIAN: ${techEmail}`);
@@ -4552,7 +4266,7 @@ async function main() {
 
   const procAceite = await prisma.mantItemProcedure.create({
     data: {
-      mantItemId: iCambioAceite.id,
+      mantItemId: iSvcCambioAceite.id,
       isGlobal: true,
       tenantId: null,
     },
@@ -4576,7 +4290,7 @@ async function main() {
 
   const procPastillas = await prisma.mantItemProcedure.create({
     data: {
-      mantItemId: iPastillasDelant.id,
+      mantItemId: iSvcPastillasDelant.id,
       isGlobal: true,
       tenantId: null,
     },

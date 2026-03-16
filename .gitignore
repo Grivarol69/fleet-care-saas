@@ -34,6 +34,8 @@ check_db_count.js
 # Playwright test artifacts
 playwright-report/
 test-results/
+playwright/.auth/
+.env.e2e
 
 # debug
 npm-debug.log*
