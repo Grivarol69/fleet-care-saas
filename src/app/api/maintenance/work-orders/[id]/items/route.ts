@@ -196,6 +196,7 @@ export async function POST(
           : itemSource === 'INTERNAL_STOCK'
             ? 'Internal Inventory'
             : 'TBD',
+        providerId: providerId || null,
         purchasedBy: user.id,
         status: 'PENDING',
         // Link closure type if internal
@@ -203,6 +204,7 @@ export async function POST(
       },
       include: {
         mantItem: true,
+        provider: true,
       },
     });
 

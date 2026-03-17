@@ -79,10 +79,10 @@ export function CierreTab({ workOrder, currentUser, onRefresh }: any) {
   const variacion =
     estimado > 0 ? ((costoTotal - estimado) / estimado) * 100 : 0;
 
+  const pendingItems = items.filter(
+    (i: any) => !['COMPLETED', 'CANCELLED'].includes(i.status)
+  );
   const blockers = [
-    ...items
-      .filter((i: any) => !['COMPLETED', 'CANCELLED'].includes(i.status))
-      .map((i: any) => `Ítem "${i.mantItem.name}" está sin completar`),
     ...(workOrder.purchaseOrders || [])
       .filter((po: any) => !['INVOICED', 'CANCELLED'].includes(po.status))
       .map((po: any) => `OC ${po.orderNumber} no tiene factura vinculada`),
@@ -254,8 +254,9 @@ export function CierreTab({ workOrder, currentUser, onRefresh }: any) {
                   </span>
                   <span className="text-muted-foreground">→</span>
                   <span
-                    className={`font-semibold flex items-center gap-1 ${Math.abs(variacion) > 15 ? 'text-red-600' : ''
-                      }`}
+                    className={`font-semibold flex items-center gap-1 ${
+                      Math.abs(variacion) > 15 ? 'text-red-600' : ''
+                    }`}
                   >
                     {Math.abs(variacion) > 15 && (
                       <AlertTriangle className="h-4 w-4" />
@@ -276,11 +277,20 @@ export function CierreTab({ workOrder, currentUser, onRefresh }: any) {
           <CardTitle className="text-lg">Checklist de Cierre</CardTitle>
         </CardHeader>
         <CardContent>
+          {pendingItems.length > 0 && (
+            <Alert className="bg-amber-50 border-amber-200 mb-3">
+              <AlertDescription className="text-amber-800 text-sm">
+                {pendingItems.length} ítem(s) sin completar serán marcados como
+                completados al cerrar la OT.
+              </AlertDescription>
+            </Alert>
+          )}
           {canClose ? (
             <Alert className="bg-green-50 border-green-200">
               <AlertDescription className="text-green-700 font-medium">
-                La OT está lista para cerrar. Todos los ítems completados y OCs
-                facturadas.
+                La OT está lista para cerrar.
+                {pendingItems.length === 0 &&
+                  ' Todos los ítems completados y OCs facturadas.'}
               </AlertDescription>
             </Alert>
           ) : (
