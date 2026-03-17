@@ -31,7 +31,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { ChevronDown, Loader2, Trash2, Search } from 'lucide-react';
+import {
+  ChevronDown,
+  Loader2,
+  Trash2,
+  Search,
+  PackageCheck,
+  PackageX,
+} from 'lucide-react';
 import { useToast } from '@/components/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
 import { canViewCosts } from '@/lib/permissions';
@@ -61,6 +68,7 @@ type WorkOrderItemSummary = {
   provider: { id: string; name: string } | null;
   purchaseOrderItems: Array<{ id: string }>;
   supplier?: string | null;
+  masterPartId?: string | null;
   mantItem: {
     id: string;
     name: string;
@@ -119,6 +127,12 @@ export function WorkItemRow({
   const [isTogglingSource, setIsTogglingSource] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
   const [isUpdatingProvider, setIsUpdatingProvider] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [stockInfo, setStockInfo] = useState<{
+    quantity: number;
+    checked: boolean;
+  } | null>(null);
+  const [isCheckingStock, setIsCheckingStock] = useState(false);
 
   const hasActivePO = (item.purchaseOrderItems?.length ?? 0) > 0;
 
@@ -195,6 +209,42 @@ export function WorkItemRow({
         description: 'No se pudo actualizar la subtarea',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleUpdateStatus = async (newStatus: string) => {
+    setIsUpdatingStatus(true);
+    try {
+      await axios.patch(
+        `/api/maintenance/work-orders/${workOrderId}/items/${item.id}`,
+        { status: newStatus }
+      );
+      onRefresh();
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'No se pudo actualizar el estado del ítem',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const handleCheckStock = async () => {
+    if (!item.masterPartId) return;
+    setIsCheckingStock(true);
+    try {
+      const res = await axios.get(
+        `/api/inventory/items?masterPartId=${encodeURIComponent(item.masterPartId)}`
+      );
+      const qty =
+        res.data && res.data.length > 0 ? Number(res.data[0].quantity) : 0;
+      setStockInfo({ quantity: qty, checked: true });
+    } catch {
+      setStockInfo({ quantity: 0, checked: true });
+    } finally {
+      setIsCheckingStock(false);
     }
   };
 
@@ -380,6 +430,79 @@ export function WorkItemRow({
 
         <CollapsibleContent className="border-t bg-muted/20">
           <div className="p-4 space-y-4">
+            {/* Item status + stock actions */}
+            {item.status !== 'CANCELLED' && (
+              <div className="flex items-center justify-between gap-4 py-1">
+                <span className="text-xs font-medium uppercase text-muted-foreground">
+                  Estado del ítem
+                </span>
+                <div className="flex items-center gap-2">
+                  {/* Stock check for internal PART items */}
+                  {item.itemSource === 'INTERNAL_STOCK' &&
+                    item.mantItem.type === 'PART' &&
+                    item.masterPartId &&
+                    item.status !== 'COMPLETED' && (
+                      <div className="flex items-center gap-2">
+                        {stockInfo?.checked ? (
+                          stockInfo.quantity >= item.quantity ? (
+                            <Badge
+                              variant="outline"
+                              className="bg-green-50 text-green-700 border-green-200 flex items-center gap-1"
+                            >
+                              <PackageCheck className="h-3 w-3" />
+                              Stock disponible ({stockInfo.quantity} und)
+                            </Badge>
+                          ) : (
+                            <Badge
+                              variant="outline"
+                              className="bg-red-50 text-red-700 border-red-200 flex items-center gap-1"
+                            >
+                              <PackageX className="h-3 w-3" />
+                              Sin stock ({stockInfo.quantity} und)
+                            </Badge>
+                          )
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs"
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleCheckStock();
+                            }}
+                            disabled={isCheckingStock}
+                          >
+                            {isCheckingStock && (
+                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                            )}
+                            Verificar stock
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  <Select
+                    value={item.status}
+                    onValueChange={handleUpdateStatus}
+                    disabled={isUpdatingStatus}
+                  >
+                    <SelectTrigger className="h-7 text-xs w-[140px]">
+                      {isUpdatingStatus ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <SelectValue />
+                      )}
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PENDING">Pendiente</SelectItem>
+                      <SelectItem value="IN_PROGRESS">En Progreso</SelectItem>
+                      <SelectItem value="COMPLETED">Completado</SelectItem>
+                      <SelectItem value="CANCELLED">Cancelado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
             {item.notes && (
               <div className="space-y-1">
                 <p className="text-xs font-medium uppercase text-muted-foreground px-1">
