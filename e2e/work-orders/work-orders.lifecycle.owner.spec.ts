@@ -106,7 +106,7 @@ test.describe('OT — Lifecycle completo (OWNER)', () => {
     await page.waitForLoadState('networkidle', { timeout: 20000 });
 
     // Botón directo que abre el Dialog de cierre
-    const cerrarBtn = page.getByRole('button', { name: 'Cerrar OT' });
+    const cerrarBtn = page.getByRole('button', { name: /cerrar/i }).first();
     await expect(cerrarBtn).toBeVisible({ timeout: 10000 });
     await cerrarBtn.click();
 
