@@ -62,7 +62,9 @@ test.describe('OT — Lifecycle completo (OWNER)', () => {
     await page.waitForLoadState('networkidle', { timeout: 20000 });
 
     // Badge de estado renderizado por WorkOrderHeader via statusConfig
-    await expect(page.getByText('Abierta')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Abierta').first()).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -83,7 +85,9 @@ test.describe('OT — Lifecycle completo (OWNER)', () => {
     await iniciarBtn.click();
 
     // La transición actualiza el badge sin confirmación adicional
-    await expect(page.getByText('En Trabajo')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText('En Trabajo').first()).toBeVisible({
+      timeout: 15000,
+    });
   });
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -117,7 +121,9 @@ test.describe('OT — Lifecycle completo (OWNER)', () => {
     await confirmarBtn.click();
 
     // Assertar badge de estado "Por Cerrar" (PENDING_INVOICE)
-    await expect(page.getByText('Por Cerrar')).toBeVisible({ timeout: 20000 });
+    await expect(page.getByText('Por Cerrar').first()).toBeVisible({
+      timeout: 20000,
+    });
 
     // Toast generado por el ticket PDF — título "Ticket descargado" si se generó,
     // o "Error al generar PDF" si falló la generación client-side del PDF.
@@ -149,7 +155,9 @@ test.describe('OT — Lifecycle completo (OWNER)', () => {
     await expect(completarBtn).toBeVisible({ timeout: 10000 });
     await completarBtn.click();
 
-    await expect(page.getByText('Cerrada')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText('Cerrada').first()).toBeVisible({
+      timeout: 15000,
+    });
   });
 
   // ─────────────────────────────────────────────────────────────────────────────
