@@ -5,9 +5,9 @@ import { canManageMaintenancePrograms } from '@/lib/permissions';
 
 const cloneSchema = z.object({
   templateId: z.string(),
-  name: z.string().min(1, "Name is required"),
-  vehicleBrandId: z.string().min(1, "Brand is required"),
-  vehicleLineId: z.string().min(1, "Line is required"),
+  name: z.string().min(1, 'Name is required'),
+  vehicleBrandId: z.string().min(1, 'Brand is required'),
+  vehicleLineId: z.string().min(1, 'Line is required'),
 });
 
 export async function POST(req: Request) {
@@ -70,17 +70,15 @@ export async function POST(req: Request) {
             estimatedCost: pkg.estimatedCost,
             estimatedTime: pkg.estimatedTime,
             isPattern: pkg.isPattern,
-            tenantId: user.tenantId,
             // Deep copy items
             packageItems: {
               create: pkg.packageItems.map(item => ({
-                mantItemId: item.mantItemId, // Reference the same item (Items are usually global or compatible)
+                mantItemId: item.mantItemId,
                 triggerKm: item.triggerKm,
                 priority: item.priority,
                 estimatedTime: item.estimatedTime,
                 technicalNotes: item.technicalNotes,
                 isOptional: item.isOptional,
-                tenantId: user.tenantId,
               })),
             },
           })),
