@@ -1,20 +1,16 @@
 /**
  * OT — Lifecycle completo (OWNER)
  *
- * Cubre la transición de estados: PENDING → IN_PROGRESS → PENDING_INVOICE.
+ * Cubre el ciclo completo: PENDING → IN_PROGRESS → PENDING_INVOICE → COMPLETED.
  * Corre en el proyecto `as-owner` (playwright.config.ts) gracias al glob *.owner.spec.ts.
- * El storageState owner.json es inyectado automáticamente por el runner.
  *
- * Notas de implementación basadas en WorkOrderHeader.tsx:
- * - No hay DropdownMenu: los botones de transición son <Button> directos.
- * - PENDING      → botón "Iniciar trabajo" (transition IN_PROGRESS, sin confirm).
- * - IN_PROGRESS  → botón "Cerrar OT" abre Dialog con input de km y botón "Confirmar cierre".
- * - PENDING_INVOICE → no hay botón de transición en el header (estado terminal visible).
- * - Toast de ticket: título "Ticket descargado" o "Error al generar PDF".
- *
- * El estado COMPLETED no tiene botón de acción en WorkOrderHeader para rol OWNER.
- * El test 4 del spec original se omite porque el campo PENDING_INVOICE → COMPLETED
- * no está expuesto en la UI del header (renderActionButtons solo cubre PENDING e IN_PROGRESS).
+ * Notas de implementación:
+ * - La WO se crea via API (CORRECTIVE, sin alertIds) para evitar la restricción
+ *   de "un vehículo no puede tener dos WOs activas simultáneas" que bloquea el UI de alertas.
+ * - Transiciones via UI: botones directos en WorkOrderHeader (sin DropdownMenu).
+ * - PENDING      → "Iniciar trabajo" (sin confirm).
+ * - IN_PROGRESS  → "Cerrar OT" → Dialog km → "Confirmar cierre".
+ * - PENDING_INVOICE → "Marcar como Completada" (sin confirm).
  */
 import { test, expect } from '@playwright/test';
 
@@ -23,69 +19,36 @@ test.describe.configure({ mode: 'serial' });
 test.describe('OT — Lifecycle completo (OWNER)', () => {
   let woId: string;
 
-  test.beforeAll(async ({ browser }) => {
-    // Crear página con el storageState del proyecto as-owner.
-    // En beforeAll, browser.newContext() NO hereda automáticamente el storageState
-    // del proyecto — hay que pasarlo explícitamente.
-    const context = await browser.newContext({
-      storageState: 'playwright/.auth/owner.json',
+  test.beforeAll(async ({ request }) => {
+    // 1. Obtener un vehículo disponible
+    const vehiclesRes = await request.get('/api/vehicles?limit=1');
+    expect(vehiclesRes.status(), 'GET /api/vehicles debe responder 200').toBe(
+      200
+    );
+    const vehicles = await vehiclesRes.json();
+    expect(
+      vehicles.length,
+      'Debe haber al menos un vehículo en staging'
+    ).toBeGreaterThan(0);
+    const vehicleId = vehicles[0].id;
+
+    // 2. Crear WO CORRECTIVE via API (no requiere alertIds)
+    const createRes = await request.post('/api/maintenance/work-orders', {
+      data: {
+        vehicleId,
+        title: `OT E2E Lifecycle - ${Date.now()}`,
+        mantType: 'CORRECTIVE',
+        priority: 'MEDIUM',
+      },
     });
-    const page = await context.newPage();
+    expect(
+      createRes.status(),
+      `POST /api/maintenance/work-orders falló: ${await createRes.text()}`
+    ).toBe(201);
 
-    await page.goto('/dashboard/maintenance/alerts');
-    await page.waitForLoadState('networkidle', { timeout: 30000 });
-
-    // Expandir primer vehículo con alertas
-    const firstPlate = page.locator('h3.font-bold').first();
-    const hasAlerts = await firstPlate
-      .isVisible({ timeout: 10000 })
-      .catch(() => false);
-
-    if (!hasAlerts) {
-      console.warn(
-        'No hay alertas en staging — lifecycle tests serán omitidos'
-      );
-      await context.close();
-      return;
-    }
-
-    await firstPlate.click();
-    await page.waitForTimeout(1000);
-
-    // Marcar primer checkbox de alerta
-    const firstCheckbox = page.locator('[role="checkbox"]').first();
-    await expect(firstCheckbox).toBeVisible({ timeout: 5000 });
-    await firstCheckbox.click();
-
-    // El botón sticky aparece en el footer después de seleccionar
-    const createBtn = page.getByRole('button', {
-      name: /crear orden de trabajo/i,
-    });
-    await expect(createBtn).toBeVisible({ timeout: 10000 });
-    await createBtn.click();
-
-    // Esperar el dialog de creación
-    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5000 });
-
-    // Llenar título — el campo puede estar etiquetado como "título" o tener name="title"
-    const titleInput = page
-      .locator('input[name="title"]')
-      .or(page.getByLabel(/título/i))
-      .first();
-    await titleInput.fill(`OT E2E Lifecycle - ${Date.now()}`);
-
-    // Botón de submit dentro del dialog — texto "Crear"
-    const submitBtn = page
-      .getByRole('dialog')
-      .getByRole('button', { name: /crear/i });
-    await submitBtn.click();
-
-    // Esperar navegación al detalle de la OT recién creada
-    await page.waitForURL(/work-orders\/[a-f0-9-]{36}/, { timeout: 30000 });
-    woId = page.url().split('/').at(-1)!;
-    console.log(`WO creada: ${woId}`);
-
-    await context.close();
+    const wo = await createRes.json();
+    woId = wo.id;
+    console.log(`✅ WO creada via API: ${woId}`);
   });
 
   // ─────────────────────────────────────────────────────────────────────────────
