@@ -26,34 +26,25 @@ const ALLOWED_TRANSITIONS: Record<
   WorkOrderStatus,
   Partial<Record<WorkOrderStatus, TransitionRule>>
 > = {
+  // Flujo activo simplificado (4 estados)
   PENDING: {
-    IN_PROGRESS: { allowedRoles: ['canExecuteWorkOrders'] },
-    PENDING_APPROVAL: { allowedRoles: ['canApproveWorkOrder'] },
-    CANCELLED: { allowedRoles: ['canApproveWorkOrder'] },
-  },
-  PENDING_APPROVAL: {
-    APPROVED: { allowedRoles: ['canApproveWorkOrder'] },
-    REJECTED: { allowedRoles: ['canApproveWorkOrder'] },
-    CANCELLED: { allowedRoles: ['canApproveWorkOrder'] },
-  },
-  APPROVED: {
     IN_PROGRESS: { allowedRoles: ['canExecuteWorkOrders'] },
     CANCELLED: { allowedRoles: ['canApproveWorkOrder'] },
   },
   IN_PROGRESS: {
-    COMPLETED: { allowedRoles: ['canCloseWorkOrder'] },
-    PENDING_INVOICE: { allowedRoles: ['canExecuteWorkOrders'] },
-    PENDING_APPROVAL: { allowedRoles: ['canApproveWorkOrder'] },
+    PENDING_INVOICE: { allowedRoles: ['canCloseWorkOrder'] },
     CANCELLED: { allowedRoles: ['canApproveWorkOrder'] },
   },
   PENDING_INVOICE: {
     COMPLETED: { allowedRoles: ['canCloseWorkOrder'] },
-    CANCELLED: { allowedRoles: ['canApproveWorkOrder'] },
   },
   // Terminal states — no transitions out
   COMPLETED: {},
-  REJECTED: {},
   CANCELLED: {},
+  // Legacy states — mantenidos para datos existentes, sin nuevas transiciones
+  PENDING_APPROVAL: {},
+  APPROVED: {},
+  REJECTED: {},
 };
 
 /**
@@ -359,34 +350,332 @@ export async function PATCH(
       // ──────────────────────────────────────────────────────────────
       // Status-specific side effects
       // ──────────────────────────────────────────────────────────────
-      if (toStatus === 'COMPLETED') {
-        // FASE 6.7: Validar que no haya items pendientes de cierre
-        const pendingItems = await tenantPrisma.workOrderItem.count({
-          where: {
-            workOrderId,
-            closureType: ItemClosureType.PENDING,
-            status: { not: 'CANCELLED' },
-          },
+      if (toStatus === 'PENDING_INVOICE') {
+        // T-02: Closure pipeline — stock deduction, OC generation, ticket creation
+        const result = await tenantPrisma.$transaction(async tx => {
+          const stockWarnings: string[] = [];
+
+          // Step 1 — Load PART items and ALL active items
+          const allActiveItems = await tx.workOrderItem.findMany({
+            where: { workOrderId, status: { not: 'CANCELLED' } },
+            include: { mantItem: { select: { type: true, name: true } } },
+          });
+
+          const partItems = allActiveItems.filter(
+            i => i.mantItem.type === 'PART'
+          );
+
+          // Step 2 — Resolve inventory for each PART item
+          const masterPartIds = partItems
+            .map(i => i.masterPartId)
+            .filter((id): id is string => id !== null);
+
+          const inventoryItems =
+            masterPartIds.length > 0
+              ? await tx.inventoryItem.findMany({
+                  where: { masterPartId: { in: masterPartIds } },
+                  select: {
+                    id: true,
+                    masterPartId: true,
+                    quantity: true,
+                    averageCost: true,
+                  },
+                })
+              : [];
+
+          const inventoryByMasterPart = new Map(
+            inventoryItems.map(ii => [ii.masterPartId!, ii])
+          );
+
+          // Step 3 — Classify: withStock vs needsPurchase
+          type PartItemWithInv = (typeof partItems)[number] & {
+            _inv?: (typeof inventoryItems)[number];
+          };
+
+          const withStock: PartItemWithInv[] = [];
+          const needsPurchase: PartItemWithInv[] = [];
+
+          for (const item of partItems) {
+            if (!item.masterPartId) {
+              needsPurchase.push(item);
+              continue;
+            }
+            const inv = inventoryByMasterPart.get(item.masterPartId);
+            if (inv && Number(inv.quantity) >= item.quantity) {
+              withStock.push({ ...item, _inv: inv });
+            } else {
+              needsPurchase.push(item);
+            }
+          }
+
+          // Step 4 — Deduct stock for withStock items
+          const withStockIds: string[] = [];
+          for (const item of withStock) {
+            try {
+              const inv = item._inv!;
+              const prevQty = Number(inv.quantity);
+              const newQty = prevQty - item.quantity;
+              const unitCost = Number(inv.averageCost);
+
+              await tx.inventoryItem.update({
+                where: { id: inv.id },
+                data: { quantity: newQty },
+              });
+
+              await tx.inventoryMovement.create({
+                data: {
+                  tenantId: user.tenantId,
+                  inventoryItemId: inv.id,
+                  movementType: 'CONSUMPTION',
+                  quantity: item.quantity,
+                  unitCost,
+                  totalCost: unitCost * item.quantity,
+                  previousStock: prevQty,
+                  newStock: newQty,
+                  previousAvgCost: unitCost,
+                  newAvgCost: unitCost,
+                  referenceType: 'INTERNAL_TICKET',
+                  referenceId: workOrderId,
+                  performedBy: user.id,
+                },
+              });
+
+              withStockIds.push(item.id);
+            } catch {
+              // Per-item failure: move to needsPurchase
+              needsPurchase.push(item);
+              stockWarnings.push(
+                `No se pudo descontar stock para: ${item.mantItem.name}`
+              );
+            }
+          }
+
+          // Step 5 — Create PurchaseOrders for needsPurchase items
+          const createdPurchaseOrderIds: string[] = [];
+          const year = new Date().getFullYear();
+
+          // Group by providerId (fallback to workOrder.providerId)
+          const loadedWO = await tx.workOrder.findUnique({
+            where: { id: workOrderId },
+            select: { providerId: true, technicianId: true },
+          });
+
+          const grouped = new Map<string, typeof needsPurchase>();
+          for (const item of needsPurchase) {
+            const pid = item.providerId ?? loadedWO?.providerId ?? null;
+            if (!pid) {
+              stockWarnings.push(
+                `Sin proveedor para generar OC: ${item.mantItem.name}`
+              );
+              continue;
+            }
+            const arr = grouped.get(pid) ?? [];
+            arr.push(item);
+            grouped.set(pid, arr);
+          }
+
+          for (const [provId, provItems] of grouped.entries()) {
+            const count = await tx.purchaseOrder.count({
+              where: {
+                tenantId: user.tenantId,
+                orderNumber: { startsWith: `OC-${year}-` },
+              },
+            });
+            const orderNumber = `OC-${year}-${String(count + 1).padStart(6, '0')}`;
+            const subtotal = provItems.reduce(
+              (sum, i) => sum + Number(i.totalCost),
+              0
+            );
+
+            const po = await tx.purchaseOrder.create({
+              data: {
+                tenantId: user.tenantId,
+                workOrderId,
+                providerId: provId,
+                orderNumber,
+                type: 'PARTS',
+                status: 'PENDING_APPROVAL',
+                requestedBy: user.id,
+                subtotal,
+                taxRate: 0,
+                taxAmount: 0,
+                total: subtotal,
+                items: {
+                  create: provItems.map(item => ({
+                    tenantId: user.tenantId,
+                    workOrderItemId: item.id,
+                    mantItemId: item.mantItemId,
+                    masterPartId: item.masterPartId,
+                    description: item.description,
+                    quantity: item.quantity,
+                    unitPrice: item.unitPrice,
+                    total: item.totalCost,
+                    status: 'PENDING' as const,
+                    receivedQty: 0,
+                  })),
+                },
+              },
+            });
+
+            createdPurchaseOrderIds.push(po.id);
+          }
+
+          // Update closureType for needsPurchase items
+          const needsPurchaseIds = needsPurchase.map(i => i.id);
+          if (needsPurchaseIds.length > 0) {
+            await tx.workOrderItem.updateMany({
+              where: { id: { in: needsPurchaseIds } },
+              data: { closureType: ItemClosureType.PURCHASE_ORDER },
+            });
+          }
+
+          // Update closureType for withStock items
+          if (withStockIds.length > 0) {
+            await tx.workOrderItem.updateMany({
+              where: { id: { in: withStockIds } },
+              data: { closureType: ItemClosureType.INTERNAL_TICKET },
+            });
+          }
+
+          // Step 6 — Create InternalWorkTicket (if WO has technicianId)
+          let ticket: { id: string; ticketNumber: string } | null = null;
+          const woTechnicianId = loadedWO?.technicianId ?? null;
+
+          if (woTechnicianId) {
+            const laborItems = allActiveItems.filter(
+              i => i.mantItem.type !== 'PART'
+            );
+            const stockConsumedParts = allActiveItems.filter(i =>
+              withStockIds.includes(i.id)
+            );
+
+            const totalLaborCost = laborItems.reduce(
+              (sum, i) => sum + Number(i.totalCost),
+              0
+            );
+            const totalPartsCost = stockConsumedParts.reduce(
+              (sum, i) => sum + Number(i.totalCost),
+              0
+            );
+            const totalCost = totalLaborCost + totalPartsCost;
+
+            const ticketCount = await tx.internalWorkTicket.count({
+              where: {
+                tenantId: user.tenantId,
+                ticketNumber: { startsWith: `TKT-${year}-` },
+              },
+            });
+            const ticketNumber = `TKT-${year}-${String(ticketCount + 1).padStart(6, '0')}`;
+
+            const createdTicket = await tx.internalWorkTicket.create({
+              data: {
+                tenantId: user.tenantId,
+                workOrderId,
+                ticketNumber,
+                technicianId: woTechnicianId,
+                totalLaborHours: 0,
+                totalLaborCost,
+                totalPartsCost,
+                totalCost,
+                status: 'DRAFT',
+                laborEntries: {
+                  create: laborItems.map(item => ({
+                    tenantId: user.tenantId,
+                    workOrderItemId: item.id,
+                    technicianId: woTechnicianId,
+                    description: item.mantItem.name,
+                    hours: 0,
+                    hourlyRate: 0,
+                    laborCost: Number(item.totalCost),
+                  })),
+                },
+                partEntries: {
+                  create: stockConsumedParts
+                    .filter(
+                      item =>
+                        item.masterPartId &&
+                        inventoryByMasterPart.has(item.masterPartId)
+                    )
+                    .map(item => {
+                      const inv = inventoryByMasterPart.get(
+                        item.masterPartId!
+                      )!;
+                      return {
+                        tenantId: user.tenantId,
+                        workOrderItemId: item.id,
+                        inventoryItemId: inv.id,
+                        quantity: item.quantity,
+                        unitCost: Number(inv.averageCost),
+                        totalCost: Number(item.totalCost),
+                      };
+                    }),
+                },
+              },
+            });
+
+            ticket = {
+              id: createdTicket.id,
+              ticketNumber: createdTicket.ticketNumber,
+            };
+          } else {
+            stockWarnings.push(
+              'La OT no tiene técnico asignado — ticket de taller no generado'
+            );
+          }
+
+          // Step 7 — Compute actualCost and update WO status
+          const itemsAgg = await tx.workOrderItem.aggregate({
+            where: { workOrderId, status: { not: 'CANCELLED' } },
+            _sum: { totalCost: true },
+          });
+          const expensesAgg = await tx.workOrderExpense.aggregate({
+            where: { workOrderId, status: 'APPROVED' },
+            _sum: { amount: true },
+          });
+          const computedActualCost =
+            Number(itemsAgg._sum.totalCost ?? 0) +
+            Number(expensesAgg._sum.amount ?? 0);
+
+          const wo = await tx.workOrder.update({
+            where: { id: workOrderId },
+            data: {
+              status: 'PENDING_INVOICE',
+              actualCost: computedActualCost,
+              ...(completionMileage !== undefined
+                ? { completionMileage: Number(completionMileage) }
+                : {}),
+              ...(technicianId !== undefined ? { technicianId } : {}),
+              ...(providerId !== undefined ? { providerId } : {}),
+            },
+            include: {
+              vehicle: { select: { id: true, licensePlate: true } },
+              maintenanceAlerts: true,
+              workOrderItems: true,
+            },
+          });
+
+          return {
+            workOrder: wo,
+            ticket,
+            purchaseOrders: createdPurchaseOrderIds,
+            stockWarnings,
+          };
         });
 
-        if (pendingItems > 0) {
-          return NextResponse.json(
-            {
-              error: `No se puede completar la OT. Hay ${pendingItems} item(s) pendientes de cierre. Genere las OC/Tickets correspondientes primero.`,
-            },
-            { status: 400 }
-          );
-        }
-
-        // TASK 2.4: Auto-compute actualCost inside a transaction
+        const serialized = JSON.parse(
+          JSON.stringify(result, (_key, value) =>
+            typeof value === 'bigint' ? value.toString() : value
+          )
+        );
+        return NextResponse.json(serialized);
+      } else if (toStatus === 'COMPLETED') {
+        // T-03: COMPLETED branch — removed pendingItems guard; compute cost and close
         const result = await tenantPrisma.$transaction(async tx => {
-          // Sum WorkOrderItem costs
           const itemsAgg = await tx.workOrderItem.aggregate({
             where: { workOrderId, status: { not: 'CANCELLED' } },
             _sum: { totalCost: true },
           });
 
-          // Sum approved WorkOrderExpense amounts
           const expensesAgg = await tx.workOrderExpense.aggregate({
             where: { workOrderId, status: 'APPROVED' },
             _sum: { amount: true },
@@ -404,7 +693,7 @@ export async function PATCH(
             data: { status: 'COMPLETED' },
           });
 
-          // FASE 6.2: Close MaintenanceAlerts linked to this WO
+          // Close MaintenanceAlerts linked to this WO
           await tx.maintenanceAlert.updateMany({
             where: { workOrderId },
             data: {
@@ -430,7 +719,6 @@ export async function PATCH(
             });
           }
 
-          // Update WorkOrder status + computed actualCost
           const wo = await tx.workOrder.update({
             where: { id: workOrderId },
             data: {

@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DocumentStats } from '@/components/layout/DocumentStats';
 import { FleetStatusBoard } from '@/components/dashboard';
 import { FinancialDashboard } from '@/components/dashboard/FinancialDashboard';
+import { PendingInvoiceWOWidget } from '@/components/dashboard/PendingInvoiceWOWidget';
 import { BarChart3, Truck, FileText } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -32,7 +33,12 @@ export default function DashboardPage() {
 
         {/* Tab 1: Estado de Flota */}
         <TabsContent value="fleet" className="mt-6">
-          <FleetStatusBoard />
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <PendingInvoiceWOWidget />
+            </div>
+            <FleetStatusBoard />
+          </div>
         </TabsContent>
 
         {/* Tab 2: Situación Financiera */}

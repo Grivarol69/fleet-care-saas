@@ -149,6 +149,8 @@ async function main() {
   await prisma.workOrderApproval.deleteMany({});
   await prisma.workOrderExpense.deleteMany({});
   await prisma.workOrderItem.deleteMany({});
+  await prisma.purchaseOrderItem.deleteMany({});
+  await prisma.purchaseOrder.deleteMany({});
   await prisma.workOrder.deleteMany({});
   await prisma.vehicleProgramItem.deleteMany({});
   await prisma.vehicleProgramPackage.deleteMany({});
@@ -159,6 +161,8 @@ async function main() {
   await prisma.vehicle.deleteMany({});
   await prisma.driver.deleteMany({});
   await prisma.technician.deleteMany({});
+  await prisma.invoice.deleteMany({});
+  await prisma.partPriceHistory.deleteMany({});
   await prisma.provider.deleteMany({});
   await prisma.mantItemRequest.deleteMany({});
   await prisma.mantItemVehiclePart.deleteMany({});
@@ -170,6 +174,7 @@ async function main() {
   await prisma.mantItem.deleteMany({});
   await prisma.mantCategory.deleteMany({});
   await prisma.partCompatibility.deleteMany({});
+  await prisma.inventoryItem.deleteMany({});
   await prisma.masterPart.deleteMany({});
   await prisma.documentTypeConfig.deleteMany({});
   await prisma.vehicleLine.deleteMany({});

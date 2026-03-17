@@ -2,31 +2,24 @@
 
 import { useState } from 'react';
 import axios from 'axios';
+import { pdf } from '@react-pdf/renderer';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/components/hooks/use-toast';
 import { Loader2, Ticket } from 'lucide-react';
-
-type WorkOrderItem = {
-  id: string;
-  description: string;
-  mantItem: {
-    name: string;
-  };
-};
+import { TicketPDF } from './TicketPDF';
+import type { WorkOrderItem, WorkOrderSummary } from './TicketPDF';
 
 type InternalTicketDialogProps = {
   workOrderId: string;
   pendingItems: WorkOrderItem[];
+  workOrder: WorkOrderSummary;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
@@ -35,41 +28,53 @@ type InternalTicketDialogProps = {
 export function InternalTicketDialog({
   workOrderId,
   pendingItems,
+  workOrder,
   open,
   onOpenChange,
   onSuccess,
 }: InternalTicketDialogProps) {
   const { toast } = useToast();
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const toggleItem = (id: string) => {
-    setSelectedIds(prev =>
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
-  };
+  const services = pendingItems.filter(i => i.mantItem.type !== 'PART');
+  const parts = pendingItems.filter(i => i.mantItem.type === 'PART');
 
   const handleGenerate = async () => {
-    if (selectedIds.length === 0) return;
-
     try {
       setIsSubmitting(true);
-      await axios.post(
+
+      const res = await axios.post(
         `/api/maintenance/work-orders/${workOrderId}/workshop-tickets`,
-        {
-          itemIds: selectedIds,
-        }
+        { itemIds: pendingItems.map(i => i.id) }
       );
+
+      const { ticketNumber } = res.data;
+
+      const blob = await pdf(
+        <TicketPDF
+          ticketNumber={ticketNumber}
+          workOrder={workOrder}
+          services={services}
+          parts={parts}
+        />
+      ).toBlob();
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${ticketNumber}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
       toast({
         title: 'Ticket generado',
-        description: `Se ha generado un ticket de taller para ${selectedIds.length} ítem(s).`,
+        description: `${ticketNumber} descargado.`,
       });
-
       onSuccess();
       onOpenChange(false);
-      setSelectedIds([]);
-    } catch (error) {
+    } catch {
       toast({
         title: 'Error',
         description: 'No se pudo generar el ticket de taller.',
@@ -82,53 +87,36 @@ export function InternalTicketDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[420px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Ticket className="h-5 w-5 text-blue-600" />
             Generar Ticket de Taller
           </DialogTitle>
-          <DialogDescription>
-            Selecciona los ítems pendientes que deseas enviar al taller propio.
-          </DialogDescription>
         </DialogHeader>
 
-        <div className="py-4">
-          <ScrollArea className="h-[300px] border rounded-md p-2">
-            {pendingItems.length === 0 ? (
-              <p className="text-center text-muted-foreground text-sm py-8">
-                No hay ítems pendientes para taller propio.
+        <div className="py-4 space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Se generará un ticket de taller con todos los ítems pendientes:
+          </p>
+          <div className="rounded-lg border bg-muted/30 p-4 space-y-1">
+            {services.length > 0 && (
+              <p className="text-sm">
+                <span className="font-medium">{services.length}</span> servicio
+                {services.length !== 1 ? 's' : ''}
               </p>
-            ) : (
-              <div className="space-y-3">
-                {pendingItems.map(item => (
-                  <div
-                    key={item.id}
-                    className="flex items-start space-x-3 p-2 hover:bg-muted/50 rounded-lg cursor-pointer transition-colors"
-                    onClick={() => toggleItem(item.id)}
-                  >
-                    <Checkbox
-                      id={item.id}
-                      checked={selectedIds.includes(item.id)}
-                      onCheckedChange={() => toggleItem(item.id)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    <div className="grid gap-1.5 leading-none">
-                      <label
-                        htmlFor={item.id}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                      >
-                        {item.mantItem.name}
-                      </label>
-                      <p className="text-xs text-muted-foreground">
-                        {item.description || 'Sin descripción adicional'}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
             )}
-          </ScrollArea>
+            {parts.length > 0 && (
+              <p className="text-sm">
+                <span className="font-medium">{parts.length}</span> repuesto
+                {parts.length !== 1 ? 's' : ''}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground pt-1">
+              Total: {pendingItems.length} ítem
+              {pendingItems.length !== 1 ? 's' : ''}
+            </p>
+          </div>
         </div>
 
         <DialogFooter>
@@ -141,11 +129,11 @@ export function InternalTicketDialog({
           </Button>
           <Button
             onClick={handleGenerate}
-            disabled={selectedIds.length === 0 || isSubmitting}
+            disabled={pendingItems.length === 0 || isSubmitting}
             className="bg-blue-600 hover:bg-blue-700"
           >
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Generar Ticket ({selectedIds.length})
+            {isSubmitting ? 'Generando PDF...' : 'Confirmar y descargar PDF'}
           </Button>
         </DialogFooter>
       </DialogContent>

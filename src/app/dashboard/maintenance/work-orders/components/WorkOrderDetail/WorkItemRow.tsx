@@ -124,17 +124,23 @@ export function WorkItemRow({
 
   const showCosts = canViewCosts(currentUser as any);
 
-  const handleToggleSource = async (e: React.MouseEvent, targetSource: string) => {
+  const handleToggleSource = async (
+    e: React.MouseEvent,
+    targetSource: string
+  ) => {
     e.stopPropagation();
     if (hasActivePO) return;
 
     setIsHidden(true);
     setIsTogglingSource(true);
     try {
-      await axios.patch(`/api/maintenance/work-orders/${workOrderId}/items/${item.id}`, {
-        itemSource: targetSource,
-        providerId: null,
-      });
+      await axios.patch(
+        `/api/maintenance/work-orders/${workOrderId}/items/${item.id}`,
+        {
+          itemSource: targetSource,
+          providerId: null,
+        }
+      );
       onRefresh();
     } catch (error) {
       setIsHidden(false);
@@ -220,7 +226,8 @@ export function WorkItemRow({
         <CollapsibleTrigger asChild>
           <div className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors cursor-pointer">
             <div className="flex items-center gap-3">
-              {item.itemSource === 'INTERNAL_STOCK' || item.itemSource === 'EXTERNAL' ? (
+              {item.itemSource === 'INTERNAL_STOCK' ||
+              item.itemSource === 'EXTERNAL' ? (
                 <TooltipProvider delayDuration={300}>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -228,16 +235,28 @@ export function WorkItemRow({
                         role="button"
                         aria-disabled={hasActivePO || isTogglingSource}
                         className={`flex items-center transition-opacity ${hasActivePO || isTogglingSource ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                        onClick={(e) => {
+                        onClick={e => {
                           e.stopPropagation();
                           if (!hasActivePO && !isTogglingSource) {
-                            handleToggleSource(e as any, item.itemSource === 'INTERNAL_STOCK' ? 'EXTERNAL' : 'INTERNAL_STOCK');
+                            handleToggleSource(
+                              e as any,
+                              item.itemSource === 'INTERNAL_STOCK'
+                                ? 'EXTERNAL'
+                                : 'INTERNAL_STOCK'
+                            );
                           }
                         }}
                       >
-                        <Badge variant="default" className="pointer-events-none flex items-center gap-1">
-                          {isTogglingSource && <Loader2 className="h-3 w-3 animate-spin" />}
-                          {item.itemSource === 'INTERNAL_STOCK' ? 'Taller Propio' : 'Externo'}
+                        <Badge
+                          variant="default"
+                          className="pointer-events-none flex items-center gap-1"
+                        >
+                          {isTogglingSource && (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          )}
+                          {item.itemSource === 'INTERNAL_STOCK'
+                            ? 'Taller Propio'
+                            : 'Externo'}
                         </Badge>
                       </div>
                     </TooltipTrigger>
@@ -267,23 +286,34 @@ export function WorkItemRow({
                 </Badge>
               )}
               {item.itemSource === 'EXTERNAL' && (
-                <div className="flex items-center gap-2 ml-2" onClick={(e) => e.stopPropagation()}>
+                <div
+                  className="flex items-center gap-2 ml-2"
+                  onClick={e => e.stopPropagation()}
+                >
                   {item.providerId === null && (
-                    <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                    <Badge
+                      variant="outline"
+                      className="bg-orange-50 text-orange-700 border-orange-200"
+                    >
                       Sin proveedor
                     </Badge>
                   )}
                   {providers && providers.length > 0 && !hasActivePO ? (
                     <div className="flex items-center relative gap-2">
-                      {isUpdatingProvider && <Loader2 className="h-3 w-3 animate-spin absolute -left-5" />}
+                      {isUpdatingProvider && (
+                        <Loader2 className="h-3 w-3 animate-spin absolute -left-5" />
+                      )}
                       <Select
                         value={item.providerId || ''}
-                        onValueChange={async (val) => {
+                        onValueChange={async val => {
                           try {
                             setIsUpdatingProvider(true);
-                            await axios.patch(`/api/maintenance/work-orders/${workOrderId}/items/${item.id}`, {
-                              providerId: val,
-                            });
+                            await axios.patch(
+                              `/api/maintenance/work-orders/${workOrderId}/items/${item.id}`,
+                              {
+                                providerId: val,
+                              }
+                            );
                             onRefresh();
                           } catch (error) {
                             toast({
@@ -301,7 +331,9 @@ export function WorkItemRow({
                         </SelectTrigger>
                         <SelectContent>
                           {providers.map(p => (
-                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.name}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -399,7 +431,7 @@ export function WorkItemRow({
                       <TableRow>
                         <TableCell
                           colSpan={5}
-                          className="text-center py-4 text-muted-foreground text-xs italic"
+                          className="text-center py-4 text-muted-foreground text-sm italic"
                         >
                           Sin subtareas. Agregá desde el Tempario o manualmente.
                         </TableCell>
@@ -409,7 +441,7 @@ export function WorkItemRow({
                       <TableRow key={task.id}>
                         <TableCell>
                           <Input
-                            className="h-8 text-xs bg-transparent border-transparent hover:border-input focus:bg-background"
+                            className="h-9 text-sm bg-transparent border-transparent hover:border-input focus:bg-background"
                             defaultValue={task.description}
                             onBlur={e => {
                               if (e.target.value !== task.description)
@@ -419,14 +451,14 @@ export function WorkItemRow({
                             }}
                           />
                         </TableCell>
-                        <TableCell className="text-xs font-mono text-muted-foreground">
+                        <TableCell className="text-sm font-mono text-muted-foreground">
                           {task.standardHours || '—'}
                         </TableCell>
                         <TableCell>
                           <Input
                             type="number"
                             step="0.1"
-                            className="h-8 text-xs w-20"
+                            className="h-9 text-sm w-20"
                             defaultValue={task.directHours || ''}
                             onBlur={e => {
                               const val = e.target.value
@@ -446,7 +478,7 @@ export function WorkItemRow({
                               handleUpdateSubtask(task.id, { status: val })
                             }
                           >
-                            <SelectTrigger className="h-8 text-xs">
+                            <SelectTrigger className="h-9 text-sm">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>

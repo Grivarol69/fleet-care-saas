@@ -3,7 +3,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
-import { WorkOrdersList, statusConfig } from './components/WorkOrdersList/WorkOrdersList';
+import {
+  WorkOrdersList,
+  statusConfig,
+} from './components/WorkOrdersList/WorkOrdersList';
 import { WorkOrdersFilters } from './components/WorkOrdersList/WorkOrdersFilters';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
@@ -55,13 +58,17 @@ export default function WorkOrdersPage() {
   const [activeTab, setActiveTab] = useState('all');
   const { toast } = useToast();
 
-  const [currentUser, setCurrentUser] = useState<{ id: string; role: string; isSuperAdmin: boolean } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{
+    id: string;
+    role: string;
+    isSuperAdmin: boolean;
+  } | null>(null);
 
   useEffect(() => {
     fetch('/api/auth/me')
       .then(res => res.json())
       .then(data => setCurrentUser(data))
-      .catch(() => { });
+      .catch(() => {});
     fetchWorkOrders();
   }, []);
 
@@ -101,11 +108,18 @@ export default function WorkOrdersPage() {
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     try {
-      await axios.patch(`/api/maintenance/work-orders/${id}`, { status: newStatus });
-      toast({ title: 'Estado actualizado', description: `La OT pasó a ${newStatus}` });
+      await axios.patch(`/api/maintenance/work-orders/${id}`, {
+        status: newStatus,
+      });
+      toast({
+        title: 'Estado actualizado',
+        description: `La OT pasó a ${newStatus}`,
+      });
       fetchWorkOrders();
     } catch (error: any) {
-      const msg = error.response?.data?.error || 'No tenés los permisos necesarios para esta acción.';
+      const msg =
+        error.response?.data?.error ||
+        'No tenés los permisos necesarios para esta acción.';
       toast({ title: 'Error', description: msg, variant: 'destructive' });
     }
   };
@@ -171,17 +185,29 @@ export default function WorkOrdersPage() {
             setActiveTab('all');
             setFilters(prev => ({ ...prev, status: 'all' }));
           }}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${activeTab === 'all'
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${
+            activeTab === 'all'
               ? 'bg-primary text-primary-foreground border-primary'
               : 'bg-background border-border text-muted-foreground hover:bg-muted'
-            }`}
+          }`}
         >
           Todas
-          <span className={`px-1.5 py-0.5 rounded-full text-xs ${activeTab === 'all' ? 'bg-background/20' : 'bg-muted-foreground/10'}`}>
+          <span
+            className={`px-1.5 py-0.5 rounded-full text-xs ${activeTab === 'all' ? 'bg-background/20' : 'bg-muted-foreground/10'}`}
+          >
             {workOrders.length}
           </span>
         </button>
-        {Object.entries(statusConfig).map(([key, config]) => {
+        {(
+          [
+            'PENDING',
+            'IN_PROGRESS',
+            'PENDING_INVOICE',
+            'COMPLETED',
+            'CANCELLED',
+          ] as const
+        ).map(key => {
+          const config = statusConfig[key];
           const count = workOrders.filter(wo => wo.status === key).length;
           const isActive = activeTab === key;
 
@@ -192,15 +218,17 @@ export default function WorkOrdersPage() {
                 setActiveTab(key);
                 setFilters(prev => ({ ...prev, status: 'all' }));
               }}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${isActive
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${
+                isActive
                   ? config.color
                   : 'bg-background border-border text-muted-foreground hover:bg-muted'
-                }`}
+              }`}
             >
               {config.label}
               <span
-                className={`px-1.5 py-0.5 rounded-full text-xs ${isActive ? 'bg-background/50' : 'bg-muted-foreground/10'
-                  }`}
+                className={`px-1.5 py-0.5 rounded-full text-xs ${
+                  isActive ? 'bg-background/50' : 'bg-muted-foreground/10'
+                }`}
               >
                 {count}
               </span>

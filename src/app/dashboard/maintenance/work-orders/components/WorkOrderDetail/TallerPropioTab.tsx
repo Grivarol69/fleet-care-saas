@@ -4,12 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { WorkItemRow } from './WorkItemRow';
 import { AddItemDialog } from './AddItemDialog';
-import { InternalTicketDialog } from './InternalTicketDialog';
 
 export function TallerPropioTab({ workOrder, currentUser, onRefresh }: any) {
   const [isAddServiceDialogOpen, setIsAddServiceDialogOpen] = useState(false);
   const [isAddPartDialogOpen, setIsAddPartDialogOpen] = useState(false);
-  const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
 
   const internalItems = workOrder.workOrderItems.filter(
     (i: any) => i.itemSource !== 'EXTERNAL'
@@ -20,9 +18,6 @@ export function TallerPropioTab({ workOrder, currentUser, onRefresh }: any) {
   const partItems = internalItems.filter(
     (i: any) => i.mantItem.type === 'PART'
   );
-  const pendingInternal = internalItems.filter(
-    (i: any) => i.closureType === 'PENDING'
-  );
 
   return (
     <div className="space-y-6">
@@ -30,15 +25,6 @@ export function TallerPropioTab({ workOrder, currentUser, onRefresh }: any) {
         <div className="flex items-center gap-2">
           <Wrench className="h-5 w-5 text-blue-600" />
           <h2 className="text-lg font-bold">Taller Propio</h2>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            disabled={pendingInternal.length === 0}
-            onClick={() => setIsTicketDialogOpen(true)}
-          >
-            Generar Ticket ({pendingInternal.length})
-          </Button>
         </div>
       </div>
 
@@ -65,6 +51,7 @@ export function TallerPropioTab({ workOrder, currentUser, onRefresh }: any) {
                   item={item}
                   currentUser={currentUser}
                   onRefresh={onRefresh}
+                  showSubtasks={false}
                 />
               ))}
             </div>
@@ -129,17 +116,6 @@ export function TallerPropioTab({ workOrder, currentUser, onRefresh }: any) {
         }}
         defaultItemSource="INTERNAL_STOCK"
         lockItemSource
-      />
-
-      <InternalTicketDialog
-        workOrderId={workOrder.id}
-        pendingItems={pendingInternal}
-        open={isTicketDialogOpen}
-        onOpenChange={setIsTicketDialogOpen}
-        onSuccess={() => {
-          setIsTicketDialogOpen(false);
-          onRefresh();
-        }}
       />
     </div>
   );
