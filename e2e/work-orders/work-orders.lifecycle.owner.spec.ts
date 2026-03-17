@@ -21,10 +21,11 @@ test.describe('OT — Lifecycle completo (OWNER)', () => {
 
   test.beforeAll(async ({ request }) => {
     // 1. Obtener un vehículo disponible
-    const vehiclesRes = await request.get('/api/vehicles?limit=1');
-    expect(vehiclesRes.status(), 'GET /api/vehicles debe responder 200').toBe(
-      200
-    );
+    const vehiclesRes = await request.get('/api/vehicles/vehicles');
+    expect(
+      vehiclesRes.status(),
+      'GET /api/vehicles/vehicles debe responder 200'
+    ).toBe(200);
     const vehicles = await vehiclesRes.json();
     expect(
       vehicles.length,
