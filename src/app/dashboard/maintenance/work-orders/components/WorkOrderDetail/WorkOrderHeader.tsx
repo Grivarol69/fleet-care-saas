@@ -266,6 +266,18 @@ export function WorkOrderHeader({
       );
     }
 
+    if (status === 'PENDING_INVOICE' && isManagerOrAbove(currentUser)) {
+      return (
+        <Button
+          size="sm"
+          disabled={isTransitioning}
+          onClick={() => handleTransition('COMPLETED')}
+        >
+          {isTransitioning ? 'Procesando...' : 'Marcar como Completada'}
+        </Button>
+      );
+    }
+
     return null;
   };
 
