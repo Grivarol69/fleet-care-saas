@@ -148,8 +148,9 @@ type WorkOrder = {
     id: string;
     orderNumber: string;
     status: string;
-    totalAmount: number;
+    total: number;
     notes: string | null;
+    provider: { id: string; name: string } | null;
   }>;
 };
 
@@ -167,7 +168,7 @@ export default function WorkOrderDetailPage() {
     fetch('/api/auth/me')
       .then(res => res.json())
       .then((data: CurrentUser) => setCurrentUser(data))
-      .catch(() => { });
+      .catch(() => {});
   }, []);
 
   const workOrderId = params.id as string;

@@ -182,7 +182,7 @@ export function AddItemDialog({
       try {
         const res = await axios.get('/api/people/providers');
         setProviders(res.data || []);
-      } catch (e) { }
+      } catch (e) {}
     }
     if (open) fetchProviders();
   }, [open]);
@@ -203,7 +203,7 @@ export function AddItemDialog({
           // we could send type=SERVICE, but the backend accepts typeFilter: 'ACTION' | 'PART' | 'SERVICE'
           // and we want both SERVICE and ACTION. The best way is to send nothing and filter on the frontend for now,
           // or modify the backend to accept an array of types. Given the prompt, the main issue is PART bringing SERVICES.
-          // By filtering PART on the backend, we fix the issue. For SERVICES we can just filter on frontend, 
+          // By filtering PART on the backend, we fix the issue. For SERVICES we can just filter on frontend,
           // since stock check doesn't apply to services so the impact is just UI clutter.
         }
 
@@ -310,12 +310,14 @@ export function AddItemDialog({
           quantity: Number(res.data[0].quantity),
           inventoryItemId: res.data[0].id,
         });
-        if (Number(res.data[0].quantity) > 0) {
+        if (Number(res.data[0].quantity) > 0 && !lockItemSource) {
           form.setValue('itemSource', 'INTERNAL_STOCK');
         }
       } else {
         setStock({ quantity: 0, inventoryItemId: 0 });
-        form.setValue('itemSource', 'EXTERNAL');
+        if (!lockItemSource) {
+          form.setValue('itemSource', 'EXTERNAL');
+        }
       }
     } catch (error) {
       console.error('Error checking stock', error);
@@ -436,8 +438,8 @@ export function AddItemDialog({
                           >
                             {field.value
                               ? (items.find(
-                                i => i.id.toString() === field.value
-                              )?.name ?? 'Seleccionar...')
+                                  i => i.id.toString() === field.value
+                                )?.name ?? 'Seleccionar...')
                               : 'Buscar y seleccionar...'}
                             <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
@@ -596,10 +598,11 @@ export function AddItemDialog({
             {/* Stock Info (Parts only) */}
             {type === 'PART' && selectedItem && (
               <div
-                className={`p-3 rounded border text-sm flex items-center gap-2 ${stock && Number(stock.quantity) > 0
-                  ? 'bg-green-50 border-green-200 text-green-700'
-                  : 'bg-amber-50 border-amber-200 text-amber-700'
-                  }`}
+                className={`p-3 rounded border text-sm flex items-center gap-2 ${
+                  stock && Number(stock.quantity) > 0
+                    ? 'bg-green-50 border-green-200 text-green-700'
+                    : 'bg-amber-50 border-amber-200 text-amber-700'
+                }`}
               >
                 <Box className="h-4 w-4" />
                 {stock ? (
@@ -612,6 +615,21 @@ export function AddItemDialog({
                 )}
               </div>
             )}
+
+            {/* Informational badge when source is locked but internal stock is available */}
+            {lockItemSource &&
+              type === 'PART' &&
+              stock &&
+              Number(stock.quantity) > 0 && (
+                <div className="p-3 rounded border text-sm flex items-center gap-2 bg-amber-50 border-amber-300 text-amber-700">
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  <span>
+                    Disponible en inventario propio:{' '}
+                    <strong>{Number(stock.quantity)}</strong> unidades. Se
+                    procesará como compra externa de todas formas.
+                  </span>
+                </div>
+              )}
 
             <div className="grid grid-cols-2 gap-4">
               <FormField
@@ -660,7 +678,10 @@ export function AddItemDialog({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Destino del trabajo</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue />

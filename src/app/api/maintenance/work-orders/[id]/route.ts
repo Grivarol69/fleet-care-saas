@@ -170,6 +170,12 @@ export async function GET(
             status: true,
             total: true, // ANTES totalAmount
             notes: true,
+            provider: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
         costCenterRef: {
