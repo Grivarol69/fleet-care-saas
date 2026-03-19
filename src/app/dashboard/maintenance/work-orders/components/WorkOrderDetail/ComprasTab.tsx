@@ -1,4 +1,7 @@
-import { ShoppingCart, Receipt } from 'lucide-react';
+'use client';
+
+import { useState } from 'react';
+import { ShoppingCart, Receipt, Loader2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import {
   Table,
@@ -9,20 +12,56 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import { canViewCosts } from '@/lib/permissions';
+import { useToast } from '@/components/hooks/use-toast';
 import { ExpensesTab } from './ExpensesTab';
+
+const PO_STATUS_NO_INVOICE = new Set([
+  'DRAFT',
+  'PENDING_APPROVAL',
+  'APPROVED',
+  'SENT',
+  'PARTIAL',
+]);
 
 export function ComprasTab({ workOrder, currentUser, onRefresh }: any) {
   const showCosts = canViewCosts(currentUser as any);
+  const { toast } = useToast();
+  const [actioningId, setActioningId] = useState<string | null>(null);
 
   const pos = workOrder.purchaseOrders || [];
   const totalOCs = pos.reduce(
-    (a: number, p: any) => a + Number(p.totalAmount || 0),
+    (a: number, p: any) => a + Number(p.total || 0),
     0
   );
 
   const invoices = workOrder.invoices || [];
+
+  const handlePoAction = async (poId: string, action: 'submit' | 'send') => {
+    setActioningId(poId);
+    try {
+      const res = await fetch(`/api/purchase-orders/${poId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Error ${res.status}`);
+      }
+      await onRefresh();
+    } catch (err: any) {
+      toast({
+        title: 'Error',
+        description: err?.message || 'No se pudo actualizar la orden de compra',
+        variant: 'destructive',
+      });
+    } finally {
+      setActioningId(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -47,6 +86,7 @@ export function ComprasTab({ workOrder, currentUser, onRefresh }: any) {
                   <TableHead>Estado</TableHead>
                   <TableHead>Monto</TableHead>
                   <TableHead>Notas</TableHead>
+                  <TableHead>Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -56,27 +96,39 @@ export function ComprasTab({ workOrder, currentUser, onRefresh }: any) {
                   let badgeClass = '';
                   let badgeLabel = po.status;
 
-                  if (po.status === 'PENDING') {
+                  if (po.status === 'DRAFT') {
+                    badgeVariant = 'outline';
+                    badgeLabel = 'Borrador';
+                  } else if (po.status === 'PENDING_APPROVAL') {
                     badgeVariant = 'secondary';
                     badgeClass =
                       'bg-yellow-100 text-yellow-800 hover:bg-yellow-100';
-                    badgeLabel = 'Pendiente';
-                  } else if (po.status === 'SENT') {
+                    badgeLabel = 'En Aprobación';
+                  } else if (po.status === 'APPROVED') {
                     badgeVariant = 'secondary';
                     badgeClass = 'bg-blue-100 text-blue-800 hover:bg-blue-100';
-                    badgeLabel = 'Enviada';
-                  } else if (po.status === 'RECEIVED') {
+                    badgeLabel = 'Aprobada';
+                  } else if (po.status === 'SENT') {
                     badgeVariant = 'secondary';
                     badgeClass =
                       'bg-green-100 text-green-800 hover:bg-green-100';
-                    badgeLabel = 'Recibida';
-                  } else if (po.status === 'INVOICED') {
+                    badgeLabel = 'Enviada';
+                  } else if (po.status === 'PARTIAL') {
+                    badgeVariant = 'secondary';
+                    badgeClass =
+                      'bg-indigo-100 text-indigo-800 hover:bg-indigo-100';
+                    badgeLabel = 'Parcial';
+                  } else if (po.status === 'COMPLETED') {
                     badgeVariant = 'default';
-                    badgeLabel = 'Facturada';
+                    badgeClass = 'bg-green-600 text-white hover:bg-green-700';
+                    badgeLabel = 'Completada';
                   } else if (po.status === 'CANCELLED') {
                     badgeVariant = 'outline';
+                    badgeClass = 'text-red-600 border-red-600';
                     badgeLabel = 'Cancelada';
                   }
+
+                  const isActioning = actioningId === po.id;
 
                   return (
                     <TableRow key={po.id}>
@@ -88,11 +140,17 @@ export function ComprasTab({ workOrder, currentUser, onRefresh }: any) {
                       </TableCell>
                       <TableCell>
                         {po.type === 'PARTS' ? (
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                          <Badge
+                            variant="outline"
+                            className="bg-blue-50 text-blue-700 border-blue-200"
+                          >
                             Repuestos
                           </Badge>
                         ) : po.type === 'SERVICES' ? (
-                          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                          <Badge
+                            variant="outline"
+                            className="bg-purple-50 text-purple-700 border-purple-200"
+                          >
                             Servicios
                           </Badge>
                         ) : (
@@ -104,19 +162,46 @@ export function ComprasTab({ workOrder, currentUser, onRefresh }: any) {
                           <Badge variant={badgeVariant} className={badgeClass}>
                             {badgeLabel}
                           </Badge>
-                          {po.status !== 'INVOICED' &&
-                            po.status !== 'CANCELLED' && (
-                              <span className="text-[10px] bg-yellow-50 text-yellow-700 px-1.5 py-0.5 rounded border border-yellow-200">
-                                Sin factura
-                              </span>
-                            )}
+                          {PO_STATUS_NO_INVOICE.has(po.status) && (
+                            <span className="text-[10px] bg-yellow-50 text-yellow-700 px-1.5 py-0.5 rounded border border-yellow-200">
+                              Sin factura
+                            </span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className="font-mono text-xs">
-                        {showCosts ? formatCurrency(po.totalAmount) : '—'}
+                        {showCosts ? formatCurrency(po.total) : '—'}
                       </TableCell>
                       <TableCell className="text-muted-foreground text-xs">
                         {po.notes || '—'}
+                      </TableCell>
+                      <TableCell>
+                        {po.status === 'DRAFT' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={isActioning}
+                            onClick={() => handlePoAction(po.id, 'submit')}
+                          >
+                            {isActioning ? (
+                              <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                            ) : null}
+                            Enviar a Aprobación
+                          </Button>
+                        )}
+                        {po.status === 'APPROVED' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={isActioning}
+                            onClick={() => handlePoAction(po.id, 'send')}
+                          >
+                            {isActioning ? (
+                              <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                            ) : null}
+                            Enviar OC
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
@@ -125,7 +210,7 @@ export function ComprasTab({ workOrder, currentUser, onRefresh }: any) {
                   <TableCell colSpan={4} className="text-right font-semibold">
                     Total comprometido
                   </TableCell>
-                  <TableCell colSpan={2} className="font-bold font-mono">
+                  <TableCell colSpan={3} className="font-bold font-mono">
                     {showCosts ? formatCurrency(totalOCs) : '—'}
                   </TableCell>
                 </TableRow>
@@ -194,8 +279,8 @@ export function ComprasTab({ workOrder, currentUser, onRefresh }: any) {
                       <TableCell className="text-muted-foreground text-xs">
                         {inv.invoiceDate
                           ? new Date(inv.invoiceDate).toLocaleDateString(
-                            'es-CO'
-                          )
+                              'es-CO'
+                            )
                           : '—'}
                       </TableCell>
                       <TableCell className="font-mono text-xs">
