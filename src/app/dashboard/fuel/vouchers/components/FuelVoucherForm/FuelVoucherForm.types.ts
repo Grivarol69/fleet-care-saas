@@ -26,9 +26,10 @@ export interface FuelVoucherFormValues {
   date: Date;
   odometer: number;
   fuelType: string;
-  liters: number;
+  quantity: number;
+  volumeUnit: 'LITERS' | 'GALLONS';
   driverId?: string;
   providerId?: string;
-  pricePerLiter?: number;
+  pricePerUnit?: number;
   notes?: string;
 }

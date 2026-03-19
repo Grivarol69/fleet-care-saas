@@ -2276,10 +2276,14 @@ enum WorkOrderSubTaskStatus {
 enum FuelVoucherFuelType {
   NAFTA_SUPER
   NAFTA_PREMIUM
-  GASOIL
   GNC
   DIESEL
   DIESEL_PREMIUM
+}
+
+enum VolumeUnit {
+  LITERS
+  GALLONS
 }
 
 model FuelVoucher {
@@ -2291,9 +2295,10 @@ model FuelVoucher {
   providerId    String?
   date          DateTime
   fuelType      FuelVoucherFuelType
-  liters        Decimal             @db.Decimal(10, 3)
+  quantity      Decimal             @db.Decimal(10, 3)
+  volumeUnit    VolumeUnit          @default(LITERS)
   odometer      Int
-  pricePerLiter Decimal?            @db.Decimal(10, 4)
+  pricePerUnit  Decimal?            @db.Decimal(10, 4)
   totalAmount   Decimal?            @db.Decimal(12, 2)
   notes         String?
   createdBy     String              // Clerk userId of admin who entered the record

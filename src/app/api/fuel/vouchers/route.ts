@@ -85,9 +85,10 @@ export async function POST(request: NextRequest) {
       providerId,
       date,
       fuelType,
-      liters,
+      quantity,
+      volumeUnit,
       odometer,
-      pricePerLiter,
+      pricePerUnit,
       notes,
     } = body;
 
@@ -96,21 +97,21 @@ export async function POST(request: NextRequest) {
       !vehicleId ||
       !date ||
       !fuelType ||
-      liters === undefined ||
+      quantity === undefined ||
       odometer === undefined
     ) {
       return NextResponse.json(
         {
           error:
-            'Missing required fields: vehicleId, date, fuelType, liters, odometer',
+            'Missing required fields: vehicleId, date, fuelType, quantity, odometer',
         },
         { status: 400 }
       );
     }
 
-    if (Number(liters) <= 0) {
+    if (Number(quantity) <= 0) {
       return NextResponse.json(
-        { error: 'liters must be greater than 0' },
+        { error: 'quantity must be greater than 0' },
         { status: 400 }
       );
     }
@@ -147,10 +148,10 @@ export async function POST(request: NextRequest) {
     const voucherDate = new Date(date);
     const yearMonth = `${voucherDate.getFullYear()}${String(voucherDate.getMonth() + 1).padStart(2, '0')}`;
 
-    // Compute totalAmount when both liters and pricePerLiter are present
+    // Compute totalAmount when both quantity and pricePerUnit are present
     let totalAmount: Decimal | null = null;
-    if (pricePerLiter !== undefined && pricePerLiter !== null) {
-      totalAmount = new Decimal(liters).mul(new Decimal(pricePerLiter));
+    if (pricePerUnit !== undefined && pricePerUnit !== null) {
+      totalAmount = new Decimal(quantity).mul(new Decimal(pricePerUnit));
     }
 
     // Run everything atomically
@@ -175,11 +176,12 @@ export async function POST(request: NextRequest) {
             providerId: providerId ?? null,
             date: voucherDate,
             fuelType,
-            liters: new Decimal(liters),
+            quantity: new Decimal(quantity),
+            volumeUnit: volumeUnit ?? 'LITERS',
             odometer: Number(odometer),
-            pricePerLiter:
-              pricePerLiter !== undefined && pricePerLiter !== null
-                ? new Decimal(pricePerLiter)
+            pricePerUnit:
+              pricePerUnit !== undefined && pricePerUnit !== null
+                ? new Decimal(pricePerUnit)
                 : null,
             totalAmount,
             notes: notes ?? null,

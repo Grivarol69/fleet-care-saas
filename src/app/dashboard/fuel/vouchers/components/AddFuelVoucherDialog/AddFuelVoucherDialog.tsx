@@ -31,13 +31,14 @@ export function AddFuelVoucherDialog({ onSuccess }: AddFuelVoucherDialogProps) {
         date: values.date.toISOString(),
         odometer: Number(values.odometer),
         fuelType: values.fuelType,
-        liters: Number(values.liters),
+        quantity: Number(values.quantity),
+        volumeUnit: values.volumeUnit,
         driverId: values.driverId || null,
         providerId: values.providerId || null,
-        pricePerLiter:
-          values.pricePerLiter != null &&
-          values.pricePerLiter !== ('' as unknown as number)
-            ? Number(values.pricePerLiter)
+        pricePerUnit:
+          values.pricePerUnit != null &&
+          values.pricePerUnit !== ('' as unknown as number)
+            ? Number(values.pricePerUnit)
             : null,
         notes: values.notes || null,
       };
