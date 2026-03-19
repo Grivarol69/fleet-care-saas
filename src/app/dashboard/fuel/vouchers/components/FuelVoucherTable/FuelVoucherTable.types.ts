@@ -3,9 +3,10 @@ export interface FuelVoucherRow {
   voucherNumber: string;
   date: string;
   fuelType: string;
-  liters: string | number;
+  quantity: string | number;
+  volumeUnit: 'LITERS' | 'GALLONS';
   odometer: number;
-  pricePerLiter?: string | number | null;
+  pricePerUnit?: string | number | null;
   totalAmount?: string | number | null;
   notes?: string | null;
   vehicle: {
@@ -27,4 +28,5 @@ export interface FuelVoucherTableProps {
   vouchers: FuelVoucherRow[];
   onDelete?: (id: string) => void;
   isLoading?: boolean;
+  countryCode?: string;
 }

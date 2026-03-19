@@ -15,10 +15,7 @@ import { Label } from '@/components/ui/label';
 
 import { FuelVoucherTable } from './components/FuelVoucherTable';
 import { AddFuelVoucherDialog } from './components/AddFuelVoucherDialog';
-import {
-  FUEL_TYPE_LABELS,
-  FUEL_TYPES,
-} from './components/FuelVoucherForm/FuelVoucherForm.form';
+import { getFuelTypeLabels, VOLUME_UNIT_SUFFIX } from '@/lib/fuel-constants';
 import type { FuelVoucherRow } from './components/FuelVoucherTable/FuelVoucherTable.types';
 
 interface Vehicle {
@@ -31,6 +28,7 @@ export default function FuelVouchersPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [total, setTotal] = useState(0);
+  const [tenantCountry, setTenantCountry] = useState<string>('_default');
 
   // Filters
   const [filterVehicleId, setFilterVehicleId] = useState<string>('_all');
@@ -78,6 +76,12 @@ export default function FuelVouchersPage() {
 
   useEffect(() => {
     fetchVehicles();
+    axios
+      .get('/api/tenants')
+      .then(res =>
+        setTenantCountry(res.data.tenants?.[0]?.country ?? '_default')
+      )
+      .catch(() => {});
   }, [fetchVehicles]);
 
   useEffect(() => {
@@ -103,7 +107,20 @@ export default function FuelVouchersPage() {
   };
 
   // Summary totals for current filter
-  const totalLiters = vouchers.reduce((acc, v) => acc + Number(v.liters), 0);
+  const defaultFuelTypeLabels = getFuelTypeLabels(tenantCountry);
+  const fuelTypeKeys = Object.keys(
+    defaultFuelTypeLabels
+  ) as (keyof typeof defaultFuelTypeLabels)[];
+
+  const units = new Set(vouchers.map(v => v.volumeUnit));
+  const hasMixedUnits = units.size > 1;
+  const singleUnit = hasMixedUnits
+    ? null
+    : (vouchers[0]?.volumeUnit ?? 'LITERS');
+
+  const totalQuantity = hasMixedUnits
+    ? null
+    : vouchers.reduce((acc, v) => acc + Number(v.quantity), 0);
   const totalAmount = vouchers.reduce(
     (acc, v) => acc + (v.totalAmount ? Number(v.totalAmount) : 0),
     0
@@ -149,9 +166,9 @@ export default function FuelVouchersPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="_all">Todos</SelectItem>
-              {FUEL_TYPES.map(ft => (
+              {fuelTypeKeys.map(ft => (
                 <SelectItem key={ft} value={ft}>
-                  {FUEL_TYPE_LABELS[ft]}
+                  {defaultFuelTypeLabels[ft]}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -182,18 +199,20 @@ export default function FuelVouchersPage() {
         vouchers={vouchers}
         onDelete={handleDelete}
         isLoading={isLoading}
+        countryCode={tenantCountry}
       />
 
       {/* Summary row */}
       {!isLoading && vouchers.length > 0 && (
         <div className="flex gap-6 justify-end text-sm text-muted-foreground border-t pt-3">
           <span>
-            Total litros:{' '}
+            Total cantidad:{' '}
             <strong className="text-foreground">
-              {totalLiters.toLocaleString('es-AR', {
-                minimumFractionDigits: 3,
-              })}{' '}
-              L
+              {hasMixedUnits || totalQuantity === null
+                ? 'Unidades mixtas'
+                : `${totalQuantity.toLocaleString('es-AR', {
+                    minimumFractionDigits: 3,
+                  })} ${VOLUME_UNIT_SUFFIX[singleUnit as keyof typeof VOLUME_UNIT_SUFFIX]}`}
             </strong>
           </span>
           {totalAmount > 0 && (

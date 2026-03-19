@@ -46,7 +46,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 }
 
 // PUT /api/fuel/vouchers/[id]
-// Allowed editable fields: driverId, providerId, fuelType, liters, pricePerLiter, notes, date
+// Allowed editable fields: driverId, providerId, fuelType, quantity, pricePerUnit, volumeUnit, notes, date
 // NOT allowed: vehicleId, odometer
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
@@ -76,24 +76,25 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       driverId,
       providerId,
       fuelType,
-      liters,
-      pricePerLiter,
+      quantity,
+      pricePerUnit,
+      volumeUnit,
       notes,
       date,
     } = body;
 
-    // Recompute totalAmount if liters or pricePerLiter changed
-    const newLiters =
-      liters !== undefined ? new Decimal(liters) : existing.liters;
-    const newPricePerLiter =
-      pricePerLiter !== undefined
-        ? pricePerLiter !== null
-          ? new Decimal(pricePerLiter)
+    // Recompute totalAmount if quantity or pricePerUnit changed
+    const newQuantity =
+      quantity !== undefined ? new Decimal(quantity) : existing.quantity;
+    const newPricePerUnit =
+      pricePerUnit !== undefined
+        ? pricePerUnit !== null
+          ? new Decimal(pricePerUnit)
           : null
-        : existing.pricePerLiter;
+        : existing.pricePerUnit;
 
     const newTotalAmount =
-      newLiters && newPricePerLiter ? newLiters.mul(newPricePerLiter) : null;
+      newQuantity && newPricePerUnit ? newQuantity.mul(newPricePerUnit) : null;
 
     const updated = await tenantPrisma.fuelVoucher.update({
       where: { id },
@@ -101,11 +102,12 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         ...(driverId !== undefined ? { driverId: driverId ?? null } : {}),
         ...(providerId !== undefined ? { providerId: providerId ?? null } : {}),
         ...(fuelType !== undefined ? { fuelType } : {}),
-        ...(liters !== undefined ? { liters: new Decimal(liters) } : {}),
-        ...(pricePerLiter !== undefined
+        ...(quantity !== undefined ? { quantity: new Decimal(quantity) } : {}),
+        ...(volumeUnit !== undefined ? { volumeUnit } : {}),
+        ...(pricePerUnit !== undefined
           ? {
-              pricePerLiter:
-                pricePerLiter !== null ? new Decimal(pricePerLiter) : null,
+              pricePerUnit:
+                pricePerUnit !== null ? new Decimal(pricePerUnit) : null,
             }
           : {}),
         totalAmount: newTotalAmount,

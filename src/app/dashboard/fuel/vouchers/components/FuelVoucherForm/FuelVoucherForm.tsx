@@ -34,11 +34,15 @@ import {
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import {
+  getFuelTypeLabels,
+  getVolumeUnitDefault,
+  VOLUME_UNIT_SUFFIX,
+  type VolumeUnitKey,
+} from '@/lib/fuel-constants';
 
 import {
   fuelVoucherFormSchema,
-  FUEL_TYPE_LABELS,
-  FUEL_TYPES,
   type FuelVoucherFormValues,
 } from './FuelVoucherForm.form';
 import type {
@@ -55,6 +59,7 @@ export function FuelVoucherForm({
   const [vehicles, setVehicles] = useState<FuelVehicle[]>([]);
   const [drivers, setDrivers] = useState<FuelDriver[]>([]);
   const [providers, setProviders] = useState<FuelProvider[]>([]);
+  const [tenantCountry, setTenantCountry] = useState<string>('AR');
 
   const form = useForm<FuelVoucherFormValues>({
     resolver: zodResolver(fuelVoucherFormSchema),
@@ -63,39 +68,52 @@ export function FuelVoucherForm({
       date: new Date(),
       odometer: 0,
       fuelType: '',
-      liters: 0,
+      quantity: 0,
+      volumeUnit: 'LITERS',
       driverId: undefined,
       providerId: undefined,
-      pricePerLiter: undefined,
+      pricePerUnit: undefined,
       notes: '',
     },
   });
 
-  const liters = form.watch('liters');
-  const pricePerLiter = form.watch('pricePerLiter');
+  const quantity = form.watch('quantity');
+  const pricePerUnit = form.watch('pricePerUnit');
+  const watchedVolumeUnit = form.watch('volumeUnit') as VolumeUnitKey;
 
   const totalAmount =
-    liters && pricePerLiter && Number(liters) > 0 && Number(pricePerLiter) > 0
-      ? (Number(liters) * Number(pricePerLiter)).toFixed(2)
+    quantity && pricePerUnit && Number(quantity) > 0 && Number(pricePerUnit) > 0
+      ? (Number(quantity) * Number(pricePerUnit)).toFixed(2)
       : null;
+
+  const fuelTypeLabels = getFuelTypeLabels(tenantCountry);
+  const fuelTypes = Object.keys(
+    fuelTypeLabels
+  ) as (keyof typeof fuelTypeLabels)[];
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [vehiclesRes, driversRes, providersRes] = await Promise.all([
-          axios.get('/api/vehicles/vehicles'),
-          axios.get('/api/people/drivers'),
-          axios.get('/api/people/providers'),
-        ]);
+        const [vehiclesRes, driversRes, providersRes, tenantsRes] =
+          await Promise.all([
+            axios.get('/api/vehicles/vehicles'),
+            axios.get('/api/people/drivers'),
+            axios.get('/api/people/providers'),
+            axios.get('/api/tenants'),
+          ]);
         setVehicles(vehiclesRes.data);
         setDrivers(driversRes.data);
         setProviders(providersRes.data);
+
+        const country: string = tenantsRes.data?.tenants?.[0]?.country ?? 'AR';
+        setTenantCountry(country);
+        form.setValue('volumeUnit', getVolumeUnitDefault(country));
       } catch (error) {
         console.error('Error fetching form data:', error);
       }
     };
     fetchData();
-  }, []);
+  }, [form]);
 
   const handleSubmit = async (values: FuelVoucherFormValues) => {
     await onSubmit(values);
@@ -209,9 +227,9 @@ export function FuelVoucherForm({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {FUEL_TYPES.map(ft => (
+                  {fuelTypes.map(ft => (
                     <SelectItem key={ft} value={ft}>
-                      {FUEL_TYPE_LABELS[ft]}
+                      {fuelTypeLabels[ft]}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -221,13 +239,38 @@ export function FuelVoucherForm({
           )}
         />
 
-        {/* Litros */}
+        {/* Unidad de volumen */}
         <FormField
           control={form.control}
-          name="liters"
+          name="volumeUnit"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Litros *</FormLabel>
+              <FormLabel>Unidad de volumen</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione unidad" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="LITERS">Litros</SelectItem>
+                  <SelectItem value="GALLONS">Galones</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Cantidad */}
+        <FormField
+          control={form.control}
+          name="quantity"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                Cantidad ({VOLUME_UNIT_SUFFIX[watchedVolumeUnit]}) *
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -306,13 +349,15 @@ export function FuelVoucherForm({
           )}
         />
 
-        {/* Precio por litro (opcional) */}
+        {/* Precio por unidad (opcional) */}
         <FormField
           control={form.control}
-          name="pricePerLiter"
+          name="pricePerUnit"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Precio por litro</FormLabel>
+              <FormLabel>
+                Precio/{VOLUME_UNIT_SUFFIX[watchedVolumeUnit]}
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"

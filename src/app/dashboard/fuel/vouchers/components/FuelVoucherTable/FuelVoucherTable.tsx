@@ -12,13 +12,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { FUEL_TYPE_LABELS } from '../FuelVoucherForm/FuelVoucherForm.form';
+import { getFuelTypeLabels, VOLUME_UNIT_SUFFIX } from '@/lib/fuel-constants';
 import type { FuelVoucherTableProps } from './FuelVoucherTable.types';
 
 export function FuelVoucherTable({
   vouchers,
   onDelete,
   isLoading,
+  countryCode,
 }: FuelVoucherTableProps) {
   if (isLoading) {
     return (
@@ -64,7 +65,7 @@ export function FuelVoucherTable({
           <TableHead>Vehículo</TableHead>
           <TableHead>Fecha</TableHead>
           <TableHead>Combustible</TableHead>
-          <TableHead className="text-right">Litros</TableHead>
+          <TableHead className="text-right">Cantidad</TableHead>
           <TableHead className="text-right">Total</TableHead>
           <TableHead>Conductor</TableHead>
           {onDelete && <TableHead className="w-12" />}
@@ -78,9 +79,12 @@ export function FuelVoucherTable({
             </TableCell>
             <TableCell>{v.vehicle.licensePlate}</TableCell>
             <TableCell>{formatDate(v.date)}</TableCell>
-            <TableCell>{FUEL_TYPE_LABELS[v.fuelType] ?? v.fuelType}</TableCell>
+            <TableCell>
+              {getFuelTypeLabels(countryCode ?? '_default')[v.fuelType] ??
+                v.fuelType}
+            </TableCell>
             <TableCell className="text-right">
-              {Number(v.liters).toFixed(3)} L
+              {Number(v.quantity).toFixed(3)} {VOLUME_UNIT_SUFFIX[v.volumeUnit]}
             </TableCell>
             <TableCell className="text-right">
               {formatAmount(v.totalAmount)}
