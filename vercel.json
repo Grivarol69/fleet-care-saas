@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm run build",
+  "buildCommand": "prisma migrate deploy && pnpm run build",
   "installCommand": "pnpm install",
   "framework": "nextjs",
   "regions": ["cle1"],
