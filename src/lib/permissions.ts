@@ -391,6 +391,34 @@ export function canAccessTaller(user: User | null): boolean {
 }
 
 // ========================================
+// FUEL VOUCHER PERMISSIONS
+// ========================================
+
+export const FUEL_VOUCHER_MANAGE_ROLES = ['OWNER', 'MANAGER'] as const;
+export const FUEL_VOUCHER_CREATE_ROLES = [
+  'OWNER',
+  'MANAGER',
+  'PURCHASER',
+] as const;
+export const FUEL_VOUCHER_VIEW_ROLES = [
+  'OWNER',
+  'MANAGER',
+  'PURCHASER',
+] as const;
+
+export function canManageFuelVouchers(role: string): boolean {
+  return (FUEL_VOUCHER_MANAGE_ROLES as readonly string[]).includes(role);
+}
+
+export function canCreateFuelVouchers(role: string): boolean {
+  return (FUEL_VOUCHER_CREATE_ROLES as readonly string[]).includes(role);
+}
+
+export function canViewFuelVouchers(role: string): boolean {
+  return (FUEL_VOUCHER_VIEW_ROLES as readonly string[]).includes(role);
+}
+
+// ========================================
 // CONSTANTES
 // ========================================
 

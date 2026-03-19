@@ -157,6 +157,7 @@ async function main() {
   await prisma.vehicleMantProgram.deleteMany({});
   await prisma.vehicleDriver.deleteMany({});
   await prisma.odometerLog.deleteMany({});
+  await prisma.fuelVoucher.deleteMany({});
   await prisma.document.deleteMany({});
   await prisma.vehicle.deleteMany({});
   await prisma.driver.deleteMany({});
@@ -1176,6 +1177,7 @@ async function main() {
     prisma.masterPart.create({
       data: {
         tenantId: null,
+        isGlobal: true,
         code: 'SHELL-HELIX-HX7-10W40',
         description: 'Aceite Shell Helix HX7 10W-40 Semi-Sintetico',
         category: 'LUBRICANTES',
@@ -1189,6 +1191,7 @@ async function main() {
     prisma.masterPart.create({
       data: {
         tenantId: null,
+        isGlobal: true,
         code: 'MOBIL-SUPER-3000-5W40',
         description: 'Aceite Mobil Super 3000 5W-40 Sintetico',
         category: 'LUBRICANTES',
@@ -1202,6 +1205,7 @@ async function main() {
     prisma.masterPart.create({
       data: {
         tenantId: null,
+        isGlobal: true,
         code: 'CASTROL-GTX-15W40',
         description: 'Aceite Castrol GTX 15W-40 Mineral',
         category: 'LUBRICANTES',
@@ -1216,6 +1220,7 @@ async function main() {
     prisma.masterPart.create({
       data: {
         tenantId: null,
+        isGlobal: true,
         code: 'BOSCH-0986AF0134',
         description: 'Filtro Aceite BOSCH 0986AF0134',
         category: 'FILTROS',
@@ -1229,6 +1234,7 @@ async function main() {
     prisma.masterPart.create({
       data: {
         tenantId: null,
+        isGlobal: true,
         code: 'MANN-W920/21',
         description: 'Filtro Aceite MANN W920/21',
         category: 'FILTROS',
@@ -1242,6 +1248,7 @@ async function main() {
     prisma.masterPart.create({
       data: {
         tenantId: null,
+        isGlobal: true,
         code: 'BOSCH-F026400364',
         description: 'Filtro Aire BOSCH F026400364',
         category: 'FILTROS',
@@ -1255,6 +1262,7 @@ async function main() {
     prisma.masterPart.create({
       data: {
         tenantId: null,
+        isGlobal: true,
         code: 'MANN-C25114',
         description: 'Filtro Aire MANN C25114',
         category: 'FILTROS',
@@ -1268,6 +1276,7 @@ async function main() {
     prisma.masterPart.create({
       data: {
         tenantId: null,
+        isGlobal: true,
         code: 'BOSCH-F026402065',
         description: 'Filtro Combustible BOSCH F026402065',
         category: 'FILTROS',
@@ -1282,6 +1291,7 @@ async function main() {
     prisma.masterPart.create({
       data: {
         tenantId: null,
+        isGlobal: true,
         code: 'BOSCH-0986AB1234',
         description: 'Pastillas Freno Delanteras BOSCH',
         category: 'FRENOS',
@@ -1295,6 +1305,7 @@ async function main() {
     prisma.masterPart.create({
       data: {
         tenantId: null,
+        isGlobal: true,
         code: 'CASTROL-DOT4-500ML',
         description: 'Liquido Frenos Castrol DOT4 500ml',
         category: 'FRENOS',
@@ -1309,6 +1320,7 @@ async function main() {
     prisma.masterPart.create({
       data: {
         tenantId: null,
+        isGlobal: true,
         code: 'RENAULT-HAB-123',
         description: 'Filtro de Habitaculo / Cabina (Duster/Oroch)',
         category: 'FILTROS',
@@ -1322,6 +1334,7 @@ async function main() {
     prisma.masterPart.create({
       data: {
         tenantId: null,
+        isGlobal: true,
         code: 'RENAULT-COR-456',
         description: 'Correa de Accesorios Poly-V',
         category: 'MOTOR',
@@ -1335,6 +1348,7 @@ async function main() {
     prisma.masterPart.create({
       data: {
         tenantId: null,
+        isGlobal: true,
         code: 'DONGFENG-RED-789',
         description: 'Aceite para Engranaje Reductor EV (Dongfeng)',
         category: 'LUBRICANTES',
@@ -1348,6 +1362,7 @@ async function main() {
     prisma.masterPart.create({
       data: {
         tenantId: null,
+        isGlobal: true,
         code: 'EV-COOLANT-BC',
         description: 'Liquido Refrigerante EV (Baja Conductividad)',
         category: 'LUBRICANTES',
@@ -3597,6 +3612,206 @@ async function main() {
   }
 
   console.log('   1 Financial Alert creado');
+
+  // ========================================
+  // FUEL VOUCHERS - Tenant 1 (Demo)
+  // ========================================
+  console.log('   Creando Fuel Vouchers Tenant 1...');
+
+  const t1VehiclesForFuel = await prisma.vehicle.findMany({
+    where: { tenantId: DEMO_TENANT_ID },
+    orderBy: { licensePlate: 'asc' },
+  });
+  const t1DriversForFuel = await prisma.driver.findMany({
+    where: { tenantId: DEMO_TENANT_ID },
+    orderBy: { name: 'asc' },
+  });
+  const t1ProvidersForFuel = await prisma.provider.findMany({
+    where: { tenantId: DEMO_TENANT_ID },
+    orderBy: { name: 'asc' },
+  });
+  const t1OwnerForFuel = await prisma.user.findFirst({
+    where: { tenantId: DEMO_TENANT_ID, role: 'OWNER' },
+  });
+
+  if (t1VehiclesForFuel.length > 0 && t1OwnerForFuel) {
+    const fuelData = [
+      // FIN-001 — 3 months ago
+      {
+        vehicleId: t1VehiclesForFuel[0].id,
+        driverId: t1DriversForFuel[0]?.id ?? null,
+        providerId: t1ProvidersForFuel[0]?.id ?? null,
+        date: getRelativeDate(3, 5),
+        fuelType: 'DIESEL',
+        liters: 60.5,
+        odometer: 44200,
+        pricePerLiter: 1820.0,
+        voucherPrefix: 'COMB-202212',
+        seq: 1,
+      },
+      // FIN-002 — 3 months ago
+      {
+        vehicleId: t1VehiclesForFuel[1].id,
+        driverId: t1DriversForFuel[1]?.id ?? null,
+        providerId: t1ProvidersForFuel[0]?.id ?? null,
+        date: getRelativeDate(3, 10),
+        fuelType: 'DIESEL',
+        liters: 75.0,
+        odometer: 60500,
+        pricePerLiter: 1830.0,
+        voucherPrefix: 'COMB-202212',
+        seq: 2,
+      },
+      // FIN-003 — 3 months ago, no price
+      {
+        vehicleId: t1VehiclesForFuel[2].id,
+        driverId: t1DriversForFuel[2]?.id ?? null,
+        providerId: null,
+        date: getRelativeDate(3, 20),
+        fuelType: 'DIESEL',
+        liters: 45.0,
+        odometer: 17200,
+        pricePerLiter: null,
+        voucherPrefix: 'COMB-202212',
+        seq: 3,
+      },
+      // FIN-004 — 2 months ago — gasolina
+      {
+        vehicleId: t1VehiclesForFuel[3]?.id ?? t1VehiclesForFuel[0].id,
+        driverId: null,
+        providerId: t1ProvidersForFuel[1]?.id ?? null,
+        date: getRelativeDate(2, 8),
+        fuelType: 'NAFTA_SUPER',
+        liters: 50.0,
+        odometer: 94200,
+        pricePerLiter: 2100.0,
+        voucherPrefix: 'COMB-202301',
+        seq: 1,
+      },
+      // FIN-001 — 2 months ago
+      {
+        vehicleId: t1VehiclesForFuel[0].id,
+        driverId: t1DriversForFuel[0]?.id ?? null,
+        providerId: t1ProvidersForFuel[0]?.id ?? null,
+        date: getRelativeDate(2, 15),
+        fuelType: 'DIESEL',
+        liters: 58.0,
+        odometer: 44600,
+        pricePerLiter: 1850.0,
+        voucherPrefix: 'COMB-202301',
+        seq: 2,
+      },
+      // FIN-005 — 2 months ago, no price
+      {
+        vehicleId: t1VehiclesForFuel[4]?.id ?? t1VehiclesForFuel[1].id,
+        driverId: null,
+        providerId: null,
+        date: getRelativeDate(2, 22),
+        fuelType: 'DIESEL',
+        liters: 40.0,
+        odometer: 11500,
+        pricePerLiter: null,
+        voucherPrefix: 'COMB-202301',
+        seq: 3,
+      },
+      // FIN-002 — 1 month ago
+      {
+        vehicleId: t1VehiclesForFuel[1].id,
+        driverId: t1DriversForFuel[1]?.id ?? null,
+        providerId: t1ProvidersForFuel[0]?.id ?? null,
+        date: getRelativeDate(1, 5),
+        fuelType: 'DIESEL',
+        liters: 70.0,
+        odometer: 61200,
+        pricePerLiter: 1870.0,
+        voucherPrefix: 'COMB-202302',
+        seq: 1,
+      },
+      // FIN-003 — 1 month ago
+      {
+        vehicleId: t1VehiclesForFuel[2].id,
+        driverId: t1DriversForFuel[2]?.id ?? null,
+        providerId: null,
+        date: getRelativeDate(1, 12),
+        fuelType: 'DIESEL',
+        liters: 55.5,
+        odometer: 17700,
+        pricePerLiter: 1865.0,
+        voucherPrefix: 'COMB-202302',
+        seq: 2,
+      },
+      // FIN-001 — this month
+      {
+        vehicleId: t1VehiclesForFuel[0].id,
+        driverId: t1DriversForFuel[0]?.id ?? null,
+        providerId: t1ProvidersForFuel[0]?.id ?? null,
+        date: getRelativeDate(0, 5),
+        fuelType: 'DIESEL',
+        liters: 62.0,
+        odometer: 45100,
+        pricePerLiter: 1900.0,
+        voucherPrefix: 'COMB-202303',
+        seq: 1,
+      },
+      // FIN-004 — this month — GNC (no price)
+      {
+        vehicleId: t1VehiclesForFuel[3]?.id ?? t1VehiclesForFuel[0].id,
+        driverId: null,
+        providerId: null,
+        date: getRelativeDate(0, 10),
+        fuelType: 'GNC',
+        liters: 30.0,
+        odometer: 95200,
+        pricePerLiter: null,
+        voucherPrefix: 'COMB-202303',
+        seq: 2,
+      },
+    ];
+
+    for (const fd of fuelData) {
+      const { Decimal } = await import('@prisma/client/runtime/library');
+      const totalAmount =
+        fd.pricePerLiter !== null
+          ? new Decimal(fd.liters).mul(new Decimal(fd.pricePerLiter))
+          : null;
+
+      const voucherNumber = `${fd.voucherPrefix}-${String(fd.seq).padStart(5, '0')}`;
+
+      const fv = await prisma.fuelVoucher.create({
+        data: {
+          tenantId: DEMO_TENANT_ID,
+          voucherNumber,
+          vehicleId: fd.vehicleId,
+          driverId: fd.driverId,
+          providerId: fd.providerId,
+          date: fd.date,
+          fuelType: fd.fuelType as import('@prisma/client').FuelVoucherFuelType,
+          liters: new Decimal(fd.liters),
+          odometer: fd.odometer,
+          pricePerLiter:
+            fd.pricePerLiter !== null ? new Decimal(fd.pricePerLiter) : null,
+          totalAmount,
+          createdBy: t1OwnerForFuel.id,
+        },
+      });
+
+      await prisma.odometerLog.create({
+        data: {
+          tenantId: DEMO_TENANT_ID,
+          vehicleId: fd.vehicleId,
+          driverId: fd.driverId,
+          kilometers: fd.odometer,
+          measureType: 'KILOMETERS',
+          recordedAt: fd.date,
+          fuelVoucherId: fv.id,
+        },
+      });
+    }
+
+    console.log(
+      `   ${fuelData.length} Fuel Vouchers creados con OdometerLogs vinculados`
+    );
+  }
 
   const t1TenantSummary = await prisma.tenant.findUnique({
     where: { id: DEMO_TENANT_ID },

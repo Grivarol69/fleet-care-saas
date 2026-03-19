@@ -16,6 +16,7 @@ import {
   Plug2,
   Landmark,
   Clock,
+  Droplets,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -182,6 +183,17 @@ export const dataAdminSidebar: SidebarItem[] = [
           UserRole.DRIVER,
         ],
       }, // Todos registran km
+      {
+        label: 'Vales de Combustible',
+        icon: Droplets,
+        href: '/dashboard/fuel/vouchers',
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.PURCHASER,
+        ],
+      },
     ],
   },
   {
