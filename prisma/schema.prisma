@@ -73,6 +73,7 @@ model Tenant {
   costCenters            CostCenter[]
   mantItemProcedures     MantItemProcedure[]
   temparios              Tempario[]
+  fuelVouchers           FuelVoucher[]
 
   @@index([slug])
   @@index([subscriptionStatus])
@@ -298,6 +299,7 @@ model Vehicle {
   maintenanceAlerts  MaintenanceAlert[]
   vehicleDrivers     VehicleDriver[]
   vehicleMantProgram VehicleMantProgram? // ✅ CURRENT ARCHITECTURE
+  fuelVouchers       FuelVoucher[]
   costCenterId       String?
   costCenter         CostCenter?         @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
 
@@ -1289,6 +1291,7 @@ model Provider {
   workOrderExpenses      WorkOrderExpense[] // ✅ Gastos asignados
   purchaseOrders         PurchaseOrder[]
   workOrderItems         WorkOrderItem[]
+  fuelVouchers           FuelVoucher[]
 
   @@unique([tenantId, name])
   @@index([tenantId])
@@ -1309,6 +1312,7 @@ model Driver {
   tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   odometerLogs   OdometerLog[]
   vehicleDrivers VehicleDriver[]
+  fuelVouchers   FuelVoucher[]
 
   userId String? @unique
   user   User?   @relation(fields: [userId], references: [id])
@@ -1348,19 +1352,21 @@ model VehicleDriver {
 // ========================================
 
 model OdometerLog {
-  id          String              @id @default(uuid())
-  vehicleId   String
-  driverId    String?
-  tenantId    String
-  kilometers  Int?
-  hours       Int?
-  measureType OdometerMeasureType @default(KILOMETERS)
-  recordedAt  DateTime            @default(now())
-  createdAt   DateTime            @default(now())
+  id             String              @id @default(uuid())
+  vehicleId      String
+  driverId       String?
+  tenantId       String
+  kilometers     Int?
+  hours          Int?
+  measureType    OdometerMeasureType @default(KILOMETERS)
+  recordedAt     DateTime            @default(now())
+  createdAt      DateTime            @default(now())
+  fuelVoucherId  String?             @unique
 
-  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-  driver  Driver? @relation(fields: [driverId], references: [id])
-  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicle      Vehicle      @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  driver       Driver?      @relation(fields: [driverId], references: [id])
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  fuelVoucher  FuelVoucher? @relation(fields: [fuelVoucherId], references: [id])
 
   @@index([vehicleId])
   @@index([driverId])
@@ -2261,4 +2267,48 @@ enum WorkOrderSubTaskStatus {
   IN_PROGRESS
   DONE
   CANCELLED
+}
+
+// ========================================
+// FUEL VOUCHERS
+// ========================================
+
+enum FuelVoucherFuelType {
+  NAFTA_SUPER
+  NAFTA_PREMIUM
+  GASOIL
+  GNC
+  DIESEL
+  DIESEL_PREMIUM
+}
+
+model FuelVoucher {
+  id            String              @id @default(uuid())
+  tenantId      String
+  voucherNumber String              // COMB-YYYYMM-NNNNN, unique per tenant
+  vehicleId     String
+  driverId      String?
+  providerId    String?
+  date          DateTime
+  fuelType      FuelVoucherFuelType
+  liters        Decimal             @db.Decimal(10, 3)
+  odometer      Int
+  pricePerLiter Decimal?            @db.Decimal(10, 4)
+  totalAmount   Decimal?            @db.Decimal(12, 2)
+  notes         String?
+  createdBy     String              // Clerk userId of admin who entered the record
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicle     Vehicle   @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  driver      Driver?   @relation(fields: [driverId], references: [id])
+  provider    Provider? @relation(fields: [providerId], references: [id])
+  odometerLog OdometerLog?
+
+  @@unique([tenantId, voucherNumber])
+  @@index([tenantId])
+  @@index([vehicleId])
+  @@index([driverId])
+  @@index([date])
 }
