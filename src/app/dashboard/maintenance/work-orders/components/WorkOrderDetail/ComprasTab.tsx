@@ -1,7 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { ShoppingCart, Receipt, Loader2 } from 'lucide-react';
+import {
+  ShoppingCart,
+  Receipt,
+  Loader2,
+  ChevronDown,
+  ChevronRight,
+} from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import {
   Table,
@@ -14,9 +20,21 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
-import { canViewCosts } from '@/lib/permissions';
+import { canViewCosts, canOverrideWorkOrderFreeze } from '@/lib/permissions';
 import { useToast } from '@/components/hooks/use-toast';
 import { ExpensesTab } from './ExpensesTab';
+import { Checkbox } from '@/components/ui/checkbox';
+import axios from 'axios';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const PO_STATUS_NO_INVOICE = new Set([
   'DRAFT',
@@ -28,8 +46,28 @@ const PO_STATUS_NO_INVOICE = new Set([
 
 export function ComprasTab({ workOrder, currentUser, onRefresh }: any) {
   const showCosts = canViewCosts(currentUser as any);
+  const isOverride = canOverrideWorkOrderFreeze(currentUser as any);
   const { toast } = useToast();
   const [actioningId, setActioningId] = useState<string | null>(null);
+  const [selectedExternalIds, setSelectedExternalIds] = useState<string[]>([]);
+  const [isGeneratingOC, setIsGeneratingOC] = useState(false);
+  const [expandedPoId, setExpandedPoId] = useState<string | null>(null);
+  const [regenerateItem, setRegenerateItem] = useState<any | null>(null);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+
+  const pendingExternalItems = (workOrder.workOrderItems || []).filter(
+    (i: any) =>
+      i.itemSource === 'EXTERNAL' &&
+      i.status !== 'CANCELLED' &&
+      (!i.purchaseOrderItems || i.purchaseOrderItems.length === 0)
+  );
+
+  const poLinkedExternalItems = (workOrder.workOrderItems || []).filter(
+    (i: any) =>
+      (i.itemSource === 'EXTERNAL' || i.itemSource === 'INTERNAL_PURCHASE') &&
+      i.status !== 'CANCELLED' &&
+      i.purchaseOrderItems?.length > 0
+  );
 
   const pos = workOrder.purchaseOrders || [];
   const totalOCs = pos.reduce(
@@ -63,9 +101,243 @@ export function ComprasTab({ workOrder, currentUser, onRefresh }: any) {
     }
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedExternalIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleGenerateOC = async () => {
+    setIsGeneratingOC(true);
+    try {
+      await axios.post(
+        `/api/maintenance/work-orders/${workOrder.id}/purchase-orders`,
+        { itemIds: selectedExternalIds }
+      );
+      toast({
+        title: 'OC generada',
+        description: 'Orden de compra creada correctamente.',
+      });
+      setSelectedExternalIds([]);
+      onRefresh();
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'No se pudo generar la OC',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGeneratingOC(false);
+    }
+  };
+
+  const handleRegenerateOC = async () => {
+    if (!regenerateItem) return;
+    setIsRegenerating(true);
+    try {
+      await axios.post(
+        `/api/maintenance/work-orders/${workOrder.id}/purchase-orders`,
+        { itemIds: [regenerateItem.id] }
+      );
+      toast({
+        title: 'OC regenerada',
+        description: 'Nueva orden de compra creada.',
+      });
+      setRegenerateItem(null);
+      onRefresh();
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'No se pudo regenerar la OC',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
+  // POs that will be cancelled on regeneration (DRAFT or PENDING_APPROVAL)
+  const cancellablePOs = (workOrder.purchaseOrders || []).filter(
+    (po: any) => po.status === 'DRAFT' || po.status === 'PENDING_APPROVAL'
+  );
+  const nonCancellablePOs = (workOrder.purchaseOrders || []).filter(
+    (po: any) => po.status === 'APPROVED' || po.status === 'SENT'
+  );
+
   return (
     <div className="space-y-6">
-      {/* Sección 1: Órdenes de Compra */}
+      {/* Sección 0: Pendientes de OC */}
+      {pendingExternalItems.length > 0 && (
+        <Card className="border-orange-100">
+          <CardHeader className="flex flex-row items-center justify-between bg-orange-50/50 pb-4">
+            <div className="flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5 text-orange-600" />
+              <CardTitle className="text-lg text-orange-900">
+                Ítems Pendientes de Compra
+              </CardTitle>
+            </div>
+            <Button
+              variant="default"
+              disabled={
+                selectedExternalIds.length === 0 ||
+                isGeneratingOC ||
+                selectedExternalIds.some(
+                  id =>
+                    pendingExternalItems.find((i: any) => i.id === id)
+                      ?.providerId === null
+                )
+              }
+              onClick={handleGenerateOC}
+            >
+              {isGeneratingOC && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Generar Órdenes de Compra ({selectedExternalIds.length})
+            </Button>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[50px]"></TableHead>
+                  <TableHead>Ítem / Descripción</TableHead>
+                  <TableHead>Proveedor Asignado</TableHead>
+                  <TableHead>Cant.</TableHead>
+                  <TableHead>Precio Unit.</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pendingExternalItems.map((item: any) => (
+                  <TableRow key={item.id}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedExternalIds.includes(item.id)}
+                        onCheckedChange={() => toggleSelect(item.id)}
+                        disabled={!item.providerId}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium">{item.mantItem.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {item.description}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {item.provider?.name ? (
+                        <Badge
+                          variant="outline"
+                          className="bg-blue-50 text-blue-700"
+                        >
+                          {item.provider.name}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-red-500 font-semibold">
+                          Falta Proveedor
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>{item.quantity}</TableCell>
+                    <TableCell>{formatCurrency(item.unitPrice)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Sección 0b: Ítems con OC — Regenerar OC (solo OWNER) */}
+      {isOverride && poLinkedExternalItems.length > 0 && (
+        <Card className="border-yellow-100">
+          <CardHeader className="flex flex-row items-center gap-2 bg-yellow-50/50 pb-4">
+            <ShoppingCart className="h-5 w-5 text-yellow-600" />
+            <CardTitle className="text-lg text-yellow-900">
+              Ítems con OC Vinculada — Regenerar
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Ítem / Descripción</TableHead>
+                  <TableHead>Proveedor</TableHead>
+                  <TableHead>OC Vinculada</TableHead>
+                  <TableHead>Cant.</TableHead>
+                  <TableHead>Precio Unit.</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {poLinkedExternalItems.map((item: any) => {
+                  const linkedPO = (workOrder.purchaseOrders || []).find(
+                    (po: any) =>
+                      po.items?.some(
+                        (poi: any) => poi.workOrderItemId === item.id
+                      )
+                  );
+                  return (
+                    <TableRow key={item.id}>
+                      <TableCell>
+                        <div className="font-medium">
+                          {item.mantItem?.name ?? '—'}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {item.description}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {item.provider?.name ? (
+                          <Badge
+                            variant="outline"
+                            className="bg-blue-50 text-blue-700"
+                          >
+                            {item.provider.name}
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-red-500 font-semibold">
+                            Falta Proveedor
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {linkedPO ? (
+                          <Badge
+                            variant="outline"
+                            className="font-mono text-xs"
+                          >
+                            {linkedPO.orderNumber}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">
+                            —
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>{item.quantity}</TableCell>
+                      <TableCell>
+                        {showCosts ? formatCurrency(item.unitPrice) : '—'}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-yellow-700 border-yellow-300 hover:bg-yellow-50"
+                          disabled={!item.providerId}
+                          onClick={() => setRegenerateItem(item)}
+                        >
+                          Regenerar OC
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Sección 1: Órdenes de Compra Generadas */}
       <Card>
         <CardHeader className="flex flex-row items-center gap-2 pb-2">
           <ShoppingCart className="h-5 w-5 text-orange-600" />
@@ -130,80 +402,174 @@ export function ComprasTab({ workOrder, currentUser, onRefresh }: any) {
 
                   const isActioning = actioningId === po.id;
 
+                  const isExpanded = expandedPoId === po.id;
+                  const poItems = po.items || [];
+
                   return (
-                    <TableRow key={po.id}>
-                      <TableCell className="font-medium text-xs font-mono">
-                        {po.orderNumber}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {po.provider?.name ?? '—'}
-                      </TableCell>
-                      <TableCell>
-                        {po.type === 'PARTS' ? (
-                          <Badge
-                            variant="outline"
-                            className="bg-blue-50 text-blue-700 border-blue-200"
-                          >
-                            Repuestos
-                          </Badge>
-                        ) : po.type === 'SERVICES' ? (
-                          <Badge
-                            variant="outline"
-                            className="bg-purple-50 text-purple-700 border-purple-200"
-                          >
-                            Servicios
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={badgeVariant} className={badgeClass}>
-                            {badgeLabel}
-                          </Badge>
-                          {PO_STATUS_NO_INVOICE.has(po.status) && (
-                            <span className="text-[10px] bg-yellow-50 text-yellow-700 px-1.5 py-0.5 rounded border border-yellow-200">
-                              Sin factura
-                            </span>
+                    <>
+                      <TableRow
+                        key={po.id}
+                        className="cursor-pointer hover:bg-muted/40"
+                        onClick={() =>
+                          setExpandedPoId(isExpanded ? null : po.id)
+                        }
+                      >
+                        <TableCell className="font-medium text-xs font-mono">
+                          <div className="flex items-center gap-1">
+                            {isExpanded ? (
+                              <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                            ) : (
+                              <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                            )}
+                            {po.orderNumber}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {po.provider?.name ?? '—'}
+                        </TableCell>
+                        <TableCell>
+                          {po.type === 'PARTS' ? (
+                            <Badge
+                              variant="outline"
+                              className="bg-blue-50 text-blue-700 border-blue-200"
+                            >
+                              Repuestos
+                            </Badge>
+                          ) : po.type === 'SERVICES' ? (
+                            <Badge
+                              variant="outline"
+                              className="bg-purple-50 text-purple-700 border-purple-200"
+                            >
+                              Servicios
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
                           )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {showCosts ? formatCurrency(po.total) : '—'}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-xs">
-                        {po.notes || '—'}
-                      </TableCell>
-                      <TableCell>
-                        {po.status === 'DRAFT' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={isActioning}
-                            onClick={() => handlePoAction(po.id, 'submit')}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant={badgeVariant}
+                              className={badgeClass}
+                            >
+                              {badgeLabel}
+                            </Badge>
+                            {PO_STATUS_NO_INVOICE.has(po.status) && (
+                              <span className="text-[10px] bg-yellow-50 text-yellow-700 px-1.5 py-0.5 rounded border border-yellow-200">
+                                Sin factura
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {showCosts ? formatCurrency(po.total) : '—'}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-xs">
+                          {po.notes || '—'}
+                        </TableCell>
+                        <TableCell onClick={e => e.stopPropagation()}>
+                          {po.status === 'DRAFT' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={isActioning}
+                              onClick={() => handlePoAction(po.id, 'submit')}
+                            >
+                              {isActioning ? (
+                                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                              ) : null}
+                              Enviar a Aprobación
+                            </Button>
+                          )}
+                          {po.status === 'APPROVED' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={isActioning}
+                              onClick={() => handlePoAction(po.id, 'send')}
+                            >
+                              {isActioning ? (
+                                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                              ) : null}
+                              Enviar OC
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                      {isExpanded && (
+                        <TableRow key={`${po.id}-detail`}>
+                          <TableCell
+                            colSpan={7}
+                            className="bg-muted/20 px-8 py-3"
                           >
-                            {isActioning ? (
-                              <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                            ) : null}
-                            Enviar a Aprobación
-                          </Button>
-                        )}
-                        {po.status === 'APPROVED' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={isActioning}
-                            onClick={() => handlePoAction(po.id, 'send')}
-                          >
-                            {isActioning ? (
-                              <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                            ) : null}
-                            Enviar OC
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
+                            {poItems.length === 0 ? (
+                              <p className="text-xs text-muted-foreground">
+                                Sin ítems registrados.
+                              </p>
+                            ) : (
+                              <table className="w-full text-xs">
+                                <thead>
+                                  <tr className="text-muted-foreground border-b">
+                                    <th className="text-left pb-1 font-medium">
+                                      Descripción
+                                    </th>
+                                    <th className="text-right pb-1 font-medium w-16">
+                                      Cant.
+                                    </th>
+                                    {showCosts && (
+                                      <th className="text-right pb-1 font-medium w-24">
+                                        Precio Unit.
+                                      </th>
+                                    )}
+                                    {showCosts && (
+                                      <th className="text-right pb-1 font-medium w-24">
+                                        Subtotal
+                                      </th>
+                                    )}
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {poItems.map((item: any) => (
+                                    <tr
+                                      key={item.id}
+                                      className="border-b last:border-0"
+                                    >
+                                      <td className="py-1">
+                                        <span className="font-medium">
+                                          {item.workOrderItem?.mantItem?.name ??
+                                            '—'}
+                                        </span>
+                                        {item.workOrderItem?.description && (
+                                          <span className="ml-1 text-muted-foreground">
+                                            {item.workOrderItem.description}
+                                          </span>
+                                        )}
+                                      </td>
+                                      <td className="text-right py-1">
+                                        {item.quantity}
+                                      </td>
+                                      {showCosts && (
+                                        <td className="text-right py-1 font-mono">
+                                          {formatCurrency(item.unitPrice)}
+                                        </td>
+                                      )}
+                                      {showCosts && (
+                                        <td className="text-right py-1 font-mono">
+                                          {formatCurrency(
+                                            Number(item.unitPrice) *
+                                              Number(item.quantity)
+                                          )}
+                                        </td>
+                                      )}
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </>
                   );
                 })}
                 <TableRow>
@@ -302,6 +668,66 @@ export function ComprasTab({ workOrder, currentUser, onRefresh }: any) {
 
       {/* Sección 3: Gastos Adicionales */}
       <ExpensesTab workOrder={workOrder} onRefresh={onRefresh} />
+
+      {/* Dialog: Confirmar Regeneración de OC */}
+      <AlertDialog
+        open={!!regenerateItem}
+        onOpenChange={open => {
+          if (!open) setRegenerateItem(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Regenerar Orden de Compra</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm">
+                {cancellablePOs.length > 0 && (
+                  <div>
+                    <p className="font-medium text-foreground">
+                      Se cancelarán las siguientes OC en estado Borrador o En
+                      Aprobación:
+                    </p>
+                    <ul className="mt-1 list-disc list-inside text-muted-foreground">
+                      {cancellablePOs.map((po: any) => (
+                        <li key={po.id} className="font-mono text-xs">
+                          {po.orderNumber}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {nonCancellablePOs.length > 0 && (
+                  <div className="rounded border border-yellow-200 bg-yellow-50 p-2">
+                    <p className="font-medium text-yellow-800">
+                      Advertencia: Las siguientes OC no se cancelarán
+                      automáticamente y quedarán activas:
+                    </p>
+                    <ul className="mt-1 list-disc list-inside text-yellow-700">
+                      {nonCancellablePOs.map((po: any) => (
+                        <li key={po.id} className="font-mono text-xs">
+                          {po.orderNumber} ({po.status})
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <p>Se creará una nueva OC con los precios actuales del ítem.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isRegenerating}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isRegenerating}
+              onClick={handleRegenerateOC}
+            >
+              {isRegenerating ? 'Procesando...' : 'Confirmar Regeneración'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

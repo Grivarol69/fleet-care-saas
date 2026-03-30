@@ -84,7 +84,11 @@ export function FuelVoucherTable({
                 v.fuelType}
             </TableCell>
             <TableCell className="text-right">
-              {Number(v.quantity).toFixed(3)} {VOLUME_UNIT_SUFFIX[v.volumeUnit]}
+              {Number(v.quantity).toLocaleString('es-AR', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 3,
+              })}{' '}
+              {VOLUME_UNIT_SUFFIX[v.volumeUnit]}
             </TableCell>
             <TableCell className="text-right">
               {formatAmount(v.totalAmount)}

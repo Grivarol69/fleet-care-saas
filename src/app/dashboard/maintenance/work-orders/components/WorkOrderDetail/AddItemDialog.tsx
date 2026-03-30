@@ -66,12 +66,23 @@ const formSchema = z.object({
 type AddItemDialogProps = {
   workOrderId: string;
   vehicleId?: string; // Optional as services might not need it, but Parts do
-  type: 'SERVICE' | 'PART';
+  type?: 'SERVICE' | 'PART';
   open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSuccess: () => void;
+  onOpenChange?: (open: boolean) => void;
+  onClose?: () => void;
+  onSuccess?: () => void;
   defaultItemSource?: 'EXTERNAL' | 'INTERNAL_STOCK';
   lockItemSource?: boolean; // Si true, oculta el select de fuente
+  mode?: 'endpoint' | 'form'; // default: 'endpoint'
+  onItemAdded?: (item: {
+    mantItemId: string;
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    itemSource: 'INTERNAL_STOCK' | 'EXTERNAL';
+    providerId?: string | null;
+    masterPartId?: string | null;
+  }) => void;
 };
 
 type MantItem = {
@@ -97,20 +108,21 @@ type PartSuggestion = {
     code: string;
     description: string;
     referencePrice: number;
-    manufacturer: string;
   };
-  isRecommended: boolean;
 };
 
 export function AddItemDialog({
   workOrderId,
   vehicleId,
-  type,
+  type = 'PART',
   open,
   onOpenChange,
+  onClose,
   onSuccess,
   defaultItemSource,
   lockItemSource,
+  mode = 'endpoint',
+  onItemAdded,
 }: AddItemDialogProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -241,6 +253,9 @@ export function AddItemDialog({
           setShowCatalogFallback(false);
           setCatalogSearch('');
           setCatalogParts([]);
+          // Siempre poblar descripción con nombre del item como baseline
+          // (las sugerencias pueden sobreescribirla con algo más específico)
+          form.setValue('description', item.name);
 
           if (type === 'PART') {
             // 1. Fetch Suggestions (Smart Part Suggestion)
@@ -262,7 +277,7 @@ export function AddItemDialog({
                     );
                     form.setValue(
                       'description',
-                      bestMatch.masterPart.description
+                      `${bestMatch.masterPart.code} - ${bestMatch.masterPart.description}`
                     );
                     form.setValue('masterPartId', bestMatch.masterPart.id);
                     // 2. Check stock using the suggested masterPartId
@@ -357,14 +372,17 @@ export function AddItemDialog({
     referencePrice: number | null;
   }) => {
     form.setValue('masterPartId', part.id);
-    form.setValue('description', part.description);
+    form.setValue('description', `${part.code} - ${part.description}`);
     form.setValue('unitPrice', Number(part.referencePrice ?? 0));
     checkStock(part.id);
   };
 
   const applySuggestion = (suggestion: PartSuggestion) => {
     form.setValue('unitPrice', Number(suggestion.masterPart.referencePrice));
-    form.setValue('description', suggestion.masterPart.description);
+    form.setValue(
+      'description',
+      `${suggestion.masterPart.code} - ${suggestion.masterPart.description}`
+    );
     form.setValue('masterPartId', suggestion.masterPart.id);
     toast({
       title: 'Repuesto seleccionado',
@@ -372,7 +390,27 @@ export function AddItemDialog({
     });
   };
 
+  const handleClose = () => {
+    if (onClose) onClose();
+    if (onOpenChange) onOpenChange(false);
+  };
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    // Form mode: call onItemAdded callback instead of POST
+    if (mode === 'form' && onItemAdded) {
+      onItemAdded({
+        mantItemId: values.mantItemId,
+        description: values.description ?? '',
+        quantity: values.quantity,
+        unitPrice: values.unitPrice,
+        itemSource: values.itemSource,
+        providerId: values.providerId || null,
+        masterPartId: values.masterPartId || null,
+      });
+      handleClose();
+      return;
+    }
+
     setIsLoading(true);
     try {
       await axios.post(`/api/maintenance/work-orders/${workOrderId}/items`, {
@@ -389,8 +427,8 @@ export function AddItemDialog({
         title: 'Item Agregado',
         description: 'El item se ha agregado correctamente a la orden.',
       });
-      onSuccess();
-      onOpenChange(false);
+      if (onSuccess) onSuccess();
+      handleClose();
       form.reset();
     } catch (error: any) {
       toast({
@@ -405,7 +443,7 @@ export function AddItemDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
@@ -500,8 +538,7 @@ export function AddItemDialog({
                           {sugg.masterPart.code} - {sugg.masterPart.description}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {sugg.masterPart.manufacturer} • Ref: $
-                          {sugg.masterPart.referencePrice}
+                          Ref: ${sugg.masterPart.referencePrice}
                         </span>
                       </div>
                       {form.watch('masterPartId') === sugg.masterPart.id && (
@@ -748,11 +785,7 @@ export function AddItemDialog({
             />
 
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
+              <Button type="button" variant="outline" onClick={handleClose}>
                 Cancelar
               </Button>
               <Button type="submit" disabled={isLoading}>

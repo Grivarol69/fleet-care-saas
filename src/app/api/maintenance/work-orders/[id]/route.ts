@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireCurrentUser } from '@/lib/auth';
-import { ItemClosureType, WorkOrderStatus } from '@prisma/client';
+import { WorkOrderStatus } from '@prisma/client';
 import {
   canExecuteWorkOrders,
   canApproveWorkOrder,
   canCloseWorkOrder,
+  canOverrideWorkOrderFreeze,
 } from '@/lib/permissions';
+import { workOrderPayloadSchema } from '@/lib/validations/work-order';
 
 // ========================================
 // ALLOWED TRANSITIONS — WO Lifecycle FSM
@@ -18,33 +20,21 @@ type RoleGuard =
   | 'canApproveWorkOrder'
   | 'canCloseWorkOrder';
 
-interface TransitionRule {
-  allowedRoles: RoleGuard[];
-}
-
-const ALLOWED_TRANSITIONS: Record<
-  WorkOrderStatus,
-  Partial<Record<WorkOrderStatus, TransitionRule>>
-> = {
-  // Flujo activo simplificado (4 estados)
+const ALLOWED_TRANSITIONS: Record<string, Record<string, string>> = {
   PENDING: {
-    IN_PROGRESS: { allowedRoles: ['canExecuteWorkOrders'] },
-    CANCELLED: { allowedRoles: ['canApproveWorkOrder'] },
+    PENDING_APPROVAL: 'canExecuteWorkOrders',
+    CANCELLED: 'canApproveWorkOrder',
   },
+  PENDING_APPROVAL: {
+    APPROVED: 'canApproveWorkOrder',
+    REJECTED: 'canApproveWorkOrder',
+  },
+  APPROVED: { IN_PROGRESS: 'canExecuteWorkOrders' },
   IN_PROGRESS: {
-    PENDING_INVOICE: { allowedRoles: ['canCloseWorkOrder'] },
-    CANCELLED: { allowedRoles: ['canApproveWorkOrder'] },
+    PENDING_INVOICE: 'canCloseWorkOrder',
+    CANCELLED: 'canApproveWorkOrder',
   },
-  PENDING_INVOICE: {
-    COMPLETED: { allowedRoles: ['canCloseWorkOrder'] },
-  },
-  // Terminal states — no transitions out
-  COMPLETED: {},
-  CANCELLED: {},
-  // Legacy states — mantenidos para datos existentes, sin nuevas transiciones
-  PENDING_APPROVAL: {},
-  APPROVED: {},
-  REJECTED: {},
+  PENDING_INVOICE: { COMPLETED: 'canCloseWorkOrder' },
 };
 
 /**
@@ -122,6 +112,9 @@ export async function GET(
             purchaseOrderItems: {
               select: { id: true },
             },
+            workOrderSubTasks: {
+              orderBy: { sequence: 'asc' },
+            },
           },
         },
         invoices: {
@@ -168,12 +161,23 @@ export async function GET(
             id: true,
             orderNumber: true,
             status: true,
-            total: true, // ANTES totalAmount
+            type: true,
+            total: true,
             notes: true,
             provider: {
+              select: { id: true, name: true },
+            },
+            items: {
               select: {
                 id: true,
-                name: true,
+                quantity: true,
+                unitPrice: true,
+                workOrderItem: {
+                  select: {
+                    description: true,
+                    mantItem: { select: { name: true } },
+                  },
+                },
               },
             },
           },
@@ -328,9 +332,9 @@ export async function PATCH(
       // 2. Check the user's role satisfies at least one allowed guard
       // ──────────────────────────────────────────────────────────────
       const allowedTargets = ALLOWED_TRANSITIONS[fromStatus];
-      const transitionRule = allowedTargets?.[toStatus];
+      const requiredGuard = allowedTargets?.[toStatus];
 
-      if (!transitionRule) {
+      if (!requiredGuard) {
         return NextResponse.json(
           {
             error: `Transición inválida: no se puede pasar de ${fromStatus} a ${toStatus}`,
@@ -339,9 +343,10 @@ export async function PATCH(
         );
       }
 
-      // Check at least one role guard passes for this user
-      const hasRolePermission = transitionRule.allowedRoles.some(guard =>
-        checkRoleGuard(guard, user)
+      // Check that user's role satisfies the required guard
+      const hasRolePermission = checkRoleGuard(
+        requiredGuard as RoleGuard,
+        user
       );
 
       if (!hasRolePermission) {
@@ -356,119 +361,35 @@ export async function PATCH(
       // ──────────────────────────────────────────────────────────────
       // Status-specific side effects
       // ──────────────────────────────────────────────────────────────
-      if (toStatus === 'PENDING_INVOICE') {
-        // T-02: Closure pipeline — stock deduction, OC generation, ticket creation
+      if (toStatus === 'APPROVED') {
+        // APPROVED: generate PO for EXTERNAL/INTERNAL_PURCHASE items + create InternalWorkTicket
         const result = await tenantPrisma.$transaction(async tx => {
           const stockWarnings: string[] = [];
 
-          // Step 1 — Load PART items and ALL active items
           const allActiveItems = await tx.workOrderItem.findMany({
             where: { workOrderId, status: { not: 'CANCELLED' } },
             include: { mantItem: { select: { type: true, name: true } } },
           });
 
-          const partItems = allActiveItems.filter(
-            i => i.mantItem.type === 'PART'
-          );
-
-          // Step 2 — Resolve inventory for each PART item
-          const masterPartIds = partItems
-            .map(i => i.masterPartId)
-            .filter((id): id is string => id !== null);
-
-          const inventoryItems =
-            masterPartIds.length > 0
-              ? await tx.inventoryItem.findMany({
-                  where: { masterPartId: { in: masterPartIds } },
-                  select: {
-                    id: true,
-                    masterPartId: true,
-                    quantity: true,
-                    averageCost: true,
-                  },
-                })
-              : [];
-
-          const inventoryByMasterPart = new Map(
-            inventoryItems.map(ii => [ii.masterPartId!, ii])
-          );
-
-          // Step 3 — Classify: withStock vs needsPurchase
-          type PartItemWithInv = (typeof partItems)[number] & {
-            _inv?: (typeof inventoryItems)[number];
-          };
-
-          const withStock: PartItemWithInv[] = [];
-          const needsPurchase: PartItemWithInv[] = [];
-
-          for (const item of partItems) {
-            if (!item.masterPartId) {
-              needsPurchase.push(item);
-              continue;
-            }
-            const inv = inventoryByMasterPart.get(item.masterPartId);
-            if (inv && Number(inv.quantity) >= item.quantity) {
-              withStock.push({ ...item, _inv: inv });
-            } else {
-              needsPurchase.push(item);
-            }
-          }
-
-          // Step 4 — Deduct stock for withStock items
-          const withStockIds: string[] = [];
-          for (const item of withStock) {
-            try {
-              const inv = item._inv!;
-              const prevQty = Number(inv.quantity);
-              const newQty = prevQty - item.quantity;
-              const unitCost = Number(inv.averageCost);
-
-              await tx.inventoryItem.update({
-                where: { id: inv.id },
-                data: { quantity: newQty },
-              });
-
-              await tx.inventoryMovement.create({
-                data: {
-                  tenantId: user.tenantId,
-                  inventoryItemId: inv.id,
-                  movementType: 'CONSUMPTION',
-                  quantity: item.quantity,
-                  unitCost,
-                  totalCost: unitCost * item.quantity,
-                  previousStock: prevQty,
-                  newStock: newQty,
-                  previousAvgCost: unitCost,
-                  newAvgCost: unitCost,
-                  referenceType: 'INTERNAL_TICKET',
-                  referenceId: workOrderId,
-                  performedBy: user.id,
-                },
-              });
-
-              withStockIds.push(item.id);
-            } catch {
-              // Per-item failure: move to needsPurchase
-              needsPurchase.push(item);
-              stockWarnings.push(
-                `No se pudo descontar stock para: ${item.mantItem.name}`
-              );
-            }
-          }
-
-          // Step 5 — Create PurchaseOrders for needsPurchase items
-          const createdPurchaseOrderIds: string[] = [];
-          const year = new Date().getFullYear();
-
-          // Group by providerId (fallback to workOrder.providerId)
-          const loadedWO = await tx.workOrder.findUnique({
+          // Load WO details
+          const wo = await tx.workOrder.findUnique({
             where: { id: workOrderId },
             select: { providerId: true, technicianId: true },
           });
 
-          const grouped = new Map<string, typeof needsPurchase>();
-          for (const item of needsPurchase) {
-            const pid = item.providerId ?? loadedWO?.providerId ?? null;
+          // Group EXTERNAL / INTERNAL_PURCHASE items by providerId to create POs
+          const purchaseItems = allActiveItems.filter(
+            i =>
+              i.itemSource === 'EXTERNAL' ||
+              i.itemSource === 'INTERNAL_PURCHASE'
+          );
+
+          const createdPurchaseOrderIds: string[] = [];
+          const year = new Date().getFullYear();
+
+          const grouped = new Map<string, typeof purchaseItems>();
+          for (const item of purchaseItems) {
+            const pid = item.providerId ?? wo?.providerId ?? null;
             if (!pid) {
               stockWarnings.push(
                 `Sin proveedor para generar OC: ${item.mantItem.name}`
@@ -526,44 +447,22 @@ export async function PATCH(
             createdPurchaseOrderIds.push(po.id);
           }
 
-          // Update closureType for needsPurchase items
-          const needsPurchaseIds = needsPurchase.map(i => i.id);
-          if (needsPurchaseIds.length > 0) {
-            await tx.workOrderItem.updateMany({
-              where: { id: { in: needsPurchaseIds } },
-              data: { closureType: ItemClosureType.PURCHASE_ORDER },
-            });
-          }
-
-          // Update closureType for withStock items
-          if (withStockIds.length > 0) {
-            await tx.workOrderItem.updateMany({
-              where: { id: { in: withStockIds } },
-              data: { closureType: ItemClosureType.INTERNAL_TICKET },
-            });
-          }
-
-          // Step 6 — Create InternalWorkTicket (if WO has technicianId)
+          // Create InternalWorkTicket (idempotent — only if not yet created)
           let ticket: { id: string; ticketNumber: string } | null = null;
-          const woTechnicianId = loadedWO?.technicianId ?? null;
+          const woTechnicianId = wo?.technicianId ?? null;
 
-          if (woTechnicianId) {
+          const existingTicket = await tx.internalWorkTicket.findFirst({
+            where: { workOrderId: workOrderId },
+          });
+
+          if (!existingTicket && woTechnicianId) {
             const laborItems = allActiveItems.filter(
               i => i.mantItem.type !== 'PART'
             );
-            const stockConsumedParts = allActiveItems.filter(i =>
-              withStockIds.includes(i.id)
-            );
-
             const totalLaborCost = laborItems.reduce(
               (sum, i) => sum + Number(i.totalCost),
               0
             );
-            const totalPartsCost = stockConsumedParts.reduce(
-              (sum, i) => sum + Number(i.totalCost),
-              0
-            );
-            const totalCost = totalLaborCost + totalPartsCost;
 
             const ticketCount = await tx.internalWorkTicket.count({
               where: {
@@ -581,8 +480,8 @@ export async function PATCH(
                 technicianId: woTechnicianId,
                 totalLaborHours: 0,
                 totalLaborCost,
-                totalPartsCost,
-                totalCost,
+                totalPartsCost: 0,
+                totalCost: totalLaborCost,
                 status: 'DRAFT',
                 laborEntries: {
                   create: laborItems.map(item => ({
@@ -595,27 +494,6 @@ export async function PATCH(
                     laborCost: Number(item.totalCost),
                   })),
                 },
-                partEntries: {
-                  create: stockConsumedParts
-                    .filter(
-                      item =>
-                        item.masterPartId &&
-                        inventoryByMasterPart.has(item.masterPartId)
-                    )
-                    .map(item => {
-                      const inv = inventoryByMasterPart.get(
-                        item.masterPartId!
-                      )!;
-                      return {
-                        tenantId: user.tenantId,
-                        workOrderItemId: item.id,
-                        inventoryItemId: inv.id,
-                        quantity: item.quantity,
-                        unitCost: Number(inv.averageCost),
-                        totalCost: Number(item.totalCost),
-                      };
-                    }),
-                },
               },
             });
 
@@ -623,13 +501,40 @@ export async function PATCH(
               id: createdTicket.id,
               ticketNumber: createdTicket.ticketNumber,
             };
-          } else {
+          } else if (!woTechnicianId) {
             stockWarnings.push(
               'La OT no tiene técnico asignado — ticket de taller no generado'
             );
           }
 
-          // Step 7 — Compute actualCost and update WO status
+          const updatedWo = await tx.workOrder.update({
+            where: { id: workOrderId },
+            data: { status: 'APPROVED' },
+            include: {
+              vehicle: { select: { id: true, licensePlate: true } },
+              maintenanceAlerts: true,
+              workOrderItems: true,
+            },
+          });
+
+          return {
+            workOrder: updatedWo,
+            ticket,
+            purchaseOrders: createdPurchaseOrderIds,
+            stockWarnings,
+          };
+        });
+
+        const serialized = JSON.parse(
+          JSON.stringify(result, (_key, value) =>
+            typeof value === 'bigint' ? value.toString() : value
+          )
+        );
+        return NextResponse.json(serialized);
+      } else if (toStatus === 'PENDING_INVOICE') {
+        // T-02 (simplified): Only update status + compute actualCost + set endDate
+        // PO/ticket generation was moved to APPROVED transition
+        const result = await tenantPrisma.$transaction(async tx => {
           const itemsAgg = await tx.workOrderItem.aggregate({
             where: { workOrderId, status: { not: 'CANCELLED' } },
             _sum: { totalCost: true },
@@ -647,6 +552,7 @@ export async function PATCH(
             data: {
               status: 'PENDING_INVOICE',
               actualCost: computedActualCost,
+              endDate: new Date(),
               ...(completionMileage !== undefined
                 ? { completionMileage: Number(completionMileage) }
                 : {}),
@@ -660,12 +566,7 @@ export async function PATCH(
             },
           });
 
-          return {
-            workOrder: wo,
-            ticket,
-            purchaseOrders: createdPurchaseOrderIds,
-            stockWarnings,
-          };
+          return wo;
         });
 
         const serialized = JSON.parse(
@@ -960,6 +861,195 @@ export async function DELETE(
       {
         error: error instanceof Error ? error.message : 'Error interno',
       },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * PUT - Sincroniza la Work Order usando el Payload Unificado
+ */
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { user, tenantPrisma } = await requireCurrentUser();
+    if (!user)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { id } = await params;
+    const workOrderId = id;
+
+    const existingWO = await tenantPrisma.workOrder.findUnique({
+      where: { id: workOrderId },
+    });
+    if (!existingWO)
+      return NextResponse.json({ error: 'OT no encontrada' }, { status: 404 });
+
+    if (!canOverrideWorkOrderFreeze(user)) {
+      if (
+        existingWO.status !== 'PENDING' &&
+        existingWO.status !== 'IN_PROGRESS' &&
+        existingWO.status !== 'PENDING_APPROVAL'
+      ) {
+        return NextResponse.json(
+          { error: 'No editar ítems de OTs cerradas/en revisión financiera' },
+          { status: 400 }
+        );
+      }
+    }
+
+    const json = await request.json();
+    const result = workOrderPayloadSchema.safeParse(json);
+    if (!result.success)
+      return NextResponse.json(
+        { error: 'Payload inválido', details: result.error.errors },
+        { status: 400 }
+      );
+
+    const data = result.data;
+    const newItemsIds = data.items.map(i => i.id).filter(Boolean) as string[];
+    const estimatedCost = data.items.reduce(
+      (acc, item) => acc + item.unitPrice * item.quantity,
+      0
+    );
+
+    const updatedWorkOrder = await tenantPrisma.$transaction(async tx => {
+      const wo = await tx.workOrder.update({
+        where: { id: workOrderId },
+        data: {
+          title: data.title,
+          description: data.description || null,
+          mantType: data.mantType,
+          priority: data.priority,
+          workType: data.workType,
+          technicianId: data.technicianId || null,
+          estimatedCost,
+          startDate: data.scheduledDate
+            ? new Date(data.scheduledDate)
+            : undefined,
+          costCenterId: data.costCenterId || null,
+        },
+      });
+
+      if (newItemsIds.length > 0) {
+        await tx.workOrderItem.deleteMany({
+          where: { workOrderId, id: { notIn: newItemsIds } },
+        });
+      } else {
+        await tx.workOrderItem.deleteMany({ where: { workOrderId } });
+      }
+
+      for (const item of data.items) {
+        // Simplificamos el update por motivos de seguridad en React
+        const itemUpserted = item.id
+          ? await tx.workOrderItem.update({
+              where: { id: item.id },
+              data: {
+                mantItemId: item.mantItemId,
+                description: item.description,
+                closureType: item.closureType as any,
+                itemSource: item.itemSource as any,
+                providerId: item.providerId || null,
+                unitPrice: item.unitPrice,
+                quantity: item.quantity,
+                totalCost: item.unitPrice * item.quantity,
+                masterPartId: item.masterPartId || null,
+              },
+            })
+          : await tx.workOrderItem.create({
+              data: {
+                tenantId: user.tenantId,
+                workOrderId,
+                mantItemId: item.mantItemId,
+                description: item.description,
+                closureType: item.closureType as any,
+                itemSource: item.itemSource as any,
+                providerId: item.providerId || null,
+                unitPrice: item.unitPrice,
+                quantity: item.quantity,
+                totalCost: item.unitPrice * item.quantity,
+                purchasedBy: user.id,
+                status: 'PENDING',
+                supplier: 'N/A',
+                masterPartId: item.masterPartId || null,
+              },
+            });
+
+        if (item.subTasks && item.subTasks.length > 0) {
+          const newSubTaskIds = item.subTasks
+            .map(s => s.id)
+            .filter(Boolean) as string[];
+          if (newSubTaskIds.length > 0) {
+            await tx.workOrderSubTask.deleteMany({
+              where: {
+                workOrderItemId: itemUpserted.id,
+                id: { notIn: newSubTaskIds },
+                status: 'PENDING',
+              },
+            });
+          } else {
+            await tx.workOrderSubTask.deleteMany({
+              where: { workOrderItemId: itemUpserted.id, status: 'PENDING' },
+            });
+          }
+
+          for (const [idx, sub] of item.subTasks.entries()) {
+            if (sub.id) {
+              await tx.workOrderSubTask.update({
+                where: { id: sub.id },
+                data: {
+                  procedureId: sub.procedureId || null,
+                  temparioItemId: sub.temparioItemId || null,
+                  description: sub.description || null,
+                  standardHours: sub.standardHours || null,
+                  directHours: sub.directHours || null,
+                  status: sub.status as any,
+                  notes: sub.notes || null,
+                  sequence: idx,
+                },
+              });
+            } else {
+              await tx.workOrderSubTask.create({
+                data: {
+                  workOrderItemId: itemUpserted.id,
+                  procedureId: sub.procedureId || null,
+                  temparioItemId: sub.temparioItemId || null,
+                  description: sub.description || null,
+                  standardHours: sub.standardHours || null,
+                  directHours: sub.directHours || null,
+                  status: sub.status as any,
+                  notes: sub.notes || null,
+                  sequence: idx,
+                },
+              });
+            }
+          }
+        } else {
+          await tx.workOrderSubTask.deleteMany({
+            where: { workOrderItemId: itemUpserted.id },
+          });
+        }
+      }
+      return wo;
+    });
+
+    const serializedWorkOrder = JSON.parse(
+      JSON.stringify(updatedWorkOrder, (_key, value) =>
+        typeof value === 'bigint' ? value.toString() : value
+      )
+    );
+    return NextResponse.json(
+      {
+        ...serializedWorkOrder,
+        estimatedCost: updatedWorkOrder.estimatedCost?.toNumber() || 0,
+      },
+      { status: 200 }
+    );
+  } catch (error: unknown) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Error interno' },
       { status: 500 }
     );
   }

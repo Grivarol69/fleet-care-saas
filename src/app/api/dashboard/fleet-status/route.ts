@@ -21,6 +21,8 @@ export type FleetVehicleStatus = {
     daysSinceUpdate: number;
     status: 'OK' | 'WARNING' | 'CRITICAL';
   };
+  // Alertas de neumáticos
+  tireAlerts: number;
   // Estado combinado
   overallStatus: 'OK' | 'WARNING' | 'CRITICAL';
   // Conductor asignado (si hay)
@@ -85,6 +87,17 @@ export async function GET() {
       _count: true,
     });
 
+    // Obtener alertas de activos serializados agrupadas por vehículo
+    const itemAlertCounts = await tenantPrisma.serializedItemAlert.groupBy({
+      by: ['vehicleId'],
+      where: { status: 'ACTIVE', vehicleId: { not: null } },
+      _count: { id: true },
+    });
+
+    const tireAlertByVehicle = Object.fromEntries(
+      itemAlertCounts.map(r => [r.vehicleId!, r._count.id])
+    );
+
     // Obtener último registro de odómetro por vehículo
     const lastOdometerByVehicle = await tenantPrisma.odometerLog.findMany({
       where: {
@@ -133,6 +146,7 @@ export async function GET() {
     const fleetStatus: FleetVehicleStatus[] = vehicles.map(vehicle => {
       const alerts = alertsMap.get(vehicle.id) || { critical: 0, warning: 0 };
       const lastOdometer = odometerMap.get(vehicle.id);
+      const tireAlerts = tireAlertByVehicle[vehicle.id] ?? 0;
 
       // Calcular días desde última actualización de odómetro
       let daysSinceUpdate = 999; // Si nunca se ha registrado
@@ -160,13 +174,14 @@ export async function GET() {
         maintenanceStatus = 'WARNING';
       }
 
-      // Estado combinado: el peor de los dos
+      // Estado combinado: el peor de mantenimiento, odómetro y neumáticos
       let overallStatus: 'OK' | 'WARNING' | 'CRITICAL' = 'OK';
       if (maintenanceStatus === 'CRITICAL' || odometerStatus === 'CRITICAL') {
         overallStatus = 'CRITICAL';
       } else if (
         maintenanceStatus === 'WARNING' ||
-        odometerStatus === 'WARNING'
+        odometerStatus === 'WARNING' ||
+        tireAlerts > 0
       ) {
         overallStatus = 'WARNING';
       }
@@ -187,6 +202,7 @@ export async function GET() {
           critical: alerts.critical,
           warning: alerts.warning,
         },
+        tireAlerts,
         odometer: {
           lastUpdate: lastOdometer?.recordedAt || null,
           daysSinceUpdate,

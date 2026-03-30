@@ -32,6 +32,7 @@ import { MoreHorizontal, Eye, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { WorkOrderStatusBadge } from '@/components/maintenance/work-orders/WorkOrderStatusBadge';
 
 type WorkOrder = {
   id: string;
@@ -254,28 +255,7 @@ export function WorkOrdersList({
   }
 
   return (
-    <div className="border rounded-lg">
-      <div className="flex flex-wrap gap-x-4 gap-y-2 px-4 py-3 border-b text-sm text-muted-foreground bg-muted/10">
-        {(
-          [
-            'PENDING',
-            'IN_PROGRESS',
-            'PENDING_INVOICE',
-            'COMPLETED',
-            'CANCELLED',
-          ] as const
-        ).map(key => {
-          const cfg = statusConfig[key];
-          return (
-            <span key={cfg.label} className="flex items-center gap-2">
-              <span
-                className={`inline-block w-4 h-4 rounded border ${cfg.color} ${cfg.rowBg}`}
-              />
-              {cfg.label}
-            </span>
-          );
-        })}
-      </div>
+    <div className="border rounded-lg shadow-sm bg-card">
       <Table>
         <TableHeader>
           <TableRow>
@@ -335,11 +315,12 @@ export function WorkOrdersList({
                   </span>
                 </TableCell>
                 <TableCell>
-                  <span
-                    className={`text-xs font-medium px-2.5 py-1 rounded-full border ${statusInfo?.color || 'bg-gray-100 text-gray-700'}`}
-                  >
-                    {statusInfo?.label || wo.status}
-                  </span>
+                  <WorkOrderStatusBadge
+                    status={wo.status as any}
+                    urgent={
+                      wo.priority === 'URGENT' || wo.priority === 'CRITICAL'
+                    }
+                  />
                 </TableCell>
                 <TableCell>
                   <div className="text-sm">

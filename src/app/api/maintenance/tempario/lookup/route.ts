@@ -20,6 +20,13 @@ export async function resolveProcedure(
       isGlobal: false,
     },
     { isGlobal: true, mantItemId, vehicleBrandId, vehicleLineId: null },
+    {
+      tenantId,
+      mantItemId,
+      vehicleBrandId: null,
+      vehicleLineId: null,
+      isGlobal: false,
+    },
     { isGlobal: true, mantItemId, vehicleBrandId: null, vehicleLineId: null },
   ];
 
@@ -45,10 +52,31 @@ export async function GET(req: NextRequest) {
     if (!user)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { searchParams } = req.nextUrl;
-    const mantItemId = searchParams.get('mantItemId');
-    const vehicleBrandId = searchParams.get('vehicleBrandId');
-    const vehicleLineId = searchParams.get('vehicleLineId');
+    const searchParams = req.nextUrl.searchParams;
+    const rawMantItemId = searchParams.get('mantItemId');
+    const rawVehicleBrandId = searchParams.get('vehicleBrandId');
+    const rawVehicleLineId = searchParams.get('vehicleLineId');
+
+    const mantItemId =
+      !rawMantItemId ||
+      rawMantItemId === 'undefined' ||
+      rawMantItemId === 'null'
+        ? null
+        : rawMantItemId;
+
+    const vehicleBrandId =
+      !rawVehicleBrandId ||
+      rawVehicleBrandId === 'undefined' ||
+      rawVehicleBrandId === 'null'
+        ? null
+        : rawVehicleBrandId;
+
+    const vehicleLineId =
+      !rawVehicleLineId ||
+      rawVehicleLineId === 'undefined' ||
+      rawVehicleLineId === 'null'
+        ? null
+        : rawVehicleLineId;
 
     if (!mantItemId) {
       return NextResponse.json(
