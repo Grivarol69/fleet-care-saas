@@ -84,6 +84,16 @@ export async function POST(req: Request) {
       );
     }
 
+    const { specifications } = body as { specifications?: unknown };
+    if (specifications !== null && specifications !== undefined) {
+      if (typeof specifications !== 'object' || Array.isArray(specifications)) {
+        return NextResponse.json(
+          { error: 'specifications must be a plain object' },
+          { status: 400 }
+        );
+      }
+    }
+
     const data = validation.data;
 
     // Check if code exists in this scope
@@ -117,6 +127,10 @@ export async function POST(req: Request) {
         accountGroup: data.accountGroup ?? null,
         siigoTaxClassification: data.siigoTaxClassification ?? null,
         siigoUnit: data.siigoUnit ?? null,
+        specifications:
+          specifications != null
+            ? (specifications as Prisma.InputJsonValue)
+            : Prisma.DbNull,
       },
     });
 

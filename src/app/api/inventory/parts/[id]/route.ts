@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -14,7 +15,10 @@ const updateMasterPartSchema = z.object({
   referencePrice: z.number().min(0).optional().nullable(),
   isActive: z.boolean().optional(),
   accountGroup: z.number().int().optional().nullable(),
-  siigoTaxClassification: z.enum(['TAXED', 'EXEMPT', 'EXCLUDED']).optional().nullable(),
+  siigoTaxClassification: z
+    .enum(['TAXED', 'EXEMPT', 'EXCLUDED'])
+    .optional()
+    .nullable(),
   siigoUnit: z.number().int().optional().nullable(),
 });
 
@@ -78,7 +82,9 @@ export async function PATCH(
 
     const { id } = await params;
 
-    const existing = await tenantPrisma.masterPart.findUnique({ where: { id } });
+    const existing = await tenantPrisma.masterPart.findUnique({
+      where: { id },
+    });
 
     if (!existing) {
       return NextResponse.json(
@@ -111,6 +117,16 @@ export async function PATCH(
         { error: 'Datos inválidos', details: validation.error.flatten() },
         { status: 400 }
       );
+    }
+
+    const { specifications } = body as { specifications?: unknown };
+    if (specifications !== null && specifications !== undefined) {
+      if (typeof specifications !== 'object' || Array.isArray(specifications)) {
+        return NextResponse.json(
+          { error: 'specifications must be a plain object' },
+          { status: 400 }
+        );
+      }
     }
 
     const data = validation.data;
@@ -150,9 +166,19 @@ export async function PATCH(
           lastPriceUpdate: new Date(),
         }),
         ...(data.isActive !== undefined && { isActive: data.isActive }),
-        ...(data.accountGroup !== undefined && { accountGroup: data.accountGroup }),
-        ...(data.siigoTaxClassification !== undefined && { siigoTaxClassification: data.siigoTaxClassification }),
+        ...(data.accountGroup !== undefined && {
+          accountGroup: data.accountGroup,
+        }),
+        ...(data.siigoTaxClassification !== undefined && {
+          siigoTaxClassification: data.siigoTaxClassification,
+        }),
         ...(data.siigoUnit !== undefined && { siigoUnit: data.siigoUnit }),
+        ...(specifications !== undefined && {
+          specifications:
+            specifications != null
+              ? (specifications as Prisma.InputJsonValue)
+              : Prisma.DbNull,
+        }),
       },
     });
 
@@ -191,7 +217,9 @@ export async function DELETE(
 
     const { id } = await params;
 
-    const existing = await tenantPrisma.masterPart.findUnique({ where: { id } });
+    const existing = await tenantPrisma.masterPart.findUnique({
+      where: { id },
+    });
 
     if (!existing) {
       return NextResponse.json(

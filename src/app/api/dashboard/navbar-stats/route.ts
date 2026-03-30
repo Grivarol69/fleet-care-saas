@@ -29,6 +29,13 @@ export async function GET() {
       },
     });
 
+    // Get active serialized item alerts
+    const activeTireAlerts = await tenantPrisma.serializedItemAlert.count({
+      where: {
+        status: 'ACTIVE',
+      },
+    });
+
     // Calculate month costs (mock for now - will be real when Invoice is implemented)
     // TODO: Replace with real calculation from Invoice table when implemented
     const currentMonth = new Date();
@@ -52,6 +59,7 @@ export async function GET() {
       criticalAlerts,
       openWorkOrders,
       monthCosts,
+      activeTireAlerts,
     });
   } catch (error) {
     console.error('[NAVBAR_STATS_GET]', error);

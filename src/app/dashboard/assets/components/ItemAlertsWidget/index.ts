@@ -1,0 +1,1 @@
+export { ItemAlertsWidget } from './ItemAlertsWidget';

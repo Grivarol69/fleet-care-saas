@@ -1,0 +1,1 @@
+export { SerializedItemTable } from './SerializedItemTable';
