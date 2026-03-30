@@ -42,7 +42,9 @@ export default function DashboardPage() {
 
         {/* Tab 2: Estado de Flota */}
         <TabsContent value="fleet" className="mt-6">
-          <FleetStatusBoard />
+          <div className="space-y-6">
+            <FleetStatusBoard />
+          </div>
         </TabsContent>
 
         {/* Tab 3: Órdenes de Trabajo */}

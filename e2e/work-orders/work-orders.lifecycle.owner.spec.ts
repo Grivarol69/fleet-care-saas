@@ -124,18 +124,6 @@ test.describe('OT — Lifecycle completo (OWNER)', () => {
     await expect(page.getByText('Por Cerrar').first()).toBeVisible({
       timeout: 20000,
     });
-
-    // Toast generado por el ticket PDF — título "Ticket descargado" si se generó,
-    // o "Error al generar PDF" si falló la generación client-side del PDF.
-    // Ambos son resultados válidos del flujo de cierre.
-    await expect(
-      page
-        .getByText('Ticket descargado')
-        .or(page.getByText('Error al generar PDF'))
-        .or(page.getByText('Por Cerrar'))
-    )
-      .first()
-      .toBeVisible({ timeout: 15000 });
   });
 
   // ─────────────────────────────────────────────────────────────────────────────

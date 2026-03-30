@@ -4544,6 +4544,77 @@ async function main() {
   });
   console.log('   Procedimientos KB creados.');
 
+  // Demo: SerializedItems (neumáticos)
+  try {
+    const demoTires = await Promise.all([
+      prisma.serializedItem.create({
+        data: {
+          tenantId: tenant1.id,
+          serialNumber: 'DEMO-SN-001',
+          type: 'TIRE',
+          status: 'INSTALLED',
+          specs: { treadDepthMm: 8.0, usefulLifePct: 100 },
+          receivedAt: new Date(),
+        },
+      }),
+      prisma.serializedItem.create({
+        data: {
+          tenantId: tenant1.id,
+          serialNumber: 'DEMO-SN-002',
+          type: 'TIRE',
+          status: 'INSTALLED',
+          specs: { treadDepthMm: 8.0, usefulLifePct: 100 },
+          receivedAt: new Date(),
+        },
+      }),
+      prisma.serializedItem.create({
+        data: {
+          tenantId: tenant1.id,
+          serialNumber: 'DEMO-SN-003',
+          type: 'TIRE',
+          status: 'IN_STOCK',
+          specs: { treadDepthMm: 8.0, usefulLifePct: 100 },
+          receivedAt: new Date(),
+        },
+      }),
+      prisma.serializedItem.create({
+        data: {
+          tenantId: tenant1.id,
+          serialNumber: 'DEMO-SN-004',
+          type: 'TIRE',
+          status: 'IN_STOCK',
+          specs: { treadDepthMm: 8.0, usefulLifePct: 100 },
+          receivedAt: new Date(),
+        },
+      }),
+    ]);
+
+    // Asignar los primeros 2 al primer vehículo demo
+    if (t1Vehicles[0]) {
+      await prisma.vehicleItemAssignment.create({
+        data: {
+          tenantId: tenant1.id,
+          vehicleId: t1Vehicles[0].id,
+          serializedItemId: demoTires[0].id,
+          position: 'FL',
+          installedAt: new Date(),
+        },
+      });
+      await prisma.vehicleItemAssignment.create({
+        data: {
+          tenantId: tenant1.id,
+          vehicleId: t1Vehicles[0].id,
+          serializedItemId: demoTires[1].id,
+          position: 'FR',
+          installedAt: new Date(),
+        },
+      });
+    }
+    console.log('✅ Demo serialized items creados');
+  } catch (e) {
+    console.error('Error creando demo serialized items:', e);
+  }
+
   console.log('\nAISLAMIENTO:');
   console.log('  - Demo tenant tiene datos propios');
   console.log('  - SUPER_ADMIN ve todos los tenants');

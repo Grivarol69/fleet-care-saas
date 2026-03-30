@@ -120,10 +120,10 @@ async function main() {
   await prisma.packageItem.deleteMany({});
   await prisma.maintenancePackage.deleteMany({});
   await prisma.maintenanceTemplate.deleteMany({});
-  await prisma.mantItem.deleteMany({});
-  await prisma.mantCategory.deleteMany({});
   await prisma.mantItemProcedureStep.deleteMany({});
   await prisma.mantItemProcedure.deleteMany({});
+  await prisma.mantItem.deleteMany({});
+  await prisma.mantCategory.deleteMany({});
   await prisma.temparioItem.deleteMany({});
   await prisma.tempario.deleteMany({});
   await prisma.partCompatibility.deleteMany({});
@@ -2694,7 +2694,7 @@ async function main() {
       lineId: rich6ev.id,
       masterPartId: pDfReductor.id,
       qty: 1,
-    }
+    },
     // FIXED: Removido iFlushRefriEV porque es un SERVICE, no un PART
   ];
 

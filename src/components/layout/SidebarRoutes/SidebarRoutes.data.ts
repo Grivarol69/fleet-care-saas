@@ -17,6 +17,7 @@ import {
   Landmark,
   Clock,
   Droplets,
+  Disc3,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -192,6 +193,18 @@ export const dataAdminSidebar: SidebarItem[] = [
           UserRole.OWNER,
           UserRole.MANAGER,
           UserRole.PURCHASER,
+        ],
+      },
+      {
+        label: 'Activos',
+        icon: Disc3,
+        href: '/dashboard/assets',
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
+          UserRole.TECHNICIAN,
         ],
       },
     ],
