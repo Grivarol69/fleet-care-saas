@@ -362,6 +362,13 @@ export function canApproveWorkOrder(user: User | null): boolean {
 }
 
 /**
+ * Solo OWNER y SUPER_ADMIN pueden anular el freeze de precios en una OT aprobada.
+ */
+export function canOverrideWorkOrderFreeze(user: User | null): boolean {
+  return isSuperAdmin(user) || isOwner(user);
+}
+
+/**
  * OWNER y MANAGER pueden cerrar Work Orders (mover a COMPLETED).
  * TECHNICIAN puede marcar trabajo terminado pero NO cerrar.
  */
@@ -416,6 +423,47 @@ export function canCreateFuelVouchers(role: string): boolean {
 
 export function canViewFuelVouchers(role: string): boolean {
   return (FUEL_VOUCHER_VIEW_ROLES as readonly string[]).includes(role);
+}
+
+// ========================================
+// SERIALIZED ASSET PERMISSIONS
+// ========================================
+
+export const SERIALIZED_ASSET_VIEW_ROLES = [
+  'OWNER',
+  'MANAGER',
+  'PURCHASER',
+  'TECHNICIAN',
+] as const;
+
+export const SERIALIZED_ASSET_CREATE_ROLES = [
+  'OWNER',
+  'MANAGER',
+  'PURCHASER',
+] as const;
+
+export const SERIALIZED_ASSET_MANAGE_ROLES = ['OWNER', 'MANAGER'] as const;
+
+export const SERIALIZED_ASSET_OPERATE_ROLES = [
+  'OWNER',
+  'MANAGER',
+  'TECHNICIAN',
+] as const;
+
+export function canViewSerializedAssets(role: string): boolean {
+  return (SERIALIZED_ASSET_VIEW_ROLES as readonly string[]).includes(role);
+}
+
+export function canCreateSerializedAssets(role: string): boolean {
+  return (SERIALIZED_ASSET_CREATE_ROLES as readonly string[]).includes(role);
+}
+
+export function canManageSerializedAssets(role: string): boolean {
+  return (SERIALIZED_ASSET_MANAGE_ROLES as readonly string[]).includes(role);
+}
+
+export function canOperateSerializedAssets(role: string): boolean {
+  return (SERIALIZED_ASSET_OPERATE_ROLES as readonly string[]).includes(role);
 }
 
 // ========================================

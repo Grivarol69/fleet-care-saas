@@ -10,11 +10,10 @@ import { ArrowLeft } from 'lucide-react';
 
 import { WorkOrderHeader } from '../components/WorkOrderDetail/WorkOrderHeader';
 import { ActivityTab } from '../components/WorkOrderDetail/ActivityTab';
-import { ResumenTab } from '../components/WorkOrderDetail/ResumenTab';
-import { TallerPropioTab } from '../components/WorkOrderDetail/TallerPropioTab';
-import { TrabajosExternosTab } from '../components/WorkOrderDetail/TrabajosExternosTab';
 import { ComprasTab } from '../components/WorkOrderDetail/ComprasTab';
 import { CierreTab } from '../components/WorkOrderDetail/CierreTab';
+import { WorkOrderStepper } from '@/components/maintenance/work-orders/WorkOrderStepper';
+import { UnifiedWorkOrderForm } from '@/components/maintenance/work-orders/UnifiedWorkOrderForm';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -92,6 +91,17 @@ type WorkOrder = {
     providerId: string | null;
     provider: { id: string; name: string } | null;
     purchaseOrderItems: Array<{ id: string }>;
+    workOrderSubTasks?: Array<{
+      id: string;
+      procedureId: string | null;
+      temparioItemId: string | null;
+      description: string | null;
+      standardHours: number | null;
+      directHours: number | null;
+      status: string;
+      sequence: number;
+      notes: string | null;
+    }>;
     mantItem: {
       id: string;
       name: string;
@@ -276,39 +286,22 @@ export default function WorkOrderDetailPage() {
         onDelete={() => setShowDeleteDialog(true)}
       />
 
-      {/* Tabs */}
-      <Tabs defaultValue="resumen" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="resumen">Resumen</TabsTrigger>
-          <TabsTrigger value="taller">Taller Propio</TabsTrigger>
-          <TabsTrigger value="externos">Trabajos Externos</TabsTrigger>
-          <TabsTrigger value="compras">Compras</TabsTrigger>
-          <TabsTrigger value="cierre">Cierre</TabsTrigger>
-          <TabsTrigger value="actividad">Actividad</TabsTrigger>
+      <div className="bg-card border rounded-xl shadow-sm mb-6 mt-4 overflow-hidden">
+        <WorkOrderStepper currentStatus={workOrder.status as any} />
+      </div>
+
+      <Tabs defaultValue="editor" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="editor">Ítems (Unificado)</TabsTrigger>
+          <TabsTrigger value="compras">Órdenes de Compra</TabsTrigger>
+          <TabsTrigger value="cierre">Cierre Financiero</TabsTrigger>
+          <TabsTrigger value="actividad">Historial</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="resumen" className="mt-6">
-          <ResumenTab
-            workOrder={workOrder}
+        <TabsContent value="editor" className="mt-6">
+          <UnifiedWorkOrderForm
+            initialData={workOrder}
             currentUser={currentUser}
-            onRefresh={fetchWorkOrder}
-            onUpdate={handleUpdate}
-          />
-        </TabsContent>
-
-        <TabsContent value="taller" className="mt-6">
-          <TallerPropioTab
-            workOrder={workOrder}
-            currentUser={currentUser}
-            onRefresh={fetchWorkOrder}
-          />
-        </TabsContent>
-
-        <TabsContent value="externos" className="mt-6">
-          <TrabajosExternosTab
-            workOrder={workOrder}
-            currentUser={currentUser}
-            onRefresh={fetchWorkOrder}
           />
         </TabsContent>
 

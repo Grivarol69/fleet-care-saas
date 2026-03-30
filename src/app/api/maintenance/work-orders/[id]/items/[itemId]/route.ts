@@ -2,14 +2,23 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireCurrentUser } from '@/lib/auth';
 import { ItemSource, ItemClosureType, WorkOrderStatus } from '@prisma/client';
 import { z } from 'zod';
-import { canExecuteWorkOrders } from '@/lib/permissions';
+import {
+  canExecuteWorkOrders,
+  canOverrideWorkOrderFreeze,
+} from '@/lib/permissions';
 
 const updateItemSchema = z.object({
   itemSource: z
     .enum(['EXTERNAL', 'INTERNAL_STOCK', 'INTERNAL_PURCHASE'])
     .optional(),
   closureType: z
-    .enum(['PENDING', 'EXTERNAL_INVOICE', 'INTERNAL_TICKET', 'NOT_APPLICABLE', 'PURCHASE_ORDER'])
+    .enum([
+      'PENDING',
+      'EXTERNAL_INVOICE',
+      'INTERNAL_TICKET',
+      'NOT_APPLICABLE',
+      'PURCHASE_ORDER',
+    ])
     .optional(),
   status: z
     .enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'])
@@ -17,6 +26,7 @@ const updateItemSchema = z.object({
   supplier: z.string().optional(),
   unitPrice: z.number().min(0).optional(),
   quantity: z.number().positive().optional(),
+  description: z.string().optional(),
   providerId: z.string().nullable().optional(),
 });
 
@@ -66,7 +76,7 @@ export async function PATCH(
     const existingItem = await tenantPrisma.workOrderItem.findUnique({
       where: { id: workOrderItemId },
       include: {
-        workOrder: { select: { tenantId: true, id: true } },
+        workOrder: { select: { tenantId: true, id: true, status: true } },
       },
     });
 
@@ -84,6 +94,31 @@ export async function PATCH(
       );
     }
 
+    // Freeze guard: bloquea edición de precios/cantidades en OTs aprobadas o posterior
+    const FROZEN_WO_STATUSES = new Set([
+      'APPROVED',
+      'IN_PROGRESS',
+      'PENDING_INVOICE',
+      'COMPLETED',
+    ]);
+    const isModifyingPrice =
+      updates.unitPrice !== undefined ||
+      updates.quantity !== undefined ||
+      updates.description !== undefined;
+    if (
+      FROZEN_WO_STATUSES.has(existingItem.workOrder.status) &&
+      isModifyingPrice &&
+      !canOverrideWorkOrderFreeze(user)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'No se pueden modificar precios en una OT aprobada o posterior',
+        },
+        { status: 403 }
+      );
+    }
+
     // Preparar datos para actualizar
     const updateData: {
       itemSource?: ItemSource;
@@ -93,6 +128,7 @@ export async function PATCH(
       unitPrice?: number;
       quantity?: number;
       totalCost?: number;
+      description?: string;
       providerId?: string | null;
     } = {};
 
@@ -113,6 +149,9 @@ export async function PATCH(
     }
     if (updates.quantity !== undefined) {
       updateData.quantity = updates.quantity;
+    }
+    if (updates.description !== undefined) {
+      updateData.description = updates.description;
     }
     if (updates.providerId !== undefined) {
       updateData.providerId = updates.providerId;
