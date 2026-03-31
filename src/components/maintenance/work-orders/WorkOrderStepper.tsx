@@ -1,10 +1,11 @@
-import { Check, Clock, FileText, Wrench } from 'lucide-react';
+import { Check, Clock, FileText, ShieldCheck, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { WorkOrderStatus } from '@prisma/client';
 
 export const WORK_ORDER_STATUS_FLOW = [
   { id: 'PENDING', label: 'Planificación', icon: FileText },
   { id: 'PENDING_APPROVAL', label: 'Esperando Aprobación', icon: Clock },
+  { id: 'APPROVED', label: 'Aprobada', icon: ShieldCheck },
   { id: 'IN_PROGRESS', label: 'En Progreso', icon: Wrench },
   { id: 'PENDING_INVOICE', label: 'Esperando Facturas', icon: Clock },
   { id: 'COMPLETED', label: 'Completada', icon: Check },
