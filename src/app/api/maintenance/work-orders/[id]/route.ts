@@ -891,7 +891,8 @@ export async function PUT(
       if (
         existingWO.status !== 'PENDING' &&
         existingWO.status !== 'IN_PROGRESS' &&
-        existingWO.status !== 'PENDING_APPROVAL'
+        existingWO.status !== 'PENDING_APPROVAL' &&
+        existingWO.status !== 'APPROVED'
       ) {
         return NextResponse.json(
           { error: 'No editar ítems de OTs cerradas/en revisión financiera' },
