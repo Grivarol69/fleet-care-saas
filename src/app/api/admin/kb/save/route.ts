@@ -81,7 +81,6 @@ export async function POST(req: NextRequest) {
         const existingMantItem = await tx.mantItem.findFirst({
           where: {
             name: item.name,
-            mantType: item.type,
             tenantId: null, // scope global
           },
         });
@@ -94,7 +93,6 @@ export async function POST(req: NextRequest) {
             data: {
               name: `${item.name} (${vehicleInfo.brand} ${vehicleInfo.model})`,
               description: `Maintenance for ${vehicleInfo.brand} ${vehicleInfo.model}. Migrated by AI. Interval: ${item.intervalKm}km / ${item.intervalMonths}mo`,
-              mantType: item.type,
               categoryId: defaultCategory.id,
               isGlobal: true, // Assuming this maps successfully to setting tenantId = null via multitenant client.
               // Or if bypassing we might need: tenantId: null

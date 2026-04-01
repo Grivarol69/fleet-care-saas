@@ -55,7 +55,6 @@ export async function GET(request: NextRequest) {
       name: item.name,
       description: item.description,
       type: item.type,
-      mantType: item.mantType,
       isGlobal: item.isGlobal,
       category: item.category,
       score: Math.round(item.score * 100), // Porcentaje 0-100

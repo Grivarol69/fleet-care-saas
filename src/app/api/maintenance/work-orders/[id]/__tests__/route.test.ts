@@ -34,7 +34,10 @@ describe('Work Order Integration (PATCH)', () => {
       permissions: [],
     } as any;
     vi.mocked(getCurrentUser).mockResolvedValue(__mockUser);
-    vi.mocked(requireCurrentUser).mockResolvedValue({ user: __mockUser, tenantPrisma: getTenantPrisma(__mockUser.tenantId) } as any);
+    vi.mocked(requireCurrentUser).mockResolvedValue({
+      user: __mockUser,
+      tenantPrisma: getTenantPrisma(__mockUser.tenantId),
+    } as any);
 
     // Setup DB
     await prisma.tenant.create({
@@ -85,7 +88,6 @@ describe('Work Order Integration (PATCH)', () => {
     const mantItem = await prisma.mantItem.create({
       data: {
         name: 'PatchItem',
-        mantType: 'PREVENTIVE',
         categoryId: category.id,
         tenantId,
       },
@@ -252,7 +254,10 @@ describe('Work Order PATCH — Role-Based Transition Guards', () => {
       permissions: [],
     } as any;
     vi.mocked(getCurrentUser).mockResolvedValue(__mockUser);
-    vi.mocked(requireCurrentUser).mockResolvedValue({ user: __mockUser, tenantPrisma: getTenantPrisma(__mockUser.tenantId) } as any);
+    vi.mocked(requireCurrentUser).mockResolvedValue({
+      user: __mockUser,
+      tenantPrisma: getTenantPrisma(__mockUser.tenantId),
+    } as any);
   };
 
   beforeEach(async () => {
@@ -317,7 +322,6 @@ describe('Work Order PATCH — Role-Based Transition Guards', () => {
     const mantItem = await prisma.mantItem.create({
       data: {
         name: 'GuardItem',
-        mantType: 'CORRECTIVE',
         categoryId: category.id,
         tenantId,
       },
@@ -602,7 +606,10 @@ describe('Work Order Item PATCH — Auto PENDING_INVOICE trigger', () => {
       permissions: [],
     } as any;
     vi.mocked(getCurrentUser).mockResolvedValue(__mockUser);
-    vi.mocked(requireCurrentUser).mockResolvedValue({ user: __mockUser, tenantPrisma: getTenantPrisma(__mockUser.tenantId) } as any);
+    vi.mocked(requireCurrentUser).mockResolvedValue({
+      user: __mockUser,
+      tenantPrisma: getTenantPrisma(__mockUser.tenantId),
+    } as any);
 
     await prisma.tenant.create({
       data: {
@@ -651,7 +658,6 @@ describe('Work Order Item PATCH — Auto PENDING_INVOICE trigger', () => {
     const mantItem = await prisma.mantItem.create({
       data: {
         name: 'AutoPIItem',
-        mantType: 'CORRECTIVE',
         categoryId: category.id,
         tenantId,
       },

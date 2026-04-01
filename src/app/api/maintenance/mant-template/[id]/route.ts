@@ -22,7 +22,7 @@ export async function GET(
     const mantTemplate = await tenantPrisma.maintenanceTemplate.findFirst({
       where: {
         id: mantTemplateId,
-        },
+      },
       include: {
         brand: {
           select: {
@@ -45,7 +45,6 @@ export async function GET(
                     id: true,
                     name: true,
                     description: true,
-                    mantType: true,
                     type: true,
                     category: {
                       select: {
@@ -138,7 +137,7 @@ export async function PATCH(
     const existingTemplate = await tenantPrisma.maintenanceTemplate.findFirst({
       where: {
         id: mantTemplateId,
-        },
+      },
     });
 
     if (!existingTemplate) {
@@ -152,7 +151,7 @@ export async function PATCH(
     const brand = await tenantPrisma.vehicleBrand.findFirst({
       where: {
         id: vehicleBrandId,
-        },
+      },
     });
 
     if (!brand) {
@@ -233,7 +232,6 @@ export async function PATCH(
                   select: {
                     id: true,
                     name: true,
-                    mantType: true,
                     type: true,
                   },
                 },
@@ -288,7 +286,7 @@ export async function DELETE(
     const existingTemplate = await tenantPrisma.maintenanceTemplate.findUnique({
       where: {
         id: mantTemplateId,
-        },
+      },
     });
 
     if (!existingTemplate) {

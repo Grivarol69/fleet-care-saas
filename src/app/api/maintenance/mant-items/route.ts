@@ -18,9 +18,9 @@ export async function GET(request: NextRequest) {
     const mantItems = await tenantPrisma.mantItem.findMany({
       where: {
         ...(typeFilter &&
-          ['ACTION', 'PART', 'SERVICE'].includes(typeFilter) && {
-          type: typeFilter as 'ACTION' | 'PART' | 'SERVICE',
-        }),
+          ['PART', 'SERVICE'].includes(typeFilter) && {
+            type: typeFilter as 'PART' | 'SERVICE',
+          }),
         ...(search && {
           AND: [
             {
@@ -59,25 +59,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { name, description, mantType, categoryId, type, isGlobal } =
-      await req.json();
+    const { name, description, categoryId, type, isGlobal } = await req.json();
 
     // Validación de campos requeridos
     if (!name || name.trim() === '') {
       return NextResponse.json(
         { error: 'El nombre es requerido' },
-        { status: 400 }
-      );
-    }
-
-    if (
-      !mantType ||
-      !['PREVENTIVE', 'PREDICTIVE', 'CORRECTIVE', 'EMERGENCY'].includes(
-        mantType
-      )
-    ) {
-      return NextResponse.json(
-        { error: 'Tipo de mantenimiento inválido' },
         { status: 400 }
       );
     }
@@ -89,7 +76,7 @@ export async function POST(req: Request) {
       );
     }
 
-    if (type && !['ACTION', 'PART', 'SERVICE'].includes(type)) {
+    if (type && !['PART', 'SERVICE'].includes(type)) {
       return NextResponse.json(
         { error: 'Tipo de item inválido' },
         { status: 400 }
@@ -156,9 +143,8 @@ export async function POST(req: Request) {
       data: {
         name: name.trim(),
         description: description?.trim() || null,
-        mantType,
         categoryId,
-        type: type || 'ACTION',
+        type: type || 'SERVICE',
         tenantId: targetTenant,
         isGlobal: isGlobal || false,
       },

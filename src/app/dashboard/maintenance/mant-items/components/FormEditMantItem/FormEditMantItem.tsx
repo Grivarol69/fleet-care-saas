@@ -59,7 +59,6 @@ export function FormEditMantItem({
     defaultValues: {
       name: mantItem.name,
       description: mantItem.description || '',
-      mantType: mantItem.mantType,
       categoryId: mantItem.categoryId,
       type: mantItem.type,
     },
@@ -91,7 +90,6 @@ export function FormEditMantItem({
       form.reset({
         name: mantItem.name,
         description: mantItem.description || '',
-        mantType: mantItem.mantType,
         categoryId: mantItem.categoryId,
         type: mantItem.type,
       });
@@ -195,35 +193,6 @@ export function FormEditMantItem({
               )}
             />
 
-            {/* Tipo de Mantenimiento */}
-            <FormField
-              control={form.control}
-              name="mantType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo de Mantenimiento</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value || ''}
-                    disabled={isLoading}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccione el tipo de mantenimiento" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="PREVENTIVE">Preventivo</SelectItem>
-                      <SelectItem value="PREDICTIVE">Predictivo</SelectItem>
-                      <SelectItem value="CORRECTIVE">Correctivo</SelectItem>
-                      <SelectItem value="EMERGENCY">Emergencia</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             {/* Tipo de Item */}
             <FormField
               control={form.control}
@@ -233,7 +202,7 @@ export function FormEditMantItem({
                   <FormLabel>Tipo de Item</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    value={field.value || 'ACTION'}
+                    value={field.value || 'SERVICE'}
                     disabled={isLoading}
                   >
                     <FormControl>
@@ -242,15 +211,10 @@ export function FormEditMantItem({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="ACTION">
-                        Acción (inspección, revisión)
-                      </SelectItem>
                       <SelectItem value="PART">
                         Repuesto (filtro, aceite)
                       </SelectItem>
-                      <SelectItem value="SERVICE">
-                        Servicio externo completo
-                      </SelectItem>
+                      <SelectItem value="SERVICE">Servicio / Labor</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

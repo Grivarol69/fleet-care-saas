@@ -73,23 +73,11 @@ export async function PATCH(
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
-    const { name, description, mantType, categoryId, type } = await req.json();
+    const { name, description, categoryId, type } = await req.json();
 
     if (!name || name.trim() === '') {
       return NextResponse.json(
         { error: 'El nombre es requerido' },
-        { status: 400 }
-      );
-    }
-
-    if (
-      !mantType ||
-      !['PREVENTIVE', 'PREDICTIVE', 'CORRECTIVE', 'EMERGENCY'].includes(
-        mantType
-      )
-    ) {
-      return NextResponse.json(
-        { error: 'Tipo de mantenimiento inválido' },
         { status: 400 }
       );
     }
@@ -101,7 +89,7 @@ export async function PATCH(
       );
     }
 
-    if (type && !['ACTION', 'PART', 'SERVICE'].includes(type)) {
+    if (type && !['PART', 'SERVICE'].includes(type)) {
       return NextResponse.json(
         { error: 'Tipo de item inválido' },
         { status: 400 }
@@ -169,7 +157,6 @@ export async function PATCH(
       data: {
         name: name.trim(),
         description: description?.trim() || null,
-        mantType,
         categoryId,
         type: type || existingItem.type,
       },

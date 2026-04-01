@@ -519,7 +519,7 @@ async function main() {
     catLubricacion,
     catFiltros,
     catNeumaticos,
-    ,
+    catCarroceria,
     catDireccion,
     catAireAcond,
     catEmbrague,
@@ -532,10 +532,9 @@ async function main() {
   console.log(`   ${cats.length} categorias creadas.`);
 
   // ----------------------------------------------------------
-  // ITEMS DE MANTENIMIENTO (33 = 17 preventivos + 16 correctivos)
-  // + 5 especificos (SUV + EV) = 38 total
+  // ITEMS DE MANTENIMIENTO — Core KB (38 items: PART + SERVICE base)
   // ----------------------------------------------------------
-  console.log('   Creando items de mantenimiento (38)...');
+  console.log('   Creando items de mantenimiento base...');
   const items = await Promise.all([
     // ---- PREVENTIVOS [0-20] ----
     // Motor [0-2]
@@ -543,7 +542,6 @@ async function main() {
       data: {
         name: 'Aceite motor sintetico',
         description: 'Aceite motor sintetico',
-        mantType: 'PREVENTIVE',
         categoryId: catMotor.id,
         type: 'PART',
         isGlobal: true,
@@ -553,7 +551,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Inspeccion sistema combustible',
-        mantType: 'PREVENTIVE',
         categoryId: catMotor.id,
         type: 'ACTION',
         isGlobal: true,
@@ -563,7 +560,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Ajuste valvulas',
-        mantType: 'PREVENTIVE',
         categoryId: catMotor.id,
         type: 'SERVICE', // FIXED
         isGlobal: true,
@@ -574,7 +570,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Filtro aceite',
-        mantType: 'PREVENTIVE',
         categoryId: catFiltros.id,
         type: 'PART',
         isGlobal: true,
@@ -584,7 +579,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Filtro aire',
-        mantType: 'PREVENTIVE',
         categoryId: catFiltros.id,
         type: 'PART',
         isGlobal: true,
@@ -594,7 +588,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Filtro combustible',
-        mantType: 'PREVENTIVE',
         categoryId: catFiltros.id,
         type: 'PART',
         isGlobal: true,
@@ -605,7 +598,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Inspeccion pastillas freno',
-        mantType: 'PREVENTIVE',
         categoryId: catFrenos.id,
         type: 'ACTION',
         isGlobal: true,
@@ -615,7 +607,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Liquido frenos',
-        mantType: 'PREVENTIVE',
         categoryId: catFrenos.id,
         type: 'PART',
         isGlobal: true,
@@ -626,7 +617,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Inspeccion amortiguadores',
-        mantType: 'PREVENTIVE',
         categoryId: catSuspension.id,
         type: 'ACTION',
         isGlobal: true,
@@ -636,7 +626,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Lubricacion rotulas',
-        mantType: 'PREVENTIVE',
         categoryId: catSuspension.id,
         type: 'SERVICE', // FIXED
         isGlobal: true,
@@ -647,7 +636,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Inspeccion bateria',
-        mantType: 'PREVENTIVE',
         categoryId: catElectrico.id,
         type: 'ACTION',
         isGlobal: true,
@@ -657,7 +645,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Limpieza terminales bateria',
-        mantType: 'PREVENTIVE',
         categoryId: catElectrico.id,
         type: 'ACTION',
         isGlobal: true,
@@ -668,7 +655,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Aceite transmision',
-        mantType: 'PREVENTIVE',
         categoryId: catTransmision.id,
         type: 'PART',
         isGlobal: true,
@@ -678,7 +664,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Ajuste embrague',
-        mantType: 'PREVENTIVE',
         categoryId: catTransmision.id,
         type: 'SERVICE', // FIXED
         isGlobal: true,
@@ -689,7 +674,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Rotacion neumaticos',
-        mantType: 'PREVENTIVE',
         categoryId: catNeumaticos.id,
         type: 'SERVICE', // FIXED
         isGlobal: true,
@@ -699,7 +683,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Balanceo y alineacion',
-        mantType: 'PREVENTIVE',
         categoryId: catNeumaticos.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -710,7 +693,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Liquido direccion hidraulica',
-        mantType: 'PREVENTIVE',
         categoryId: catLubricacion.id,
         type: 'PART',
         isGlobal: true,
@@ -721,7 +703,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Filtro habitaculo',
-        mantType: 'PREVENTIVE',
         categoryId: catFiltros.id,
         type: 'PART',
         isGlobal: true,
@@ -731,7 +712,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Correa accesorios',
-        mantType: 'PREVENTIVE',
         categoryId: catMotor.id,
         type: 'PART',
         isGlobal: true,
@@ -742,7 +722,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Inspeccion alta tension EV',
-        mantType: 'PREVENTIVE',
         categoryId: catAltaTensionEV.id,
         type: 'ACTION',
         isGlobal: true,
@@ -752,7 +731,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Aceite engranaje reductor EV',
-        mantType: 'PREVENTIVE',
         categoryId: catTransmision.id,
         type: 'PART',
         isGlobal: true,
@@ -762,7 +740,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Flush liquido refrigerante EV',
-        mantType: 'PREVENTIVE',
         categoryId: catTermicoEV.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -776,7 +753,6 @@ async function main() {
       data: {
         name: 'Pastillas freno delanteras',
         description: 'Reemplazo de pastillas desgastadas delanteras',
-        mantType: 'CORRECTIVE',
         categoryId: catFrenos.id,
         type: 'SERVICE', // FIXED
         isGlobal: true,
@@ -787,7 +763,6 @@ async function main() {
       data: {
         name: 'Pastillas freno',
         description: 'Pastillas de Freno',
-        mantType: 'CORRECTIVE',
         categoryId: catFrenos.id,
         type: 'PART',
         isGlobal: true,
@@ -798,7 +773,6 @@ async function main() {
       data: {
         name: 'Discos freno',
         description: 'Discos de freno',
-        mantType: 'CORRECTIVE',
         categoryId: catFrenos.id,
         type: 'PART',
         isGlobal: true,
@@ -808,7 +782,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Reparacion cilindro maestro',
-        mantType: 'CORRECTIVE',
         categoryId: catFrenos.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -819,7 +792,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Correa distribucion',
-        mantType: 'CORRECTIVE',
         categoryId: catMotor.id,
         type: 'PART',
         isGlobal: true,
@@ -829,7 +801,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Reparacion empaque culata',
-        mantType: 'CORRECTIVE',
         categoryId: catMotor.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -839,7 +810,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Bomba agua',
-        mantType: 'CORRECTIVE',
         categoryId: catMotor.id,
         type: 'PART',
         isGlobal: true,
@@ -850,7 +820,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Amortiguadores',
-        mantType: 'CORRECTIVE',
         categoryId: catSuspension.id,
         type: 'PART',
         isGlobal: true,
@@ -860,7 +829,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Rotulas',
-        mantType: 'CORRECTIVE',
         categoryId: catSuspension.id,
         type: 'PART',
         isGlobal: true,
@@ -870,7 +838,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Bujes suspension',
-        mantType: 'CORRECTIVE',
         categoryId: catSuspension.id,
         type: 'PART',
         isGlobal: true,
@@ -881,7 +848,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Bateria',
-        mantType: 'CORRECTIVE',
         categoryId: catElectrico.id,
         type: 'PART',
         isGlobal: true,
@@ -891,7 +857,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Alternador',
-        mantType: 'CORRECTIVE',
         categoryId: catElectrico.id,
         type: 'PART',
         isGlobal: true,
@@ -901,7 +866,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Motor arranque',
-        mantType: 'CORRECTIVE',
         categoryId: catElectrico.id,
         type: 'PART',
         isGlobal: true,
@@ -912,7 +876,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Kit embrague',
-        mantType: 'CORRECTIVE',
         categoryId: catTransmision.id,
         type: 'PART',
         isGlobal: true,
@@ -922,7 +885,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Reparacion caja cambios',
-        mantType: 'CORRECTIVE',
         categoryId: catTransmision.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -933,7 +895,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Neumaticos',
-        mantType: 'CORRECTIVE',
         categoryId: catNeumaticos.id,
         type: 'PART',
         isGlobal: true,
@@ -941,6 +902,279 @@ async function main() {
       },
     }),
   ]);
+
+  // ----------------------------------------------------------
+  // KB TEMPARIO AUTOMOTRIZ — 226 items SERVICE (isGlobal=true)
+  // skipDuplicates evita conflictos con items core de arriba
+  // ----------------------------------------------------------
+  console.log('   Agregando KB tempario automotriz (SERVICE, isGlobal)...');
+  const catByTemp: Record<string, string> = {
+    Motor: catMotor.id,
+    Transmision: catTransmision.id,
+    Frenos: catFrenos.id,
+    Suspension: catSuspension.id,
+    Direccion: catDireccion.id,
+    Electrico: catElectrico.id,
+    'Aire Acondicionado': catAireAcond.id,
+    Embrague: catEmbrague.id,
+    Escape: catEscape.id,
+    Carroceria: catCarroceria.id,
+    Neumaticos: catNeumaticos.id,
+    Lubricacion: catLubricacion.id,
+    Varios: catVarios.id,
+  };
+  const temparioKB: { cat: string; name: string }[] = [
+    // Motor (30)
+    { cat: 'Motor', name: 'Cambio aceite motor' },
+    { cat: 'Motor', name: 'Cambio filtro aceite' },
+    { cat: 'Motor', name: 'Cambio filtro aire' },
+    { cat: 'Motor', name: 'Cambio filtro combustible' },
+    { cat: 'Motor', name: 'Cambio filtro respiradero' },
+    { cat: 'Motor', name: 'Calibración válvulas' },
+    { cat: 'Motor', name: 'Rectificación motor' },
+    { cat: 'Motor', name: 'Cambio juntas motor' },
+    { cat: 'Motor', name: 'Cambio retenes motor' },
+    { cat: 'Motor', name: 'Cambio bomba aceite' },
+    { cat: 'Motor', name: 'Cambio cadena distribución' },
+    { cat: 'Motor', name: 'Cambio tensor distribución' },
+    { cat: 'Motor', name: 'Cambio correa distribución' },
+    { cat: 'Motor', name: 'Cambio radiador' },
+    { cat: 'Motor', name: 'Cambio manguera refrigerante' },
+    { cat: 'Motor', name: 'Cambio termostato' },
+    { cat: 'Motor', name: 'Cambio bomba agua' },
+    { cat: 'Motor', name: 'Cambio inyectores' },
+    { cat: 'Motor', name: 'Cambio bomba combustible' },
+    { cat: 'Motor', name: 'Limpieza cuerpo aceleración' },
+    { cat: 'Motor', name: 'Ajuste carburador' },
+    { cat: 'Motor', name: 'Cambio carburador' },
+    { cat: 'Motor', name: 'Cambio turbocharger' },
+    { cat: 'Motor', name: 'Cambio intercooler' },
+    { cat: 'Motor', name: 'Cambio sensores motor' },
+    { cat: 'Motor', name: 'Cambio bujías' },
+    { cat: 'Motor', name: 'Cambio cables bujía' },
+    { cat: 'Motor', name: 'Cambio bobina ignición' },
+    { cat: 'Motor', name: 'Diagnóstico motor' },
+    { cat: 'Motor', name: 'Escape reparacion general' },
+    // Transmision (20)
+    { cat: 'Transmision', name: 'Cambio aceite transmisión' },
+    { cat: 'Transmision', name: 'Cambio filtro transmisión' },
+    { cat: 'Transmision', name: 'Ajuste embrague' },
+    { cat: 'Transmision', name: 'Cambio disco embrague' },
+    { cat: 'Transmision', name: 'Cambio platino embrague' },
+    { cat: 'Transmision', name: 'Cambio cojinete empuje' },
+    { cat: 'Transmision', name: 'Cambio cable clutch' },
+    { cat: 'Transmision', name: 'Cambio aceite diferencial' },
+    { cat: 'Transmision', name: 'Cambio corona piñón' },
+    { cat: 'Transmision', name: 'Cambio rodamientos diferencial' },
+    { cat: 'Transmision', name: 'Rectificación diferencial' },
+    { cat: 'Transmision', name: 'Cambio retenes transmisión' },
+    { cat: 'Transmision', name: 'Cambio synchronous' },
+    { cat: 'Transmision', name: 'Cambio cremallera cambio' },
+    { cat: 'Transmision', name: 'Cambio palancas cambio' },
+    { cat: 'Transmision', name: 'Ajuste juego cambio' },
+    { cat: 'Transmision', name: 'Diagnóstico transmisión' },
+    { cat: 'Transmision', name: 'Cambio convertidor torque' },
+    { cat: 'Transmision', name: 'Cambio cuerpo válvulas' },
+    { cat: 'Transmision', name: 'Rectificación caja cambios' },
+    // Frenos (20)
+    { cat: 'Frenos', name: 'Cambio pastillas freno adelante' },
+    { cat: 'Frenos', name: 'Cambio pastillas freno atrás' },
+    { cat: 'Frenos', name: 'Cambio discos freno' },
+    { cat: 'Frenos', name: 'Rectificación discos freno' },
+    { cat: 'Frenos', name: 'Cambio bandas freno' },
+    { cat: 'Frenos', name: 'Cambio tambores freno' },
+    { cat: 'Frenos', name: 'Rectificación tambores' },
+    { cat: 'Frenos', name: 'Cambio cilindro ruedas' },
+    { cat: 'Frenos', name: 'Cambio cilindro maestro' },
+    { cat: 'Frenos', name: 'Cambio servo freno' },
+    { cat: 'Frenos', name: 'Cambio mangueras freno' },
+    { cat: 'Frenos', name: 'Cambio tubo freno' },
+    { cat: 'Frenos', name: 'Cambio líquido freno' },
+    { cat: 'Frenos', name: 'Purga sistema freno' },
+    { cat: 'Frenos', name: 'Ajuste freno estacionario' },
+    { cat: 'Frenos', name: 'Cambio zapata freno mano' },
+    { cat: 'Frenos', name: 'Cambio cable freno mano' },
+    { cat: 'Frenos', name: 'Cambio ABS sensor' },
+    { cat: 'Frenos', name: 'Diagnóstico sistema freno' },
+    { cat: 'Frenos', name: 'Inspección general frenos' },
+    // Suspension (20)
+    { cat: 'Suspension', name: 'Cambio amortiguador adelante' },
+    { cat: 'Suspension', name: 'Cambio amortiguador atrás' },
+    { cat: 'Suspension', name: 'Cambio resorte suspensión' },
+    { cat: 'Suspension', name: 'Cambio tornillo presión' },
+    { cat: 'Suspension', name: 'Cambio bocín suspensión' },
+    { cat: 'Suspension', name: 'Cambio gemelo suspensión' },
+    { cat: 'Suspension', name: 'Cambio bieleta suspensión' },
+    { cat: 'Suspension', name: 'Cambio barra estabilizadora' },
+    { cat: 'Suspension', name: 'Cambio terminal estabilizadora' },
+    { cat: 'Suspension', name: 'Cambio rotula suspensión' },
+    { cat: 'Suspension', name: 'Cambio axial dirección' },
+    { cat: 'Suspension', name: 'Cambio manga eje' },
+    { cat: 'Suspension', name: 'Cambio rodamiento cubo' },
+    { cat: 'Suspension', name: 'Cambio retén cubo' },
+    { cat: 'Suspension', name: 'Cambio rulemán centro' },
+    { cat: 'Suspension', name: 'Cambio ballesta' },
+    { cat: 'Suspension', name: 'Cambio parachoques suspensión' },
+    { cat: 'Suspension', name: 'Engrase suspensión' },
+    { cat: 'Suspension', name: 'Inspección suspensión' },
+    { cat: 'Suspension', name: 'Alineación tren delantero' },
+    // Direccion (18)
+    { cat: 'Direccion', name: 'Cambio líquido dirección hidráulica' },
+    { cat: 'Direccion', name: 'Cambio manguera dirección' },
+    { cat: 'Direccion', name: 'Cambio bomba dirección hidráulica' },
+    { cat: 'Direccion', name: 'Cambio cremallera dirección' },
+    { cat: 'Direccion', name: 'Reparación cremallera' },
+    { cat: 'Direccion', name: 'Cambio terminal dirección' },
+    { cat: 'Direccion', name: 'Cambio biela dirección' },
+    { cat: 'Direccion', name: 'Cambio barra dirección' },
+    { cat: 'Direccion', name: 'Cambio soporte dirección' },
+    { cat: 'Direccion', name: 'Cambio columna dirección' },
+    { cat: 'Direccion', name: 'Cambio volante' },
+    { cat: 'Direccion', name: 'Cambio cardan dirección' },
+    { cat: 'Direccion', name: 'Cambio caja dirección' },
+    { cat: 'Direccion', name: 'Ajuste juego dirección' },
+    { cat: 'Direccion', name: 'Inspección dirección' },
+    { cat: 'Direccion', name: 'Alineación dirección' },
+    { cat: 'Direccion', name: 'Diagnóstico dirección' },
+    { cat: 'Direccion', name: 'Cambio sensor posición dirección' },
+    // Electrico (28)
+    { cat: 'Electrico', name: 'Cambio batería' },
+    { cat: 'Electrico', name: 'Limpieza terminales batería' },
+    { cat: 'Electrico', name: 'Cambio alternador' },
+    { cat: 'Electrico', name: 'Cambio motor arranque' },
+    { cat: 'Electrico', name: 'Cambio regulador voltaje' },
+    { cat: 'Electrico', name: 'Cambio bombillas' },
+    { cat: 'Electrico', name: 'Cambio faro' },
+    { cat: 'Electrico', name: 'Cambio piloto' },
+    { cat: 'Electrico', name: 'Cambio luz stop' },
+    { cat: 'Electrico', name: 'Cambio direccional' },
+    { cat: 'Electrico', name: 'Cambio switch luz' },
+    { cat: 'Electrico', name: 'Cambio switch limpiaparabrisas' },
+    { cat: 'Electrico', name: 'Cambio motor limpiaparabrisas' },
+    { cat: 'Electrico', name: 'Cambio bomba limpiaparabrisas' },
+    { cat: 'Electrico', name: 'Cambio bocina' },
+    { cat: 'Electrico', name: 'Cambio espejo eléctrico' },
+    { cat: 'Electrico', name: 'Cambio levanta vidrio' },
+    { cat: 'Electrico', name: 'Cambio switch levanta vidrio' },
+    { cat: 'Electrico', name: 'Cambio motorventilador' },
+    { cat: 'Electrico', name: 'Cambio resistor motorventilador' },
+    { cat: 'Electrico', name: 'Cambio sensor temperatura' },
+    { cat: 'Electrico', name: 'Cambio sensor nivel combustible' },
+    { cat: 'Electrico', name: 'Cambio velocímetro' },
+    { cat: 'Electrico', name: 'Cambio tablero instrumentos' },
+    { cat: 'Electrico', name: 'Cambio radio autoestereo' },
+    { cat: 'Electrico', name: 'Cambio altavoz' },
+    { cat: 'Electrico', name: 'Diagnóstico sistema eléctrico' },
+    { cat: 'Electrico', name: 'Reparación cableado' },
+    // Aire Acondicionado (14)
+    { cat: 'Aire Acondicionado', name: 'Carga gas refrigerante' },
+    { cat: 'Aire Acondicionado', name: 'Vacío sistema A/A' },
+    { cat: 'Aire Acondicionado', name: 'Cambio compresor A/A' },
+    { cat: 'Aire Acondicionado', name: 'Cambio condensador A/A' },
+    { cat: 'Aire Acondicionado', name: 'Cambio evaporador A/A' },
+    { cat: 'Aire Acondicionado', name: 'Cambio filtro deshumedecedor' },
+    { cat: 'Aire Acondicionado', name: 'Cambio manguera A/A' },
+    { cat: 'Aire Acondicionado', name: 'Cambio válvula expansión' },
+    { cat: 'Aire Acondicionado', name: 'Cambio sensor temperatura A/A' },
+    { cat: 'Aire Acondicionado', name: 'Cambio motor blower' },
+    { cat: 'Aire Acondicionado', name: 'Cambio switch A/A' },
+    { cat: 'Aire Acondicionado', name: 'Diagnóstico A/A' },
+    { cat: 'Aire Acondicionado', name: 'Limpieza sistema A/A' },
+    { cat: 'Aire Acondicionado', name: 'Cambio correa A/A' },
+    // Embrague (10)
+    { cat: 'Embrague', name: 'Ajuste pedal embrague' },
+    { cat: 'Embrague', name: 'Cambio disco embrague' },
+    { cat: 'Embrague', name: 'Cambio platino embrague' },
+    { cat: 'Embrague', name: 'Cambio cojinete apoyo' },
+    { cat: 'Embrague', name: 'Cambio cojinete piloto' },
+    { cat: 'Embrague', name: 'Cambio cable embrague' },
+    { cat: 'Embrague', name: 'Cambio bomba embrague' },
+    { cat: 'Embrague', name: 'Purga sistema embrague' },
+    { cat: 'Embrague', name: 'Cambio horquilla embrague' },
+    { cat: 'Embrague', name: 'Diagnóstico embrague' },
+    // Escape (10)
+    { cat: 'Escape', name: 'Cambio múltiple escape' },
+    { cat: 'Escape', name: 'Cambio silenciador' },
+    { cat: 'Escape', name: 'Cambio tubo escape' },
+    { cat: 'Escape', name: 'Cambio catalizador' },
+    { cat: 'Escape', name: 'Cambio sensor oxígeno' },
+    { cat: 'Escape', name: 'Soldadura escape' },
+    { cat: 'Escape', name: 'Cambio empaque escape' },
+    { cat: 'Escape', name: 'Cambio soporte escape' },
+    { cat: 'Escape', name: 'Rectificación múltiple' },
+    { cat: 'Escape', name: 'Diagnóstico emisiones' },
+    // Carroceria (25)
+    { cat: 'Carroceria', name: 'Enderezado panels' },
+    { cat: 'Carroceria', name: 'Soldadura cuerpos' },
+    { cat: 'Carroceria', name: 'Cambio parachoque adelante' },
+    { cat: 'Carroceria', name: 'Cambio parachoque atrás' },
+    { cat: 'Carroceria', name: 'Cambio capo' },
+    { cat: 'Carroceria', name: 'Cambio puertas' },
+    { cat: 'Carroceria', name: 'Cambio guardabarros' },
+    { cat: 'Carroceria', name: 'Cambio toldo' },
+    { cat: 'Carroceria', name: 'Cambio vidrio parabrisas' },
+    { cat: 'Carroceria', name: 'Cambio vidrio lateral' },
+    { cat: 'Carroceria', name: 'Cambio cristal atrás' },
+    { cat: 'Carroceria', name: 'Cambio parabrisas' },
+    { cat: 'Carroceria', name: 'Cambio limpiaparabrisas' },
+    { cat: 'Carroceria', name: 'Cambio brazo limpiaparabrisas' },
+    { cat: 'Carroceria', name: 'Cambio tapa combustible' },
+    { cat: 'Carroceria', name: 'Cambio espejo retrovisor' },
+    { cat: 'Carroceria', name: 'Cambio cerradura puerta' },
+    { cat: 'Carroceria', name: 'Cambio manija puerta' },
+    { cat: 'Carroceria', name: 'Cambio molduras' },
+    { cat: 'Carroceria', name: 'Pintura panel' },
+    { cat: 'Carroceria', name: 'Pulido vehicular' },
+    { cat: 'Carroceria', name: 'Cambio alfombra' },
+    { cat: 'Carroceria', name: 'Cambio tapiz' },
+    { cat: 'Carroceria', name: 'Cambio asiento' },
+    { cat: 'Carroceria', name: 'Cambio cinturón seguridad' },
+    // Neumaticos (10)
+    { cat: 'Neumaticos', name: 'Cambio neumático' },
+    { cat: 'Neumaticos', name: 'Rotación neumáticos' },
+    { cat: 'Neumaticos', name: 'Balanceo ruedas' },
+    { cat: 'Neumaticos', name: 'Alineación ruedas' },
+    { cat: 'Neumaticos', name: 'Reparación neumático' },
+    { cat: 'Neumaticos', name: 'Sellado cámara' },
+    { cat: 'Neumaticos', name: 'Cambio válvula' },
+    { cat: 'Neumaticos', name: 'Verificación presión' },
+    { cat: 'Neumaticos', name: 'Cambio rodada' },
+    { cat: 'Neumaticos', name: 'Cambio cubo rueda' },
+    // Lubricacion (6)
+    { cat: 'Lubricacion', name: 'Engrase general' },
+    { cat: 'Lubricacion', name: 'Engrase cardanes' },
+    { cat: 'Lubricacion', name: 'Engrase rodamientos' },
+    { cat: 'Lubricacion', name: 'Engrase puntos lubricación' },
+    { cat: 'Lubricacion', name: 'Cambio lubricante' },
+    { cat: 'Lubricacion', name: 'Limpieza sistema lubricación' },
+    // Varios (15)
+    { cat: 'Varios', name: 'Diagnóstico general' },
+    { cat: 'Varios', name: 'Prueba camino' },
+    { cat: 'Varios', name: 'Inspección pre-entrega' },
+    { cat: 'Varios', name: 'Cambio liquido limpiaparabrisas' },
+    { cat: 'Varios', name: 'Limpieza inyectores' },
+    { cat: 'Varios', name: 'Decarbonización motor' },
+    { cat: 'Varios', name: 'Ajuste faros' },
+    { cat: 'Varios', name: 'Inspección técnica' },
+    { cat: 'Varios', name: 'Cambio aceite caja transferencia' },
+    { cat: 'Varios', name: 'Cambio aceite árbol transmisión' },
+    { cat: 'Varios', name: 'Cambio filtros habitáculo' },
+    { cat: 'Varios', name: 'Limpieza radiador' },
+    { cat: 'Varios', name: 'Inspección leakage' },
+    { cat: 'Varios', name: 'Reparación fuga aceite' },
+    { cat: 'Varios', name: 'Reparación fuga refrigerante' },
+  ];
+  const { count: kbCount } = await prisma.mantItem.createMany({
+    data: temparioKB.map(({ cat, name }) => ({
+      name,
+      categoryId: catByTemp[cat]!,
+      type: 'SERVICE' as const,
+      isGlobal: true,
+      tenantId: null,
+    })),
+    skipDuplicates: true,
+  });
+  console.log(`   ${kbCount} items KB tempario agregados (skipDuplicates).`);
 
   // Aliases legibles
   const iCambioAceite = items[0]!;
@@ -989,7 +1223,6 @@ async function main() {
       data: {
         name: 'Cambio aceite motor',
         description: 'Drenado, limpieza y llenado aceite motor',
-        mantType: 'PREVENTIVE',
         categoryId: catMotor.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -1000,7 +1233,6 @@ async function main() {
       data: {
         name: 'Cambio filtro aceite',
         description: 'Reemplazo filtro de aceite motor',
-        mantType: 'PREVENTIVE',
         categoryId: catFiltros.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -1011,7 +1243,6 @@ async function main() {
       data: {
         name: 'Cambio filtro aire',
         description: 'Reemplazo filtro de aire motor',
-        mantType: 'PREVENTIVE',
         categoryId: catFiltros.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -1022,7 +1253,6 @@ async function main() {
       data: {
         name: 'Cambio filtro combustible',
         description: 'Reemplazo filtro de combustible',
-        mantType: 'PREVENTIVE',
         categoryId: catFiltros.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -1033,7 +1263,6 @@ async function main() {
       data: {
         name: 'Cambio liquido frenos',
         description: 'Purga y reemplazo liquido de frenos DOT4',
-        mantType: 'PREVENTIVE',
         categoryId: catFrenos.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -1044,7 +1273,6 @@ async function main() {
       data: {
         name: 'Cambio aceite transmision',
         description: 'Reemplazo aceite caja de cambios',
-        mantType: 'PREVENTIVE',
         categoryId: catTransmision.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -1055,7 +1283,6 @@ async function main() {
       data: {
         name: 'Cambio liquido direccion hidraulica',
         description: 'Reemplazo liquido de la dirección hidráulica',
-        mantType: 'PREVENTIVE',
         categoryId: catDireccion.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -1066,7 +1293,6 @@ async function main() {
       data: {
         name: 'Cambio filtro habitaculo',
         description: 'Reemplazo filtro de habitáculo / cabina',
-        mantType: 'PREVENTIVE',
         categoryId: catFiltros.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -1077,7 +1303,6 @@ async function main() {
       data: {
         name: 'Cambio correa accesorios',
         description: 'Reemplazo correa poly-V de accesorios',
-        mantType: 'PREVENTIVE',
         categoryId: catMotor.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -1088,7 +1313,6 @@ async function main() {
       data: {
         name: 'Cambio aceite reductor EV',
         description: 'Reemplazo aceite engranaje reductor EV',
-        mantType: 'PREVENTIVE',
         categoryId: catTransmision.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -1100,7 +1324,6 @@ async function main() {
       data: {
         name: 'Cambio pastillas freno delanteras',
         description: 'Reemplazo pastillas freno delanteras',
-        mantType: 'CORRECTIVE',
         categoryId: catFrenos.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -1111,7 +1334,6 @@ async function main() {
       data: {
         name: 'Cambio pastillas freno traseras',
         description: 'Reemplazo pastillas freno traseras',
-        mantType: 'CORRECTIVE',
         categoryId: catFrenos.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -1122,7 +1344,6 @@ async function main() {
       data: {
         name: 'Cambio discos freno',
         description: 'Reemplazo discos de freno desgastados',
-        mantType: 'CORRECTIVE',
         categoryId: catFrenos.id,
         type: 'SERVICE',
         isGlobal: true,

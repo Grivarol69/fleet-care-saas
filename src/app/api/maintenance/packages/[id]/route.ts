@@ -18,8 +18,7 @@ export async function GET(
     const package_ = await tenantPrisma.maintenancePackage.findFirst({
       where: {
         id,
-        template: {
-          },
+        template: {},
       },
       include: {
         packageItems: {
@@ -28,7 +27,6 @@ export async function GET(
               select: {
                 id: true,
                 name: true,
-                mantType: true,
                 type: true,
                 category: {
                   select: {
@@ -94,8 +92,7 @@ export async function PUT(
     const existingPackage = await tenantPrisma.maintenancePackage.findFirst({
       where: {
         id,
-        template: {
-          },
+        template: {},
       },
     });
 
@@ -185,8 +182,7 @@ export async function DELETE(
     const existingPackage = await tenantPrisma.maintenancePackage.findFirst({
       where: {
         id,
-        template: {
-          },
+        template: {},
       },
     });
 
@@ -195,14 +191,13 @@ export async function DELETE(
     }
 
     // Verificar si hay VehicleProgramPackages que referencian este package por nombre
-    const vehicleProgramPackages = await tenantPrisma.vehicleProgramPackage.findFirst(
-      {
+    const vehicleProgramPackages =
+      await tenantPrisma.vehicleProgramPackage.findFirst({
         where: {
           name: existingPackage.name,
           triggerKm: existingPackage.triggerKm,
         },
-      }
-    );
+      });
 
     if (vehicleProgramPackages) {
       return NextResponse.json(

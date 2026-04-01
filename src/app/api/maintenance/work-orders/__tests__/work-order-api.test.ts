@@ -50,7 +50,10 @@ describe('Work Order Integration (API Route)', () => {
     // Mock Auth to return this user
     const mockUser = { ...user, isSuperAdmin: false };
     (getCurrentUser as any).mockResolvedValue(mockUser);
-    (requireCurrentUser as any).mockResolvedValue({ user: mockUser, tenantPrisma: getTenantPrisma(mockUser.tenantId) });
+    (requireCurrentUser as any).mockResolvedValue({
+      user: mockUser,
+      tenantPrisma: getTenantPrisma(mockUser.tenantId),
+    });
 
     // Create Vehicle
     const brand = await prisma.vehicleBrand.create({
@@ -85,7 +88,6 @@ describe('Work Order Integration (API Route)', () => {
     const mantItem = await prisma.mantItem.create({
       data: {
         name: 'IntegraService',
-        mantType: 'PREVENTIVE',
         categoryId: category.id,
         tenantId,
       },
@@ -190,7 +192,6 @@ describe('Work Order Integration (API Route)', () => {
       title: 'Fixing Integration Test Issue',
       description: 'Automated test work order',
       priority: 'HIGH',
-      mantType: 'PREVENTIVE',
       workType: 'INTERNAL',
       scheduledDate: new Date().toISOString(),
     };

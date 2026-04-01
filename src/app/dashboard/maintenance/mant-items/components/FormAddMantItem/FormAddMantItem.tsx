@@ -47,13 +47,10 @@ const formSchema = z.object({
     message: 'El nombre debe tener al menos 2 caracteres',
   }),
   description: z.string().optional(),
-  mantType: z.enum(['PREVENTIVE', 'PREDICTIVE', 'CORRECTIVE', 'EMERGENCY'], {
-    required_error: 'Debe seleccionar un tipo de mantenimiento',
-  }),
   categoryId: z.string().min(1).min(1, {
     message: 'Debe seleccionar una categoría',
   }),
-  type: z.enum(['ACTION', 'PART', 'SERVICE']).default('ACTION'),
+  type: z.enum(['PART', 'SERVICE']).default('SERVICE'),
   justification: z.string().optional(),
 });
 
@@ -73,7 +70,6 @@ interface SimilarItem {
   name: string;
   description: string | null;
   type: string;
-  mantType: string;
   isGlobal: boolean;
   category: { id: string; name: string };
   score: number;
@@ -84,9 +80,8 @@ interface MantItemResponse {
   tenantId: string;
   name: string;
   description?: string | null;
-  mantType: 'PREVENTIVE' | 'PREDICTIVE' | 'CORRECTIVE' | 'EMERGENCY';
   categoryId: string;
-  type: 'ACTION' | 'PART' | 'SERVICE';
+  type: 'PART' | 'SERVICE';
   status: 'ACTIVE' | 'INACTIVE';
   createdAt: string;
   updatedAt: string;
@@ -133,7 +128,7 @@ export function FormAddMantItem({
       name: '',
       description: '',
       categoryId: '',
-      type: 'ACTION',
+      type: 'SERVICE',
       justification: '',
     },
   });
@@ -225,19 +220,8 @@ export function FormAddMantItem({
     setStep('form');
   };
 
-  const formatMantType = (mantType: string) => {
-    const map: Record<string, string> = {
-      PREVENTIVE: 'Preventivo',
-      PREDICTIVE: 'Predictivo',
-      CORRECTIVE: 'Correctivo',
-      EMERGENCY: 'Emergencia',
-    };
-    return map[mantType] || mantType;
-  };
-
   const formatItemType = (type: string) => {
     const map: Record<string, string> = {
-      ACTION: 'Accion',
       PART: 'Repuesto',
       SERVICE: 'Servicio',
     };
@@ -277,7 +261,6 @@ export function FormAddMantItem({
         const requestData = {
           suggestedName: values.name,
           description: values.description,
-          mantType: values.mantType,
           categoryId: values.categoryId,
           type: values.type,
           justification: values.justification,
@@ -392,7 +375,6 @@ export function FormAddMantItem({
                           )}
                           <div className="text-xs mt-1 flex gap-2">
                             <span>{item.category.name}</span>
-                            <span>{formatMantType(item.mantType)}</span>
                             <span>{formatItemType(item.type)}</span>
                           </div>
                         </div>
@@ -501,64 +483,32 @@ export function FormAddMantItem({
                 )}
               />
 
-              <div className="grid grid-cols-2 gap-4">
-                {/* Tipo de Mantenimiento */}
-                <FormField
-                  control={form.control}
-                  name="mantType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tipo Mantenimiento</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value || ''}
-                        disabled={isLoading}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleccione..." />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="PREVENTIVE">Preventivo</SelectItem>
-                          <SelectItem value="PREDICTIVE">Predictivo</SelectItem>
-                          <SelectItem value="CORRECTIVE">Correctivo</SelectItem>
-                          <SelectItem value="EMERGENCY">Emergencia</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Tipo de Item */}
-                <FormField
-                  control={form.control}
-                  name="type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tipo de Item</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value || 'ACTION'}
-                        disabled={isLoading}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleccione..." />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="ACTION">Accion</SelectItem>
-                          <SelectItem value="PART">Repuesto</SelectItem>
-                          <SelectItem value="SERVICE">Servicio</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              {/* Tipo de Item */}
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo de Item</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value || 'SERVICE'}
+                      disabled={isLoading}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccione..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="PART">Repuesto</SelectItem>
+                        <SelectItem value="SERVICE">Servicio</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               {/* Categoría */}
               <FormField
