@@ -302,6 +302,7 @@ export default function WorkOrderDetailPage() {
           <UnifiedWorkOrderForm
             initialData={workOrder}
             currentUser={currentUser}
+            onRefresh={fetchWorkOrder}
           />
         </TabsContent>
 

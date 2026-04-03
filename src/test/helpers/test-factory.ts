@@ -110,8 +110,7 @@ export async function createTestMantItem(
   tenantId: string,
   overrides: Partial<{
     name: string;
-    mantType: 'PREVENTIVE' | 'CORRECTIVE' | 'PREDICTIVE';
-    type: 'ACTION' | 'PART' | 'SERVICE';
+    type: 'PART' | 'SERVICE';
     categoryName: string;
   }> = {}
 ) {
@@ -122,8 +121,7 @@ export async function createTestMantItem(
   const mantItem = await prisma.mantItem.create({
     data: {
       name: overrides.name ?? `MantItem-${uid()}`,
-      mantType: overrides.mantType ?? 'PREVENTIVE',
-      type: overrides.type ?? 'ACTION',
+      type: overrides.type ?? 'SERVICE',
       categoryId: category.id,
       tenantId,
     },

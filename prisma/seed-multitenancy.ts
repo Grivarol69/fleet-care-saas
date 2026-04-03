@@ -567,7 +567,6 @@ async function main() {
       data: {
         name: 'Aceite motor sintetico',
         description: 'Cambio de aceite motor sintetico',
-        mantType: 'PREVENTIVE',
         categoryId: catMotor.id,
         type: 'PART',
         isGlobal: true,
@@ -577,9 +576,8 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Inspeccion sistema combustible',
-        mantType: 'PREVENTIVE',
         categoryId: catMotor.id,
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -587,9 +585,8 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Ajuste valvulas',
-        mantType: 'PREVENTIVE',
         categoryId: catMotor.id,
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -598,7 +595,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Filtro aceite',
-        mantType: 'PREVENTIVE',
         categoryId: catFiltros.id,
         type: 'PART',
         isGlobal: true,
@@ -608,7 +604,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Filtro aire',
-        mantType: 'PREVENTIVE',
         categoryId: catFiltros.id,
         type: 'PART',
         isGlobal: true,
@@ -618,7 +613,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Filtro combustible',
-        mantType: 'PREVENTIVE',
         categoryId: catFiltros.id,
         type: 'PART',
         isGlobal: true,
@@ -629,9 +623,8 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Inspeccion pastillas freno',
-        mantType: 'PREVENTIVE',
         categoryId: catFrenos.id,
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -639,7 +632,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Liquido frenos',
-        mantType: 'PREVENTIVE',
         categoryId: catFrenos.id,
         type: 'PART',
         isGlobal: true,
@@ -650,9 +642,8 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Inspeccion amortiguadores',
-        mantType: 'PREVENTIVE',
         categoryId: catSuspension.id,
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -660,9 +651,8 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Lubricacion rotulas',
-        mantType: 'PREVENTIVE',
         categoryId: catSuspension.id,
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -671,9 +661,8 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Inspeccion bateria',
-        mantType: 'PREVENTIVE',
         categoryId: catElectrico.id,
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -681,9 +670,8 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Limpieza terminales bateria',
-        mantType: 'PREVENTIVE',
         categoryId: catElectrico.id,
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -692,7 +680,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Aceite transmision',
-        mantType: 'PREVENTIVE',
         categoryId: catTransmision.id,
         type: 'PART',
         isGlobal: true,
@@ -702,9 +689,8 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Ajuste embrague',
-        mantType: 'PREVENTIVE',
         categoryId: catTransmision.id,
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -713,9 +699,8 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Rotacion neumaticos',
-        mantType: 'PREVENTIVE',
         categoryId: catNeumaticos.id,
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -723,7 +708,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Balanceo y alineacion',
-        mantType: 'PREVENTIVE',
         categoryId: catNeumaticos.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -734,7 +718,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Liquido direccion hidraulica',
-        mantType: 'PREVENTIVE',
         categoryId: catLubricacion.id,
         type: 'PART',
         isGlobal: true,
@@ -745,7 +728,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Filtro habitaculo',
-        mantType: 'PREVENTIVE',
         categoryId: catFiltros.id,
         type: 'PART',
         isGlobal: true,
@@ -755,7 +737,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Correa accesorios',
-        mantType: 'PREVENTIVE',
         categoryId: catMotor.id,
         type: 'PART',
         isGlobal: true,
@@ -766,9 +747,8 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Inspeccion alta tension EV',
-        mantType: 'PREVENTIVE',
         categoryId: catAltaTensionEV.id,
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -776,7 +756,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Aceite engranaje reductor EV',
-        mantType: 'PREVENTIVE',
         categoryId: catTransmision.id,
         type: 'PART',
         isGlobal: true,
@@ -786,7 +765,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Flush liquido refrigerante EV',
-        mantType: 'PREVENTIVE',
         categoryId: catTermicoEV.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -800,7 +778,6 @@ async function main() {
       data: {
         name: 'Pastillas freno delanteras',
         description: 'Reemplazo de pastillas desgastadas delanteras',
-        mantType: 'CORRECTIVE',
         categoryId: catFrenos.id,
         type: 'SERVICE', // FIXED
         isGlobal: true,
@@ -811,7 +788,6 @@ async function main() {
       data: {
         name: 'Pastillas freno',
         description: 'Pastillas de Freno',
-        mantType: 'CORRECTIVE',
         categoryId: catFrenos.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -822,7 +798,6 @@ async function main() {
       data: {
         name: 'Pastillas freno traseras',
         description: 'Reemplazo de pastillas desgastadas traseras',
-        mantType: 'CORRECTIVE',
         categoryId: catFrenos.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -833,7 +808,6 @@ async function main() {
       data: {
         name: 'Discos freno',
         description: 'Reemplazo de discos de freno desgastados',
-        mantType: 'CORRECTIVE',
         categoryId: catFrenos.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -843,7 +817,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Reparacion cilindro maestro',
-        mantType: 'CORRECTIVE',
         categoryId: catFrenos.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -854,7 +827,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Correa distribucion',
-        mantType: 'CORRECTIVE',
         categoryId: catMotor.id,
         type: 'PART',
         isGlobal: true,
@@ -864,7 +836,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Reparacion empaque culata',
-        mantType: 'CORRECTIVE',
         categoryId: catMotor.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -874,7 +845,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Bomba agua',
-        mantType: 'CORRECTIVE',
         categoryId: catMotor.id,
         type: 'PART',
         isGlobal: true,
@@ -885,7 +855,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Amortiguadores',
-        mantType: 'CORRECTIVE',
         categoryId: catSuspension.id,
         type: 'PART',
         isGlobal: true,
@@ -895,7 +864,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Rotulas',
-        mantType: 'CORRECTIVE',
         categoryId: catSuspension.id,
         type: 'PART',
         isGlobal: true,
@@ -905,7 +873,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Bujes suspension',
-        mantType: 'CORRECTIVE',
         categoryId: catSuspension.id,
         type: 'PART',
         isGlobal: true,
@@ -916,7 +883,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Bateria',
-        mantType: 'CORRECTIVE',
         categoryId: catElectrico.id,
         type: 'PART',
         isGlobal: true,
@@ -926,7 +892,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Alternador',
-        mantType: 'CORRECTIVE',
         categoryId: catElectrico.id,
         type: 'PART',
         isGlobal: true,
@@ -936,7 +901,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Motor arranque',
-        mantType: 'CORRECTIVE',
         categoryId: catElectrico.id,
         type: 'PART',
         isGlobal: true,
@@ -947,7 +911,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Kit embrague',
-        mantType: 'CORRECTIVE',
         categoryId: catTransmision.id,
         type: 'PART',
         isGlobal: true,
@@ -957,7 +920,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Reparacion caja cambios',
-        mantType: 'CORRECTIVE',
         categoryId: catTransmision.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -968,7 +930,6 @@ async function main() {
     prisma.mantItem.create({
       data: {
         name: 'Neumaticos',
-        mantType: 'CORRECTIVE',
         categoryId: catNeumaticos.id,
         type: 'PART',
         isGlobal: true,
@@ -1009,7 +970,6 @@ async function main() {
       data: {
         name: 'Cambio aceite motor',
         description: 'Drenado, limpieza y llenado aceite motor',
-        mantType: 'PREVENTIVE',
         categoryId: catMotor.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -1020,7 +980,6 @@ async function main() {
       data: {
         name: 'Cambio filtro aceite',
         description: 'Reemplazo filtro de aceite motor',
-        mantType: 'PREVENTIVE',
         categoryId: catFiltros.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -1031,7 +990,6 @@ async function main() {
       data: {
         name: 'Cambio filtro aire',
         description: 'Reemplazo filtro de aire motor',
-        mantType: 'PREVENTIVE',
         categoryId: catFiltros.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -1042,7 +1000,6 @@ async function main() {
       data: {
         name: 'Cambio filtro combustible',
         description: 'Reemplazo filtro de combustible',
-        mantType: 'PREVENTIVE',
         categoryId: catFiltros.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -1053,7 +1010,6 @@ async function main() {
       data: {
         name: 'Cambio liquido frenos',
         description: 'Purga y reemplazo liquido de frenos DOT4',
-        mantType: 'PREVENTIVE',
         categoryId: catFrenos.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -1064,7 +1020,6 @@ async function main() {
       data: {
         name: 'Cambio aceite transmision',
         description: 'Reemplazo aceite caja de cambios',
-        mantType: 'PREVENTIVE',
         categoryId: catTransmision.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -1075,7 +1030,6 @@ async function main() {
       data: {
         name: 'Cambio liquido direccion hidraulica',
         description: 'Reemplazo liquido de la dirección hidráulica',
-        mantType: 'PREVENTIVE',
         categoryId: catDireccion.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -1086,7 +1040,6 @@ async function main() {
       data: {
         name: 'Cambio filtro habitaculo',
         description: 'Reemplazo filtro de habitáculo / cabina',
-        mantType: 'PREVENTIVE',
         categoryId: catFiltros.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -1097,7 +1050,6 @@ async function main() {
       data: {
         name: 'Cambio correa accesorios',
         description: 'Reemplazo correa poly-V de accesorios',
-        mantType: 'PREVENTIVE',
         categoryId: catMotor.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -1108,7 +1060,6 @@ async function main() {
       data: {
         name: 'Cambio aceite reductor EV',
         description: 'Reemplazo aceite engranaje reductor EV',
-        mantType: 'PREVENTIVE',
         categoryId: catTransmision.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -1119,7 +1070,6 @@ async function main() {
       data: {
         name: 'Cambio pastillas freno delanteras',
         description: 'Reemplazo pastillas freno delanteras',
-        mantType: 'CORRECTIVE',
         categoryId: catFrenos.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -1130,7 +1080,6 @@ async function main() {
       data: {
         name: 'Cambio pastillas freno traseras',
         description: 'Reemplazo pastillas freno traseras',
-        mantType: 'CORRECTIVE',
         categoryId: catFrenos.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -1141,7 +1090,6 @@ async function main() {
       data: {
         name: 'Cambio discos freno',
         description: 'Reemplazo discos de freno desgastados',
-        mantType: 'CORRECTIVE',
         categoryId: catFrenos.id,
         type: 'SERVICE',
         isGlobal: true,
@@ -4174,7 +4122,6 @@ async function main() {
         vehicleId: t2VehiclesList[0].id,
         title: 'Mantenimiento 10,000 km',
         description: 'Servicio preventivo',
-        mantType: 'PREVENTIVE',
         priority: 'MEDIUM',
         status: 'COMPLETED',
         workType: 'EXTERNAL',
@@ -4217,7 +4164,6 @@ async function main() {
         vehicleId: t2VehiclesList[1].id,
         title: 'Cambio filtros',
         description: 'Filtros de aceite y aire',
-        mantType: 'PREVENTIVE',
         priority: 'MEDIUM',
         status: 'COMPLETED',
         workType: 'EXTERNAL',
@@ -4280,7 +4226,6 @@ async function main() {
         vehicleId: t2VehiclesList[2].id,
         title: 'Mantenimiento 60,000 km',
         description: 'Servicio mayor',
-        mantType: 'PREVENTIVE',
         priority: 'HIGH',
         status: 'COMPLETED',
         workType: 'MIXED',

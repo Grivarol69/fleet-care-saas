@@ -72,7 +72,6 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
       const requestBody = {
         name: 'Oil Filter Replacement',
         description: 'Change engine oil filter',
-        mantType: 'PREVENTIVE',
         categoryId: category.id,
         type: 'PART',
       };
@@ -92,7 +91,6 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
       expect(response.status).toBe(200);
       expect(data.name).toBe('Oil Filter Replacement');
       expect(data.description).toBe('Change engine oil filter');
-      expect(data.mantType).toBe('PREVENTIVE');
       expect(data.type).toBe('PART');
       expect(data.categoryId).toBe(category.id);
       expect(data.tenantId).toBe(tenant.id);
@@ -114,7 +112,6 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
         'POST',
         {
           name: 'Brake Pads',
-          mantType: 'CORRECTIVE',
           categoryId: category.id,
         }
       );
@@ -140,8 +137,7 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
       await prisma.mantItem.create({
         data: {
           name: 'Tire Rotation',
-          mantType: 'PREVENTIVE',
-          type: 'ACTION',
+          type: 'SERVICE',
           categoryId: category.id,
           tenantId: tenant.id,
         },
@@ -152,7 +148,6 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
         'POST',
         {
           name: 'Tire Rotation',
-          mantType: 'PREVENTIVE',
           categoryId: category.id,
         }
       );
@@ -179,7 +174,6 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
       const tenantItem = await prisma.mantItem.create({
         data: {
           name: 'Custom Tenant Service',
-          mantType: 'CORRECTIVE',
           type: 'SERVICE',
           categoryId: category.id,
           tenantId: tenant.id,
@@ -194,8 +188,7 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
       const globalItem = await prisma.mantItem.create({
         data: {
           name: 'Global Standard Service',
-          mantType: 'PREVENTIVE',
-          type: 'ACTION',
+          type: 'SERVICE',
           categoryId: globalCategory.id,
           tenantId: null,
           isGlobal: true,
@@ -220,7 +213,6 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
       await prisma.mantItem.create({
         data: {
           name: 'Oil Change',
-          mantType: 'PREVENTIVE',
           type: 'SERVICE',
           categoryId: category.id,
           tenantId: tenant.id,
@@ -230,8 +222,7 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
       await prisma.mantItem.create({
         data: {
           name: 'Brake Inspection',
-          mantType: 'PREVENTIVE',
-          type: 'ACTION',
+          type: 'SERVICE',
           categoryId: category.id,
           tenantId: tenant.id,
         },
@@ -259,7 +250,6 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
         {
           suggestedName: 'Hydraulic Fluid Change',
           description: 'Replace hydraulic brake fluid',
-          mantType: 'PREVENTIVE',
           categoryId: category.id,
           type: 'SERVICE',
           justification: 'We need this service for our vehicle fleet',
@@ -274,7 +264,6 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
 
       expect(response.status).toBe(201);
       expect(data.suggestedName).toBe('Hydraulic Fluid Change');
-      expect(data.mantType).toBe('PREVENTIVE');
       expect(data.requestedBy).toBe(technicianUser.id);
       expect(data.status).toBe('PENDING');
       expect(data.type).toBe('SERVICE');
@@ -295,7 +284,6 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
         'POST',
         {
           suggestedName: 'A',
-          mantType: 'PREVENTIVE',
           categoryId: category.id,
         }
       );
@@ -315,7 +303,6 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
           tenantId: tenant.id,
           suggestedName: 'Transmission Fluid Change',
           description: 'Change automatic transmission fluid',
-          mantType: 'PREVENTIVE',
           categoryId: category.id,
           type: 'SERVICE',
           requestedBy: technicianUser.id,
@@ -346,7 +333,6 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
       expect(data.request.status).toBe('APPROVED');
       expect(data.request.resolvedBy).toBe(managerUser.id);
       expect(data.createdItem.name).toBe('Transmission Fluid Change');
-      expect(data.createdItem.mantType).toBe('PREVENTIVE');
       expect(data.createdItem.tenantId).toBe(tenant.id);
       expect(createdItem).toMatchObject({
         id: data.createdItem.id,
@@ -367,7 +353,6 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
         data: {
           tenantId: tenant.id,
           suggestedName: 'Custom Wash Service',
-          mantType: 'CORRECTIVE',
           categoryId: category.id,
           type: 'SERVICE',
           requestedBy: technicianUser.id,
@@ -415,7 +400,6 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
         data: {
           tenantId: tenant.id,
           suggestedName: 'Test Service',
-          mantType: 'PREVENTIVE',
           categoryId: category.id,
           requestedBy: technicianUser.id,
           status: 'PENDING',
@@ -444,7 +428,6 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
         data: {
           tenantId: tenant.id,
           suggestedName: 'Coolant Flush',
-          mantType: 'PREVENTIVE',
           categoryId: category.id,
           requestedBy: technicianUser.id,
           status: 'PENDING',
@@ -484,7 +467,6 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
         data: {
           tenantId: tenant.id,
           suggestedName: 'Test Service',
-          mantType: 'PREVENTIVE',
           categoryId: category.id,
           requestedBy: technicianUser.id,
           status: 'PENDING',
@@ -515,7 +497,6 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
         data: {
           tenantId: tenant.id,
           suggestedName: 'Request 1',
-          mantType: 'PREVENTIVE',
           categoryId: category.id,
           requestedBy: technicianUser.id,
           status: 'PENDING',
@@ -527,7 +508,6 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
         data: {
           tenantId: tenant.id,
           suggestedName: 'Request 2',
-          mantType: 'CORRECTIVE',
           categoryId: category.id,
           requestedBy: otherTech.id,
           status: 'PENDING',
@@ -551,7 +531,6 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
         data: {
           tenantId: tenant.id,
           suggestedName: 'My Request',
-          mantType: 'PREVENTIVE',
           categoryId: category.id,
           requestedBy: technicianUser.id,
           status: 'PENDING',
@@ -563,7 +542,6 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
         data: {
           tenantId: tenant.id,
           suggestedName: 'Other Request',
-          mantType: 'CORRECTIVE',
           categoryId: category.id,
           requestedBy: otherTech.id,
           status: 'PENDING',
@@ -588,7 +566,6 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
         data: {
           tenantId: tenant.id,
           suggestedName: 'Pending Request',
-          mantType: 'PREVENTIVE',
           categoryId: category.id,
           requestedBy: technicianUser.id,
           status: 'PENDING',
@@ -599,7 +576,6 @@ describe('Maintenance Items & Item Requests API Integration Tests', () => {
         data: {
           tenantId: tenant.id,
           suggestedName: 'Approved Request',
-          mantType: 'CORRECTIVE',
           categoryId: category.id,
           requestedBy: technicianUser.id,
           status: 'APPROVED',

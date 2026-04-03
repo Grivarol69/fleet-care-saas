@@ -35,7 +35,6 @@ export async function GET() {
                   select: {
                     id: true,
                     name: true,
-                    mantType: true,
                     type: true,
                   },
                 },
@@ -213,7 +212,6 @@ export async function POST(req: Request) {
                   select: {
                     id: true,
                     name: true,
-                    mantType: true,
                     type: true,
                   },
                 },

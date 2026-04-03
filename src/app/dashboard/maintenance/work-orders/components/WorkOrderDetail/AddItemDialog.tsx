@@ -70,7 +70,7 @@ type AddItemDialogProps = {
   open: boolean;
   onOpenChange?: (open: boolean) => void;
   onClose?: () => void;
-  onSuccess?: () => void;
+  onSuccess?: (item?: any) => void;
   defaultItemSource?: 'EXTERNAL' | 'INTERNAL_STOCK';
   lockItemSource?: boolean; // Si true, oculta el select de fuente
   mode?: 'endpoint' | 'form'; // default: 'endpoint'
@@ -209,14 +209,8 @@ export function AddItemDialog({
         if (searchQuery.trim()) {
           queryParams.append('search', searchQuery.trim());
         }
-        if (type === 'PART') {
-          queryParams.append('type', 'PART');
-        } else if (type === 'SERVICE') {
-          // we could send type=SERVICE, but the backend accepts typeFilter: 'ACTION' | 'PART' | 'SERVICE'
-          // and we want both SERVICE and ACTION. The best way is to send nothing and filter on the frontend for now,
-          // or modify the backend to accept an array of types. Given the prompt, the main issue is PART bringing SERVICES.
-          // By filtering PART on the backend, we fix the issue. For SERVICES we can just filter on frontend,
-          // since stock check doesn't apply to services so the impact is just UI clutter.
+        if (type === 'PART' || type === 'SERVICE') {
+          queryParams.append('type', type);
         }
 
         const url = `${baseUrl}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
@@ -224,10 +218,7 @@ export function AddItemDialog({
         const allItems: MantItem[] = Array.isArray(res.data)
           ? res.data
           : res.data.items || [];
-        // Filtrar por tipo en cliente: SERVICE/ACTION para servicios, PART para repuestos (redundante pero seguro)
-        const typeFilters =
-          type === 'SERVICE' ? ['SERVICE', 'ACTION'] : ['PART'];
-        setItems(allItems.filter(i => typeFilters.includes(i.type)));
+        setItems(allItems);
       } catch (error) {
         console.error('Error searching items', error);
       }
@@ -413,21 +404,24 @@ export function AddItemDialog({
 
     setIsLoading(true);
     try {
-      await axios.post(`/api/maintenance/work-orders/${workOrderId}/items`, {
-        mantItemId: values.mantItemId,
-        quantity: values.quantity,
-        unitPrice: values.unitPrice,
-        description: values.description,
-        itemSource: values.itemSource,
-        providerId: values.providerId ? values.providerId : undefined,
-        masterPartId: values.masterPartId || undefined,
-      });
+      const response = await axios.post(
+        `/api/maintenance/work-orders/${workOrderId}/items`,
+        {
+          mantItemId: values.mantItemId,
+          quantity: values.quantity,
+          unitPrice: values.unitPrice,
+          description: values.description,
+          itemSource: values.itemSource,
+          providerId: values.providerId ? values.providerId : undefined,
+          masterPartId: values.masterPartId || undefined,
+        }
+      );
 
       toast({
         title: 'Item Agregado',
         description: 'El item se ha agregado correctamente a la orden.',
       });
-      if (onSuccess) onSuccess();
+      if (onSuccess) onSuccess(response.data);
       handleClose();
       form.reset();
     } catch (error: any) {
@@ -455,7 +449,13 @@ export function AddItemDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form
+            onSubmit={e => {
+              e.stopPropagation();
+              form.handleSubmit(onSubmit)(e);
+            }}
+            className="space-y-4"
+          >
             {/* Item Search */}
             <div className="space-y-2">
               <FormField

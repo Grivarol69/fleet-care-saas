@@ -23,7 +23,7 @@ export async function GET(
     }
 
     const itemRequest = await tenantPrisma.mantItemRequest.findFirst({
-      where: { id: requestId, },
+      where: { id: requestId },
       include: {
         category: { select: { id: true, name: true } },
       },
@@ -82,7 +82,7 @@ export async function PATCH(
 
     // Verificar que la solicitud existe y está pendiente
     const itemRequest = await tenantPrisma.mantItemRequest.findFirst({
-      where: { id: requestId, },
+      where: { id: requestId },
     });
 
     if (!itemRequest) {
@@ -145,7 +145,6 @@ export async function PATCH(
         data: {
           name: itemRequest.suggestedName,
           description: itemRequest.description,
-          mantType: itemRequest.mantType,
           categoryId: itemRequest.categoryId,
           type: itemRequest.type,
           isGlobal: false,

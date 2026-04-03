@@ -31,7 +31,7 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
       },
       include: {
         mantItem: {
-          select: { id: true, name: true, type: true, mantType: true },
+          select: { id: true, name: true, type: true },
         },
         vehicleBrand: { select: { id: true, name: true } },
         vehicleLine: { select: { id: true, name: true } },

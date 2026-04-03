@@ -35,12 +35,12 @@ export async function GET(
       return NextResponse.json({ error: 'Not Found' }, { status: 404 });
     }
 
-    // Support multiple types: "SERVICE,ACTION" or single "PART"
+    // Support multiple types: "SERVICE,PART" or single "PART"
     let typeFilter: ItemType[] | undefined;
     if (typeParam) {
       const types = typeParam.split(',').map(t => t.trim()) as ItemType[];
       const validTypes: ItemType[] = types.filter(t =>
-        ['PART', 'SERVICE', 'ACTION'].includes(t)
+        ['PART', 'SERVICE'].includes(t)
       );
       if (validTypes.length > 0) {
         typeFilter = validTypes;
@@ -67,7 +67,7 @@ export async function GET(
       workOrderItemId: item.id,
       mantItemId: item.mantItemId,
       mantItemName: item.mantItem?.name || '-',
-      mantItemType: item.mantItem?.type || 'ACTION',
+      mantItemType: item.mantItem?.type || 'SERVICE',
       categoryName: item.mantItem?.category?.name || '-',
       masterPartId: item.masterPartId || null,
       masterPartCode: item.masterPart?.code || null,

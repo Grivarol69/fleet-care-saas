@@ -33,7 +33,9 @@ vi.mock('@/lib/services/FinancialWatchdogService', () => ({
 // Mock InventoryService
 vi.mock('@/lib/services/InventoryService', () => ({
   InventoryService: {
-    checkAvailability: vi.fn().mockResolvedValue({ available: true, currentStock: 100 }),
+    checkAvailability: vi
+      .fn()
+      .mockResolvedValue({ available: true, currentStock: 100 }),
   },
 }));
 
@@ -47,7 +49,7 @@ describe('Corrective Internal Work Order Circuit', () => {
     tenant = await createTestTenant();
     user = await createTestUser(tenant.id, { role: 'OWNER' });
     vehicleData = await createTestVehicle(tenant.id);
-    mantItemData = await createTestMantItem(tenant.id, { mantType: 'CORRECTIVE', type: 'SERVICE' });
+    mantItemData = await createTestMantItem(tenant.id, { type: 'SERVICE' });
 
     mockAuthAsUser({ id: user.id, tenantId: tenant.id, role: user.role });
   });
@@ -85,7 +87,9 @@ describe('Corrective Internal Work Order Circuit', () => {
       `http://localhost:3000/api/maintenance/work-orders/${woId}/items`,
       { method: 'POST', body: JSON.stringify(itemBody) }
     );
-    return POST_ITEMS(req, { params: Promise.resolve({ id: woId.toString() }) });
+    return POST_ITEMS(req, {
+      params: Promise.resolve({ id: woId.toString() }),
+    });
   }
 
   // Helper to patch WO status
@@ -229,7 +233,9 @@ describe('Corrective Internal Work Order Circuit', () => {
     await patchWO(wo.id, { status: 'COMPLETED' });
 
     // Verify all items are COMPLETED
-    const items = await prisma.workOrderItem.findMany({ where: { workOrderId: wo.id } });
+    const items = await prisma.workOrderItem.findMany({
+      where: { workOrderId: wo.id },
+    });
     expect(items).toHaveLength(2);
     for (const item of items) {
       expect(item.status).toBe('COMPLETED');
@@ -259,7 +265,9 @@ describe('Corrective Internal Work Order Circuit', () => {
     });
 
     // Verify alert linked
-    const alertAfter = await prisma.maintenanceAlert.findUnique({ where: { id: testAlert.id } });
+    const alertAfter = await prisma.maintenanceAlert.findUnique({
+      where: { id: testAlert.id },
+    });
     expect(alertAfter?.status).toBe('IN_PROGRESS');
     expect(alertAfter?.workOrderId).toBe(wo.id);
 
@@ -268,12 +276,16 @@ describe('Corrective Internal Work Order Circuit', () => {
     expect(delRes.status).toBe(200);
 
     // Verify alert reverted
-    const alertReverted = await prisma.maintenanceAlert.findUnique({ where: { id: testAlert.id } });
+    const alertReverted = await prisma.maintenanceAlert.findUnique({
+      where: { id: testAlert.id },
+    });
     expect(alertReverted?.status).toBe('PENDING');
     expect(alertReverted?.workOrderId).toBeNull();
 
     // Verify WO cancelled
-    const cancelledWO = await prisma.workOrder.findUnique({ where: { id: wo.id } });
+    const cancelledWO = await prisma.workOrder.findUnique({
+      where: { id: wo.id },
+    });
     expect(cancelledWO?.status).toBe('CANCELLED');
   });
 
@@ -319,7 +331,9 @@ describe('Corrective Internal Work Order Circuit', () => {
     const item2 = await itemRes2.json();
     expect(Number(item2.totalCost)).toBe(70000);
 
-    const items = await prisma.workOrderItem.findMany({ where: { workOrderId: wo.id } });
+    const items = await prisma.workOrderItem.findMany({
+      where: { workOrderId: wo.id },
+    });
     expect(items).toHaveLength(2);
     const total = items.reduce((s, i) => s + Number(i.totalCost), 0);
     expect(total).toBe(130000);

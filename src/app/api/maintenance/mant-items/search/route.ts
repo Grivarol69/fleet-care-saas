@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const q = searchParams.get('q') || '';
-    const type = searchParams.get('type'); // ACTION, PART, SERVICE
+    const type = searchParams.get('type'); // PART, SERVICE
 
     const where: Prisma.MantItemWhereInput = {
       OR: [{ tenantId: user.tenantId }, { tenantId: null, isGlobal: true }],
@@ -26,8 +26,8 @@ export async function GET(request: NextRequest) {
       where.name = { contains: q.trim(), mode: 'insensitive' };
     }
 
-    if (type && ['ACTION', 'PART', 'SERVICE'].includes(type)) {
-      where.type = type as 'ACTION' | 'PART' | 'SERVICE';
+    if (type && ['PART', 'SERVICE'].includes(type)) {
+      where.type = type as 'PART' | 'SERVICE';
     }
 
     const items = await tenantPrisma.mantItem.findMany({

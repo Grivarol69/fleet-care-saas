@@ -74,7 +74,7 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
         name: 'Engrase general chasis',
         description:
           'Engrase de puntos de lubricación del chasís y componentes',
-        mantType: 'PREVENTIVE',
+
         categoryId: catLubricacion?.id || '', // FIXED
         type: 'SERVICE', // FIXED
         isGlobal: true,
@@ -85,7 +85,7 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Ajuste valvulas motor',
         description: 'Ajuste de válvulas del motor MaxxForce',
-        mantType: 'PREVENTIVE',
+
         categoryId: catMotor?.id || '',
         type: 'SERVICE',
         isGlobal: true,
@@ -96,9 +96,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Inspeccion turbocharger',
         description: 'Verificar estado y funcionamiento del turbocharger',
-        mantType: 'PREVENTIVE',
+
         categoryId: catMotor?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -107,9 +107,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Inspeccion bomba inyectores',
         description: 'Verificar estado de bomba de inyectores',
-        mantType: 'PREVENTIVE',
+
         categoryId: catMotor?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -119,9 +119,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Ajuste cardanes crucetas',
         description: 'Ajuste de cardanes, crucetas y flanches',
-        mantType: 'PREVENTIVE',
+
         categoryId: catTransmision?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -130,9 +130,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Inspeccion respiradero transmision',
         description: 'Verificar estado del respiradero de transmisión',
-        mantType: 'PREVENTIVE',
+
         categoryId: catTransmision?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -141,9 +141,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Inspeccion embrague',
         description: 'Verificar estado y ajuste del embrague',
-        mantType: 'PREVENTIVE',
+
         categoryId: catTransmision?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -153,9 +153,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Inspeccion bandas freno',
         description: 'Verificar estado y ajustar bandas de freno',
-        mantType: 'PREVENTIVE',
+
         categoryId: catFrenos?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -164,9 +164,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Inspeccion tambores discos freno',
         description: 'Verificar estado de tambores y discos de freno',
-        mantType: 'PREVENTIVE',
+
         categoryId: catFrenos?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -175,9 +175,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Inspeccion valvula alivio freno',
         description: 'Verificar funcionamiento de válvula de alivio de freno',
-        mantType: 'PREVENTIVE',
+
         categoryId: catFrenos?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -186,9 +186,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Inspeccion sellos ruedas',
         description: 'Verificar estado de sellos de ruedas',
-        mantType: 'PREVENTIVE',
+
         categoryId: catFrenos?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -198,9 +198,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Inspeccion muelles ballestas',
         description: 'Inspección visual de fisuras en muelles y ballestas',
-        mantType: 'PREVENTIVE',
+
         categoryId: catSuspension?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -209,9 +209,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Inspeccion bujes suspension',
         description: 'Verificar estado de bujes de suspensión',
-        mantType: 'PREVENTIVE',
+
         categoryId: catSuspension?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -220,9 +220,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Ajuste grapas muelles',
         description: 'Ajuste de grapas de fijación de muelles',
-        mantType: 'PREVENTIVE',
+
         categoryId: catSuspension?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -231,9 +231,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Inspeccion estabilizadora',
         description: 'Verificar estado de barra estabilizadora',
-        mantType: 'PREVENTIVE',
+
         categoryId: catSuspension?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -244,9 +244,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
         name: 'Inspeccion alternador arranque',
         description:
           'Verificar funcionamiento de alternador y motor de arranque',
-        mantType: 'PREVENTIVE',
+
         categoryId: catElectrico?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -255,9 +255,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Inspeccion baterias sistema',
         description: 'Verificar estado de baterías y conexiones del sistema',
-        mantType: 'PREVENTIVE',
+
         categoryId: catElectrico?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -267,9 +267,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
         name: 'Verificacion luces indicadores',
         description:
           'Verificar funcionamiento de luces e indicadores del tablero',
-        mantType: 'PREVENTIVE',
+
         categoryId: catElectrico?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -279,9 +279,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Inspeccion radiador refrigeracion',
         description: 'Limpiar/soplar radiador y sistema de refrigeración',
-        mantType: 'PREVENTIVE',
+
         categoryId: catRefrigeracion?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -291,9 +291,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
         name: 'Inspeccion mangueras refrigerante',
         description:
           'Verificar estado de mangueras del sistema de refrigeración',
-        mantType: 'PREVENTIVE',
+
         categoryId: catRefrigeracion?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -303,9 +303,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Control juego libre direccion',
         description: 'Verificar holgura en el sistema de dirección',
-        mantType: 'PREVENTIVE',
+
         categoryId: catSuspension?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -314,9 +314,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Inspeccion bomba direccion hidraulica',
         description: 'Verificar estado de bomba de dirección hidráulica',
-        mantType: 'PREVENTIVE',
+
         categoryId: catSuspension?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -326,9 +326,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Engrase rodamientos ruedas',
         description: 'Lubricar rodamientos de ruedas',
-        mantType: 'PREVENTIVE',
+
         categoryId: catNeumaticos?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -337,9 +337,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Inspeccion presion neumaticos',
         description: 'Verificar presión de neumáticos',
-        mantType: 'PREVENTIVE',
+
         categoryId: catNeumaticos?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -349,9 +349,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Inspeccion filtro aire motor',
         description: 'Verificar estado del filtro de aire del motor',
-        mantType: 'PREVENTIVE',
+
         categoryId: catFiltros?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -361,9 +361,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Inspeccion filtro aire cabina',
         description: 'Verificar estado del filtro de aire de cabina',
-        mantType: 'PREVENTIVE',
+
         categoryId: catCarroceria?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -372,9 +372,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Inspeccion condicionador aire',
         description: 'Verificar sistema de aire acondicionado',
-        mantType: 'PREVENTIVE',
+
         categoryId: catCarroceria?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -383,9 +383,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Inspeccion asientos seguridad',
         description: 'Verificar estado de asientos y cinturones de seguridad',
-        mantType: 'PREVENTIVE',
+
         categoryId: catCarroceria?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -395,9 +395,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Inspeccion diferencial',
         description: 'Verificar estado y nivel de aceite del diferencial',
-        mantType: 'PREVENTIVE',
+
         categoryId: catTransmision?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -406,9 +406,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Inspeccion cardan ejemp',
         description: 'Verificar estado del cardán y eje propeller',
-        mantType: 'PREVENTIVE',
+
         categoryId: catTransmision?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -418,9 +418,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Inspeccion linea combustible',
         description: 'Verificar estado de líneas de combustible',
-        mantType: 'PREVENTIVE',
+
         categoryId: catMotor?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -429,9 +429,9 @@ export async function seedInternational7400WorkStar(prisma: PrismaClient) {
       data: {
         name: 'Drenaje agua separador combustible',
         description: 'Drenar agua del separador de combustible',
-        mantType: 'PREVENTIVE',
+
         categoryId: catFiltros?.id || '',
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },

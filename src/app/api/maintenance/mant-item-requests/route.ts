@@ -54,7 +54,6 @@ export async function POST(req: Request) {
     const {
       suggestedName,
       description,
-      mantType,
       categoryId,
       type,
       justification,
@@ -69,18 +68,6 @@ export async function POST(req: Request) {
       );
     }
 
-    if (
-      !mantType ||
-      !['PREVENTIVE', 'PREDICTIVE', 'CORRECTIVE', 'EMERGENCY'].includes(
-        mantType
-      )
-    ) {
-      return NextResponse.json(
-        { error: 'Tipo de mantenimiento inválido' },
-        { status: 400 }
-      );
-    }
-
     if (!categoryId || categoryId <= 0) {
       return NextResponse.json(
         { error: 'Categoría inválida' },
@@ -88,7 +75,7 @@ export async function POST(req: Request) {
       );
     }
 
-    if (type && !['ACTION', 'PART', 'SERVICE'].includes(type)) {
+    if (type && !['PART', 'SERVICE'].includes(type)) {
       return NextResponse.json(
         { error: 'Tipo de item inválido' },
         { status: 400 }
@@ -115,9 +102,8 @@ export async function POST(req: Request) {
         tenantId: user.tenantId,
         suggestedName: suggestedName.trim(),
         description: description?.trim() || null,
-        mantType,
         categoryId,
-        type: type || 'ACTION',
+        type: type || 'SERVICE',
         justification: justification?.trim() || null,
         similarItems: similarItems || null,
         requestedBy: user.id,

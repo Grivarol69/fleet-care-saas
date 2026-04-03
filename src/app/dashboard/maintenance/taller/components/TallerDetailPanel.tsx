@@ -35,7 +35,7 @@ export function TallerDetailPanel({
     try {
       setIsLoading(true);
       const res = await axios.get(
-        `/api/maintenance/work-orders/${workOrderId}/items?type=SERVICE,ACTION`
+        `/api/maintenance/work-orders/${workOrderId}/items?type=SERVICE`
       );
       const allItems = res.data.items || [];
 

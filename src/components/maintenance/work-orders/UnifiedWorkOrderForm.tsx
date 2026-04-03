@@ -72,9 +72,11 @@ const FROZEN_WO_STATUSES = new Set([
 export function UnifiedWorkOrderForm({
   initialData,
   currentUser,
+  onRefresh,
 }: {
   initialData?: any;
   currentUser?: { id: string; role: string; isSuperAdmin: boolean } | null;
+  onRefresh?: () => void;
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -1069,15 +1071,41 @@ export function UnifiedWorkOrderForm({
           </Card>
 
           <AddItemDialog
-            mode="form"
+            mode={initialData?.id ? 'endpoint' : 'form'}
             vehicleId={form.watch('vehicleId') ?? ''}
             open={showAddPartDialog}
             onClose={() => setShowAddPartDialog(false)}
-            onItemAdded={item => {
-              partsArray.append(item as any);
-              setShowAddPartDialog(false);
-            }}
-            workOrderId=""
+            onItemAdded={
+              !initialData?.id
+                ? (item: any) => {
+                    partsArray.append(item as any);
+                    setShowAddPartDialog(false);
+                  }
+                : undefined
+            }
+            onSuccess={
+              initialData?.id
+                ? (createdItem?: any) => {
+                    if (createdItem) {
+                      partsArray.append({
+                        id: createdItem.id,
+                        mantItemId: createdItem.mantItemId,
+                        description: createdItem.description || '',
+                        closureType: createdItem.closureType || 'PENDING',
+                        itemSource: createdItem.itemSource || 'EXTERNAL',
+                        providerId: createdItem.providerId || null,
+                        unitPrice: Number(createdItem.unitPrice || 0),
+                        quantity: Number(createdItem.quantity || 1),
+                        masterPartId: createdItem.masterPartId || null,
+                        subTasks: [],
+                      } as any);
+                    }
+                    setShowAddPartDialog(false);
+                    onRefresh?.();
+                  }
+                : undefined
+            }
+            workOrderId={initialData?.id ?? ''}
           />
 
           <div className="flex justify-end sticky bottom-4 bg-background/80 backdrop-blur border-t p-4 rounded-xl shadow-lg">

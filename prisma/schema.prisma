@@ -347,12 +347,11 @@ model MantItem {
   isGlobal    Boolean  @default(false) // Global Knowledge Base flag
   name        String
   description String?
-  mantType    MantType
   categoryId  String
   status      Status   @default(ACTIVE)
 
-  // NUEVO: Discriminación de tipo y vinculación con MasterPart
-  type ItemType @default(ACTION) // ACTION, PART, SERVICE
+  // Discriminación de tipo: PART = repuesto facturable, SERVICE = labor/servicio
+  type ItemType @default(SERVICE)
 
   // ❌ REMOVIDOS (migrados a PackageItem y VehicleProgramItem):
   // - estimatedTime: Ahora en PackageItem (específico por tipo de máquina)
@@ -386,9 +385,8 @@ model MantItemRequest {
   // Datos del item solicitado
   suggestedName String
   description   String?
-  mantType      MantType
   categoryId    String
-  type          ItemType @default(ACTION)
+  type          ItemType @default(SERVICE)
   justification String?  @db.Text // Por qué se necesita
 
   // Items similares encontrados (snapshot del fuzzy search)
@@ -1936,9 +1934,8 @@ enum AlertCategory {
 // ========================================
 
 enum ItemType {
-  ACTION // Inspección, revisión (no factura artículo)
-  PART // Repuesto facturable (filtro, aceite, etc.)
-  SERVICE // Servicio completo (mano obra + materiales del proveedor)
+  PART    // Repuesto facturable (filtro, aceite, etc.)
+  SERVICE // Labor/servicio (mano de obra + materiales del proveedor)
 }
 
 enum InvoiceStatus {
