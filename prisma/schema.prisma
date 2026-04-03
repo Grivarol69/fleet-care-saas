@@ -366,7 +366,6 @@ model MantItem {
   packageItems        PackageItem[] // ✅ CURRENT (Template items)
   workOrderItems      WorkOrderItem[]
   vehicleProgramItems VehicleProgramItem[] // ✅ CURRENT ARCHITECTURE
-  parts               MantItemPart[] // Legacy: vínculo genérico sin contexto vehículo
   vehicleParts        MantItemVehiclePart[] // KB: repuestos por marca/línea/año
   purchaseOrderItems  PurchaseOrderItem[]
   procedures          MantItemProcedure[]   // KB: procedimientos de labor
@@ -887,7 +886,6 @@ model MasterPart {
   updatedAt DateTime @updatedAt
 
   // Relaciones
-  mantItemParts        MantItemPart[]
   mantItemVehicleParts MantItemVehiclePart[] @relation("VehiclePartSpec") // KB: repuestos por vehículo
   invoiceItems         InvoiceItem[]
   priceHistory         PartPriceHistory[]
@@ -905,30 +903,7 @@ model MasterPart {
   @@index([isGlobal])
 }
 
-// 2. Tabla intermedia: MantItem ↔ MasterPart (many-to-many)
-model MantItemPart {
-  id           String     @id @default(cuid())
-  mantItemId   String
-  mantItem     MantItem   @relation(fields: [mantItemId], references: [id], onDelete: Cascade)
-  masterPartId String
-  masterPart   MasterPart @relation(fields: [masterPartId], references: [id], onDelete: Restrict)
-
-  quantity   Decimal @default(1) @db.Decimal(10, 2) // Ej: 4.5 litros de aceite
-  isRequired Boolean @default(true) // Requerido vs opcional
-  isPrimary  Boolean @default(false) // Artículo principal del item
-
-  // Notas específicas de este vínculo
-  notes String? // "Alternativamente usar CASTROL 5W-40"
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([mantItemId, masterPartId])
-  @@index([mantItemId])
-  @@index([masterPartId])
-}
-
-// 3. Invoice - Factura del proveedor
+// 2. Invoice - Factura del proveedor
 model Invoice {
   id       String @id @default(cuid())
   tenantId String

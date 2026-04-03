@@ -128,7 +128,6 @@ export async function POST(
     // 2. Fetch MantItem details
     const mantItem = await tenantPrisma.mantItem.findUnique({
       where: { id: mantItemId },
-      include: { parts: { include: { masterPart: true } } },
     });
 
     if (!mantItem) {
@@ -142,25 +141,17 @@ export async function POST(
     const totalCost = Number(unitPrice) * Number(quantity);
 
     // 3. Financial Watchdog Check (Price Deviation)
-    // If it's a part and has a master part linked, check price
-    if (mantItem.type === 'PART' && mantItem.parts.length > 0) {
-      // Check against the first linked master part (simplified logic)
-      // ideally we should pass masterPartId from frontend if specific brand selected
-      // If masterPartId was provided in body, use that. Otherwise fallback to first linked.
-      const targetMasterPartId =
-        masterPartId || mantItem.parts[0]?.masterPartId;
-
-      if (targetMasterPartId) {
-        // Non-blocking check
-        FinancialWatchdogService.checkPriceDeviation(
-          user.tenantId,
-          targetMasterPartId,
-          unitPrice,
-          undefined,
-          workOrderId,
-          `Item agregado: ${finalDescription}`
-        ).catch(console.error);
-      }
+    // If it's a part and a masterPartId was provided, check price deviation
+    if (mantItem.type === 'PART' && masterPartId) {
+      // Non-blocking check
+      FinancialWatchdogService.checkPriceDeviation(
+        user.tenantId,
+        masterPartId,
+        unitPrice,
+        undefined,
+        workOrderId,
+        `Item agregado: ${finalDescription}`
+      ).catch(console.error);
     }
 
     // 4. Inventory Check (Visual Warning / Validation)

@@ -275,18 +275,9 @@ export function AddItemDialog({
                     checkStock(bestMatch.masterPart.id);
                   }
                 } else {
-                  // Fallback to mant item defaults if any
-                  if (item.parts?.[0]?.masterPart?.referencePrice) {
-                    form.setValue(
-                      'unitPrice',
-                      Number(item.parts[0].masterPart.referencePrice)
-                    );
-                    checkStock(item.parts[0].masterPart.id);
-                  } else {
-                    // No KB suggestions and no direct parts — show catalog fallback
-                    setStock({ quantity: 0, inventoryItemId: 0 });
-                    setShowCatalogFallback(true);
-                  }
+                  // No KB suggestions — show catalog fallback
+                  setStock({ quantity: 0, inventoryItemId: 0 });
+                  setShowCatalogFallback(true);
                 }
               } catch (err) {
                 console.error('Error fetching suggestions', err);

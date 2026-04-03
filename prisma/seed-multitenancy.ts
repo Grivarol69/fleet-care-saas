@@ -168,7 +168,6 @@ async function main() {
   await prisma.mantItemRequest.deleteMany({});
   await prisma.mantItemVehiclePart.deleteMany({});
   await prisma.mantItemProcedure.deleteMany({});
-  await prisma.mantItemPart.deleteMany({});
   await prisma.packageItem.deleteMany({});
   await prisma.maintenancePackage.deleteMany({});
   await prisma.maintenanceTemplate.deleteMany({});
@@ -1339,143 +1338,6 @@ async function main() {
     pEvCoolant,
   ] = parts;
   console.log(`   ${parts.length} master parts creados`);
-
-  // --- VINCULOS MantItemPart: SERVICE → MasterPart ---
-  console.log('   Creando vinculos MantItemPart (servicio → autoparte)...');
-  const mantItemParts = await Promise.all([
-    // Cambio aceite motor → aceites (primary + alternativas)
-    prisma.mantItemPart.create({
-      data: {
-        mantItemId: iSvcCambioAceite.id,
-        masterPartId: pShell.id,
-        quantity: 5.5,
-        isRequired: true,
-        isPrimary: true,
-        notes: 'Shell Helix HX7 10W-40',
-      },
-    }),
-    prisma.mantItemPart.create({
-      data: {
-        mantItemId: iSvcCambioAceite.id,
-        masterPartId: pMobil.id,
-        quantity: 5.5,
-        isRequired: false,
-        isPrimary: false,
-        notes: 'Alternativa: Mobil Super 3000 5W-40',
-      },
-    }),
-    prisma.mantItemPart.create({
-      data: {
-        mantItemId: iSvcCambioAceite.id,
-        masterPartId: pCastrolGTX.id,
-        quantity: 5.5,
-        isRequired: false,
-        isPrimary: false,
-        notes: 'Alternativa: Castrol GTX 15W-40',
-      },
-    }),
-    // Cambio filtro aceite
-    prisma.mantItemPart.create({
-      data: {
-        mantItemId: iSvcFiltroAceite.id,
-        masterPartId: pBoschFiltAce.id,
-        quantity: 1,
-        isRequired: true,
-        isPrimary: true,
-      },
-    }),
-    prisma.mantItemPart.create({
-      data: {
-        mantItemId: iSvcFiltroAceite.id,
-        masterPartId: pMannFiltAce.id,
-        quantity: 1,
-        isRequired: false,
-        isPrimary: false,
-        notes: 'Alternativa: MANN W920/21',
-      },
-    }),
-    // Cambio filtro aire
-    prisma.mantItemPart.create({
-      data: {
-        mantItemId: iSvcFiltroAire.id,
-        masterPartId: pBoschFiltAire.id,
-        quantity: 1,
-        isRequired: true,
-        isPrimary: true,
-      },
-    }),
-    prisma.mantItemPart.create({
-      data: {
-        mantItemId: iSvcFiltroAire.id,
-        masterPartId: pMannFiltAire.id,
-        quantity: 1,
-        isRequired: false,
-        isPrimary: false,
-        notes: 'Alternativa: MANN C25114',
-      },
-    }),
-    // Cambio filtro combustible
-    prisma.mantItemPart.create({
-      data: {
-        mantItemId: iSvcFiltroComb.id,
-        masterPartId: pBoschFiltComb.id,
-        quantity: 1,
-        isRequired: true,
-        isPrimary: true,
-      },
-    }),
-    // Cambio liquido frenos
-    prisma.mantItemPart.create({
-      data: {
-        mantItemId: iSvcLiqFreno.id,
-        masterPartId: pCastrolDOT4.id,
-        quantity: 2,
-        isRequired: true,
-        isPrimary: true,
-      },
-    }),
-    // Cambio filtro habitaculo
-    prisma.mantItemPart.create({
-      data: {
-        mantItemId: iSvcFiltroHabitaculo.id,
-        masterPartId: pRenHabitaculo.id,
-        quantity: 1,
-        isRequired: true,
-        isPrimary: true,
-      },
-    }),
-    // Cambio correa accesorios
-    prisma.mantItemPart.create({
-      data: {
-        mantItemId: iSvcCorreaAcc.id,
-        masterPartId: pRenCorrea.id,
-        quantity: 1,
-        isRequired: true,
-        isPrimary: true,
-      },
-    }),
-    // Cambio aceite reductor EV
-    prisma.mantItemPart.create({
-      data: {
-        mantItemId: iSvcAceiteRedEV.id,
-        masterPartId: pDfReductor.id,
-        quantity: 1,
-        isRequired: true,
-        isPrimary: true,
-      },
-    }),
-    // Cambio pastillas freno delanteras
-    prisma.mantItemPart.create({
-      data: {
-        mantItemId: iSvcPastillasDelant.id,
-        masterPartId: pBoschPastillas.id,
-        quantity: 1,
-        isRequired: true,
-        isPrimary: true,
-      },
-    }),
-  ]);
-  console.log(`   ${mantItemParts.length} vinculos MantItemPart creados.`);
 
   // --- TEMPLATES (3) with packages ---
   console.log('   Creando templates (3) con paquetes (12)...');
@@ -4395,7 +4257,6 @@ async function main() {
   console.log('KNOWLEDGE BASE GLOBAL (tenantId: null):');
   console.log('  - 7 Brands, 17 Lines, 5 Types');
   console.log('  - 17 Categories, 38 MantItems + 13 ServiceItems');
-  console.log('  - 13 MantItemPart (servicio → autoparte)');
   console.log('  - 2 Procedimientos KB con pasos de tempario');
   console.log('  - 14 MasterParts');
   console.log('  - 5 Templates con paquetes');

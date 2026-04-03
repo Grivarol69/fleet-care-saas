@@ -14,7 +14,9 @@ export async function cleanupTenant(tenantId: string) {
   await prisma.invoice.deleteMany({ where: { tenantId } });
 
   // 2. Purchase Orders
-  await prisma.purchaseOrderItem.deleteMany({ where: { purchaseOrder: { tenantId } } });
+  await prisma.purchaseOrderItem.deleteMany({
+    where: { purchaseOrder: { tenantId } },
+  });
   await prisma.purchaseOrder.deleteMany({ where: { tenantId } });
 
   // 3. Inventory
@@ -27,9 +29,15 @@ export async function cleanupTenant(tenantId: string) {
   await prisma.internalWorkTicket.deleteMany({ where: { tenantId } });
 
   // 5. Work Orders
-  await prisma.expenseAuditLog.deleteMany({ where: { workOrder: { tenantId } } });
-  await prisma.workOrderApproval.deleteMany({ where: { workOrder: { tenantId } } });
-  await prisma.workOrderExpense.deleteMany({ where: { workOrder: { tenantId } } });
+  await prisma.expenseAuditLog.deleteMany({
+    where: { workOrder: { tenantId } },
+  });
+  await prisma.workOrderApproval.deleteMany({
+    where: { workOrder: { tenantId } },
+  });
+  await prisma.workOrderExpense.deleteMany({
+    where: { workOrder: { tenantId } },
+  });
   await prisma.workOrderItem.deleteMany({ where: { workOrder: { tenantId } } });
   await prisma.workOrder.deleteMany({ where: { tenantId } });
 
@@ -49,7 +57,6 @@ export async function cleanupTenant(tenantId: string) {
 
   // 10. Knowledge Base & Maintenance Items
   await prisma.mantItemVehiclePart.deleteMany({ where: { tenantId } });
-  await prisma.mantItemPart.deleteMany({ where: { mantItem: { tenantId } } });
   await prisma.mantItemRequest.deleteMany({ where: { tenantId } });
   await prisma.mantItem.deleteMany({ where: { tenantId } });
   await prisma.mantCategory.deleteMany({ where: { tenantId } });
@@ -58,8 +65,12 @@ export async function cleanupTenant(tenantId: string) {
   await prisma.masterPart.deleteMany({ where: { tenantId } });
 
   // 12. Templates & Packages
-  await prisma.packageItem.deleteMany({ where: { package: { template: { tenantId } } } });
-  await prisma.maintenancePackage.deleteMany({ where: { template: { tenantId } } });
+  await prisma.packageItem.deleteMany({
+    where: { package: { template: { tenantId } } },
+  });
+  await prisma.maintenancePackage.deleteMany({
+    where: { template: { tenantId } },
+  });
   await prisma.maintenanceTemplate.deleteMany({ where: { tenantId } });
 
   // 13. Vehicle Documents & Odometer
