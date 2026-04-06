@@ -28,8 +28,19 @@ export async function GET(request: NextRequest) {
         where: { removedAt: null },
         include: {
           serializedItem: {
-            select: { id: true, serialNumber: true, type: true, specs: true },
-            include: {
+            select: {
+              id: true,
+              serialNumber: true,
+              type: true,
+              specs: true,
+              invoiceItem: {
+                select: {
+                  description: true,
+                  masterPart: {
+                    select: { description: true },
+                  },
+                },
+              },
               alerts: { where: { status: 'ACTIVE' }, select: { id: true } },
             },
           },
@@ -48,6 +59,10 @@ export async function GET(request: NextRequest) {
         position: a.position,
         serializedItemId: a.serializedItem.id,
         serialNumber: a.serializedItem.serialNumber,
+        description:
+          a.serializedItem.invoiceItem?.masterPart?.description ||
+          a.serializedItem.invoiceItem?.description ||
+          '',
         type: a.serializedItem.type,
         specs: a.serializedItem.specs,
         activeAlertCount: a.serializedItem.alerts.length,

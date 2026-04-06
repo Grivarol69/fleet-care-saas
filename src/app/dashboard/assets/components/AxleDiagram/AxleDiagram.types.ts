@@ -2,6 +2,7 @@ export interface SerializedSlotData {
   position: string;
   serializedItemId: string;
   serialNumber: string;
+  description?: string;
   type: string;
   specs: { usefulLifePct?: number | null; treadDepthMm?: number | null } | null;
   activeAlertCount: number;

@@ -860,6 +860,8 @@ model MasterPart {
   category    String // "FILTROS", "ACEITES", "LUBRICANTES"
   subcategory String? // "FILTROS_ACEITE", "FILTROS_AIRE"
   unit        String  @default("UNIDAD") // "UNIDAD", "LITRO", "GALÓN", "KG"
+  serializedType SerializedItemType? // NULL = No serializable, TIRE = Neumático, etc.
+
 
   // Precio referencia (último conocido)
   referencePrice  Decimal?  @db.Decimal(10, 2)

@@ -337,7 +337,9 @@ export function AxleDiagram({
           );
           const isEmpty = !itemData;
           const label = itemData ? itemData.serialNumber.slice(0, 4) : null;
-          const titleText = itemData ? itemData.serialNumber : 'Vacío';
+          const titleText = itemData
+            ? `${itemData.serialNumber}${itemData.description ? ` - ${itemData.description}` : ''}`
+            : 'Vacío';
 
           return (
             <g
