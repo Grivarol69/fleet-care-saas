@@ -127,10 +127,9 @@ async function main() {
   // ========================================
   // HELPERS FOR REALISTIC DATA
   // ========================================
-  const now = new Date(2026, 2, 15); // March 15, 2026
+  const now = new Date();
   const getRelativeDate = (monthOffset: number, day: number = 15) => {
-    const d = new Date(2026, 2 - monthOffset, day);
-    return d;
+    return new Date(now.getFullYear(), now.getMonth() - monthOffset, day);
   };
 
   console.log('==============================================');
@@ -272,6 +271,18 @@ async function main() {
   });
   const iSvcPastillasDelant = await prisma.mantItem.findFirstOrThrow({
     where: { name: 'Cambio pastillas freno delanteras', isGlobal: true },
+  });
+  const docTypeSOAT = await prisma.documentTypeConfig.findFirstOrThrow({
+    where: { code: 'SOAT', isGlobal: true },
+  });
+  const docTypeTecno = await prisma.documentTypeConfig.findFirstOrThrow({
+    where: { code: 'TECNOMECANICA', isGlobal: true },
+  });
+  const docTypeInsurance = await prisma.documentTypeConfig.findFirstOrThrow({
+    where: { code: 'INSURANCE', isGlobal: true },
+  });
+  const docTypeRegistration = await prisma.documentTypeConfig.findFirstOrThrow({
+    where: { code: 'REGISTRATION', isGlobal: true },
   });
 
   // ========================================
@@ -635,6 +646,258 @@ async function main() {
   // JKL-012 Land Cruiser -> no template available, skip
   console.log('   3 programas creados (JKL-012 sin template)');
 
+  // ========================================
+  // DOCUMENTOS - Tenant 1 (variedad de estados)
+  // FIN-001: todo vigente
+  // FIN-002: SOAT por vencer (20 días), seguro vencido
+  // FIN-003: SOAT vencido, Tecno por vencer (10 días = CRITICAL)
+  // FIN-004: todo vigente, sin seguro
+  // FIN-005: todo vigente
+  // ========================================
+  console.log('   Creando documentos de vehículos...');
+
+  const daysMs = (d: number) => d * 24 * 60 * 60 * 1000;
+  const futureDate = (days: number) => new Date(Date.now() + daysMs(days));
+  const pastDate = (days: number) => new Date(Date.now() - daysMs(days));
+
+  await Promise.all([
+    // FIN-001: todo vigente
+    prisma.document.create({
+      data: {
+        tenantId: DEMO_TENANT_ID,
+        vehicleId: t1Vehicles[0].id,
+        documentTypeId: docTypeSOAT.id,
+        fileName: 'soat-fin001-2024.pdf',
+        fileUrl: 'https://utfs.io/f/demo-soat-fin001.pdf',
+        documentNumber: 'SOAT-2024-001001',
+        entity: 'SURA',
+        expiryDate: futureDate(240),
+      },
+    }),
+    prisma.document.create({
+      data: {
+        tenantId: DEMO_TENANT_ID,
+        vehicleId: t1Vehicles[0].id,
+        documentTypeId: docTypeTecno.id,
+        fileName: 'tecno-fin001-2024.pdf',
+        fileUrl: 'https://utfs.io/f/demo-tecno-fin001.pdf',
+        documentNumber: 'TECNO-2024-001001',
+        entity: 'CDA Movilidad',
+        expiryDate: futureDate(365),
+      },
+    }),
+    prisma.document.create({
+      data: {
+        tenantId: DEMO_TENANT_ID,
+        vehicleId: t1Vehicles[0].id,
+        documentTypeId: docTypeInsurance.id,
+        fileName: 'seguro-fin001-2024.pdf',
+        fileUrl: 'https://utfs.io/f/demo-insurance-fin001.pdf',
+        documentNumber: 'POL-2024-001',
+        entity: 'Seguros Bolivar',
+        expiryDate: futureDate(180),
+      },
+    }),
+    prisma.document.create({
+      data: {
+        tenantId: DEMO_TENANT_ID,
+        vehicleId: t1Vehicles[0].id,
+        documentTypeId: docTypeRegistration.id,
+        fileName: 'tarjeta-propiedad-fin001.pdf',
+        fileUrl: 'https://utfs.io/f/demo-reg-fin001.pdf',
+        documentNumber: 'REG-001-ABC',
+        entity: 'RUNT',
+      },
+    }),
+
+    // FIN-002: SOAT por vencer (20 días = WARNING), seguro vencido (-30 días = EXPIRED)
+    prisma.document.create({
+      data: {
+        tenantId: DEMO_TENANT_ID,
+        vehicleId: t1Vehicles[1].id,
+        documentTypeId: docTypeSOAT.id,
+        fileName: 'soat-fin002-2024.pdf',
+        fileUrl: 'https://utfs.io/f/demo-soat-fin002.pdf',
+        documentNumber: 'SOAT-2024-002001',
+        entity: 'Equidad Seguros',
+        expiryDate: futureDate(20),
+      },
+    }),
+    prisma.document.create({
+      data: {
+        tenantId: DEMO_TENANT_ID,
+        vehicleId: t1Vehicles[1].id,
+        documentTypeId: docTypeTecno.id,
+        fileName: 'tecno-fin002-2024.pdf',
+        fileUrl: 'https://utfs.io/f/demo-tecno-fin002.pdf',
+        documentNumber: 'TECNO-2024-002001',
+        entity: 'CDA Centro',
+        expiryDate: futureDate(120),
+      },
+    }),
+    prisma.document.create({
+      data: {
+        tenantId: DEMO_TENANT_ID,
+        vehicleId: t1Vehicles[1].id,
+        documentTypeId: docTypeInsurance.id,
+        fileName: 'seguro-fin002-2023.pdf',
+        fileUrl: 'https://utfs.io/f/demo-insurance-fin002.pdf',
+        documentNumber: 'POL-2023-002',
+        entity: 'AXA Seguros',
+        expiryDate: pastDate(30),
+      },
+    }),
+    prisma.document.create({
+      data: {
+        tenantId: DEMO_TENANT_ID,
+        vehicleId: t1Vehicles[1].id,
+        documentTypeId: docTypeRegistration.id,
+        fileName: 'tarjeta-propiedad-fin002.pdf',
+        fileUrl: 'https://utfs.io/f/demo-reg-fin002.pdf',
+        documentNumber: 'REG-002-DEF',
+        entity: 'RUNT',
+      },
+    }),
+
+    // FIN-003: SOAT vencido (-15 días), Tecno por vencer crítico (10 días < 15 días critical)
+    prisma.document.create({
+      data: {
+        tenantId: DEMO_TENANT_ID,
+        vehicleId: t1Vehicles[2].id,
+        documentTypeId: docTypeSOAT.id,
+        fileName: 'soat-fin003-2023.pdf',
+        fileUrl: 'https://utfs.io/f/demo-soat-fin003.pdf',
+        documentNumber: 'SOAT-2023-003001',
+        entity: 'Mapfre',
+        expiryDate: pastDate(15),
+      },
+    }),
+    prisma.document.create({
+      data: {
+        tenantId: DEMO_TENANT_ID,
+        vehicleId: t1Vehicles[2].id,
+        documentTypeId: docTypeTecno.id,
+        fileName: 'tecno-fin003-2024.pdf',
+        fileUrl: 'https://utfs.io/f/demo-tecno-fin003.pdf',
+        documentNumber: 'TECNO-2024-003001',
+        entity: 'CDA Sur',
+        expiryDate: futureDate(10),
+      },
+    }),
+    prisma.document.create({
+      data: {
+        tenantId: DEMO_TENANT_ID,
+        vehicleId: t1Vehicles[2].id,
+        documentTypeId: docTypeInsurance.id,
+        fileName: 'seguro-fin003-2024.pdf',
+        fileUrl: 'https://utfs.io/f/demo-insurance-fin003.pdf',
+        documentNumber: 'POL-2024-003',
+        entity: 'Generali',
+        expiryDate: futureDate(200),
+      },
+    }),
+    prisma.document.create({
+      data: {
+        tenantId: DEMO_TENANT_ID,
+        vehicleId: t1Vehicles[2].id,
+        documentTypeId: docTypeRegistration.id,
+        fileName: 'tarjeta-propiedad-fin003.pdf',
+        fileUrl: 'https://utfs.io/f/demo-reg-fin003.pdf',
+        documentNumber: 'REG-003-GHI',
+        entity: 'RUNT',
+      },
+    }),
+
+    // FIN-004: todo vigente, sin seguro (no se crea Insurance doc)
+    prisma.document.create({
+      data: {
+        tenantId: DEMO_TENANT_ID,
+        vehicleId: t1Vehicles[3].id,
+        documentTypeId: docTypeSOAT.id,
+        fileName: 'soat-fin004-2024.pdf',
+        fileUrl: 'https://utfs.io/f/demo-soat-fin004.pdf',
+        documentNumber: 'SOAT-2024-004001',
+        entity: 'Allianz',
+        expiryDate: futureDate(120),
+      },
+    }),
+    prisma.document.create({
+      data: {
+        tenantId: DEMO_TENANT_ID,
+        vehicleId: t1Vehicles[3].id,
+        documentTypeId: docTypeTecno.id,
+        fileName: 'tecno-fin004-2024.pdf',
+        fileUrl: 'https://utfs.io/f/demo-tecno-fin004.pdf',
+        documentNumber: 'TECNO-2024-004001',
+        entity: 'CDA Norte',
+        expiryDate: futureDate(180),
+      },
+    }),
+    prisma.document.create({
+      data: {
+        tenantId: DEMO_TENANT_ID,
+        vehicleId: t1Vehicles[3].id,
+        documentTypeId: docTypeRegistration.id,
+        fileName: 'tarjeta-propiedad-fin004.pdf',
+        fileUrl: 'https://utfs.io/f/demo-reg-fin004.pdf',
+        documentNumber: 'REG-004-JKL',
+        entity: 'RUNT',
+      },
+    }),
+
+    // FIN-005: todo vigente (nuevo)
+    prisma.document.create({
+      data: {
+        tenantId: DEMO_TENANT_ID,
+        vehicleId: t1Vehicles[4].id,
+        documentTypeId: docTypeSOAT.id,
+        fileName: 'soat-fin005-2025.pdf',
+        fileUrl: 'https://utfs.io/f/demo-soat-fin005.pdf',
+        documentNumber: 'SOAT-2025-005001',
+        entity: 'SURA',
+        expiryDate: futureDate(330),
+      },
+    }),
+    prisma.document.create({
+      data: {
+        tenantId: DEMO_TENANT_ID,
+        vehicleId: t1Vehicles[4].id,
+        documentTypeId: docTypeTecno.id,
+        fileName: 'tecno-fin005-2025.pdf',
+        fileUrl: 'https://utfs.io/f/demo-tecno-fin005.pdf',
+        documentNumber: 'TECNO-2025-005001',
+        entity: 'CDA Movilidad',
+        expiryDate: futureDate(730),
+      },
+    }),
+    prisma.document.create({
+      data: {
+        tenantId: DEMO_TENANT_ID,
+        vehicleId: t1Vehicles[4].id,
+        documentTypeId: docTypeInsurance.id,
+        fileName: 'seguro-fin005-2025.pdf',
+        fileUrl: 'https://utfs.io/f/demo-insurance-fin005.pdf',
+        documentNumber: 'POL-2025-005',
+        entity: 'Seguros Bolivar',
+        expiryDate: futureDate(365),
+      },
+    }),
+    prisma.document.create({
+      data: {
+        tenantId: DEMO_TENANT_ID,
+        vehicleId: t1Vehicles[4].id,
+        documentTypeId: docTypeRegistration.id,
+        fileName: 'tarjeta-propiedad-fin005.pdf',
+        fileUrl: 'https://utfs.io/f/demo-reg-fin005.pdf',
+        documentNumber: 'REG-005-MNO',
+        entity: 'RUNT',
+      },
+    }),
+  ]);
+  console.log(
+    '   19 documentos creados (SOAT/Tecno/Seguro/Tarjeta × 5 vehículos)'
+  );
+
   // Inventory (Tenant 1)
   console.log('   Creando inventario...');
   const t1InventoryData = [
@@ -957,41 +1220,39 @@ async function main() {
   // ========================================
   console.log('   Creando Financial Alerts...');
 
-  const invoice5 = await prisma.invoice.findFirst({
-    where: { tenantId: DEMO_TENANT_ID, invoiceNumber: 'FAC-2025-005' },
-    include: { items: { include: { masterPart: true } } },
+  // Crear alertas financieras representativas para el demo
+  const recentInvoice = await prisma.invoice.findFirst({
+    where: { tenantId: DEMO_TENANT_ID, status: 'APPROVED' },
+    orderBy: { createdAt: 'desc' },
   });
 
-  if (invoice5 && invoice5.items.length > 0) {
-    const item = invoice5.items[0];
-    if (item.masterPart && item.unitPrice && item.masterPart.referencePrice) {
-      const unitPrice = Number(item.unitPrice);
-      const refPrice =
-        Number(item.masterPart.referencePrice) > 0
-          ? Number(item.masterPart.referencePrice)
-          : 45000;
-      const deviation = ((unitPrice - refPrice) / refPrice) * 100;
-
-      await prisma.financialAlert.create({
-        data: {
-          tenantId: DEMO_TENANT_ID,
-          invoiceId: invoice5.id,
-          masterPartId: item.masterPartId,
-          type: 'PRICE_DEVIATION',
-          severity: deviation > 20 ? 'CRITICAL' : 'HIGH',
-          status: 'PENDING',
-          message: `Desviación del ${deviation.toFixed(1)}% en compra de ${item.masterPart.description}. Referencia: $${refPrice}, Compra: $${unitPrice}`,
-          details: {
-            expected: refPrice,
-            actual: unitPrice,
-            deviation: deviation.toFixed(1),
-          },
-        },
-      });
-    }
-  }
-
-  console.log('   1 Financial Alert creado');
+  await Promise.all([
+    prisma.financialAlert.create({
+      data: {
+        tenantId: DEMO_TENANT_ID,
+        invoiceId: recentInvoice?.id,
+        masterPartId: pShell.id,
+        type: 'PRICE_DEVIATION',
+        severity: 'HIGH',
+        status: 'PENDING',
+        message:
+          'Desviación del 32.5% en compra de Aceite Shell Helix HX7 10W-40. Referencia: $42.000, Compra: $55.650',
+        details: { expected: 42000, actual: 55650, deviation: '32.5' },
+      },
+    }),
+    prisma.financialAlert.create({
+      data: {
+        tenantId: DEMO_TENANT_ID,
+        type: 'BUDGET_OVERRUN',
+        severity: 'CRITICAL',
+        status: 'PENDING',
+        message:
+          'Gasto mensual supera el presupuesto en $1.250.000 (FIN-004 acumula $2.8M este mes)',
+        details: { budget: 1500000, actual: 2750000, overrun: 1250000 },
+      },
+    }),
+  ]);
+  console.log('   2 Financial Alerts creados');
 
   // ========================================
   // FUEL VOUCHERS - Tenant 1 (Demo)
@@ -1840,8 +2101,8 @@ async function main() {
   console.log('  - Fleet Care Platform');
   console.log('  - SUPER_ADMIN: grivarol69@gmail.com');
 
-  console.log('\nDEMO TENANT:');
-  console.log(`  - ID: ${TENANT_2_ID}`);
+  console.log('\nDEMO TENANT 1 (Transportes Demo SAS):');
+  console.log(`  - ID: ${DEMO_TENANT_ID}`);
   console.log(`  - OWNER: ${ownerEmail}`);
   console.log(`  - MANAGER: ${managerEmail}`);
   console.log(`  - TECHNICIAN: ${techEmail}`);
