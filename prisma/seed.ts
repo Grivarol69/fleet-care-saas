@@ -27,118 +27,61 @@ const prisma = new PrismaClient({ adapter });
 
 const PLATFORM_TENANT_ID = '00000000-0000-0000-0000-000000000000';
 
-// Helper: crea paquetes con items para un template
-async function createTemplatePackages(
-  templateId: string,
-  packages: Array<{
-    name: string;
-    triggerKm: number;
-    estimatedCost: number;
-    estimatedTime: number;
-    priority: 'MEDIUM' | 'HIGH';
-    items: Array<{
-      mantItemId: string;
+// ============================================================
+// seedGlobalKB — exportada para reutilización en otros seeds
+// ============================================================
+export async function seedGlobalKB(prismaParam: PrismaClient): Promise<void> {
+  // Alias local para que el código interno use 'prisma' sin cambios
+  const prisma = prismaParam;
+
+  // Helper: crea paquetes con items para un template (cierra sobre prisma local)
+  async function createTemplatePackages(
+    templateId: string,
+    packages: Array<{
+      name: string;
       triggerKm: number;
+      estimatedCost: number;
       estimatedTime: number;
-      order: number;
-      priority: 'LOW' | 'MEDIUM' | 'HIGH';
-    }>;
-  }>
-) {
-  for (const pkg of packages) {
-    const created = await prisma.maintenancePackage.create({
-      data: {
-        templateId,
-        name: pkg.name,
-        triggerKm: pkg.triggerKm,
-        estimatedCost: pkg.estimatedCost,
-        estimatedTime: pkg.estimatedTime,
-        priority: pkg.priority,
-        packageType: 'PREVENTIVE',
-        status: 'ACTIVE',
-      },
-    });
-    await Promise.all(
-      pkg.items.map(item =>
-        prisma.packageItem.create({
-          data: {
-            packageId: created.id,
-            mantItemId: item.mantItemId,
-            triggerKm: item.triggerKm,
-            estimatedTime: item.estimatedTime,
-            order: item.order,
-            priority: item.priority,
-          },
-        })
-      )
-    );
+      priority: 'MEDIUM' | 'HIGH';
+      items: Array<{
+        mantItemId: string;
+        triggerKm: number;
+        estimatedTime: number;
+        order: number;
+        priority: 'LOW' | 'MEDIUM' | 'HIGH';
+      }>;
+    }>
+  ) {
+    for (const pkg of packages) {
+      const created = await prisma.maintenancePackage.create({
+        data: {
+          templateId,
+          name: pkg.name,
+          triggerKm: pkg.triggerKm,
+          estimatedCost: pkg.estimatedCost,
+          estimatedTime: pkg.estimatedTime,
+          priority: pkg.priority,
+          packageType: 'PREVENTIVE',
+          status: 'ACTIVE',
+        },
+      });
+      await Promise.all(
+        pkg.items.map(item =>
+          prisma.packageItem.create({
+            data: {
+              packageId: created.id,
+              mantItemId: item.mantItemId,
+              triggerKm: item.triggerKm,
+              estimatedTime: item.estimatedTime,
+              order: item.order,
+              priority: item.priority,
+            },
+          })
+        )
+      );
+    }
   }
-}
 
-async function main() {
-  console.log('==============================================');
-  console.log('  SEED PRODUCCION - Fleet Care SaaS');
-  console.log('  Knowledge Base Global');
-  console.log('==============================================\n');
-
-  // ============================================================
-  // STEP 1: CLEANUP COMPLETO (orden FK-safe)
-  // ============================================================
-  console.log('1. CLEANUP - Borrando datos existentes...\n');
-
-  await prisma.purchaseOrderItem.deleteMany({});
-  await prisma.purchaseOrder.deleteMany({});
-  await prisma.ticketPartEntry.deleteMany({});
-  await prisma.ticketLaborEntry.deleteMany({});
-  await prisma.internalWorkTicket.deleteMany({});
-  await prisma.inventoryMovement.deleteMany({});
-  await prisma.inventoryItem.deleteMany({});
-  await prisma.invoicePayment.deleteMany({});
-  await prisma.partPriceHistory.deleteMany({});
-  await prisma.invoiceItem.deleteMany({});
-  await prisma.invoice.deleteMany({});
-  await prisma.financialAlert.deleteMany({});
-  await prisma.maintenanceAlert.deleteMany({});
-  await prisma.expenseAuditLog.deleteMany({});
-  await prisma.workOrderApproval.deleteMany({});
-  await prisma.workOrderExpense.deleteMany({});
-  await prisma.workOrderItem.deleteMany({});
-  await prisma.workOrder.deleteMany({});
-  await prisma.vehicleProgramItem.deleteMany({});
-  await prisma.vehicleProgramPackage.deleteMany({});
-  await prisma.vehicleMantProgram.deleteMany({});
-  await prisma.vehicleDriver.deleteMany({});
-  await prisma.odometerLog.deleteMany({});
-  await prisma.document.deleteMany({});
-  await prisma.vehicle.deleteMany({});
-  await prisma.driver.deleteMany({});
-  await prisma.technician.deleteMany({});
-  await prisma.provider.deleteMany({});
-  await prisma.mantItemRequest.deleteMany({});
-  await prisma.mantItemVehiclePart.deleteMany({});
-  await prisma.mantItemPart.deleteMany({});
-  await prisma.packageItem.deleteMany({});
-  await prisma.maintenancePackage.deleteMany({});
-  await prisma.maintenanceTemplate.deleteMany({});
-  await prisma.mantItemProcedureStep.deleteMany({});
-  await prisma.mantItemProcedure.deleteMany({});
-  await prisma.mantItem.deleteMany({});
-  await prisma.mantCategory.deleteMany({});
-  await prisma.temparioItem.deleteMany({});
-  await prisma.tempario.deleteMany({});
-  await prisma.partCompatibility.deleteMany({});
-  await prisma.masterPart.deleteMany({});
-  await prisma.documentTypeConfig.deleteMany({});
-  await prisma.vehicleLine.deleteMany({});
-  await prisma.vehicleBrand.deleteMany({});
-  await prisma.vehicleType.deleteMany({});
-  await prisma.user.deleteMany({});
-  await prisma.subscription.deleteMany({});
-  await prisma.tenant.deleteMany({});
-
-  console.log('   Cleanup completo.\n');
-
-  // ============================================================
   // STEP 2: KNOWLEDGE BASE GLOBAL (tenantId: null, isGlobal: true)
   // ============================================================
   console.log('2. KNOWLEDGE BASE GLOBAL...\n');
@@ -552,7 +495,7 @@ async function main() {
       data: {
         name: 'Inspeccion sistema combustible',
         categoryId: catMotor.id,
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -599,7 +542,7 @@ async function main() {
       data: {
         name: 'Inspeccion pastillas freno',
         categoryId: catFrenos.id,
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -618,7 +561,7 @@ async function main() {
       data: {
         name: 'Inspeccion amortiguadores',
         categoryId: catSuspension.id,
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -637,7 +580,7 @@ async function main() {
       data: {
         name: 'Inspeccion bateria',
         categoryId: catElectrico.id,
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -646,7 +589,7 @@ async function main() {
       data: {
         name: 'Limpieza terminales bateria',
         categoryId: catElectrico.id,
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -723,7 +666,7 @@ async function main() {
       data: {
         name: 'Inspeccion alta tension EV',
         categoryId: catAltaTensionEV.id,
-        type: 'ACTION',
+        type: 'SERVICE',
         isGlobal: true,
         tenantId: null,
       },
@@ -955,6 +898,11 @@ async function main() {
     { cat: 'Motor', name: 'Cambio bobina ignición' },
     { cat: 'Motor', name: 'Diagnóstico motor' },
     { cat: 'Motor', name: 'Escape reparacion general' },
+    { cat: 'Motor', name: 'Control guaya acelerador' },
+    { cat: 'Motor', name: 'Inspeccion radiador intercooler' },
+    { cat: 'Motor', name: 'Control tension correas' },
+    { cat: 'Motor', name: 'Inspeccion linea admision' },
+    { cat: 'Motor', name: 'Inspeccion soporte motor transmision' },
     // Transmision (20)
     { cat: 'Transmision', name: 'Cambio aceite transmisión' },
     { cat: 'Transmision', name: 'Cambio filtro transmisión' },
@@ -976,6 +924,8 @@ async function main() {
     { cat: 'Transmision', name: 'Cambio convertidor torque' },
     { cat: 'Transmision', name: 'Cambio cuerpo válvulas' },
     { cat: 'Transmision', name: 'Rectificación caja cambios' },
+    { cat: 'Transmision', name: 'Ajuste cardanes crucetas flanches' },
+    { cat: 'Transmision', name: 'Inspeccion respiradero transmision' },
     // Frenos (20)
     { cat: 'Frenos', name: 'Cambio pastillas freno adelante' },
     { cat: 'Frenos', name: 'Cambio pastillas freno atrás' },
@@ -997,6 +947,9 @@ async function main() {
     { cat: 'Frenos', name: 'Cambio ABS sensor' },
     { cat: 'Frenos', name: 'Diagnóstico sistema freno' },
     { cat: 'Frenos', name: 'Inspección general frenos' },
+    { cat: 'Frenos', name: 'Inspeccionar bandas freno' },
+    { cat: 'Frenos', name: 'Inspeccion cilindro freno' },
+    { cat: 'Frenos', name: 'Inspeccion escape sellos ruedas' },
     // Suspension (20)
     { cat: 'Suspension', name: 'Cambio amortiguador adelante' },
     { cat: 'Suspension', name: 'Cambio amortiguador atrás' },
@@ -1018,6 +971,9 @@ async function main() {
     { cat: 'Suspension', name: 'Engrase suspensión' },
     { cat: 'Suspension', name: 'Inspección suspensión' },
     { cat: 'Suspension', name: 'Alineación tren delantero' },
+    { cat: 'Suspension', name: 'Inspeccion fisuras muelles' },
+    { cat: 'Suspension', name: 'Inspeccion bujes suspension' },
+    { cat: 'Suspension', name: 'Ajustar grapas fijacion muelles' },
     // Direccion (18)
     { cat: 'Direccion', name: 'Cambio líquido dirección hidráulica' },
     { cat: 'Direccion', name: 'Cambio manguera dirección' },
@@ -1037,6 +993,7 @@ async function main() {
     { cat: 'Direccion', name: 'Alineación dirección' },
     { cat: 'Direccion', name: 'Diagnóstico dirección' },
     { cat: 'Direccion', name: 'Cambio sensor posición dirección' },
+    { cat: 'Direccion', name: 'Inspeccion deposito direccion' },
     // Electrico (28)
     { cat: 'Electrico', name: 'Cambio batería' },
     { cat: 'Electrico', name: 'Limpieza terminales batería' },
@@ -1066,6 +1023,8 @@ async function main() {
     { cat: 'Electrico', name: 'Cambio altavoz' },
     { cat: 'Electrico', name: 'Diagnóstico sistema eléctrico' },
     { cat: 'Electrico', name: 'Reparación cableado' },
+    { cat: 'Electrico', name: 'Inspeccion conexion alternador arranque' },
+    { cat: 'Electrico', name: 'Inspeccion baterias' },
     // Aire Acondicionado (14)
     { cat: 'Aire Acondicionado', name: 'Carga gas refrigerante' },
     { cat: 'Aire Acondicionado', name: 'Vacío sistema A/A' },
@@ -1129,6 +1088,8 @@ async function main() {
     { cat: 'Carroceria', name: 'Cambio tapiz' },
     { cat: 'Carroceria', name: 'Cambio asiento' },
     { cat: 'Carroceria', name: 'Cambio cinturón seguridad' },
+    { cat: 'Carroceria', name: 'Inspeccion filtro aire cabina' },
+    { cat: 'Carroceria', name: 'Inspeccion sistema ajuste cabina' },
     // Neumaticos (10)
     { cat: 'Neumaticos', name: 'Cambio neumático' },
     { cat: 'Neumaticos', name: 'Rotación neumáticos' },
@@ -1175,6 +1136,243 @@ async function main() {
     skipDuplicates: true,
   });
   console.log(`   ${kbCount} items KB tempario agregados (skipDuplicates).`);
+
+  // ----------------------------------------------------------
+  // KB TEMPARIO AUTOMOTRIZ — PART items (isGlobal=true)
+  // Derived from SERVICE entries by stripping leading verb.
+  // skipDuplicates handles re-runs and overlaps with core items.
+  // ----------------------------------------------------------
+  console.log('   Agregando KB tempario automotriz (PART, isGlobal)...');
+  const temparioPartsKB: { cat: string; name: string }[] = [
+    // Motor — PART (22)
+    { cat: 'Motor', name: 'aceite motor' },
+    { cat: 'Motor', name: 'filtro aceite' },
+    { cat: 'Motor', name: 'filtro aire' },
+    { cat: 'Motor', name: 'filtro combustible' },
+    { cat: 'Motor', name: 'filtro respiradero' },
+    { cat: 'Motor', name: 'juntas motor' },
+    { cat: 'Motor', name: 'retenes motor' },
+    { cat: 'Motor', name: 'bomba aceite' },
+    { cat: 'Motor', name: 'cadena distribución' },
+    { cat: 'Motor', name: 'tensor distribución' },
+    { cat: 'Motor', name: 'correa distribución' },
+    { cat: 'Motor', name: 'radiador' },
+    { cat: 'Motor', name: 'manguera refrigerante' },
+    { cat: 'Motor', name: 'termostato' },
+    { cat: 'Motor', name: 'bomba agua' },
+    { cat: 'Motor', name: 'inyectores' },
+    { cat: 'Motor', name: 'bomba combustible' },
+    { cat: 'Motor', name: 'carburador' },
+    { cat: 'Motor', name: 'turbocharger' },
+    { cat: 'Motor', name: 'intercooler' },
+    { cat: 'Motor', name: 'sensores motor' },
+    { cat: 'Motor', name: 'bujías' },
+    { cat: 'Motor', name: 'cables bujía' },
+    { cat: 'Motor', name: 'bobina ignición' },
+    { cat: 'Motor', name: 'limpiador cuerpo aceleración' }, // REVIEW — chemical cleaner consumed
+    // Motor — NO PART: Calibración válvulas, Rectificación motor, Diagnóstico motor, Escape reparacion general, Ajuste carburador
+
+    // Transmision — PART (14)
+    { cat: 'Transmision', name: 'aceite transmisión' },
+    { cat: 'Transmision', name: 'filtro transmisión' },
+    { cat: 'Transmision', name: 'disco embrague' },
+    { cat: 'Transmision', name: 'platino embrague' },
+    { cat: 'Transmision', name: 'cojinete empuje' },
+    { cat: 'Transmision', name: 'cable clutch' },
+    { cat: 'Transmision', name: 'aceite diferencial' },
+    { cat: 'Transmision', name: 'corona piñón' },
+    { cat: 'Transmision', name: 'rodamientos diferencial' },
+    { cat: 'Transmision', name: 'retenes transmisión' },
+    { cat: 'Transmision', name: 'synchronous' },
+    { cat: 'Transmision', name: 'cremallera cambio' },
+    { cat: 'Transmision', name: 'palancas cambio' },
+    { cat: 'Transmision', name: 'convertidor torque' },
+    { cat: 'Transmision', name: 'cuerpo válvulas' },
+    // Transmision — NO PART: Ajuste embrague, Rectificación diferencial, Ajuste juego cambio, Diagnóstico transmisión, Rectificación caja cambios
+
+    // Frenos — PART (14)
+    { cat: 'Frenos', name: 'pastillas freno adelante' },
+    { cat: 'Frenos', name: 'pastillas freno atrás' },
+    { cat: 'Frenos', name: 'discos freno' },
+    { cat: 'Frenos', name: 'bandas freno' },
+    { cat: 'Frenos', name: 'tambores freno' },
+    { cat: 'Frenos', name: 'cilindro ruedas' },
+    { cat: 'Frenos', name: 'cilindro maestro' },
+    { cat: 'Frenos', name: 'servo freno' },
+    { cat: 'Frenos', name: 'mangueras freno' },
+    { cat: 'Frenos', name: 'tubo freno' },
+    { cat: 'Frenos', name: 'líquido freno' },
+    { cat: 'Frenos', name: 'zapata freno mano' },
+    { cat: 'Frenos', name: 'cable freno mano' },
+    { cat: 'Frenos', name: 'ABS sensor' },
+    { cat: 'Frenos', name: 'líquido freno purga' }, // REVIEW — fluid consumed during purge
+    // Frenos — NO PART: Rectificación discos freno, Rectificación tambores, Ajuste freno estacionario, Diagnóstico sistema freno, Inspección general frenos
+
+    // Suspension — PART (17)
+    { cat: 'Suspension', name: 'amortiguador adelante' },
+    { cat: 'Suspension', name: 'amortiguador atrás' },
+    { cat: 'Suspension', name: 'resorte suspensión' },
+    { cat: 'Suspension', name: 'tornillo presión' },
+    { cat: 'Suspension', name: 'bocín suspensión' },
+    { cat: 'Suspension', name: 'gemelo suspensión' },
+    { cat: 'Suspension', name: 'bieleta suspensión' },
+    { cat: 'Suspension', name: 'barra estabilizadora' },
+    { cat: 'Suspension', name: 'terminal estabilizadora' },
+    { cat: 'Suspension', name: 'rotula suspensión' },
+    { cat: 'Suspension', name: 'axial dirección' },
+    { cat: 'Suspension', name: 'manga eje' },
+    { cat: 'Suspension', name: 'rodamiento cubo' },
+    { cat: 'Suspension', name: 'retén cubo' },
+    { cat: 'Suspension', name: 'rulemán centro' },
+    { cat: 'Suspension', name: 'ballesta' },
+    { cat: 'Suspension', name: 'parachoques suspensión' },
+    { cat: 'Suspension', name: 'grasa suspensión' }, // REVIEW — grease consumed during Engrase suspensión
+    // Suspension — NO PART: Inspección suspensión, Alineación tren delantero
+
+    // Direccion — PART (13)
+    { cat: 'Direccion', name: 'líquido dirección hidráulica' },
+    { cat: 'Direccion', name: 'manguera dirección' },
+    { cat: 'Direccion', name: 'bomba dirección hidráulica' },
+    { cat: 'Direccion', name: 'cremallera dirección' },
+    { cat: 'Direccion', name: 'terminal dirección' },
+    { cat: 'Direccion', name: 'biela dirección' },
+    { cat: 'Direccion', name: 'barra dirección' },
+    { cat: 'Direccion', name: 'soporte dirección' },
+    { cat: 'Direccion', name: 'columna dirección' },
+    { cat: 'Direccion', name: 'volante' },
+    { cat: 'Direccion', name: 'cardan dirección' },
+    { cat: 'Direccion', name: 'caja dirección' },
+    { cat: 'Direccion', name: 'sensor posición dirección' },
+    // Direccion — NO PART: Reparación cremallera, Ajuste juego dirección, Inspección dirección, Alineación dirección, Diagnóstico dirección
+
+    // Electrico — PART (25)
+    { cat: 'Electrico', name: 'batería' },
+    { cat: 'Electrico', name: 'alternador' },
+    { cat: 'Electrico', name: 'motor arranque' },
+    { cat: 'Electrico', name: 'regulador voltaje' },
+    { cat: 'Electrico', name: 'bombillas' },
+    { cat: 'Electrico', name: 'faro' },
+    { cat: 'Electrico', name: 'piloto' },
+    { cat: 'Electrico', name: 'luz stop' },
+    { cat: 'Electrico', name: 'direccional' },
+    { cat: 'Electrico', name: 'switch luz' },
+    { cat: 'Electrico', name: 'switch limpiaparabrisas' },
+    { cat: 'Electrico', name: 'motor limpiaparabrisas' },
+    { cat: 'Electrico', name: 'bomba limpiaparabrisas' },
+    { cat: 'Electrico', name: 'bocina' },
+    { cat: 'Electrico', name: 'espejo eléctrico' },
+    { cat: 'Electrico', name: 'levanta vidrio' },
+    { cat: 'Electrico', name: 'switch levanta vidrio' },
+    { cat: 'Electrico', name: 'motorventilador' },
+    { cat: 'Electrico', name: 'resistor motorventilador' },
+    { cat: 'Electrico', name: 'sensor temperatura' },
+    { cat: 'Electrico', name: 'sensor nivel combustible' },
+    { cat: 'Electrico', name: 'velocímetro' },
+    { cat: 'Electrico', name: 'tablero instrumentos' },
+    { cat: 'Electrico', name: 'radio autoestereo' },
+    { cat: 'Electrico', name: 'altavoz' },
+    { cat: 'Electrico', name: 'limpiador terminales batería' }, // REVIEW — chemical cleaner consumed
+    // Electrico — NO PART: Diagnóstico sistema eléctrico, Reparación cableado
+
+    // Aire Acondicionado — PART (11)
+    { cat: 'Aire Acondicionado', name: 'gas refrigerante' },
+    { cat: 'Aire Acondicionado', name: 'compresor A/A' },
+    { cat: 'Aire Acondicionado', name: 'condensador A/A' },
+    { cat: 'Aire Acondicionado', name: 'evaporador A/A' },
+    { cat: 'Aire Acondicionado', name: 'filtro deshumedecedor' },
+    { cat: 'Aire Acondicionado', name: 'manguera A/A' },
+    { cat: 'Aire Acondicionado', name: 'válvula expansión' },
+    { cat: 'Aire Acondicionado', name: 'sensor temperatura A/A' },
+    { cat: 'Aire Acondicionado', name: 'motor blower' },
+    { cat: 'Aire Acondicionado', name: 'switch A/A' },
+    { cat: 'Aire Acondicionado', name: 'correa A/A' },
+    { cat: 'Aire Acondicionado', name: 'limpiador sistema A/A' }, // REVIEW — chemical cleaner consumed
+    // Aire Acondicionado — NO PART: Vacío sistema A/A, Diagnóstico A/A, Limpieza sistema A/A (no distinct consumable)
+
+    // Embrague — PART (7)
+    { cat: 'Embrague', name: 'disco embrague' },
+    { cat: 'Embrague', name: 'platino embrague' },
+    { cat: 'Embrague', name: 'cojinete apoyo' },
+    { cat: 'Embrague', name: 'cojinete piloto' },
+    { cat: 'Embrague', name: 'cable embrague' },
+    { cat: 'Embrague', name: 'bomba embrague' },
+    { cat: 'Embrague', name: 'horquilla embrague' },
+    { cat: 'Embrague', name: 'líquido embrague purga' }, // REVIEW — fluid consumed during Purga sistema embrague
+    // Embrague — NO PART: Ajuste pedal embrague, Purga sistema embrague (covered by REVIEW above), Diagnóstico embrague
+
+    // Escape — PART (7)
+    { cat: 'Escape', name: 'múltiple escape' },
+    { cat: 'Escape', name: 'silenciador' },
+    { cat: 'Escape', name: 'tubo escape' },
+    { cat: 'Escape', name: 'catalizador' },
+    { cat: 'Escape', name: 'sensor oxígeno' },
+    { cat: 'Escape', name: 'empaque escape' },
+    { cat: 'Escape', name: 'soporte escape' },
+    // Escape — NO PART: Soldadura escape, Rectificación múltiple, Diagnóstico emisiones
+
+    // Carroceria — PART (20)
+    { cat: 'Carroceria', name: 'parachoque adelante' },
+    { cat: 'Carroceria', name: 'parachoque atrás' },
+    { cat: 'Carroceria', name: 'capo' },
+    { cat: 'Carroceria', name: 'puertas' },
+    { cat: 'Carroceria', name: 'guardabarros' },
+    { cat: 'Carroceria', name: 'toldo' },
+    { cat: 'Carroceria', name: 'vidrio parabrisas' },
+    { cat: 'Carroceria', name: 'vidrio lateral' },
+    { cat: 'Carroceria', name: 'cristal atrás' },
+    { cat: 'Carroceria', name: 'parabrisas' },
+    { cat: 'Carroceria', name: 'limpiaparabrisas' },
+    { cat: 'Carroceria', name: 'brazo limpiaparabrisas' },
+    { cat: 'Carroceria', name: 'tapa combustible' },
+    { cat: 'Carroceria', name: 'espejo retrovisor' },
+    { cat: 'Carroceria', name: 'cerradura puerta' },
+    { cat: 'Carroceria', name: 'manija puerta' },
+    { cat: 'Carroceria', name: 'molduras' },
+    { cat: 'Carroceria', name: 'alfombra' },
+    { cat: 'Carroceria', name: 'tapiz' },
+    { cat: 'Carroceria', name: 'asiento' },
+    { cat: 'Carroceria', name: 'cinturón seguridad' },
+    // Carroceria — NO PART: Enderezado panels, Soldadura cuerpos, Pintura panel, Pulido vehicular
+
+    // Neumaticos — PART (4)
+    { cat: 'Neumaticos', name: 'neumático' },
+    { cat: 'Neumaticos', name: 'válvula' },
+    { cat: 'Neumaticos', name: 'rodada' },
+    { cat: 'Neumaticos', name: 'cubo rueda' },
+    { cat: 'Neumaticos', name: 'kit sellado cámara' }, // REVIEW — sealant kit consumed during Sellado cámara
+    // Neumaticos — NO PART: Rotación neumáticos, Balanceo ruedas, Alineación ruedas, Reparación neumático, Verificación presión
+
+    // Lubricacion — PART (1)
+    { cat: 'Lubricacion', name: 'lubricante' },
+    { cat: 'Lubricacion', name: 'grasa general' }, // REVIEW — grease consumed during Engrase general
+    { cat: 'Lubricacion', name: 'grasa cardanes' }, // REVIEW — grease consumed during Engrase cardanes
+    { cat: 'Lubricacion', name: 'grasa rodamientos' }, // REVIEW — grease consumed during Engrase rodamientos
+    { cat: 'Lubricacion', name: 'grasa puntos lubricación' }, // REVIEW — grease consumed during Engrase puntos lubricación
+    { cat: 'Lubricacion', name: 'limpiador sistema lubricación' }, // REVIEW — chemical cleaner consumed
+    // Lubricacion — NO PART: (all 6 items have a PART or REVIEW)
+
+    // Varios — PART (4)
+    { cat: 'Varios', name: 'liquido limpiaparabrisas' },
+    { cat: 'Varios', name: 'aceite caja transferencia' },
+    { cat: 'Varios', name: 'aceite árbol transmisión' },
+    { cat: 'Varios', name: 'filtros habitáculo' },
+    { cat: 'Varios', name: 'limpiador inyectores' }, // REVIEW — chemical cleaner consumed during Limpieza inyectores
+    { cat: 'Varios', name: 'limpiador radiador' }, // REVIEW — chemical cleaner consumed during Limpieza radiador
+    // Varios — NO PART: Diagnóstico general, Prueba camino, Inspección pre-entrega, Decarbonización motor, Ajuste faros, Inspección técnica, Inspección leakage, Reparación fuga aceite, Reparación fuga refrigerante
+  ];
+  const { count: partsKbCount } = await prisma.mantItem.createMany({
+    data: temparioPartsKB.map(({ cat, name }) => ({
+      name,
+      categoryId: catByTemp[cat]!,
+      type: 'PART' as const,
+      isGlobal: true,
+      tenantId: null,
+    })),
+    skipDuplicates: true,
+  });
+  console.log(
+    `   ${partsKbCount} items KB tempario PART agregados (skipDuplicates).`
+  );
 
   // Aliases legibles
   const iCambioAceite = items[0]!;
@@ -2939,147 +3137,6 @@ async function main() {
   console.log(`   ${kbEntries.length} vinculos KB creados.`);
 
   // ----------------------------------------------------------
-  // VINCULOS MantItemPart: SERVICE → MasterPart
-  // Cada SERVICE item declara qué autopartes requiere.
-  // Esto permite sugerir repuestos al agregar un servicio a una OT.
-  // ----------------------------------------------------------
-  console.log('   Creando vinculos MantItemPart (servicio → autoparte)...');
-  const mantItemParts = await Promise.all([
-    // Cambio aceite motor → aceites (primary + alternativas)
-    prisma.mantItemPart.create({
-      data: {
-        mantItemId: iSvcCambioAceite.id,
-        masterPartId: pShell.id,
-        quantity: 5.5,
-        isRequired: true,
-        isPrimary: true,
-        notes: 'Shell Helix HX7 10W-40',
-      },
-    }),
-    prisma.mantItemPart.create({
-      data: {
-        mantItemId: iSvcCambioAceite.id,
-        masterPartId: pMobil.id,
-        quantity: 5.5,
-        isRequired: false,
-        isPrimary: false,
-        notes: 'Alternativa: Mobil Super 3000 5W-40',
-      },
-    }),
-    prisma.mantItemPart.create({
-      data: {
-        mantItemId: iSvcCambioAceite.id,
-        masterPartId: pCastrolGTX.id,
-        quantity: 5.5,
-        isRequired: false,
-        isPrimary: false,
-        notes: 'Alternativa: Castrol GTX 15W-40',
-      },
-    }),
-    // Cambio filtro aceite
-    prisma.mantItemPart.create({
-      data: {
-        mantItemId: iSvcFiltroAceite.id,
-        masterPartId: pBoschFiltAce.id,
-        quantity: 1,
-        isRequired: true,
-        isPrimary: true,
-      },
-    }),
-    prisma.mantItemPart.create({
-      data: {
-        mantItemId: iSvcFiltroAceite.id,
-        masterPartId: pMannFiltAce.id,
-        quantity: 1,
-        isRequired: false,
-        isPrimary: false,
-        notes: 'Alternativa: MANN W920/21',
-      },
-    }),
-    // Cambio filtro aire
-    prisma.mantItemPart.create({
-      data: {
-        mantItemId: iSvcFiltroAire.id,
-        masterPartId: pBoschFiltAire.id,
-        quantity: 1,
-        isRequired: true,
-        isPrimary: true,
-      },
-    }),
-    prisma.mantItemPart.create({
-      data: {
-        mantItemId: iSvcFiltroAire.id,
-        masterPartId: pMannFiltAire.id,
-        quantity: 1,
-        isRequired: false,
-        isPrimary: false,
-        notes: 'Alternativa: MANN C25114',
-      },
-    }),
-    // Cambio filtro combustible
-    prisma.mantItemPart.create({
-      data: {
-        mantItemId: iSvcFiltroComb.id,
-        masterPartId: pBoschFiltComb.id,
-        quantity: 1,
-        isRequired: true,
-        isPrimary: true,
-      },
-    }),
-    // Cambio liquido frenos
-    prisma.mantItemPart.create({
-      data: {
-        mantItemId: iSvcLiqFreno.id,
-        masterPartId: pCastrolDOT4.id,
-        quantity: 2,
-        isRequired: true,
-        isPrimary: true,
-      },
-    }),
-    // Cambio filtro habitaculo
-    prisma.mantItemPart.create({
-      data: {
-        mantItemId: iSvcFiltroHabitaculo.id,
-        masterPartId: pRenHabitaculo.id,
-        quantity: 1,
-        isRequired: true,
-        isPrimary: true,
-      },
-    }),
-    // Cambio correa accesorios
-    prisma.mantItemPart.create({
-      data: {
-        mantItemId: iSvcCorreaAcc.id,
-        masterPartId: pRenCorrea.id,
-        quantity: 1,
-        isRequired: true,
-        isPrimary: true,
-      },
-    }),
-    // Cambio aceite reductor EV
-    prisma.mantItemPart.create({
-      data: {
-        mantItemId: iSvcAceiteRedEV.id,
-        masterPartId: pDfReductor.id,
-        quantity: 1,
-        isRequired: true,
-        isPrimary: true,
-      },
-    }),
-    // Cambio pastillas freno delanteras
-    prisma.mantItemPart.create({
-      data: {
-        mantItemId: iSvcPastillasDelant.id,
-        masterPartId: pBoschPastillas.id,
-        quantity: 1,
-        isRequired: true,
-        isPrimary: true,
-      },
-    }),
-  ]);
-  console.log(`   ${mantItemParts.length} vinculos MantItemPart creados.`);
-
-  // ----------------------------------------------------------
   // TEMPARIO AUTOMOTRIZ (Catálogo de tiempos)
   // ----------------------------------------------------------
   console.log('   Iniciando carga de Tempario Automotriz...');
@@ -3144,6 +3201,82 @@ async function main() {
 
   console.log('   Procedimientos KB creados.\n');
 
+  // Seeds adicionales de KB (Hino 300, International 7400)
+  await seedHino300Dutro(prisma);
+  await seedInternational7400WorkStar(prisma);
+}
+
+async function main() {
+  console.log('==============================================');
+  console.log('  SEED PRODUCCION - Fleet Care SaaS');
+  console.log('  Knowledge Base Global');
+  console.log('==============================================\n');
+
+  // ============================================================
+  // STEP 1: CLEANUP COMPLETO (orden FK-safe)
+  // ============================================================
+  console.log('1. CLEANUP - Borrando datos existentes...\n');
+
+  await prisma.purchaseOrderItem.deleteMany({});
+  await prisma.purchaseOrder.deleteMany({});
+  await prisma.ticketPartEntry.deleteMany({});
+  await prisma.ticketLaborEntry.deleteMany({});
+  await prisma.internalWorkTicket.deleteMany({});
+  await prisma.inventoryMovement.deleteMany({});
+  await prisma.inventoryItem.deleteMany({});
+  await prisma.invoicePayment.deleteMany({});
+  await prisma.partPriceHistory.deleteMany({});
+  await prisma.invoiceItem.deleteMany({});
+  await prisma.invoice.deleteMany({});
+  await prisma.financialAlert.deleteMany({});
+  await prisma.maintenanceAlert.deleteMany({});
+  await prisma.expenseAuditLog.deleteMany({});
+  await prisma.workOrderApproval.deleteMany({});
+  await prisma.workOrderExpense.deleteMany({});
+  await prisma.workOrderItem.deleteMany({});
+  await prisma.workOrder.deleteMany({});
+  await prisma.vehicleProgramItem.deleteMany({});
+  await prisma.vehicleProgramPackage.deleteMany({});
+  await prisma.vehicleMantProgram.deleteMany({});
+  await prisma.vehicleDriver.deleteMany({});
+  await prisma.odometerLog.deleteMany({});
+  await prisma.document.deleteMany({});
+  await prisma.vehicle.deleteMany({});
+  await prisma.driver.deleteMany({});
+  await prisma.technician.deleteMany({});
+  await prisma.provider.deleteMany({});
+  await prisma.mantItemRequest.deleteMany({});
+  await prisma.mantItemVehiclePart.deleteMany({});
+  await prisma.packageItem.deleteMany({});
+  await prisma.maintenancePackage.deleteMany({});
+  await prisma.maintenanceTemplate.deleteMany({});
+  await prisma.mantItemProcedureStep.deleteMany({});
+  await prisma.mantItemProcedure.deleteMany({});
+  await prisma.mantItem.deleteMany({});
+  await prisma.mantCategory.deleteMany({});
+  await prisma.temparioItem.deleteMany({});
+  await prisma.tempario.deleteMany({});
+  await prisma.partCompatibility.deleteMany({});
+  await prisma.masterPart.deleteMany({});
+  await prisma.documentTypeConfig.deleteMany({});
+  await prisma.serializedItemAlert.deleteMany({});
+  await prisma.serializedItemEvent.deleteMany({});
+  await prisma.vehicleItemAssignment.deleteMany({});
+  await prisma.serializedItem.deleteMany({});
+  await prisma.vehicleLine.deleteMany({});
+  await prisma.vehicleBrand.deleteMany({});
+  await prisma.vehicleType.deleteMany({});
+  await prisma.user.deleteMany({});
+  await prisma.subscription.deleteMany({});
+  await prisma.tenant.deleteMany({});
+
+  console.log('   Cleanup completo.\n');
+
+  // ============================================================
+  // STEP 2: KNOWLEDGE BASE GLOBAL (via seedGlobalKB)
+  // ============================================================
+  await seedGlobalKB(prisma);
+
   // ============================================================
   // STEP 3: PLATFORM TENANT + SUPER_ADMIN
   // ============================================================
@@ -3175,31 +3308,19 @@ async function main() {
   console.log(`   SUPER_ADMIN: ${superAdmin.email}\n`);
 
   // ============================================================
+
+  // ============================================================
   // RESUMEN FINAL
   // ============================================================
   console.log('============================================================');
   console.log('  SEED PRODUCCION COMPLETADO');
-  await seedHino300Dutro(prisma); // ADDED
-  await seedInternational7400WorkStar(prisma); // ADDED
-
   console.log('============================================================\n');
   console.log('KB GLOBAL (tenantId: null, isGlobal: true):');
-  console.log(`  Marcas: ${brands.length + 2}`); // FIXED
-  console.log(`  Lineas: ${lines.length + 2}`); // FIXED
-  console.log(`  Tipos: ${types.length}`);
-  console.log(`  Categorias: ${cats.length}`);
+  console.log('  9 Marcas (7 + Hino + International)');
   console.log(
-    `  Items mantenimiento: ${items.length} (22 preventivos + 16 correctivos)`
+    '  Templates: 7 (Hilux x4, Ranger x4, D-MAX x4, Duster x3, Dongfeng EV x3, Hino 300, Intl 7400)'
   );
-  console.log(
-    `  Items servicio (MO): ${serviceItems.length} (10 preventivos + 3 correctivos)`
-  );
-  console.log(`  Autopartes maestras: ${parts.length}`);
-  console.log(
-    `  Templates: 7 (Hilux x4, Ranger x4, D-MAX x4, Duster x3, Dongfeng EV x3, Hino 300, Intl 7400)` // FIXED
-  );
-  console.log(`  Vinculos KB (MantItemVehiclePart): ${kbEntries.length}`);
-  console.log(`  Document Type Configs (CO): 5`);
+  console.log('  Document Type Configs (CO): 5');
   console.log('');
   console.log('PLATAFORMA:');
   console.log(`  Tenant: ${platformTenant.name} (${PLATFORM_TENANT_ID})`);
@@ -3210,12 +3331,14 @@ async function main() {
   console.log('============================================================\n');
 }
 
-main()
-  .catch(e => {
-    console.error('Seed failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-    await pool.end();
-  });
+if (require.main === module) {
+  main()
+    .catch(e => {
+      console.error('Seed failed:', e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+      await pool.end();
+    });
+}

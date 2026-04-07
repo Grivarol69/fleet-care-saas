@@ -196,7 +196,7 @@ export const dataAdminSidebar: SidebarItem[] = [
         ],
       },
       {
-        label: 'Activos',
+        label: 'Neumáticos',
         icon: Disc3,
         href: '/dashboard/assets',
         roles: [

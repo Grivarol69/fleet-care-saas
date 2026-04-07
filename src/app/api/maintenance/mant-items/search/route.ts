@@ -36,18 +36,6 @@ export async function GET(request: NextRequest) {
         category: {
           select: { name: true },
         },
-        parts: {
-          include: {
-            masterPart: {
-              select: {
-                id: true,
-                code: true,
-                description: true,
-                referencePrice: true,
-              },
-            },
-          },
-        },
       },
       take: 20,
       orderBy: { name: 'asc' },
@@ -59,16 +47,6 @@ export async function GET(request: NextRequest) {
       description: item.description,
       type: item.type,
       categoryName: item.category.name,
-      parts: item.parts.map(p => ({
-        masterPartId: p.masterPart.id,
-        code: p.masterPart.code,
-        description: p.masterPart.description,
-        referencePrice: p.masterPart.referencePrice
-          ? Number(p.masterPart.referencePrice)
-          : null,
-        quantity: Number(p.quantity),
-        isPrimary: p.isPrimary,
-      })),
     }));
 
     return NextResponse.json(results);

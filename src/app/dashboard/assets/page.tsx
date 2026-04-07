@@ -41,6 +41,7 @@ interface VehicleSummary {
     position: string;
     serializedItemId: string;
     serialNumber: string;
+    description?: string;
     type: string;
     specs: Record<string, unknown> | null;
     activeAlertCount: number;
@@ -181,6 +182,7 @@ export default function AssetsPage() {
     position: a.position ?? '',
     serializedItemId: a.serializedItemId,
     serialNumber: a.serialNumber,
+    description: a.description,
     type: a.type,
     specs: a.specs as SerializedSlotData['specs'],
     activeAlertCount: a.activeAlertCount,

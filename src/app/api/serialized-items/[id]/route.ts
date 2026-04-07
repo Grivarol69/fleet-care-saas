@@ -19,8 +19,10 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
       where: { id, tenantId: user.tenantId },
       include: {
         invoiceItem: {
-          select: { id: true, description: true, unitPrice: true },
-          include: {
+          select: {
+            id: true,
+            description: true,
+            unitPrice: true,
             invoice: { select: { invoiceNumber: true, invoiceDate: true } },
           },
         },
