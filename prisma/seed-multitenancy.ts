@@ -148,6 +148,7 @@ async function main() {
   await prisma.workOrderItem.deleteMany({});
   await prisma.purchaseOrderItem.deleteMany({});
   await prisma.purchaseOrder.deleteMany({});
+  await prisma.internalWorkTicket.deleteMany({});
   await prisma.workOrder.deleteMany({});
   await prisma.vehicleProgramItem.deleteMany({});
   await prisma.vehicleProgramPackage.deleteMany({});
