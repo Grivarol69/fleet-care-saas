@@ -140,6 +140,8 @@ async function main() {
   // STEP 1: CLEANUP
   // ========================================
   console.log('1. CLEANUP - Borrando datos existentes...\n');
+  await prisma.auditLog.deleteMany({});
+  await prisma.watchdogConfiguration.deleteMany({});
   await prisma.financialAlert.deleteMany({});
   await prisma.maintenanceAlert.deleteMany({});
   await prisma.expenseAuditLog.deleteMany({});
@@ -1256,6 +1258,162 @@ async function main() {
   console.log('   2 Financial Alerts creados');
 
   // ========================================
+  // WATCHDOG CONFIGURATION - Tenant 1
+  // ========================================
+  console.log('   Creando WatchdogConfiguration Tenant 1...');
+
+  await prisma.watchdogConfiguration.createMany({
+    data: [
+      // Umbral global (aplica a todas las categorías sin config específica)
+      {
+        tenantId: DEMO_TENANT_ID,
+        category: null,
+        threshold: 15,
+        isActive: true,
+      },
+      // Lubricantes: más tolerancia (precios volátiles)
+      {
+        tenantId: DEMO_TENANT_ID,
+        category: 'LUBRICANTES',
+        threshold: 20,
+        isActive: true,
+      },
+      // Repuestos: estricto
+      {
+        tenantId: DEMO_TENANT_ID,
+        category: 'REPUESTOS',
+        threshold: 10,
+        isActive: true,
+      },
+      // Frenos: medio
+      {
+        tenantId: DEMO_TENANT_ID,
+        category: 'FRENOS',
+        threshold: 12,
+        isActive: true,
+      },
+    ],
+  });
+  console.log('   4 WatchdogConfigurations Tenant 1 creadas');
+
+  // ========================================
+  // AUDIT LOG - Tenant 1
+  // Muestra el historial de acciones en la tabla de auditoría del admin
+  // ========================================
+  console.log('   Creando AuditLog entries Tenant 1...');
+
+  await prisma.auditLog.createMany({
+    data: [
+      // Onboarding: owner creó la organización
+      {
+        tenantId: DEMO_TENANT_ID,
+        actorId: t1Owner.id,
+        action: 'CREATED',
+        resource: 'Tenant',
+        resourceId: DEMO_TENANT_ID,
+        changes: { name: 'Transportes Demo SAS' },
+        createdAt: getRelativeDate(3, 1),
+      },
+      // Owner asignó rol MANAGER al manager
+      {
+        tenantId: DEMO_TENANT_ID,
+        actorId: t1Owner.id,
+        action: 'USER_ROLE_CHANGED',
+        resource: 'User',
+        resourceId: t1Manager.id,
+        changes: { before: { role: 'DRIVER' }, after: { role: 'MANAGER' } },
+        createdAt: getRelativeDate(3, 2),
+      },
+      // Owner asignó rol TECHNICIAN
+      {
+        tenantId: DEMO_TENANT_ID,
+        actorId: t1Owner.id,
+        action: 'USER_ROLE_CHANGED',
+        resource: 'User',
+        resourceId: t1Tech.id,
+        changes: { before: { role: 'DRIVER' }, after: { role: 'TECHNICIAN' } },
+        createdAt: getRelativeDate(3, 3),
+      },
+      // Owner asignó rol PURCHASER
+      {
+        tenantId: DEMO_TENANT_ID,
+        actorId: t1Owner.id,
+        action: 'USER_ROLE_CHANGED',
+        resource: 'User',
+        resourceId: t1Purchaser.id,
+        changes: { before: { role: 'DRIVER' }, after: { role: 'PURCHASER' } },
+        createdAt: getRelativeDate(3, 4),
+      },
+      // Manager aprobó una OT
+      {
+        tenantId: DEMO_TENANT_ID,
+        actorId: t1Manager.id,
+        action: 'APPROVED',
+        resource: 'WorkOrder',
+        changes: {
+          status: 'APPROVED',
+          note: 'Aprobación de mantenimiento preventivo',
+        },
+        createdAt: getRelativeDate(2, 10),
+      },
+      // Owner aprobó una factura
+      {
+        tenantId: DEMO_TENANT_ID,
+        actorId: t1Owner.id,
+        action: 'APPROVED',
+        resource: 'Invoice',
+        changes: { invoiceNumber: 'FAC-2026-3-0', totalAmount: 535500 },
+        createdAt: getRelativeDate(1, 5),
+      },
+      // Alerta financiera marcada como reconocida por el manager
+      {
+        tenantId: DEMO_TENANT_ID,
+        actorId: t1Manager.id,
+        action: 'ACKNOWLEDGED',
+        resource: 'FinancialAlert',
+        changes: {
+          severity: 'HIGH',
+          message: 'Desviación de precio reconocida',
+        },
+        createdAt: getRelativeDate(1, 8),
+      },
+      // OT completada por técnico
+      {
+        tenantId: DEMO_TENANT_ID,
+        actorId: t1Tech.id,
+        action: 'COMPLETED',
+        resource: 'WorkOrder',
+        changes: { status: 'COMPLETED', completionMileage: 44500 },
+        createdAt: getRelativeDate(1, 15),
+      },
+      // Manager modificó una OT
+      {
+        tenantId: DEMO_TENANT_ID,
+        actorId: t1Manager.id,
+        action: 'MODIFIED',
+        resource: 'WorkOrder',
+        changes: { before: { priority: 'LOW' }, after: { priority: 'HIGH' } },
+        createdAt: getRelativeDate(0, 3),
+      },
+      // Purchaser cambió rol de technician (simulación de error + corrección)
+      {
+        tenantId: DEMO_TENANT_ID,
+        actorId: t1Owner.id,
+        action: 'USER_ROLE_CHANGED',
+        resource: 'User',
+        resourceId: t1Purchaser.id,
+        changes: {
+          before: { role: 'TECHNICIAN' },
+          after: { role: 'PURCHASER' },
+          reason: 'Corrección de rol incorrecto',
+        },
+        createdAt: getRelativeDate(0, 5),
+      },
+    ],
+  });
+  console.log('   10 AuditLog entries creadas');
+
+  // ========================================
   // FUEL VOUCHERS - Tenant 1 (Demo)
   // ========================================
   console.log('   Creando Fuel Vouchers Tenant 1...');
@@ -1277,146 +1435,296 @@ async function main() {
   });
 
   if (t1VehiclesForFuel.length > 0 && t1OwnerForFuel) {
+    // =====================================================================
+    // FUEL DATA PARA ANALYTICS:
+    // - FIN-001 (Hilux diesel): 6 entradas ~ 8 L/100km EXCEPTO mes 3 → 12 L/100km (ANOMALY HIGH_CONSUMPTION)
+    // - FIN-002 (Ranger diesel): 5 entradas, consumo estable ~8.5 L/100km
+    // - FIN-003 (D-MAX diesel):  5 entradas, consumo estable ~8 L/100km
+    // - FIN-004 (Land Cruiser gasolina): 4 entradas ~9.5 L/100km
+    // =====================================================================
     const fuelData = [
-      // FIN-001 — 3 months ago
+      // === FIN-001 (Hilux, diesel) — consumo normal ~8 L/100km, ANOMALÍA en mes 3 ===
       {
         vehicleId: t1VehiclesForFuel[0].id,
         driverId: t1DriversForFuel[0]?.id ?? null,
         providerId: t1ProvidersForFuel[0]?.id ?? null,
-        date: getRelativeDate(3, 5),
+        date: getRelativeDate(5, 8),
         fuelType: 'DIESEL',
-        quantity: 60.5,
+        quantity: 65.0,
         volumeUnit: 'LITERS',
-        odometer: 44200,
-        pricePerUnit: 1820.0,
-        voucherPrefix: 'COMB-202212',
+        odometer: 43000,
+        pricePerUnit: 1800.0,
+        voucherPrefix: 'COMB-FIN001',
         seq: 1,
       },
-      // FIN-002 — 3 months ago
+      {
+        vehicleId: t1VehiclesForFuel[0].id,
+        driverId: t1DriversForFuel[0]?.id ?? null,
+        providerId: t1ProvidersForFuel[0]?.id ?? null,
+        date: getRelativeDate(4, 8),
+        fuelType: 'DIESEL',
+        quantity: 62.0,
+        volumeUnit: 'LITERS',
+        // 750 km → 8.27 L/100km (normal)
+        odometer: 43750,
+        pricePerUnit: 1820.0,
+        voucherPrefix: 'COMB-FIN001',
+        seq: 2,
+      },
+      {
+        vehicleId: t1VehiclesForFuel[0].id,
+        driverId: t1DriversForFuel[0]?.id ?? null,
+        providerId: t1ProvidersForFuel[0]?.id ?? null,
+        date: getRelativeDate(3, 8),
+        fuelType: 'DIESEL',
+        quantity: 60.0,
+        volumeUnit: 'LITERS',
+        // 750 km → 8.0 L/100km (normal)
+        odometer: 44500,
+        pricePerUnit: 1840.0,
+        voucherPrefix: 'COMB-FIN001',
+        seq: 3,
+      },
+      // ANOMALÍA: 90 L para 750 km → 12.0 L/100km (+50% sobre baseline ~8) = HIGH_CONSUMPTION
+      {
+        vehicleId: t1VehiclesForFuel[0].id,
+        driverId: t1DriversForFuel[0]?.id ?? null,
+        providerId: t1ProvidersForFuel[0]?.id ?? null,
+        date: getRelativeDate(2, 8),
+        fuelType: 'DIESEL',
+        quantity: 90.0,
+        volumeUnit: 'LITERS',
+        odometer: 45250,
+        pricePerUnit: 1860.0,
+        voucherPrefix: 'COMB-FIN001',
+        seq: 4,
+      },
+      {
+        vehicleId: t1VehiclesForFuel[0].id,
+        driverId: t1DriversForFuel[0]?.id ?? null,
+        providerId: t1ProvidersForFuel[0]?.id ?? null,
+        date: getRelativeDate(1, 8),
+        fuelType: 'DIESEL',
+        quantity: 63.0,
+        volumeUnit: 'LITERS',
+        // 750 km → 8.4 L/100km (vuelve a normal)
+        odometer: 46000,
+        pricePerUnit: 1880.0,
+        voucherPrefix: 'COMB-FIN001',
+        seq: 5,
+      },
+      {
+        vehicleId: t1VehiclesForFuel[0].id,
+        driverId: t1DriversForFuel[0]?.id ?? null,
+        providerId: t1ProvidersForFuel[0]?.id ?? null,
+        date: getRelativeDate(0, 8),
+        fuelType: 'DIESEL',
+        quantity: 64.0,
+        volumeUnit: 'LITERS',
+        // 700 km → 9.14 L/100km (normal)
+        odometer: 46700,
+        pricePerUnit: 1900.0,
+        voucherPrefix: 'COMB-FIN001',
+        seq: 6,
+      },
+
+      // === FIN-002 (Ranger, diesel) — consumo estable ~8.5 L/100km ===
       {
         vehicleId: t1VehiclesForFuel[1].id,
         driverId: t1DriversForFuel[1]?.id ?? null,
         providerId: t1ProvidersForFuel[0]?.id ?? null,
-        date: getRelativeDate(3, 10),
+        date: getRelativeDate(4, 12),
         fuelType: 'DIESEL',
-        quantity: 75.0,
+        quantity: 68.0,
         volumeUnit: 'LITERS',
-        odometer: 60500,
-        pricePerUnit: 1830.0,
-        voucherPrefix: 'COMB-202212',
+        odometer: 59000,
+        pricePerUnit: 1820.0,
+        voucherPrefix: 'COMB-FIN002',
+        seq: 1,
+      },
+      {
+        vehicleId: t1VehiclesForFuel[1].id,
+        driverId: t1DriversForFuel[1]?.id ?? null,
+        providerId: t1ProvidersForFuel[0]?.id ?? null,
+        date: getRelativeDate(3, 12),
+        fuelType: 'DIESEL',
+        quantity: 70.0,
+        volumeUnit: 'LITERS',
+        // 850 km → 8.24 L/100km
+        odometer: 59850,
+        pricePerUnit: 1840.0,
+        voucherPrefix: 'COMB-FIN002',
         seq: 2,
       },
-      // FIN-003 — 3 months ago, no price
+      {
+        vehicleId: t1VehiclesForFuel[1].id,
+        driverId: t1DriversForFuel[1]?.id ?? null,
+        providerId: t1ProvidersForFuel[0]?.id ?? null,
+        date: getRelativeDate(2, 12),
+        fuelType: 'DIESEL',
+        quantity: 67.0,
+        volumeUnit: 'LITERS',
+        // 850 km → 7.88 L/100km
+        odometer: 60700,
+        pricePerUnit: 1855.0,
+        voucherPrefix: 'COMB-FIN002',
+        seq: 3,
+      },
+      {
+        vehicleId: t1VehiclesForFuel[1].id,
+        driverId: t1DriversForFuel[1]?.id ?? null,
+        providerId: t1ProvidersForFuel[0]?.id ?? null,
+        date: getRelativeDate(1, 12),
+        fuelType: 'DIESEL',
+        quantity: 69.0,
+        volumeUnit: 'LITERS',
+        // 800 km → 8.63 L/100km
+        odometer: 61500,
+        pricePerUnit: 1870.0,
+        voucherPrefix: 'COMB-FIN002',
+        seq: 4,
+      },
+      {
+        vehicleId: t1VehiclesForFuel[1].id,
+        driverId: t1DriversForFuel[1]?.id ?? null,
+        providerId: t1ProvidersForFuel[0]?.id ?? null,
+        date: getRelativeDate(0, 12),
+        fuelType: 'DIESEL',
+        quantity: 71.0,
+        volumeUnit: 'LITERS',
+        // 800 km → 8.88 L/100km
+        odometer: 62300,
+        pricePerUnit: 1900.0,
+        voucherPrefix: 'COMB-FIN002',
+        seq: 5,
+      },
+
+      // === FIN-003 (D-MAX, diesel) — consumo estable ~8 L/100km ===
       {
         vehicleId: t1VehiclesForFuel[2].id,
         driverId: t1DriversForFuel[2]?.id ?? null,
         providerId: null,
-        date: getRelativeDate(3, 20),
+        date: getRelativeDate(4, 18),
         fuelType: 'DIESEL',
-        quantity: 45.0,
+        quantity: 55.0,
         volumeUnit: 'LITERS',
-        odometer: 17200,
-        pricePerUnit: null,
-        voucherPrefix: 'COMB-202212',
+        odometer: 15500,
+        pricePerUnit: 1810.0,
+        voucherPrefix: 'COMB-FIN003',
+        seq: 1,
+      },
+      {
+        vehicleId: t1VehiclesForFuel[2].id,
+        driverId: t1DriversForFuel[2]?.id ?? null,
+        providerId: null,
+        date: getRelativeDate(3, 18),
+        fuelType: 'DIESEL',
+        quantity: 58.0,
+        volumeUnit: 'LITERS',
+        // 700 km → 8.29 L/100km
+        odometer: 16200,
+        pricePerUnit: 1830.0,
+        voucherPrefix: 'COMB-FIN003',
+        seq: 2,
+      },
+      {
+        vehicleId: t1VehiclesForFuel[2].id,
+        driverId: t1DriversForFuel[2]?.id ?? null,
+        providerId: null,
+        date: getRelativeDate(2, 18),
+        fuelType: 'DIESEL',
+        quantity: 52.0,
+        volumeUnit: 'LITERS',
+        // 700 km → 7.43 L/100km
+        odometer: 16900,
+        pricePerUnit: 1845.0,
+        voucherPrefix: 'COMB-FIN003',
         seq: 3,
       },
-      // FIN-004 — 2 months ago — gasolina
+      {
+        vehicleId: t1VehiclesForFuel[2].id,
+        driverId: t1DriversForFuel[2]?.id ?? null,
+        providerId: null,
+        date: getRelativeDate(1, 18),
+        fuelType: 'DIESEL',
+        quantity: 56.0,
+        volumeUnit: 'LITERS',
+        // 700 km → 8.0 L/100km
+        odometer: 17600,
+        pricePerUnit: 1860.0,
+        voucherPrefix: 'COMB-FIN003',
+        seq: 4,
+      },
+      {
+        vehicleId: t1VehiclesForFuel[2].id,
+        driverId: t1DriversForFuel[2]?.id ?? null,
+        providerId: null,
+        date: getRelativeDate(0, 18),
+        fuelType: 'DIESEL',
+        quantity: 53.0,
+        volumeUnit: 'LITERS',
+        // 600 km → 8.83 L/100km
+        odometer: 18200,
+        pricePerUnit: 1890.0,
+        voucherPrefix: 'COMB-FIN003',
+        seq: 5,
+      },
+
+      // === FIN-004 (Land Cruiser, gasolina) — 4 entradas ~9.5 L/100km ===
       {
         vehicleId: t1VehiclesForFuel[3]?.id ?? t1VehiclesForFuel[0].id,
         driverId: null,
         providerId: t1ProvidersForFuel[1]?.id ?? null,
-        date: getRelativeDate(2, 8),
+        date: getRelativeDate(3, 22),
         fuelType: 'NAFTA_SUPER',
-        quantity: 50.0,
+        quantity: 72.0,
         volumeUnit: 'LITERS',
-        odometer: 94200,
+        odometer: 93500,
         pricePerUnit: 2100.0,
-        voucherPrefix: 'COMB-202301',
+        voucherPrefix: 'COMB-FIN004',
         seq: 1,
       },
-      // FIN-001 — 2 months ago
-      {
-        vehicleId: t1VehiclesForFuel[0].id,
-        driverId: t1DriversForFuel[0]?.id ?? null,
-        providerId: t1ProvidersForFuel[0]?.id ?? null,
-        date: getRelativeDate(2, 15),
-        fuelType: 'DIESEL',
-        quantity: 58.0,
-        volumeUnit: 'LITERS',
-        odometer: 44600,
-        pricePerUnit: 1850.0,
-        voucherPrefix: 'COMB-202301',
-        seq: 2,
-      },
-      // FIN-005 — 2 months ago, no price
-      {
-        vehicleId: t1VehiclesForFuel[4]?.id ?? t1VehiclesForFuel[1].id,
-        driverId: null,
-        providerId: null,
-        date: getRelativeDate(2, 22),
-        fuelType: 'DIESEL',
-        quantity: 40.0,
-        volumeUnit: 'LITERS',
-        odometer: 11500,
-        pricePerUnit: null,
-        voucherPrefix: 'COMB-202301',
-        seq: 3,
-      },
-      // FIN-002 — 1 month ago
-      {
-        vehicleId: t1VehiclesForFuel[1].id,
-        driverId: t1DriversForFuel[1]?.id ?? null,
-        providerId: t1ProvidersForFuel[0]?.id ?? null,
-        date: getRelativeDate(1, 5),
-        fuelType: 'DIESEL',
-        quantity: 70.0,
-        volumeUnit: 'LITERS',
-        odometer: 61200,
-        pricePerUnit: 1870.0,
-        voucherPrefix: 'COMB-202302',
-        seq: 1,
-      },
-      // FIN-003 — 1 month ago
-      {
-        vehicleId: t1VehiclesForFuel[2].id,
-        driverId: t1DriversForFuel[2]?.id ?? null,
-        providerId: null,
-        date: getRelativeDate(1, 12),
-        fuelType: 'DIESEL',
-        quantity: 55.5,
-        volumeUnit: 'LITERS',
-        odometer: 17700,
-        pricePerUnit: 1865.0,
-        voucherPrefix: 'COMB-202302',
-        seq: 2,
-      },
-      // FIN-001 — this month
-      {
-        vehicleId: t1VehiclesForFuel[0].id,
-        driverId: t1DriversForFuel[0]?.id ?? null,
-        providerId: t1ProvidersForFuel[0]?.id ?? null,
-        date: getRelativeDate(0, 5),
-        fuelType: 'DIESEL',
-        quantity: 62.0,
-        volumeUnit: 'LITERS',
-        odometer: 45100,
-        pricePerUnit: 1900.0,
-        voucherPrefix: 'COMB-202303',
-        seq: 1,
-      },
-      // FIN-004 — this month — GNC (no price)
       {
         vehicleId: t1VehiclesForFuel[3]?.id ?? t1VehiclesForFuel[0].id,
         driverId: null,
-        providerId: null,
-        date: getRelativeDate(0, 10),
-        fuelType: 'GNC',
-        quantity: 30.0,
+        providerId: t1ProvidersForFuel[1]?.id ?? null,
+        date: getRelativeDate(2, 22),
+        fuelType: 'NAFTA_SUPER',
+        quantity: 75.0,
         volumeUnit: 'LITERS',
-        odometer: 95200,
-        pricePerUnit: null,
-        voucherPrefix: 'COMB-202303',
+        // 800 km → 9.38 L/100km
+        odometer: 94300,
+        pricePerUnit: 2130.0,
+        voucherPrefix: 'COMB-FIN004',
         seq: 2,
+      },
+      {
+        vehicleId: t1VehiclesForFuel[3]?.id ?? t1VehiclesForFuel[0].id,
+        driverId: null,
+        providerId: t1ProvidersForFuel[1]?.id ?? null,
+        date: getRelativeDate(1, 22),
+        fuelType: 'NAFTA_SUPER',
+        quantity: 73.0,
+        volumeUnit: 'LITERS',
+        // 750 km → 9.73 L/100km
+        odometer: 95050,
+        pricePerUnit: 2160.0,
+        voucherPrefix: 'COMB-FIN004',
+        seq: 3,
+      },
+      {
+        vehicleId: t1VehiclesForFuel[3]?.id ?? t1VehiclesForFuel[0].id,
+        driverId: null,
+        providerId: t1ProvidersForFuel[1]?.id ?? null,
+        date: getRelativeDate(0, 22),
+        fuelType: 'NAFTA_SUPER',
+        quantity: 74.0,
+        volumeUnit: 'LITERS',
+        // 750 km → 9.87 L/100km
+        odometer: 95800,
+        pricePerUnit: 2190.0,
+        voucherPrefix: 'COMB-FIN004',
+        seq: 4,
       },
     ];
 
@@ -2077,6 +2385,24 @@ async function main() {
     console.log('   1 Maintenance Alert Tenant 2 creado');
   }
 
+  // ========================================
+  // WATCHDOG CONFIGURATION - Tenant 2
+  // ========================================
+  console.log('   Creando WatchdogConfiguration Tenant 2...');
+
+  await prisma.watchdogConfiguration.createMany({
+    data: [
+      { tenantId: TENANT_2_ID, category: null, threshold: 10, isActive: true },
+      {
+        tenantId: TENANT_2_ID,
+        category: 'FILTROS',
+        threshold: 8,
+        isActive: true,
+      },
+    ],
+  });
+  console.log('   2 WatchdogConfigurations Tenant 2 creadas');
+
   console.log(`\n   Tenant 2 COMPLETO.\n`);
 
   // Suppress unused variable warnings
@@ -2112,10 +2438,14 @@ async function main() {
   console.log('  - 3 proveedores, 2 tecnicos, 3 conductores');
   console.log('  - 3 programas de mantenimiento');
   console.log(`  - ${t1InventoryData.length} items de inventario`);
-  console.log('  - 4 Work Orders');
-  console.log('  - 3 Invoices');
-  console.log('  - 3 Maintenance Alerts');
-  console.log('  - 1 Financial Alert');
+  console.log('  - ~30 Work Orders (historial 12 meses)');
+  console.log('  - Invoices vinculadas');
+  console.log('  - 3 Maintenance Alerts, 2 Financial Alerts');
+  console.log('  - 4 WatchdogConfigurations (global + por categoría)');
+  console.log('  - 10 AuditLog entries (roles, aprobaciones, OTs)');
+  console.log(
+    '  - 20 FuelVouchers + OdometerLogs (analítica L/100km, anomalía en FIN-001)'
+  );
 
   // ========================================
   // ========================================

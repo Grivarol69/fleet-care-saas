@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import axios from 'axios';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useRouter } from 'next/navigation';
 
 type FinancialAlert = {
   id: number;
@@ -34,9 +35,24 @@ const severityColor = {
   FINANCIAL: 'bg-purple-100 text-purple-800',
 };
 
+const severityLabel: Record<string, string> = {
+  LOW: 'Baja',
+  MEDIUM: 'Media',
+  HIGH: 'Alta',
+  CRITICAL: 'Crítica',
+  FINANCIAL: 'Financiera',
+};
+
+const alertTypeLabel: Record<string, string> = {
+  PRICE_DEVIATION: 'Desviación de precio',
+  BUDGET_OVERRUN: 'Costo excedido',
+  PREVENTIVE: 'Mantenimiento preventivo',
+};
+
 export function FinancialAlertsWidget() {
   const [alerts, setAlerts] = useState<FinancialAlert[]>([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchAlerts = async () => {
@@ -66,7 +82,12 @@ export function FinancialAlertsWidget() {
             {alerts.length} alertas requieren atención
           </CardDescription>
         </div>
-        <Button variant="outline" size="sm" className="hidden sm:flex">
+        <Button
+          variant="outline"
+          size="sm"
+          className="hidden sm:flex"
+          onClick={() => router.push('/dashboard/admin/watchdog')}
+        >
           Ver todas <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </CardHeader>
@@ -93,10 +114,11 @@ export function FinancialAlertsWidget() {
                         ] || 'bg-gray-100'
                       }
                     >
-                      {alert.severity}
+                      {severityLabel[alert.severity] ?? alert.severity}
                     </Badge>
                     <span className="font-medium text-sm">
-                      {alert.type.replace('_', ' ')}
+                      {alertTypeLabel[alert.type] ??
+                        alert.type.replace(/_/g, ' ')}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(alert.createdAt), {
@@ -120,9 +142,15 @@ export function FinancialAlertsWidget() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() =>
-                    (window.location.href = `/dashboard/maintenance/work-orders/${alert.workOrder?.id}?tab=expenses`)
-                  }
+                  onClick={() => {
+                    if (alert.workOrder?.id) {
+                      router.push(
+                        `/dashboard/maintenance/work-orders/${alert.workOrder.id}?tab=expenses`
+                      );
+                    } else {
+                      router.push('/dashboard/admin/watchdog');
+                    }
+                  }}
                 >
                   Revisar
                 </Button>
