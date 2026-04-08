@@ -509,6 +509,17 @@ export const dataAdminSidebar: SidebarItem[] = [
           UserRole.COORDINATOR,
         ],
       },
+      {
+        label: 'Combustible',
+        icon: Droplets,
+        href: '/dashboard/reports/fuel-analytics',
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
+        ],
+      },
     ],
   },
   {
@@ -524,6 +535,16 @@ export const dataAdminSidebar: SidebarItem[] = [
       {
         label: 'Users',
         href: '/dashboard/admin/users',
+        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER],
+      },
+      {
+        label: 'Auditoría',
+        href: '/dashboard/admin/audit-log',
+        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
+      },
+      {
+        label: 'Watchdog de Precios',
+        href: '/dashboard/admin/watchdog',
         roles: [UserRole.SUPER_ADMIN, UserRole.OWNER],
       },
       {

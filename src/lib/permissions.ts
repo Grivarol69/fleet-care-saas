@@ -98,6 +98,13 @@ export function canManageUsers(user: User | null): boolean {
 }
 
 /**
+ * SUPER_ADMIN, OWNER, MANAGER pueden ver el historial de auditoría
+ */
+export function canViewAuditLogs(user: User | null): boolean {
+  return isSuperAdmin(user) || isOwner(user) || isManager(user);
+}
+
+/**
  * SUPER_ADMIN, OWNER, MANAGER, PURCHASER pueden gestionar facturas
  */
 export function canApproveInvoices(user: User | null): boolean {
