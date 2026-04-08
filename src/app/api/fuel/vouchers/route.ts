@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireCurrentUser } from '@/lib/auth';
 import { canViewFuelVouchers, canCreateFuelVouchers } from '@/lib/permissions';
 import { MaintenanceAlertService } from '@/lib/services/MaintenanceAlertService';
+import { FinancialWatchdogService } from '@/lib/services/FinancialWatchdogService';
 import { Decimal } from '@prisma/client/runtime/library';
 
 // GET /api/fuel/vouchers
@@ -228,6 +229,17 @@ export async function POST(request: NextRequest) {
         '[FUEL_VOUCHERS] Error checking maintenance alerts:',
         alertError
       );
+    }
+
+    // Non-blocking watchdog: detect unusual fuel price vs rolling average
+    if (pricePerUnit !== undefined && pricePerUnit !== null) {
+      FinancialWatchdogService.checkFuelPriceDeviation(
+        user.tenantId,
+        fuelType,
+        Number(pricePerUnit),
+        fuelVoucher.id,
+        vehicleId
+      ).catch(err => console.error('[WATCHDOG] fuel check failed:', err));
     }
 
     return NextResponse.json({ fuelVoucher, odometerLog }, { status: 201 });

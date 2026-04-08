@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { requireCurrentUser } from '@/lib/auth';
 import { z } from 'zod';
-import { AlertType, AlertLevel, AlertStatus } from '@prisma/client';
 import { canManagePurchases } from '@/lib/permissions';
+import { FinancialWatchdogService } from '@/lib/services/FinancialWatchdogService';
 
 // Schema validation
 const purchaseSchema = z.object({
@@ -171,36 +171,25 @@ export async function POST(req: Request) {
           },
         });
 
-        // 2.5 Watchdog (Price Alert)
-        const masterPart = await tx.masterPart.findUnique({
-          where: { id: item.masterPartId },
-        });
-        if (masterPart && masterPart.referencePrice) {
-          const refPrice = Number(masterPart.referencePrice);
-          if (item.unitPrice > refPrice * 1.1) {
-            // 10% tolerance
-            await tx.financialAlert.create({
-              data: {
-                tenantId: user.tenantId,
-                invoiceId: invoice.id,
-                masterPartId: item.masterPartId,
-                type: AlertType.PRICE_DEVIATION,
-                severity: AlertLevel.FINANCIAL,
-                message: `Precio de compra (${item.unitPrice}) excede referencia (${refPrice}) en >10%`,
-                details: {
-                  expected: refPrice,
-                  actual: item.unitPrice,
-                  deviation: item.unitPrice - refPrice,
-                },
-                status: AlertStatus.PENDING,
-              },
-            });
-          }
-        }
+        // 2.5 Watchdog check is done after the transaction (see below)
       }
 
       return invoice;
     });
+
+    // Fire-and-forget watchdog: uses dynamic threshold from WatchdogConfiguration
+    // Called AFTER transaction so the invoice exists and reference prices are intact
+    // (purchases route does NOT overwrite masterPart.referencePrice)
+    for (const item of body.items) {
+      FinancialWatchdogService.checkPriceDeviation(
+        user.tenantId,
+        item.masterPartId,
+        item.unitPrice,
+        result.id,
+        undefined,
+        item.description
+      ).catch(err => console.error('[WATCHDOG] purchases check failed:', err));
+    }
 
     return NextResponse.json(result);
   } catch (error) {
@@ -237,11 +226,13 @@ export async function GET(req: Request) {
         ...(includeDeleted ? {} : { status: { not: 'CANCELLED' } }),
         ...(search
           ? {
-            OR: [
-              { invoiceNumber: { contains: search, mode: 'insensitive' } },
-              { supplier: { name: { contains: search, mode: 'insensitive' } } },
-            ],
-          }
+              OR: [
+                { invoiceNumber: { contains: search, mode: 'insensitive' } },
+                {
+                  supplier: { name: { contains: search, mode: 'insensitive' } },
+                },
+              ],
+            }
           : {}),
         ...(supplierId ? { supplierId } : {}),
       },
