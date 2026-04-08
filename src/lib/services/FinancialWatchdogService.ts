@@ -1,6 +1,30 @@
 import { prisma } from '@/lib/prisma';
 import { AlertType, AlertLevel, AlertStatus } from '@prisma/client';
 
+const DEFAULT_THRESHOLD = 10;
+
+export async function getThresholdForCategory(
+  tenantId: string,
+  category: string | null
+): Promise<number> {
+  const configs = await prisma.watchdogConfiguration.findMany({
+    where: { tenantId, isActive: true },
+  });
+
+  // 1. Category-specific config
+  if (category) {
+    const specific = configs.find((c) => c.category === category);
+    if (specific) return Number(specific.threshold);
+  }
+
+  // 2. Global config (category = null)
+  const global = configs.find((c) => c.category === null);
+  if (global) return Number(global.threshold);
+
+  // 3. Default
+  return DEFAULT_THRESHOLD;
+}
+
 /**
  * Service dedicated to financial monitoring and alert generation.
  * " The Watchdog "
@@ -35,8 +59,11 @@ export class FinancialWatchdogService {
     const referencePrice = Number(masterPart.referencePrice);
     const proposedPrice = Number(unitPrice);
 
-    // 2. Define Threshold (e.g., 10% tolerance)
-    const DEVIATION_TOLERANCE_PERCENT = 10;
+    // 2. Resolve threshold dynamically (category-specific → global → 10% default)
+    const DEVIATION_TOLERANCE_PERCENT = await getThresholdForCategory(
+      tenantId,
+      masterPart.category ?? null
+    );
     const maxAllowedPrice =
       referencePrice * (1 + DEVIATION_TOLERANCE_PERCENT / 100);
 

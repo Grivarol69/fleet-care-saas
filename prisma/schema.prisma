@@ -78,6 +78,8 @@ model Tenant {
   serializedItemEvents   SerializedItemEvent[]
   vehicleItemAssignments VehicleItemAssignment[]
   serializedItemAlerts   SerializedItemAlert[]
+  auditLogs              AuditLog[]
+  watchdogConfigs        WatchdogConfiguration[]
 
   @@index([slug])
   @@index([subscriptionStatus])
@@ -140,6 +142,7 @@ model User {
   driverProfile         Driver?
   serializedItemEvents  SerializedItemEvent[]
   alertsResolved        SerializedItemAlert[] @relation("AlertResolver")
+  auditLogsActed        AuditLog[]            @relation("AuditLogActor")
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -843,6 +846,24 @@ model ExpenseAuditLog {
   @@index([tenantId])
 }
 
+model AuditLog {
+  id         String      @id @default(cuid())
+  tenantId   String
+  actorId    String
+  action     AuditAction
+  resource   String      // e.g. "User", "WorkOrder"
+  resourceId String?
+  changes    Json?       // { before: ..., after: ... }
+  createdAt  DateTime    @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  actor  User   @relation("AuditLogActor", fields: [actorId], references: [id])
+
+  @@index([tenantId, createdAt])
+  @@index([actorId])
+  @@index([resource])
+}
+
 // ========================================
 // INVOICE & MASTER PARTS SYSTEM (FASE 1-3)
 // Sistema de facturación y catálogo de artículos
@@ -1490,6 +1511,21 @@ model FinancialAlert {
   @@index([severity])
 }
 
+model WatchdogConfiguration {
+  id        String   @id @default(uuid())
+  tenantId  String
+  category  String?  // null = global (applies to all categories)
+  threshold Decimal  @default(10) @db.Decimal(5, 2) // percentage, e.g. 15 = 15%
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, category])
+  @@index([tenantId])
+}
+
 model Document {
   id             String @id @default(uuid())
   tenantId       String
@@ -1828,6 +1864,7 @@ enum AuditAction {
   COMPLETED
   FLAGGED // Para alertas
   ACKNOWLEDGED // Para alertas
+  USER_ROLE_CHANGED // Admin: cambio de rol de usuario
 }
 
 enum AlertLevel {
