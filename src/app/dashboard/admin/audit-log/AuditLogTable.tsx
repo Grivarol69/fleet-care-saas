@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Table,
   TableBody,
@@ -33,9 +33,11 @@ export function AuditLogTable() {
   const [page, setPage] = useState(1);
   const limit = 20;
 
-  const loadPage = useCallback((p: number) => {
-    setLoading(true);
-    fetch(`/api/admin/audit-log?page=${p}&limit=${limit}`)
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(`/api/admin/audit-log?page=${page}&limit=${limit}`, {
+      signal: controller.signal,
+    })
       .then(r => r.json())
       .then(data => {
         setEntries(data.items ?? []);
@@ -43,19 +45,26 @@ export function AuditLogTable() {
         setLoading(false);
       })
       .catch(() => {
-        toast.error('Error cargando historial');
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          toast.error('Error cargando historial');
+          setLoading(false);
+        }
       });
-  }, []);
+    return () => controller.abort();
+  }, [page]);
 
-  useEffect(() => {
-    loadPage(page);
-  }, [page, loadPage]);
+  const goToPage = (p: number) => {
+    setLoading(true);
+    setPage(p);
+  };
 
-  if (loading) return <p className="text-sm text-slate-500">Cargando historial...</p>;
+  if (loading)
+    return <p className="text-sm text-slate-500">Cargando historial...</p>;
 
   if (!entries.length) {
-    return <p className="text-sm text-slate-500">Sin registros de auditoría.</p>;
+    return (
+      <p className="text-sm text-slate-500">Sin registros de auditoría.</p>
+    );
   }
 
   const totalPages = Math.ceil(total / limit);
@@ -117,14 +126,14 @@ export function AuditLogTable() {
             <button
               className="px-3 py-1 border rounded disabled:opacity-40"
               disabled={page <= 1}
-              onClick={() => setPage(p => p - 1)}
+              onClick={() => goToPage(page - 1)}
             >
               Anterior
             </button>
             <button
               className="px-3 py-1 border rounded disabled:opacity-40"
               disabled={page >= totalPages}
-              onClick={() => setPage(p => p + 1)}
+              onClick={() => goToPage(page + 1)}
             >
               Siguiente
             </button>
