@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Table,
   TableBody,
@@ -33,9 +33,9 @@ export function AuditLogTable() {
   const [page, setPage] = useState(1);
   const limit = 20;
 
-  useEffect(() => {
+  const loadPage = useCallback((p: number) => {
     setLoading(true);
-    fetch(`/api/admin/audit-log?page=${page}&limit=${limit}`)
+    fetch(`/api/admin/audit-log?page=${p}&limit=${limit}`)
       .then(r => r.json())
       .then(data => {
         setEntries(data.items ?? []);
@@ -46,7 +46,11 @@ export function AuditLogTable() {
         toast.error('Error cargando historial');
         setLoading(false);
       });
-  }, [page]);
+  }, []);
+
+  useEffect(() => {
+    loadPage(page);
+  }, [page, loadPage]);
 
   if (loading) return <p className="text-sm text-slate-500">Cargando historial...</p>;
 
@@ -75,7 +79,7 @@ export function AuditLogTable() {
               e.actor.email;
             const changesLabel =
               e.action === 'USER_ROLE_CHANGED' && e.changes
-                ? `${(e.changes as any).before} → ${(e.changes as any).after}`
+                ? `${(e.changes as { before: string; after: string }).before} → ${(e.changes as { before: string; after: string }).after}`
                 : e.action;
 
             return (
