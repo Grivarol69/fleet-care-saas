@@ -3,7 +3,7 @@ import {
   Building2,
   Truck,
   Wrench,
-  ClipboardCheck,
+  ShieldCheck,
   Users,
   BarChart2,
   Settings,
@@ -381,8 +381,8 @@ export const dataAdminSidebar: SidebarItem[] = [
     ],
   },
   {
-    icon: ClipboardCheck,
-    label: 'Checklist',
+    icon: ShieldCheck,
+    label: 'HSEQ',
     roles: [
       UserRole.SUPER_ADMIN,
       UserRole.OWNER,
@@ -392,18 +392,8 @@ export const dataAdminSidebar: SidebarItem[] = [
     ],
     subItems: [
       {
-        label: 'Crear',
-        href: '/dashboard/checklist/crear',
-        roles: [
-          UserRole.SUPER_ADMIN,
-          UserRole.OWNER,
-          UserRole.MANAGER,
-          UserRole.COORDINATOR,
-        ],
-      },
-      {
-        label: 'Inspeccionar',
-        href: '/dashboard/checklist/inspeccionar',
+        label: 'Novedades',
+        href: '/dashboard/hseq/incidents',
         roles: [
           UserRole.SUPER_ADMIN,
           UserRole.OWNER,
@@ -413,14 +403,13 @@ export const dataAdminSidebar: SidebarItem[] = [
         ],
       },
       {
-        label: 'Historial',
-        href: '/dashboard/checklist/historial',
+        label: 'Checklists',
+        href: '/dashboard/hseq/checklists',
         roles: [
           UserRole.SUPER_ADMIN,
           UserRole.OWNER,
           UserRole.MANAGER,
           UserRole.COORDINATOR,
-          UserRole.TECHNICIAN,
         ],
       },
     ],
