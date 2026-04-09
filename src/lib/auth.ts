@@ -59,16 +59,24 @@ async function getCurrentUserInternal(): Promise<UserWithSuperAdmin | null> {
       }
 
       // ========================================
-      // VERIFICAR SI ES SUPER_ADMIN
+      // QUERIES PARALELAS: SUPER_ADMIN + tenant user en un solo round-trip
       // ========================================
-      const superAdminUser = await prisma.user.findFirst({
-        where: {
-          email,
-          tenantId: PLATFORM_TENANT_ID,
-          role: 'SUPER_ADMIN',
-          isActive: true,
-        },
-      });
+      const [superAdminUser, tenantUser] = await Promise.all([
+        prisma.user.findFirst({
+          where: {
+            email,
+            tenantId: PLATFORM_TENANT_ID,
+            role: 'SUPER_ADMIN',
+            isActive: true,
+          },
+        }),
+        orgId
+          ? prisma.user.findFirst({
+              where: { email, tenantId: orgId, isActive: true },
+            })
+          : Promise.resolve(null),
+      ]);
+
       const isSuperAdmin = !!superAdminUser;
 
       // Si no tiene org pero es SUPER_ADMIN, retornar usuario del Platform Tenant
@@ -86,15 +94,7 @@ async function getCurrentUserInternal(): Promise<UserWithSuperAdmin | null> {
       // AUTH STANDARD (WEBHOOK SYNC DEPENDENCY)
       // ========================================
 
-      // Buscar usuario en Prisma por email + tenantId.
-      // Con Webhooks, confiamos en que Clerk ya sincronizó los datos.
-      let user = await prisma.user.findFirst({
-        where: {
-          email,
-          tenantId: orgId,
-          isActive: true,
-        },
-      });
+      let user = tenantUser;
 
       // Fallback JIT: si el usuario no existe, el webhook puede estar en tránsito o falló.
       // Lo creamos de manera proactiva utilizando los datos de session de Clerk.
@@ -109,7 +109,7 @@ async function getCurrentUserInternal(): Promise<UserWithSuperAdmin | null> {
         // Resolve org membership via Clerk Backend API.
         // currentUser() does NOT include organizationMemberships — we must call the API.
         let jitOrgName: string | undefined;
-        let dbRole: UserRole = 'OWNER'; // safest fallback for the first user of a new org
+        let dbRole: UserRole = 'DRIVER'; // least-privilege fallback si la API de Clerk no responde
 
         try {
           const client = await clerkClient();

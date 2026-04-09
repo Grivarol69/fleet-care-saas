@@ -4,27 +4,8 @@ import { WebhookEvent } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 import { UserRole } from '@prisma/client';
 
-// Cache en memoria para idempotency de webhooks (previene procesamiento duplicado)
-// Los svix-id se guardan por 5 minutos — suficiente para cubrir retries de Svix
-const processedEvents = new Map<string, number>();
-const IDEMPOTENCY_TTL_MS = 5 * 60 * 1000;
-
-function isEventAlreadyProcessed(svixId: string): boolean {
-  const timestamp = processedEvents.get(svixId);
-  if (timestamp && Date.now() - timestamp < IDEMPOTENCY_TTL_MS) {
-    return true;
-  }
-  // Limpiar entradas expiradas periódicamente (cada 100 eventos)
-  if (processedEvents.size > 100) {
-    const now = Date.now();
-    for (const [key, ts] of processedEvents) {
-      if (now - ts > IDEMPOTENCY_TTL_MS) {
-        processedEvents.delete(key);
-      }
-    }
-  }
-  return false;
-}
+// Limpia registros de idempotencia con más de 7 días (Svix no reintenta después de 3 días)
+const IDEMPOTENCY_CLEANUP_DAYS = 7;
 
 /** Mapea un rol de Clerk (org:admin, org:manager, etc.) al UserRole de Prisma */
 function mapClerkRoleToDbRole(clerkRoleRaw: string): UserRole {
@@ -86,8 +67,12 @@ export async function POST(req: Request) {
     });
   }
 
-  // Idempotency: rechazar eventos ya procesados
-  if (isEventAlreadyProcessed(svix_id)) {
+  // Idempotency via DB: garantiza que múltiples instancias serverless
+  // no procesen el mismo evento. Svix usa el mismo svix-id en retries.
+  try {
+    await prisma.processedWebhookEvent.create({ data: { svixId: svix_id } });
+  } catch {
+    // Unique constraint violation = evento ya procesado por otra instancia
     console.log(`[WEBHOOK] Duplicate event ${svix_id} skipped`);
     return new Response('', { status: 200 });
   }
@@ -116,7 +101,9 @@ export async function POST(req: Request) {
             lastName: last_name,
           },
         });
-        console.log(`[WEBHOOK] Updated ${updatedCount.count} user records for email ${email}`);
+        console.log(
+          `[WEBHOOK] Updated ${updatedCount.count} user records for email ${email}`
+        );
         break;
       }
 
@@ -148,10 +135,14 @@ export async function POST(req: Request) {
         const { organization, public_user_data, role } = evt.data;
         const email = public_user_data.identifier;
         const dbRole = mapClerkRoleToDbRole(role);
-        console.log(`[WEBHOOK] Membership created for ${email} in org ${organization.id} as ${dbRole}`);
+        console.log(
+          `[WEBHOOK] Membership created for ${email} in org ${organization.id} as ${dbRole}`
+        );
 
         if (!email) {
-          console.error('[WEBHOOK] No email (identifier) found in public_user_data');
+          console.error(
+            '[WEBHOOK] No email (identifier) found in public_user_data'
+          );
           break;
         }
 
@@ -188,7 +179,7 @@ export async function POST(req: Request) {
           update: {
             role: dbRole,
             isActive: true,
-            // Podríamos actualizar el id aquí si queremos forzarlo, 
+            // Podríamos actualizar el id aquí si queremos forzarlo,
             // pero Prisma no recomienda cambiar IDs en upsert/update.
           },
         });
@@ -210,7 +201,9 @@ export async function POST(req: Request) {
             role: dbRole,
           },
         });
-        console.log(`[WEBHOOK] Membership updated for ${email} (${updated.count} records)`);
+        console.log(
+          `[WEBHOOK] Membership updated for ${email} (${updated.count} records)`
+        );
         break;
       }
 
@@ -227,16 +220,32 @@ export async function POST(req: Request) {
             isActive: false,
           },
         });
-        console.log(`[WEBHOOK] Membership deleted (soft) for ${email} (${updated.count} records)`);
+        console.log(
+          `[WEBHOOK] Membership deleted (soft) for ${email} (${updated.count} records)`
+        );
         break;
       }
     }
   } catch (error: any) {
     console.error('[WEBHOOK ERROR] Error processing webhook logic:', error);
     // Log detailed error info
-    return new Response(`Error processing logic: ${error.message}`, { status: 500 });
+    return new Response(`Error processing logic: ${error.message}`, {
+      status: 500,
+    });
   }
 
-  processedEvents.set(svix_id, Date.now());
+  // Limpieza asíncrona de registros viejos (no bloquea la respuesta)
+  prisma.processedWebhookEvent
+    .deleteMany({
+      where: {
+        processedAt: {
+          lt: new Date(
+            Date.now() - IDEMPOTENCY_CLEANUP_DAYS * 24 * 60 * 60 * 1000
+          ),
+        },
+      },
+    })
+    .catch(err => console.warn('[WEBHOOK] Cleanup error (non-critical):', err));
+
   return new Response('', { status: 200 });
 }

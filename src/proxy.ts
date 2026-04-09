@@ -55,9 +55,10 @@ export default clerkMiddleware(async (auth, request) => {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
+    // /api maneja su propio auth, /onboarding y /admin no necesitan org
+    // /dashboard SÍ requiere org — si no tiene, va a onboarding
     const skipOrgCheck =
       isAdminRoute(request) ||
-      url.pathname.startsWith('/dashboard') ||
       url.pathname.startsWith('/api') ||
       url.pathname.startsWith('/onboarding');
 
