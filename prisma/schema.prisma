@@ -2471,3 +2471,12 @@ model SerializedItemAlert {
   @@index([serializedItemId, status])
   @@index([tenantId, vehicleId, status])
 }
+
+// Idempotencia de webhooks de Clerk — reemplaza el Map en memoria
+// que no funciona en entornos serverless con múltiples instancias
+model ProcessedWebhookEvent {
+  svixId      String   @id
+  processedAt DateTime @default(now())
+
+  @@index([processedAt])
+}

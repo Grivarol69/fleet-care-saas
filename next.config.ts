@@ -167,8 +167,7 @@ const nextConfig: NextConfig = {
 
     // Configuración de TypeScript
     typescript: {
-        // Permitir builds en producción incluso con errores de tipos (usar con cuidado)
-        ignoreBuildErrors: true,
+        ignoreBuildErrors: false,
     },
 
     // Configuración de ESLint
