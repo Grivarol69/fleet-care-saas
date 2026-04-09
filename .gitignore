@@ -82,6 +82,9 @@ next-env.d.ts
 # Claude Code - configuración y sesiones locales
 .claude/
 
+# Documentación interna (repo público — no exponer arquitectura)
+docs/
+
 # Google Cloud credentials
 /credentials/
 *.json
