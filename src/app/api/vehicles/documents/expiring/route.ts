@@ -1,21 +1,19 @@
-import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 
 export async function GET() {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const now = new Date();
     const sixtyDaysFromNow = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000);
 
     // Obtener documentos que están próximos a vencer o ya vencidos
-    const documents = await prisma.document.findMany({
+    const documents = await tenantPrisma.document.findMany({
       where: {
-        tenantId: user.tenantId,
         expiryDate: {
           lte: sixtyDaysFromNow, // Documentos que vencen en los próximos 60 días
         },
@@ -71,9 +69,9 @@ export async function GET() {
 // Endpoint para obtener estadísticas resumidas
 export async function POST() {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const now = new Date();
@@ -83,18 +81,16 @@ export async function POST() {
     );
 
     // Contar documentos por categoría de vencimiento
-    const criticalCount = await prisma.document.count({
+    const criticalCount = await tenantPrisma.document.count({
       where: {
-        tenantId: user.tenantId,
         expiryDate: {
           lte: sevenDaysFromNow,
         },
       },
     });
 
-    const warningCount = await prisma.document.count({
+    const warningCount = await tenantPrisma.document.count({
       where: {
-        tenantId: user.tenantId,
         expiryDate: {
           gt: sevenDaysFromNow,
           lte: thirtyDaysFromNow,
@@ -102,19 +98,17 @@ export async function POST() {
       },
     });
 
-    const okCount = await prisma.document.count({
+    const okCount = await tenantPrisma.document.count({
       where: {
-        tenantId: user.tenantId,
         expiryDate: {
           gt: thirtyDaysFromNow,
         },
       },
     });
 
-    const totalCount = await prisma.document.count({
+    const totalCount = await tenantPrisma.document.count({
       where: {
-        tenantId: user.tenantId,
-      },
+        },
     });
 
     return NextResponse.json({

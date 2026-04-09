@@ -13,6 +13,20 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -52,10 +66,23 @@ const formSchema = z.object({
 type AddItemDialogProps = {
   workOrderId: string;
   vehicleId?: string; // Optional as services might not need it, but Parts do
-  type: 'SERVICE' | 'PART';
+  type?: 'SERVICE' | 'PART';
   open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSuccess: () => void;
+  onOpenChange?: (open: boolean) => void;
+  onClose?: () => void;
+  onSuccess?: (item?: any) => void;
+  defaultItemSource?: 'EXTERNAL' | 'INTERNAL_STOCK';
+  lockItemSource?: boolean; // Si true, oculta el select de fuente
+  mode?: 'endpoint' | 'form'; // default: 'endpoint'
+  onItemAdded?: (item: {
+    mantItemId: string;
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    itemSource: 'INTERNAL_STOCK' | 'EXTERNAL';
+    providerId?: string | null;
+    masterPartId?: string | null;
+  }) => void;
 };
 
 type MantItem = {
@@ -81,21 +108,25 @@ type PartSuggestion = {
     code: string;
     description: string;
     referencePrice: number;
-    manufacturer: string;
   };
-  isRecommended: boolean;
 };
 
 export function AddItemDialog({
   workOrderId,
   vehicleId,
-  type,
+  type = 'PART',
   open,
   onOpenChange,
+  onClose,
   onSuccess,
+  defaultItemSource,
+  lockItemSource,
+  mode = 'endpoint',
+  onItemAdded,
 }: AddItemDialogProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [comboOpen, setComboOpen] = useState(false);
   const [items, setItems] = useState<MantItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<MantItem | null>(null);
@@ -123,11 +154,39 @@ export function AddItemDialog({
     defaultValues: {
       quantity: 1,
       unitPrice: 0,
-      itemSource: 'EXTERNAL',
+      itemSource: defaultItemSource || 'EXTERNAL', // USAR PROP
       description: '',
       masterPartId: '',
     },
   });
+
+  // Reset states when dialog opens/closes
+  useEffect(() => {
+    if (!open) {
+      // Clear all states when closing
+      setSearchQuery('');
+      setSelectedItem(null);
+      setStock(null);
+      setSuggestions([]);
+      setCatalogSearch('');
+      setCatalogParts([]);
+      setShowCatalogFallback(false);
+      form.reset({
+        quantity: 1,
+        unitPrice: 0,
+        itemSource: defaultItemSource || 'EXTERNAL',
+        description: '',
+        masterPartId: '',
+        mantItemId: '',
+        providerId: '',
+      });
+    } else {
+      // Ensure defaults are set when opening
+      if (defaultItemSource) {
+        form.setValue('itemSource', defaultItemSource);
+      }
+    }
+  }, [open, defaultItemSource, form]);
 
   // Fetch providers on mount
   useEffect(() => {
@@ -145,17 +204,21 @@ export function AddItemDialog({
     if (!open) return;
     const searchItems = async () => {
       try {
-        const url = searchQuery.trim()
-          ? `/api/maintenance/mant-items?search=${encodeURIComponent(searchQuery.trim())}`
-          : '/api/maintenance/mant-items';
+        const baseUrl = '/api/maintenance/mant-items';
+        const queryParams = new URLSearchParams();
+        if (searchQuery.trim()) {
+          queryParams.append('search', searchQuery.trim());
+        }
+        if (type === 'PART' || type === 'SERVICE') {
+          queryParams.append('type', type);
+        }
+
+        const url = `${baseUrl}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
         const res = await axios.get(url);
         const allItems: MantItem[] = Array.isArray(res.data)
           ? res.data
           : res.data.items || [];
-        // Filtrar por tipo en cliente: SERVICE/ACTION para servicios, PART para repuestos
-        const typeFilters =
-          type === 'SERVICE' ? ['SERVICE', 'ACTION'] : ['PART'];
-        setItems(allItems.filter(i => typeFilters.includes(i.type)));
+        setItems(allItems);
       } catch (error) {
         console.error('Error searching items', error);
       }
@@ -181,6 +244,9 @@ export function AddItemDialog({
           setShowCatalogFallback(false);
           setCatalogSearch('');
           setCatalogParts([]);
+          // Siempre poblar descripción con nombre del item como baseline
+          // (las sugerencias pueden sobreescribirla con algo más específico)
+          form.setValue('description', item.name);
 
           if (type === 'PART') {
             // 1. Fetch Suggestions (Smart Part Suggestion)
@@ -202,25 +268,16 @@ export function AddItemDialog({
                     );
                     form.setValue(
                       'description',
-                      bestMatch.masterPart.description
+                      `${bestMatch.masterPart.code} - ${bestMatch.masterPart.description}`
                     );
                     form.setValue('masterPartId', bestMatch.masterPart.id);
                     // 2. Check stock using the suggested masterPartId
                     checkStock(bestMatch.masterPart.id);
                   }
                 } else {
-                  // Fallback to mant item defaults if any
-                  if (item.parts?.[0]?.masterPart?.referencePrice) {
-                    form.setValue(
-                      'unitPrice',
-                      Number(item.parts[0].masterPart.referencePrice)
-                    );
-                    checkStock(item.parts[0].masterPart.id);
-                  } else {
-                    // No KB suggestions and no direct parts — show catalog fallback
-                    setStock({ quantity: 0, inventoryItemId: 0 });
-                    setShowCatalogFallback(true);
-                  }
+                  // No KB suggestions — show catalog fallback
+                  setStock({ quantity: 0, inventoryItemId: 0 });
+                  setShowCatalogFallback(true);
                 }
               } catch (err) {
                 console.error('Error fetching suggestions', err);
@@ -250,12 +307,14 @@ export function AddItemDialog({
           quantity: Number(res.data[0].quantity),
           inventoryItemId: res.data[0].id,
         });
-        if (Number(res.data[0].quantity) > 0) {
+        if (Number(res.data[0].quantity) > 0 && !lockItemSource) {
           form.setValue('itemSource', 'INTERNAL_STOCK');
         }
       } else {
         setStock({ quantity: 0, inventoryItemId: 0 });
-        form.setValue('itemSource', 'EXTERNAL');
+        if (!lockItemSource) {
+          form.setValue('itemSource', 'EXTERNAL');
+        }
       }
     } catch (error) {
       console.error('Error checking stock', error);
@@ -295,14 +354,17 @@ export function AddItemDialog({
     referencePrice: number | null;
   }) => {
     form.setValue('masterPartId', part.id);
-    form.setValue('description', part.description);
+    form.setValue('description', `${part.code} - ${part.description}`);
     form.setValue('unitPrice', Number(part.referencePrice ?? 0));
     checkStock(part.id);
   };
 
   const applySuggestion = (suggestion: PartSuggestion) => {
     form.setValue('unitPrice', Number(suggestion.masterPart.referencePrice));
-    form.setValue('description', suggestion.masterPart.description);
+    form.setValue(
+      'description',
+      `${suggestion.masterPart.code} - ${suggestion.masterPart.description}`
+    );
     form.setValue('masterPartId', suggestion.masterPart.id);
     toast({
       title: 'Repuesto seleccionado',
@@ -310,25 +372,48 @@ export function AddItemDialog({
     });
   };
 
+  const handleClose = () => {
+    if (onClose) onClose();
+    if (onOpenChange) onOpenChange(false);
+  };
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    setIsLoading(true);
-    try {
-      await axios.post(`/api/maintenance/work-orders/${workOrderId}/items`, {
-        mantItemId: parseInt(values.mantItemId),
+    // Form mode: call onItemAdded callback instead of POST
+    if (mode === 'form' && onItemAdded) {
+      onItemAdded({
+        mantItemId: values.mantItemId,
+        description: values.description ?? '',
         quantity: values.quantity,
         unitPrice: values.unitPrice,
-        description: values.description,
         itemSource: values.itemSource,
-        providerId: values.providerId ? parseInt(values.providerId) : undefined,
-        masterPartId: values.masterPartId || undefined,
+        providerId: values.providerId || null,
+        masterPartId: values.masterPartId || null,
       });
+      handleClose();
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await axios.post(
+        `/api/maintenance/work-orders/${workOrderId}/items`,
+        {
+          mantItemId: values.mantItemId,
+          quantity: values.quantity,
+          unitPrice: values.unitPrice,
+          description: values.description,
+          itemSource: values.itemSource,
+          providerId: values.providerId ? values.providerId : undefined,
+          masterPartId: values.masterPartId || undefined,
+        }
+      );
 
       toast({
         title: 'Item Agregado',
         description: 'El item se ha agregado correctamente a la orden.',
       });
-      onSuccess();
-      onOpenChange(false);
+      if (onSuccess) onSuccess(response.data);
+      handleClose();
       form.reset();
     } catch (error: any) {
       toast({
@@ -343,7 +428,7 @@ export function AddItemDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
@@ -355,43 +440,70 @@ export function AddItemDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form
+            onSubmit={e => {
+              e.stopPropagation();
+              form.handleSubmit(onSubmit)(e);
+            }}
+            className="space-y-4"
+          >
             {/* Item Search */}
             <div className="space-y-2">
-              <FormLabel>Buscar Item</FormLabel>
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Escribe para buscar..."
-                  className="pl-8"
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                />
-              </div>
               <FormField
                 control={form.control}
                 name="mantItemId"
                 render={({ field }) => (
                   <FormItem>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona un resultado" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {items.slice(0, 10).map(item => (
-                          <SelectItem key={item.id} value={item.id.toString()}>
-                            {item.name}
-                          </SelectItem>
-                        ))}
-                        {items.length === 0 && (
-                          <SelectItem value="none" disabled>
-                            No se encontraron resultados
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>
+                      Buscar {type === 'SERVICE' ? 'Servicio' : 'Repuesto'}
+                    </FormLabel>
+                    <Popover open={comboOpen} onOpenChange={setComboOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className="w-full justify-between font-normal"
+                          >
+                            {field.value
+                              ? (items.find(
+                                  i => i.id.toString() === field.value
+                                )?.name ?? 'Seleccionar...')
+                              : 'Buscar y seleccionar...'}
+                            <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[460px] p-0" align="start">
+                        <Command shouldFilter={false}>
+                          <CommandInput
+                            placeholder="Escribir para filtrar..."
+                            value={searchQuery}
+                            onValueChange={setSearchQuery}
+                          />
+                          <CommandList>
+                            <CommandEmpty>Sin resultados.</CommandEmpty>
+                            <CommandGroup>
+                              {items.slice(0, 50).map(item => (
+                                <CommandItem
+                                  key={item.id}
+                                  value={item.id.toString()}
+                                  onSelect={val => {
+                                    form.setValue('mantItemId', val);
+                                    setComboOpen(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={`mr-2 h-4 w-4 ${field.value === item.id.toString() ? 'opacity-100' : 'opacity-0'}`}
+                                  />
+                                  {item.name}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -417,8 +529,7 @@ export function AddItemDialog({
                           {sugg.masterPart.code} - {sugg.masterPart.description}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {sugg.masterPart.manufacturer} • Ref: $
-                          {sugg.masterPart.referencePrice}
+                          Ref: ${sugg.masterPart.referencePrice}
                         </span>
                       </div>
                       {form.watch('masterPartId') === sugg.masterPart.id && (
@@ -533,6 +644,21 @@ export function AddItemDialog({
               </div>
             )}
 
+            {/* Informational badge when source is locked but internal stock is available */}
+            {lockItemSource &&
+              type === 'PART' &&
+              stock &&
+              Number(stock.quantity) > 0 && (
+                <div className="p-3 rounded border text-sm flex items-center gap-2 bg-amber-50 border-amber-300 text-amber-700">
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  <span>
+                    Disponible en inventario propio:{' '}
+                    <strong>{Number(stock.quantity)}</strong> unidades. Se
+                    procesará como compra externa de todas formas.
+                  </span>
+                </div>
+              )}
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -573,38 +699,36 @@ export function AddItemDialog({
             </div>
 
             <div className="grid grid-cols-1 gap-4">
-              <FormField
-                control={form.control}
-                name="itemSource"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Fuente / Origen</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="EXTERNAL">
-                          Proveedor Externo (Compra)
-                        </SelectItem>
-                        {type === 'PART' && (
+              {!lockItemSource && (
+                <FormField
+                  control={form.control}
+                  name="itemSource"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Destino del trabajo</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
                           <SelectItem value="INTERNAL_STOCK">
-                            Inventario Interno
+                            Taller Propio (interno)
                           </SelectItem>
-                        )}
-                        {type === 'SERVICE' && (
-                          <SelectItem value="INTERNAL_STOCK">
-                            Taller Propio (Interno)
+                          <SelectItem value="EXTERNAL">
+                            Proveedor Externo (compra)
                           </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               {form.watch('itemSource') === 'EXTERNAL' && (
                 <FormField
@@ -652,11 +776,7 @@ export function AddItemDialog({
             />
 
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
+              <Button type="button" variant="outline" onClick={handleClose}>
                 Cancelar
               </Button>
               <Button type="submit" disabled={isLoading}>

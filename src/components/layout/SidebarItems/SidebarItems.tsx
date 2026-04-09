@@ -24,27 +24,38 @@ export function SidebarItems(props: SidebarItemsProps) {
     }
   };
 
+  const itemClassName = cn(
+    `flex gap-x-2 mt-2 text-slate-700 text-sm items-center hover:bg-slate-300/20 p-2 rounded-lg cursor-pointer`,
+    isActive && 'bg-slate-400/20'
+  );
+
+  const itemContent = (
+    <>
+      <Icon className="h-5 w-5" strokeWidth={1} />
+      {label}
+      {subItems && (
+        <span className="ml-auto">
+          {isOpen ? (
+            <ChevronDown className="h-4 w-4 text-slate-700" />
+          ) : (
+            <ChevronRight className="h-4 w-4 text-slate-700" />
+          )}
+        </span>
+      )}
+    </>
+  );
+
   return (
     <div>
-      <div
-        onClick={toggleSubMenu}
-        className={cn(
-          `flex gap-x-2 mt-2 text-slate-700 text-sm items-center hover:bg-slate-300/20 p-2 rounded-lg cursor-pointer`,
-          isActive && 'bg-slate-400/20'
-        )}
-      >
-        <Icon className="h-5 w-5" strokeWidth={1} />
-        {label}
-        {subItems && (
-          <span className="ml-auto">
-            {isOpen ? (
-              <ChevronDown className="h-4 w-4 text-slate-700" />
-            ) : (
-              <ChevronRight className="h-4 w-4 text-slate-700" />
-            )}
-          </span>
-        )}
-      </div>
+      {href && !subItems ? (
+        <Link href={href} className={itemClassName}>
+          {itemContent}
+        </Link>
+      ) : (
+        <div onClick={toggleSubMenu} className={itemClassName}>
+          {itemContent}
+        </div>
+      )}
       {subItems && isOpen && (
         <div className="ml-6 mt-2">
           {subItems.map(subItem => (

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import {
   InternalTicketStatus,
   MovementType,
@@ -11,15 +10,15 @@ import { canExecuteWorkOrders } from '@/lib/permissions';
 // GET: Listar tickets internos filtrados por workOrderId
 export async function GET(request: Request) {
   try {
-    const user = await getCurrentUser();
-    if (!user) return new NextResponse('Unauthorized', { status: 401 });
+    const { user, tenantPrisma } = await requireCurrentUser();
+    if (!user)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { searchParams } = new URL(request.url);
     const workOrderId = searchParams.get('workOrderId');
 
-    const tickets = await prisma.internalWorkTicket.findMany({
+    const tickets = await tenantPrisma.internalWorkTicket.findMany({
       where: {
-        tenantId: user.tenantId,
         ...(workOrderId ? { workOrderId: workOrderId } : {}),
       },
       include: {
@@ -65,9 +64,9 @@ export async function GET(request: Request) {
 // POST: Crear nuevo Internal Work Ticket
 export async function POST(request: Request) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canExecuteWorkOrders(user)) {
@@ -94,7 +93,7 @@ export async function POST(request: Request) {
     // Generar número de ticket (Simulado simple por ahora, idealmente secuencial)
     const ticketNumber = `TKT-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`;
 
-    const result = await prisma.$transaction(async tx => {
+    const result = await tenantPrisma.$transaction(async tx => {
       // 1. Calcular totales
       let totalLaborHours = 0;
       let totalLaborCost = 0;
@@ -124,13 +123,13 @@ export async function POST(request: Request) {
           // crear entradas de labor
           laborEntries: {
             create: (laborEntries || []).map((entry: any) => ({
-              tenantId: user.tenantId,
               description: entry.description,
               hours: entry.hours,
               hourlyRate: entry.hourlyRate,
               laborCost: Number(entry.hours) * Number(entry.hourlyRate),
               workOrderItemId: entry.workOrderItemId,
               technicianId, // Default al técnico del ticket
+              tenantId: user.tenantId,
             })),
           },
         },

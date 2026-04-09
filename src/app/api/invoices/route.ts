@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { requireCurrentUser } from '@/lib/auth';
 import { InvoiceStatus, ItemSource, ItemClosureType } from '@prisma/client';
 import { canApproveInvoices } from '@/lib/permissions';
+import { getThresholdForCategory } from '@/lib/services/FinancialWatchdogService';
 
 interface InvoiceItemInput {
   description: string;
@@ -18,10 +18,9 @@ interface InvoiceItemInput {
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -29,9 +28,8 @@ export async function GET(request: NextRequest) {
     const workOrderId = searchParams.get('workOrderId');
     const limit = searchParams.get('limit');
 
-    const invoices = await prisma.invoice.findMany({
+    const invoices = await tenantPrisma.invoice.findMany({
       where: {
-        tenantId: user.tenantId,
         ...(status && { status: status as InvoiceStatus }),
         ...(workOrderId && {
           workOrderId: workOrderId,
@@ -76,10 +74,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Validar permisos
@@ -123,12 +120,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Validar que el número de factura no exista para este tenant
-    const existingInvoice = await prisma.invoice.findUnique({
+    const existingInvoice = await tenantPrisma.invoice.findFirst({
       where: {
-        tenantId_invoiceNumber: {
-          tenantId: user.tenantId,
-          invoiceNumber,
-        },
+        invoiceNumber,
       },
     });
 
@@ -141,10 +135,9 @@ export async function POST(request: NextRequest) {
 
     // Si tiene workOrderId, validar que existe y pertenece al tenant
     if (workOrderId) {
-      const workOrder = await prisma.workOrder.findUnique({
+      const workOrder = await tenantPrisma.workOrder.findUnique({
         where: {
           id: workOrderId,
-          tenantId: user.tenantId,
         },
       });
 
@@ -157,10 +150,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Validar que el proveedor existe y pertenece al tenant
-    const provider = await prisma.provider.findUnique({
+    const provider = await tenantPrisma.provider.findUnique({
       where: {
         id: supplierId,
-        tenantId: user.tenantId,
       },
     });
 
@@ -174,10 +166,9 @@ export async function POST(request: NextRequest) {
     // Si tiene purchaseOrderId, validar que existe y está en estado SENT
     let purchaseOrder = null;
     if (purchaseOrderId) {
-      purchaseOrder = await prisma.purchaseOrder.findUnique({
+      purchaseOrder = await tenantPrisma.purchaseOrder.findUnique({
         where: {
           id: purchaseOrderId,
-          tenantId: user.tenantId,
         },
         include: { items: true },
       });
@@ -197,8 +188,45 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Pre-fetch reference prices BEFORE the transaction overwrites them,
+    // and resolve thresholds per category (cannot call async inside tx).
+    const masterPartIds = (items as InvoiceItemInput[])
+      .map(i => i.masterPartId)
+      .filter((id): id is string => !!id);
+
+    const masterPartsSnapshot =
+      masterPartIds.length > 0
+        ? await tenantPrisma.masterPart.findMany({
+            where: { id: { in: masterPartIds } },
+            select: {
+              id: true,
+              referencePrice: true,
+              category: true,
+              description: true,
+            },
+          })
+        : [];
+    const masterPartMap = new Map(masterPartsSnapshot.map(mp => [mp.id, mp]));
+
+    // Resolve dynamic threshold per category (synchronous closure for use inside tx)
+    const thresholdCache = new Map<string | null, number>();
+    const getThreshold = async (category: string | null): Promise<number> => {
+      if (!thresholdCache.has(category)) {
+        thresholdCache.set(
+          category,
+          await getThresholdForCategory(user.tenantId, category)
+        );
+      }
+      return thresholdCache.get(category)!;
+    };
+    // Pre-warm cache for all categories present in this invoice
+    const categories = [
+      ...new Set(masterPartsSnapshot.map(mp => mp.category ?? null)),
+    ];
+    await Promise.all(categories.map(cat => getThreshold(cat)));
+
     // Crear Invoice + InvoiceItems en transacción
-    const invoice = await prisma.$transaction(async tx => {
+    const invoice = await tenantPrisma.$transaction(async tx => {
       // 1. Crear Invoice
       const newInvoice = await tx.invoice.create({
         data: {
@@ -241,12 +269,11 @@ export async function POST(request: NextRequest) {
         )
       );
 
-      // 3. FASE 6.4: Actualizar precios de referencia y registrar histórico
-      const PRICE_DEVIATION_THRESHOLD = 0.2; // 20%
-
+      // 3. FASE 6.4: Actualizar precios de referencia y registrar histórico + Watchdog
       for (const invoiceItem of invoiceItems) {
-        // Si tiene masterPartId, actualizar precio de referencia
         if (invoiceItem.masterPartId) {
+          const mpSnapshot = masterPartMap.get(invoiceItem.masterPartId);
+
           // Registrar en PartPriceHistory
           await tx.partPriceHistory.create({
             data: {
@@ -268,9 +295,40 @@ export async function POST(request: NextRequest) {
               lastPriceUpdate: new Date(),
             },
           });
+
+          // WATCHDOG: items sin OT → comparar contra referencePrice original (pre-fetched)
+          if (!invoiceItem.workOrderItemId && mpSnapshot?.referencePrice) {
+            const refPrice = Number(mpSnapshot.referencePrice);
+            const actual = Number(invoiceItem.unitPrice);
+            const thresholdPct =
+              thresholdCache.get(mpSnapshot.category ?? null) ?? 10;
+            const deviation = (actual - refPrice) / refPrice;
+
+            if (actual > refPrice * (1 + thresholdPct / 100)) {
+              const deviationPercent = Math.round(deviation * 100);
+              await tx.financialAlert.create({
+                data: {
+                  tenantId: user.tenantId,
+                  type: 'PRICE_DEVIATION',
+                  severity:
+                    deviationPercent > 50
+                      ? 'CRITICAL'
+                      : deviationPercent > 20
+                        ? 'HIGH'
+                        : 'FINANCIAL',
+                  status: 'PENDING',
+                  message: `Precio en factura "${invoiceItem.description}": $${actual.toLocaleString()} vs ref $${refPrice.toLocaleString()} (+${deviationPercent}%)`,
+                  details: { expected: refPrice, actual, deviationPercent },
+                  masterPartId: invoiceItem.masterPartId,
+                  invoiceId: newInvoice.id,
+                  workOrderId: workOrderId || null,
+                },
+              });
+            }
+          }
         }
 
-        // FASE 6.5: Detectar desviación de precio y generar FinancialAlert
+        // WATCHDOG: items con OT → comparar precio facturado vs precio estimado en OT
         if (invoiceItem.workOrderItemId) {
           const woItem = await tx.workOrderItem.findUnique({
             where: { id: invoiceItem.workOrderItemId },
@@ -281,12 +339,17 @@ export async function POST(request: NextRequest) {
             const expected = Number(woItem.unitPrice);
             const actual = Number(invoiceItem.unitPrice);
             const deviation = Math.abs((actual - expected) / expected);
+            const mpSnapshot = invoiceItem.masterPartId
+              ? masterPartMap.get(invoiceItem.masterPartId)
+              : null;
+            const thresholdPct =
+              thresholdCache.get(mpSnapshot?.category ?? null) ?? 10;
 
-            if (deviation > PRICE_DEVIATION_THRESHOLD) {
+            if (deviation > thresholdPct / 100) {
               await tx.financialAlert.create({
                 data: {
                   tenantId: user.tenantId,
-                  workOrderId: workOrderId || undefined,
+                  workOrderId: workOrderId || null,
                   masterPartId: invoiceItem.masterPartId,
                   type: 'PRICE_DEVIATION',
                   severity: deviation > 0.5 ? 'CRITICAL' : 'HIGH',

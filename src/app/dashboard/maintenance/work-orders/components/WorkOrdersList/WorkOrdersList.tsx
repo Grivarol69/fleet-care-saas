@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+
 import {
   Table,
   TableBody,
@@ -13,12 +15,24 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Eye, Play, FileText } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { MoreHorizontal, Eye, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { WorkOrderStatusBadge } from '@/components/maintenance/work-orders/WorkOrderStatusBadge';
 
 type WorkOrder = {
   id: string;
@@ -56,50 +70,127 @@ type WorkOrder = {
 type WorkOrdersListProps = {
   workOrders: WorkOrder[];
   isLoading: boolean;
+  currentUser: { id: string; role: string; isSuperAdmin: boolean };
   onViewDetail?: (id: string) => void;
-  onStartWork?: (id: string) => void;
+  onStatusChange?: (id: string, newStatus: string) => Promise<void>;
 };
 
-const statusConfig = {
+function getAvailableTransitions(
+  status: string,
+  user: { role: string; isSuperAdmin: boolean }
+) {
+  const { role, isSuperAdmin } = user;
+
+  const canExecuteWorkOrders =
+    isSuperAdmin ||
+    ['OWNER', 'MANAGER', 'COORDINATOR', 'TECHNICIAN'].includes(role);
+  const canApproveWorkOrder =
+    isSuperAdmin || ['OWNER', 'MANAGER', 'COORDINATOR'].includes(role);
+  const canCloseWorkOrder =
+    isSuperAdmin || ['OWNER', 'MANAGER', 'COORDINATOR'].includes(role);
+
+  const transitions: Array<{
+    toStatus: string;
+    label: string;
+    description: string;
+    isDestructive?: boolean;
+  }> = [];
+
+  if (status === 'PENDING') {
+    if (canExecuteWorkOrders)
+      transitions.push({
+        toStatus: 'IN_PROGRESS',
+        label: 'Iniciar Trabajo',
+        description:
+          'La OT pasará a En Trabajo. El técnico podrá registrar horas y repuestos.',
+      });
+    if (canApproveWorkOrder)
+      transitions.push({
+        toStatus: 'CANCELLED',
+        label: 'Cancelar OT',
+        description:
+          'La OT quedará Cancelada. Esta acción no se puede deshacer.',
+        isDestructive: true,
+      });
+  } else if (status === 'IN_PROGRESS') {
+    if (canCloseWorkOrder)
+      transitions.push({
+        toStatus: 'PENDING_INVOICE',
+        label: 'Cerrar OT',
+        description:
+          'La OT pasará a Por Cerrar. Se deducirá stock y se generarán OCs para repuestos faltantes.',
+      });
+    if (canApproveWorkOrder)
+      transitions.push({
+        toStatus: 'CANCELLED',
+        label: 'Cancelar OT',
+        description:
+          'La OT quedará Cancelada. Esta acción no se puede deshacer.',
+        isDestructive: true,
+      });
+  } else if (status === 'PENDING_INVOICE') {
+    if (canCloseWorkOrder)
+      transitions.push({
+        toStatus: 'COMPLETED',
+        label: 'Marcar como Completada',
+        description:
+          'La OT se cerrará definitivamente. Asegurate de haber cargado las facturas correspondientes.',
+      });
+  }
+
+  return transitions;
+}
+
+export const statusConfig = {
+  // Estados activos del flujo simplificado
   PENDING: {
     label: 'Abierta',
     variant: 'secondary' as const,
     color: 'bg-blue-100 text-blue-700 border-blue-200',
-  },
-  PENDING_APPROVAL: {
-    label: 'En Aprobación',
-    variant: 'outline' as const,
-    color: 'bg-purple-100 text-purple-700 border-purple-200',
-  },
-  APPROVED: {
-    label: 'Aprobada',
-    variant: 'outline' as const,
-    color: 'bg-teal-100 text-teal-700 border-teal-200',
+    rowBg: 'bg-blue-50',
   },
   IN_PROGRESS: {
     label: 'En Trabajo',
     variant: 'default' as const,
     color: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-  },
-  PENDING_INVOICE: {
-    label: 'Por Cerrar',
-    variant: 'outline' as const,
-    color: 'bg-orange-100 text-orange-700 border-orange-200',
+    rowBg: 'bg-yellow-50',
   },
   COMPLETED: {
     label: 'Cerrada',
     variant: 'default' as const,
     color: 'bg-green-100 text-green-700 border-green-200',
-  },
-  REJECTED: {
-    label: 'Rechazada',
-    variant: 'destructive' as const,
-    color: 'bg-red-100 text-red-700 border-red-200',
+    rowBg: 'bg-green-50',
   },
   CANCELLED: {
     label: 'Cancelada',
     variant: 'outline' as const,
     color: 'bg-gray-100 text-gray-500 border-gray-200',
+    rowBg: 'bg-gray-100',
+  },
+  // Legacy — para datos históricos existentes (no aparecen en leyenda ni filtros)
+  PENDING_APPROVAL: {
+    label: 'En Aprobación',
+    variant: 'outline' as const,
+    color: 'bg-purple-100 text-purple-700 border-purple-200',
+    rowBg: 'bg-purple-50',
+  },
+  APPROVED: {
+    label: 'Aprobada',
+    variant: 'outline' as const,
+    color: 'bg-teal-100 text-teal-700 border-teal-200',
+    rowBg: 'bg-teal-50',
+  },
+  PENDING_INVOICE: {
+    label: 'Por Cerrar',
+    variant: 'outline' as const,
+    color: 'bg-orange-100 text-orange-700 border-orange-200',
+    rowBg: 'bg-orange-50',
+  },
+  REJECTED: {
+    label: 'Rechazada',
+    variant: 'destructive' as const,
+    color: 'bg-red-100 text-red-700 border-red-200',
+    rowBg: 'bg-red-50',
   },
 };
 
@@ -113,16 +204,35 @@ const priorityConfig = {
   LOW: { label: 'Baja', color: 'text-gray-600' },
   MEDIUM: { label: 'Media', color: 'text-yellow-600' },
   HIGH: { label: 'Alta', color: 'text-red-600' },
-  CRITICAL: { label: 'Crítica', color: 'text-red-700 font-bold' },
+  URGENT: { label: 'Urgente', color: 'text-red-700 font-bold' },
+  CRITICAL: { label: 'Crítica', color: 'text-red-800 font-black' }, // Mantener por compatibilidad si se usó en mocks
 };
 
 export function WorkOrdersList({
   workOrders,
   isLoading,
+  currentUser,
   onViewDetail,
-  onStartWork,
+  onStatusChange,
 }: WorkOrdersListProps) {
   const router = useRouter();
+  const [pendingAction, setPendingAction] = useState<{
+    workOrderId: string;
+    toStatus: string;
+    label: string;
+    description: string;
+    isDestructive?: boolean;
+  } | null>(null);
+
+  const confirmAction = async () => {
+    if (!pendingAction || !onStatusChange) return;
+    try {
+      await onStatusChange(pendingAction.workOrderId, pendingAction.toStatus);
+    } finally {
+      setPendingAction(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -145,7 +255,7 @@ export function WorkOrdersList({
   }
 
   return (
-    <div className="border rounded-lg">
+    <div className="border rounded-lg shadow-sm bg-card">
       <Table>
         <TableHeader>
           <TableRow>
@@ -169,9 +279,13 @@ export function WorkOrdersList({
               mantTypeConfig[wo.mantType as keyof typeof mantTypeConfig];
             const priorityInfo =
               priorityConfig[wo.priority as keyof typeof priorityConfig];
+            const availableTransitions = getAvailableTransitions(
+              wo.status,
+              currentUser
+            );
 
             return (
-              <TableRow key={wo.id}>
+              <TableRow key={wo.id} className={statusInfo?.rowBg}>
                 <TableCell className="font-medium">
                   <div>
                     <div className="font-semibold">
@@ -191,21 +305,22 @@ export function WorkOrdersList({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <span className={mantTypeInfo.color}>
-                    {mantTypeInfo.label}
+                  <span className={mantTypeInfo?.color || 'text-gray-600'}>
+                    {mantTypeInfo?.label || wo.mantType}
                   </span>
                 </TableCell>
                 <TableCell>
-                  <span className={priorityInfo.color}>
-                    {priorityInfo.label}
+                  <span className={priorityInfo?.color || 'text-gray-600'}>
+                    {priorityInfo?.label || wo.priority}
                   </span>
                 </TableCell>
                 <TableCell>
-                  <span
-                    className={`text-xs font-medium px-2.5 py-1 rounded-full border ${statusInfo?.color || 'bg-gray-100 text-gray-700'}`}
-                  >
-                    {statusInfo?.label || wo.status}
-                  </span>
+                  <WorkOrderStatusBadge
+                    status={wo.status as any}
+                    urgent={
+                      wo.priority === 'URGENT' || wo.priority === 'CRITICAL'
+                    }
+                  />
                 </TableCell>
                 <TableCell>
                   <div className="text-sm">
@@ -258,12 +373,6 @@ export function WorkOrdersList({
                         <Eye className="mr-2 h-4 w-4" />
                         Ver Detalle
                       </DropdownMenuItem>
-                      {wo.status === 'PENDING' && onStartWork && (
-                        <DropdownMenuItem onClick={() => onStartWork(wo.id)}>
-                          <Play className="mr-2 h-4 w-4" />
-                          Iniciar Trabajo
-                        </DropdownMenuItem>
-                      )}
                       {(wo.status === 'IN_PROGRESS' ||
                         wo.status === 'PENDING_INVOICE') && (
                         <DropdownMenuItem
@@ -277,6 +386,32 @@ export function WorkOrdersList({
                           Cargar Factura
                         </DropdownMenuItem>
                       )}
+                      {availableTransitions.length > 0 && (
+                        <>
+                          <DropdownMenuSeparator />
+                          {availableTransitions.map(t => (
+                            <DropdownMenuItem
+                              key={t.toStatus}
+                              onClick={() => {
+                                setPendingAction({
+                                  workOrderId: wo.id,
+                                  toStatus: t.toStatus,
+                                  label: t.label,
+                                  description: t.description,
+                                  isDestructive: t.isDestructive,
+                                });
+                              }}
+                              className={
+                                t.isDestructive
+                                  ? 'text-destructive focus:text-destructive'
+                                  : ''
+                              }
+                            >
+                              {t.label}
+                            </DropdownMenuItem>
+                          ))}
+                        </>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
@@ -285,6 +420,34 @@ export function WorkOrdersList({
           })}
         </TableBody>
       </Table>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog
+        open={pendingAction !== null}
+        onOpenChange={open => !open && setPendingAction(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{pendingAction?.label}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingAction?.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmAction}
+              className={
+                pendingAction?.isDestructive
+                  ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                  : ''
+              }
+            >
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

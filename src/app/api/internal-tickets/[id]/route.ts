@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { requireCurrentUser } from '@/lib/auth';
 import { ItemSource, ItemClosureType } from '@prisma/client';
 import { canManageMasterData } from '@/lib/permissions';
 
@@ -12,18 +11,17 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
 
-    const ticket = await prisma.internalWorkTicket.findFirst({
+    const ticket = await tenantPrisma.internalWorkTicket.findFirst({
       where: {
         id,
-        tenantId: user.tenantId,
-      },
+        },
       include: {
         workOrder: {
           select: {
@@ -75,9 +73,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManageMasterData(user)) {
@@ -99,11 +97,10 @@ export async function PATCH(
     }
 
     // Fetch the ticket with all related data
-    const ticket = await prisma.internalWorkTicket.findFirst({
+    const ticket = await tenantPrisma.internalWorkTicket.findFirst({
       where: {
         id,
-        tenantId: user.tenantId,
-      },
+        },
       include: {
         workOrder: true,
         partEntries: {
@@ -123,7 +120,7 @@ export async function PATCH(
 
     // If approving the ticket, close internal items and potentially the entire work order
     if (status === 'APPROVED') {
-      const result = await prisma.$transaction(async tx => {
+      const result = await tenantPrisma.$transaction(async tx => {
         // 1. Approve the ticket
         const updatedTicket = await tx.internalWorkTicket.update({
           where: { id },
@@ -236,7 +233,7 @@ export async function PATCH(
     }
 
     // For other status changes (SUBMITTED, REJECTED, CANCELLED)
-    const updatedTicket = await prisma.internalWorkTicket.update({
+    const updatedTicket = await tenantPrisma.internalWorkTicket.update({
       where: { id },
       data: {
         status,

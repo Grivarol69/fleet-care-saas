@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { NextResponse } from 'next/server';
+import { requireCurrentUser } from '@/lib/auth';
 
 /**
  * GET - List available Corrective Maintenace Recipes (Packages with null triggerKm)
@@ -11,9 +11,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -23,8 +23,8 @@ export async function GET(
     }
 
     // 1. Get Vehicle Info (Brand/Line)
-    const vehicle = await prisma.vehicle.findUnique({
-      where: { id: vehicleId, tenantId: user.tenantId },
+    const vehicle = await tenantPrisma.vehicle.findUnique({
+      where: { id: vehicleId, },
       include: { brand: true, line: true },
     });
 

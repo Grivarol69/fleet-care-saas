@@ -1,12 +1,11 @@
-import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { canManageMaintenancePrograms } from '@/lib/permissions';
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -21,7 +20,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const packageItems = await prisma.packageItem.findMany({
+    const packageItems = await tenantPrisma.packageItem.findMany({
       where: {
         packageId: packageId,
       },
@@ -47,7 +46,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -80,7 +79,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar que el package existe
-    const maintenancePackage = await prisma.maintenancePackage.findFirst({
+    const maintenancePackage = await tenantPrisma.maintenancePackage.findFirst({
       where: {
         id: packageId,
       },
@@ -91,10 +90,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar que el mantItem existe
-    const mantItem = await prisma.mantItem.findFirst({
+    const mantItem = await tenantPrisma.mantItem.findFirst({
       where: {
         id: mantItemId,
-        tenantId: user.tenantId,
         status: 'ACTIVE',
       },
     });
@@ -107,7 +105,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar que no existe el mismo mantItem en este package
-    const existingItem = await prisma.packageItem.findFirst({
+    const existingItem = await tenantPrisma.packageItem.findFirst({
       where: {
         packageId: packageId,
         mantItemId: mantItemId,
@@ -121,7 +119,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const newPackageItem = await prisma.packageItem.create({
+    const newPackageItem = await tenantPrisma.packageItem.create({
       data: {
         packageId,
         mantItemId,

@@ -28,12 +28,34 @@
 # Business / internal documents (no subir al repo)
 PRICING.md
 
-# Utility scripts
+# Utility scripts / archivos de trabajo temporales
 check_db_count.js
+fix-tires.ts
+search-vehicle.ts
+test-api.ts
+test-masterpart.ts
+test-query.ts
+test-query2.ts
+test-query3.ts
+test-search.ts
+debug_error_get_wo.log
+check-data.ts
+check-wo-details.ts
+debug-wo.ts
+fix-tenant-mismatch.ts
+seed-temp.ts
+*.log
+
+# Carpetas temporales y artifacts SDD
+tmp/
+sdd/
+load-tests/
 
 # Playwright test artifacts
 playwright-report/
 test-results/
+playwright/.auth/
+.env.e2e
 
 # debug
 npm-debug.log*

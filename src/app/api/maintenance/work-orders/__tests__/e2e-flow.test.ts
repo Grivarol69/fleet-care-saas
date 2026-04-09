@@ -3,11 +3,14 @@ import { NextRequest } from 'next/server';
 import { POST } from '../route';
 import { PATCH } from '../[id]/route';
 import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { getTenantPrisma } from '@/lib/tenant-prisma';
+import { getCurrentUser, requireCurrentUser } from '@/lib/auth';
 
 // Mock Auth
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn(),
+  requireCurrentUser: vi.fn(),
+  isSuperAdmin: vi.fn().mockResolvedValue(false),
 }));
 
 describe('E2E Simulation: Alert to Completion', () => {
@@ -20,12 +23,17 @@ describe('E2E Simulation: Alert to Completion', () => {
 
   beforeEach(async () => {
     // Mock User
-    vi.mocked(getCurrentUser).mockResolvedValue({
+    const __mockUser = {
       id: userId,
       tenantId: tenantId,
       email: 'e2e@test.com',
       role: 'OWNER',
       permissions: [],
+    } as any;
+    vi.mocked(getCurrentUser).mockResolvedValue(__mockUser);
+    vi.mocked(requireCurrentUser).mockResolvedValue({
+      user: __mockUser,
+      tenantPrisma: getTenantPrisma(__mockUser.tenantId),
     } as any);
 
     // 1. Setup Data
@@ -68,7 +76,6 @@ describe('E2E Simulation: Alert to Completion', () => {
     const mantItem = await prisma.mantItem.create({
       data: {
         name: 'E2E Service',
-        mantType: 'PREVENTIVE',
         categoryId: category.id,
         tenantId,
       },
@@ -166,7 +173,6 @@ describe('E2E Simulation: Alert to Completion', () => {
       title: 'E2E Work Order',
       description: 'Full flow test',
       priority: 'HIGH',
-      mantType: 'PREVENTIVE',
       workType: 'INTERNAL',
       scheduledDate: new Date().toISOString(),
     };

@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import { tenantService } from '@/lib/tenant';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 import type { InputJsonValue } from '@prisma/client/runtime/library';
+import { Prisma } from '@prisma/client';
 
 // GET /api/tenants - Listar todos los tenants (solo OWNER de su propio tenant)
 export async function GET() {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Users can only see their own tenant
-    const tenant = await prisma.tenant.findUnique({
+    const tenant = await tenantPrisma.tenant.findUnique({
       where: { id: user.tenantId },
       select: {
         id: true,
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
 
     // Si hay preset, crear datos iniciales
     if (presetConfig) {
-      await prisma.$transaction(async tx => {
+      await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         await tenantService.createInitialTenantData(tx, tenant.id);
       });
     }

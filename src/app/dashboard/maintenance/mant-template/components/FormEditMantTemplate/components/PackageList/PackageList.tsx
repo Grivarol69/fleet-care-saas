@@ -34,6 +34,7 @@ import { useToast } from '@/components/hooks/use-toast';
 import { PackageListProps, MaintenancePackage } from './PackageList.types';
 import { FormAddPackage } from '../FormAddPackage';
 import { FormEditPackage } from '../FormEditPackage';
+import { ClonePackageModal } from '@/components/maintenance/templates/ClonePackageModal';
 
 export function PackageList({ templateId }: PackageListProps) {
   const [data, setData] = useState<MaintenancePackage[]>([]);
@@ -198,10 +199,17 @@ export function PackageList({ templateId }: PackageListProps) {
       header: 'Acciones',
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
+          <ClonePackageModal
+            sourcePackageId={row.original.id}
+            originalName={row.original.name}
+            onSuccess={() => fetchPackages()}
+          />
           <Button
             variant="outline"
             size="sm"
             onClick={() => handleEdit(row.original)}
+            className="w-10 px-0"
+            title="Editar Paquete"
           >
             <Edit className="h-4 w-4" />
           </Button>
@@ -209,8 +217,10 @@ export function PackageList({ templateId }: PackageListProps) {
             variant="outline"
             size="sm"
             onClick={() => handleDelete(row.original.id)}
+            className="w-10 px-0"
+            title="Eliminar Paquete"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-4 w-4 text-red-500" />
           </Button>
         </div>
       ),
@@ -293,9 +303,9 @@ export function PackageList({ templateId }: PackageListProps) {
                           {header.isPlaceholder
                             ? null
                             : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
                         </TableHead>
                       ))}
                     </TableRow>

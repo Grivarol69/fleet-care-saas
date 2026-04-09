@@ -1,0 +1,1 @@
+export { SiigoSyncStatusBadge } from './SiigoSyncStatusBadge';

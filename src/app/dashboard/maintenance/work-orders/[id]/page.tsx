@@ -6,13 +6,14 @@ import axios from 'axios';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/hooks/use-toast';
-import { ArrowLeft, Trash2 } from 'lucide-react';
-import { GeneralInfoTab } from '../components/WorkOrderDetail/GeneralInfoTab';
-import { ServicesTab } from '../components/WorkOrderDetail/ServicesTab';
-import { PartsTab } from '../components/WorkOrderDetail/PartsTab';
-import { PurchaseOrdersTab } from '../components/WorkOrderDetail/PurchaseOrdersTab';
-import { ExpensesTab } from '../components/WorkOrderDetail/ExpensesTab';
-import { HistoryTab } from '../components/WorkOrderDetail/HistoryTab';
+import { ArrowLeft } from 'lucide-react';
+
+import { WorkOrderHeader } from '../components/WorkOrderDetail/WorkOrderHeader';
+import { ActivityTab } from '../components/WorkOrderDetail/ActivityTab';
+import { ComprasTab } from '../components/WorkOrderDetail/ComprasTab';
+import { CierreTab } from '../components/WorkOrderDetail/CierreTab';
+import { WorkOrderStepper } from '@/components/maintenance/work-orders/WorkOrderStepper';
+import { UnifiedWorkOrderForm } from '@/components/maintenance/work-orders/UnifiedWorkOrderForm';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,10 +25,17 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
+type CurrentUser = {
+  id: string;
+  role: string;
+  isSuperAdmin: boolean;
+};
+
 type WorkOrder = {
   id: string;
   title: string;
   description: string | null;
+  notes: string | null; // NUEVO
   status: string;
   mantType: string;
   priority: string;
@@ -40,6 +48,8 @@ type WorkOrder = {
   completionMileage: number | null;
   isPackageWork: boolean;
   packageName: string | null;
+  costCenterId: string | null;
+  costCenterRef: { id: string; name: string } | null;
   vehicle: {
     id: string;
     licensePlate: string;
@@ -75,6 +85,23 @@ type WorkOrder = {
     quantity: number;
     totalCost: number;
     status: string;
+    itemSource: string | null; // NUEVO
+    closureType: string | null; // NUEVO
+    notes: string | null; // NUEVO
+    providerId: string | null;
+    provider: { id: string; name: string } | null;
+    purchaseOrderItems: Array<{ id: string }>;
+    workOrderSubTasks?: Array<{
+      id: string;
+      procedureId: string | null;
+      temparioItemId: string | null;
+      description: string | null;
+      standardHours: number | null;
+      directHours: number | null;
+      status: string;
+      sequence: number;
+      notes: string | null;
+    }>;
     mantItem: {
       id: string;
       name: string;
@@ -87,10 +114,7 @@ type WorkOrder = {
     invoiceDate: string;
     totalAmount: number;
     status: string;
-    supplier: {
-      id: string;
-      name: string;
-    } | null;
+    supplier: { id: string; name: string } | null;
   }>;
   workOrderExpenses: Array<{
     id: string;
@@ -105,9 +129,38 @@ type WorkOrder = {
   approvals: Array<{
     id: string;
     status: string;
-    approvedBy: number | null;
+    approvedBy: string | null;
     approvedAt: string | null;
-    comments: string | null;
+    notes: string | null;
+  }>;
+  internalWorkTickets: Array<{
+    // NUEVO
+    id: string;
+    status: string;
+    notes: string | null;
+    laborEntries: Array<{
+      id: string;
+      workOrderItemId: string | null;
+      hours: number;
+      laborCost: number;
+      notes: string | null;
+    }>;
+    partEntries: Array<{
+      id: string;
+      workOrderItemId: string | null;
+      quantity: number;
+      unitCost: number;
+      totalCost: number;
+    }>;
+  }>;
+  purchaseOrders: Array<{
+    // NUEVO
+    id: string;
+    orderNumber: string;
+    status: string;
+    total: number;
+    notes: string | null;
+    provider: { id: string; name: string } | null;
   }>;
 };
 
@@ -119,6 +172,14 @@ export default function WorkOrderDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then((data: CurrentUser) => setCurrentUser(data))
+      .catch(() => {});
+  }, []);
 
   const workOrderId = params.id as string;
 
@@ -128,7 +189,9 @@ export default function WorkOrderDetailPage() {
 
   const fetchWorkOrder = async () => {
     try {
-      setIsLoading(true);
+      if (!workOrder) {
+        setIsLoading(true);
+      }
       const response = await axios.get(
         `/api/maintenance/work-orders/${workOrderId}`
       );
@@ -213,97 +276,54 @@ export default function WorkOrderDetailPage() {
     );
   }
 
-  const canDelete = workOrder.status !== 'COMPLETED';
-
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="flex justify-between items-start mb-6">
-        <div className="flex items-start gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push('/dashboard/maintenance/work-orders')}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">{workOrder.title}</h1>
-            <p className="text-muted-foreground mt-1">
-              {workOrder.vehicle.licensePlate} - {workOrder.vehicle.brand.name}{' '}
-              {workOrder.vehicle.line.name}
-            </p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          {canDelete && (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setShowDeleteDialog(true)}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Cancelar Orden
-            </Button>
-          )}
-        </div>
+      <WorkOrderHeader
+        workOrder={workOrder}
+        currentUser={currentUser}
+        onUpdate={handleUpdate}
+        onDelete={() => setShowDeleteDialog(true)}
+      />
+
+      <div className="bg-card border rounded-xl shadow-sm mb-6 mt-4 overflow-hidden">
+        <WorkOrderStepper currentStatus={workOrder.status as any} />
       </div>
 
-      {/* Tabs */}
-      <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="general">Info General</TabsTrigger>
-          <TabsTrigger value="services">
-            Servicios (
-            {
-              workOrder.workOrderItems.filter(
-                i =>
-                  i.mantItem.type === 'ACTION' || i.mantItem.type === 'SERVICE'
-              ).length
-            }
-            )
-          </TabsTrigger>
-          <TabsTrigger value="parts">
-            Repuestos (
-            {
-              workOrder.workOrderItems.filter(i => i.mantItem.type === 'PART')
-                .length
-            }
-            )
-          </TabsTrigger>
-          <TabsTrigger value="purchase-orders">Órdenes Compra</TabsTrigger>
-          <TabsTrigger value="expenses">
-            Gastos ({workOrder.workOrderExpenses.length})
-          </TabsTrigger>
-          <TabsTrigger value="history">Historial</TabsTrigger>
+      <Tabs defaultValue="editor" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="editor">Ítems (Unificado)</TabsTrigger>
+          <TabsTrigger value="compras">Órdenes de Compra</TabsTrigger>
+          <TabsTrigger value="cierre">Cierre Financiero</TabsTrigger>
+          <TabsTrigger value="actividad">Historial</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="general" className="mt-6">
-          <GeneralInfoTab workOrder={workOrder} onUpdate={handleUpdate} />
-        </TabsContent>
-
-        <TabsContent value="services" className="mt-6">
-          <ServicesTab workOrderId={workOrder.id} onRefresh={fetchWorkOrder} />
-        </TabsContent>
-
-        <TabsContent value="parts" className="mt-6">
-          <PartsTab
-            workOrderId={workOrder.id}
-            vehicleId={workOrder.vehicle.id}
+        <TabsContent value="editor" className="mt-6">
+          <UnifiedWorkOrderForm
+            initialData={workOrder}
+            currentUser={currentUser}
             onRefresh={fetchWorkOrder}
           />
         </TabsContent>
 
-        <TabsContent value="purchase-orders" className="mt-6">
-          <PurchaseOrdersTab workOrderId={workOrder.id} />
+        <TabsContent value="compras" className="mt-6">
+          <ComprasTab
+            workOrder={workOrder}
+            currentUser={currentUser}
+            onRefresh={fetchWorkOrder}
+          />
         </TabsContent>
 
-        <TabsContent value="expenses" className="mt-6">
-          <ExpensesTab workOrder={workOrder} onRefresh={fetchWorkOrder} />
+        <TabsContent value="cierre" className="mt-6">
+          <CierreTab
+            workOrder={workOrder}
+            currentUser={currentUser}
+            onRefresh={fetchWorkOrder}
+          />
         </TabsContent>
 
-        <TabsContent value="history" className="mt-6">
-          <HistoryTab workOrder={workOrder} />
+        <TabsContent value="actividad" className="mt-6">
+          <ActivityTab workOrder={workOrder} onRefresh={fetchWorkOrder} />
         </TabsContent>
       </Tabs>
 

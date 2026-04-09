@@ -7,7 +7,7 @@ export const odometerFormSchema = z
     measureType: z.enum(['KILOMETERS', 'HOURS'], {
       required_error: 'Debe seleccionar el tipo de medida',
     }),
-    measureValue: z.number().min(0, 'El valor debe ser mayor a 0'),
+    measureValue: z.coerce.number().min(0, 'El valor debe ser mayor a 0'),
     recordedAt: z.date({
       required_error: 'La fecha es requerida',
     }),

@@ -1,15 +1,14 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { MovementType, MovementReferenceType } from '@prisma/client';
 import { canManagePurchases } from '@/lib/permissions';
 
 // POST: Registrar un movimiento de inventario (Entrada/Salida)
 export async function POST(request: Request) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManagePurchases(user)) {
@@ -43,7 +42,7 @@ export async function POST(request: Request) {
     const cost = unitCost ? Number(unitCost) : 0;
 
     // Usamos transacción serializable para evitar condiciones de carrera en el costo promedio
-    const result = await prisma.$transaction(async tx => {
+    const result = await tenantPrisma.$transaction(async tx => {
       // 1. Obtener item actual con bloqueo (si fuera posible, Prisma usa FOR UPDATE en raw query, aquí confiamos en atomicidad de tx)
       const item = await tx.inventoryItem.findUnique({
         where: { id: inventoryItemId },

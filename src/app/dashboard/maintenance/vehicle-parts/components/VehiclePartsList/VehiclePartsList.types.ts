@@ -9,7 +9,7 @@ export type VehiclePartEntry = {
   mantItem: {
     id: string;
     name: string;
-    type: 'ACTION' | 'PART' | 'SERVICE';
+    type: 'PART' | 'SERVICE';
   };
   vehicleBrand: {
     id: string;

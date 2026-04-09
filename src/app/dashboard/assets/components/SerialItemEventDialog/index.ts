@@ -1,0 +1,1 @@
+export { SerialItemEventDialog } from './SerialItemEventDialog';

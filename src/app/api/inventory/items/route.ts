@@ -1,24 +1,23 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { canManagePurchases } from '@/lib/permissions';
 
 // GET: Listar items de inventario del tenant
 export async function GET(request: Request) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
     const status = searchParams.get('status');
     const masterPartId = searchParams.get('masterPartId');
+    const warehouse = searchParams.get('warehouse');
+    const lowStock = searchParams.get('lowStock') === 'true';
 
-    const whereClause: any = {
-      tenantId: user.tenantId,
-    };
+    const whereClause: any = {};
 
     if (status) {
       whereClause.status = status;
@@ -26,6 +25,10 @@ export async function GET(request: Request) {
 
     if (masterPartId) {
       whereClause.masterPartId = masterPartId;
+    }
+
+    if (warehouse) {
+      whereClause.warehouse = warehouse;
     }
 
     if (search) {
@@ -43,7 +46,7 @@ export async function GET(request: Request) {
       ];
     }
 
-    const items = await prisma.inventoryItem.findMany({
+    const items = await tenantPrisma.inventoryItem.findMany({
       where: whereClause,
       include: {
         masterPart: true,
@@ -53,7 +56,12 @@ export async function GET(request: Request) {
       },
     });
 
-    return NextResponse.json(items);
+    let resultItems = items;
+    if (lowStock) {
+      resultItems = items.filter((i: any) => Number(i.quantity) <= Number(i.minStock));
+    }
+
+    return NextResponse.json(resultItems);
   } catch (error) {
     console.error('Error fetching inventory items:', error);
     return new NextResponse('Internal Error', { status: 500 });
@@ -63,9 +71,9 @@ export async function GET(request: Request) {
 // POST: Crear nuevo item de inventario (Stock Inicial)
 export async function POST(request: Request) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManagePurchases(user)) {
@@ -93,7 +101,7 @@ export async function POST(request: Request) {
     const totalValue = Number(quantity) * Number(unitCost);
 
     // Usamos una transacción para asegurar consistencia
-    const result = await prisma.$transaction(async tx => {
+    const result = await tenantPrisma.$transaction(async tx => {
       // 1. Crear el Item de Inventario
       const newItem = await tx.inventoryItem.create({
         data: {

@@ -1,14 +1,12 @@
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { canCreateMantItems } from '@/lib/permissions';
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Búsqueda para autocompletado
@@ -16,16 +14,12 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const typeFilter = searchParams.get('type');
 
-    // Devolver items GLOBALES + del tenant
-    const mantItems = await prisma.mantItem.findMany({
+    // Devolver items del tenant y globales confiando en tenantPrisma
+    const mantItems = await tenantPrisma.mantItem.findMany({
       where: {
-        OR: [
-          { isGlobal: true }, // Items globales (Knowledge Base)
-          { tenantId: user.tenantId }, // Items custom del tenant
-        ],
         ...(typeFilter &&
-          ['ACTION', 'PART', 'SERVICE'].includes(typeFilter) && {
-            type: typeFilter as 'ACTION' | 'PART' | 'SERVICE',
+          ['PART', 'SERVICE'].includes(typeFilter) && {
+            type: typeFilter as 'PART' | 'SERVICE',
           }),
         ...(search && {
           AND: [
@@ -60,14 +54,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(req: Request) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { name, description, mantType, categoryId, type, isGlobal } =
-      await req.json();
+    const { name, description, categoryId, type, isGlobal } = await req.json();
 
     // Validación de campos requeridos
     if (!name || name.trim() === '') {
@@ -77,26 +69,14 @@ export async function POST(req: Request) {
       );
     }
 
-    if (
-      !mantType ||
-      !['PREVENTIVE', 'PREDICTIVE', 'CORRECTIVE', 'EMERGENCY'].includes(
-        mantType
-      )
-    ) {
-      return NextResponse.json(
-        { error: 'Tipo de mantenimiento inválido' },
-        { status: 400 }
-      );
-    }
-
-    if (!categoryId || categoryId <= 0) {
+    if (!categoryId || categoryId.trim() === '') {
       return NextResponse.json(
         { error: 'Categoría inválida' },
         { status: 400 }
       );
     }
 
-    if (type && !['ACTION', 'PART', 'SERVICE'].includes(type)) {
+    if (type && !['PART', 'SERVICE'].includes(type)) {
       return NextResponse.json(
         { error: 'Tipo de item inválido' },
         { status: 400 }
@@ -134,10 +114,9 @@ export async function POST(req: Request) {
     }
 
     // Verificar que la categoría existe (global o del tenant)
-    const category = await prisma.mantCategory.findFirst({
+    const category = await tenantPrisma.mantCategory.findFirst({
       where: {
         id: categoryId,
-        OR: [{ isGlobal: true }, { tenantId: targetTenant }],
       },
     });
 
@@ -149,7 +128,7 @@ export async function POST(req: Request) {
     }
 
     // Verificar que no exista un item con el mismo nombre en el scope
-    const existingItem = await prisma.mantItem.findFirst({
+    const existingItem = await tenantPrisma.mantItem.findFirst({
       where: {
         tenantId: targetTenant,
         name: name.trim(),
@@ -160,13 +139,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'El ítem ya existe' }, { status: 409 });
     }
 
-    const mantItem = await prisma.mantItem.create({
+    const mantItem = await tenantPrisma.mantItem.create({
       data: {
         name: name.trim(),
         description: description?.trim() || null,
-        mantType,
         categoryId,
-        type: type || 'ACTION',
+        type: type || 'SERVICE',
         tenantId: targetTenant,
         isGlobal: isGlobal || false,
       },

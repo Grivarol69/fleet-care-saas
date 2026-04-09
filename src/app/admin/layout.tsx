@@ -10,6 +10,7 @@ import {
   FileBox,
   Settings,
   ArrowLeft,
+  Bot,
 } from 'lucide-react';
 
 export default async function AdminLayout({
@@ -61,6 +62,16 @@ export default async function AdminLayout({
             >
               <FileBox className="mr-2 h-4 w-4" />
               Templates Globales
+            </Button>
+          </Link>
+
+          <Link href="/admin/kb-population">
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-white hover:bg-slate-800"
+            >
+              <Bot className="mr-2 h-4 w-4" />
+              KB AI Population
             </Button>
           </Link>
 

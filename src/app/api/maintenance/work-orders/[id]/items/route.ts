@@ -1,6 +1,5 @@
-import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { FinancialWatchdogService } from '@/lib/services/FinancialWatchdogService';
 import { InventoryService } from '@/lib/services/InventoryService';
 import { ItemType } from '@prisma/client';
@@ -14,9 +13,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -29,29 +28,28 @@ export async function GET(
     const typeParam = searchParams.get('type');
 
     // Verify parent WorkOrder belongs to tenant
-    const workOrder = await prisma.workOrder.findUnique({
-      where: { id: workOrderId, tenantId: user.tenantId },
+    const workOrder = await tenantPrisma.workOrder.findUnique({
+      where: { id: workOrderId },
     });
     if (!workOrder) {
       return NextResponse.json({ error: 'Not Found' }, { status: 404 });
     }
 
-    // Support multiple types: "SERVICE,ACTION" or single "PART"
+    // Support multiple types: "SERVICE,PART" or single "PART"
     let typeFilter: ItemType[] | undefined;
     if (typeParam) {
       const types = typeParam.split(',').map(t => t.trim()) as ItemType[];
       const validTypes: ItemType[] = types.filter(t =>
-        ['PART', 'SERVICE', 'ACTION'].includes(t)
+        ['PART', 'SERVICE'].includes(t)
       );
       if (validTypes.length > 0) {
         typeFilter = validTypes;
       }
     }
 
-    const items = await prisma.workOrderItem.findMany({
+    const items = await tenantPrisma.workOrderItem.findMany({
       where: {
         workOrderId,
-        tenantId: user.tenantId,
         ...(typeFilter ? { mantItem: { type: { in: typeFilter } } } : {}),
       },
       include: {
@@ -69,7 +67,7 @@ export async function GET(
       workOrderItemId: item.id,
       mantItemId: item.mantItemId,
       mantItemName: item.mantItem?.name || '-',
-      mantItemType: item.mantItem?.type || 'ACTION',
+      mantItemType: item.mantItem?.type || 'SERVICE',
       categoryName: item.mantItem?.category?.name || '-',
       masterPartId: item.masterPartId || null,
       masterPartCode: item.masterPart?.code || null,
@@ -105,9 +103,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -128,9 +126,8 @@ export async function POST(
     } = body;
 
     // 2. Fetch MantItem details
-    const mantItem = await prisma.mantItem.findUnique({
+    const mantItem = await tenantPrisma.mantItem.findUnique({
       where: { id: mantItemId },
-      include: { parts: { include: { masterPart: true } } },
     });
 
     if (!mantItem) {
@@ -144,25 +141,17 @@ export async function POST(
     const totalCost = Number(unitPrice) * Number(quantity);
 
     // 3. Financial Watchdog Check (Price Deviation)
-    // If it's a part and has a master part linked, check price
-    if (mantItem.type === 'PART' && mantItem.parts.length > 0) {
-      // Check against the first linked master part (simplified logic)
-      // ideally we should pass masterPartId from frontend if specific brand selected
-      // If masterPartId was provided in body, use that. Otherwise fallback to first linked.
-      const targetMasterPartId =
-        masterPartId || mantItem.parts[0]?.masterPartId;
-
-      if (targetMasterPartId) {
-        // Non-blocking check
-        FinancialWatchdogService.checkPriceDeviation(
-          user.tenantId,
-          targetMasterPartId,
-          unitPrice,
-          undefined,
-          workOrderId,
-          `Item agregado: ${finalDescription}`
-        ).catch(console.error);
-      }
+    // If it's a part and a masterPartId was provided, check price deviation
+    if (mantItem.type === 'PART' && masterPartId) {
+      // Non-blocking check
+      FinancialWatchdogService.checkPriceDeviation(
+        user.tenantId,
+        masterPartId,
+        unitPrice,
+        undefined,
+        workOrderId,
+        `Item agregado: ${finalDescription}`
+      ).catch(console.error);
     }
 
     // 4. Inventory Check (Visual Warning / Validation)
@@ -182,7 +171,7 @@ export async function POST(
     }
 
     // 5. Create Work Order Item
-    const newItem = await prisma.workOrderItem.create({
+    const newItem = await tenantPrisma.workOrderItem.create({
       data: {
         tenantId: user.tenantId,
         workOrderId,
@@ -198,6 +187,7 @@ export async function POST(
           : itemSource === 'INTERNAL_STOCK'
             ? 'Internal Inventory'
             : 'TBD',
+        providerId: providerId || null,
         purchasedBy: user.id,
         status: 'PENDING',
         // Link closure type if internal
@@ -205,6 +195,7 @@ export async function POST(
       },
       include: {
         mantItem: true,
+        provider: true,
       },
     });
 

@@ -1,15 +1,14 @@
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { canManageVehicles } from '@/lib/permissions';
 
 // GET all documents for a specific vehicle
 export async function GET(req: Request) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
 
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(req.url);
@@ -19,12 +18,9 @@ export async function GET(req: Request) {
       return new NextResponse('Vehicle plate is required', { status: 400 });
     }
 
-    const vehicle = await prisma.vehicle.findUnique({
+    const vehicle = await tenantPrisma.vehicle.findFirst({
       where: {
-        tenantId_licensePlate: {
-          tenantId: user.tenantId,
-          licensePlate: vehiclePlate,
-        },
+        licensePlate: vehiclePlate,
       },
     });
 
@@ -32,9 +28,8 @@ export async function GET(req: Request) {
       return new NextResponse('Vehicle not found', { status: 404 });
     }
 
-    const documents = await prisma.document.findMany({
+    const documents = await tenantPrisma.document.findMany({
       where: {
-        tenantId: user.tenantId,
         vehicleId: vehicle.id,
       },
       include: {
@@ -55,10 +50,10 @@ export async function GET(req: Request) {
 // POST a new document for a vehicle
 export async function POST(req: Request) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
 
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManageVehicles(user)) {
@@ -86,12 +81,9 @@ export async function POST(req: Request) {
     // Extraer fileName del fileUrl automáticamente
     const fileName = fileUrl.split('/').pop() || 'document.pdf';
 
-    const vehicle = await prisma.vehicle.findUnique({
+    const vehicle = await tenantPrisma.vehicle.findFirst({
       where: {
-        tenantId_licensePlate: {
-          tenantId: user.tenantId,
-          licensePlate: vehiclePlate,
-        },
+        licensePlate: vehiclePlate,
       },
     });
 
@@ -102,7 +94,7 @@ export async function POST(req: Request) {
     }
 
     // Verify document type exists and is accessible
-    const docType = await prisma.documentTypeConfig.findUnique({
+    const docType = await tenantPrisma.documentTypeConfig.findUnique({
       where: { id: documentTypeId },
     });
 
@@ -115,7 +107,7 @@ export async function POST(req: Request) {
       return new NextResponse('Document type not accessible', { status: 403 });
     }
 
-    const newDocument = await prisma.document.create({
+    const newDocument = await tenantPrisma.document.create({
       data: {
         tenantId: user.tenantId,
         vehicleId: vehicle.id,

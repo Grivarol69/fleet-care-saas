@@ -28,7 +28,10 @@ export function WorkOrdersFilters({
   onClearFilters,
 }: WorkOrdersFiltersProps) {
   const hasActiveFilters =
-    filters.search || filters.status || filters.mantType || filters.priority;
+    filters.search !== '' ||
+    filters.status !== 'all' ||
+    filters.mantType !== 'all' ||
+    filters.priority !== 'all';
 
   return (
     <div className="bg-muted/50 p-4 rounded-lg space-y-4 mb-6">
@@ -91,6 +94,7 @@ export function WorkOrdersFilters({
             <SelectItem value="LOW">Baja</SelectItem>
             <SelectItem value="MEDIUM">Media</SelectItem>
             <SelectItem value="HIGH">Alta</SelectItem>
+            <SelectItem value="URGENT">Urgente</SelectItem>
             <SelectItem value="CRITICAL">Crítica</SelectItem>
           </SelectContent>
         </Select>

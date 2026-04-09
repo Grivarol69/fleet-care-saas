@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 
 export type RecentInvoice = {
   id: string;
@@ -20,15 +19,14 @@ export type RecentInvoice = {
 
 export async function GET() {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const recentInvoices = await prisma.invoice.findMany({
+    const recentInvoices = await tenantPrisma.invoice.findMany({
       where: {
-        tenantId: user.tenantId,
-      },
+        },
       include: {
         supplier: {
           select: {

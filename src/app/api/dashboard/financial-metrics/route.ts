@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 
 export type VehicleExpense = {
   rank: number;
@@ -82,7 +81,7 @@ function normalizeCategoryKey(name: string): string {
 
 export async function GET() {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -118,7 +117,7 @@ export async function GET() {
     // 1. GASTOS POR VEHÍCULO (MES ACTUAL)
     // ============================================
 
-    const currentMonthInvoices = await prisma.invoice.findMany({
+    const currentMonthInvoices = await tenantPrisma.invoice.findMany({
       where: {
         tenantId,
         invoiceDate: {
@@ -143,7 +142,7 @@ export async function GET() {
     });
 
     // Gastos mes anterior (para tendencias)
-    const previousMonthInvoices = await prisma.invoice.findMany({
+    const previousMonthInvoices = await tenantPrisma.invoice.findMany({
       where: {
         tenantId,
         invoiceDate: {
@@ -266,7 +265,7 @@ export async function GET() {
     // 2. PREVENTIVO VS CORRECTIVO
     // ============================================
 
-    const maintenanceTypeAgg = await prisma.invoice.groupBy({
+    const maintenanceTypeAgg = await tenantPrisma.invoice.groupBy({
       by: ['workOrderId'],
       where: {
         tenantId,
@@ -287,7 +286,7 @@ export async function GET() {
       .map(agg => agg.workOrderId)
       .filter((id): id is string => id !== null);
 
-    const workOrders = await prisma.workOrder.findMany({
+    const workOrders = await tenantPrisma.workOrder.findMany({
       where: {
         id: { in: workOrderIds },
       },
@@ -342,7 +341,7 @@ export async function GET() {
     // 3. GASTO POR CATEGORÍA
     // ============================================
 
-    const invoicesWithItems = await prisma.invoice.findMany({
+    const invoicesWithItems = await tenantPrisma.invoice.findMany({
       where: {
         tenantId,
         invoiceDate: {
@@ -420,7 +419,7 @@ export async function GET() {
           )
         : 0;
 
-    const activeVehiclesCount = await prisma.vehicle.count({
+    const activeVehiclesCount = await tenantPrisma.vehicle.count({
       where: {
         tenantId,
         status: 'ACTIVE',
@@ -428,7 +427,7 @@ export async function GET() {
     });
 
     // Facturas pendientes (por aprobar o pagar)
-    const pendingInvoices = await prisma.invoice.aggregate({
+    const pendingInvoices = await tenantPrisma.invoice.aggregate({
       where: {
         tenantId,
         status: 'PENDING', // Facturas pendientes de aprobación

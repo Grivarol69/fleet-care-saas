@@ -1,23 +1,15 @@
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Devolver categorías GLOBALES + del tenant
-    const categories = await prisma.mantCategory.findMany({
-      where: {
-        OR: [
-          { isGlobal: true }, // Categorías globales (Knowledge Base)
-          { tenantId: user.tenantId }, // Categorías custom del tenant
-        ],
-      },
+    // Devolver categorías globales y del tenant — interceptor aplica OR[tenantId, isGlobal]
+    const categories = await tenantPrisma.mantCategory.findMany({
       orderBy: {
         name: 'asc',
       },
@@ -31,10 +23,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { name, description, isGlobal } = await req.json();
@@ -72,7 +63,7 @@ export async function POST(req: Request) {
     }
 
     // Verificar que no exista una categoría con el mismo nombre
-    const existingCategory = await prisma.mantCategory.findFirst({
+    const existingCategory = await tenantPrisma.mantCategory.findFirst({
       where: {
         tenantId: targetTenant,
         name: name.trim(),
@@ -86,7 +77,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const category = await prisma.mantCategory.create({
+    const category = await tenantPrisma.mantCategory.create({
       data: {
         name: name.trim(),
         description: description?.trim() || null,

@@ -1,5 +1,4 @@
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { canManageMaintenancePrograms } from '@/lib/permissions';
 
@@ -8,9 +7,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -20,10 +19,9 @@ export async function GET(
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
-    const mantTemplate = await prisma.maintenanceTemplate.findFirst({
+    const mantTemplate = await tenantPrisma.maintenanceTemplate.findFirst({
       where: {
         id: mantTemplateId,
-        tenantId: user.tenantId,
       },
       include: {
         brand: {
@@ -47,7 +45,6 @@ export async function GET(
                     id: true,
                     name: true,
                     description: true,
-                    mantType: true,
                     type: true,
                     category: {
                       select: {
@@ -92,9 +89,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManageMaintenancePrograms(user)) {
@@ -137,10 +134,9 @@ export async function PATCH(
     }
 
     // Verificar que el template existe y pertenece al tenant
-    const existingTemplate = await prisma.maintenanceTemplate.findFirst({
+    const existingTemplate = await tenantPrisma.maintenanceTemplate.findFirst({
       where: {
         id: mantTemplateId,
-        tenantId: user.tenantId,
       },
     });
 
@@ -152,10 +148,9 @@ export async function PATCH(
     }
 
     // Verificar que la marca existe y pertenece al tenant
-    const brand = await prisma.vehicleBrand.findFirst({
+    const brand = await tenantPrisma.vehicleBrand.findFirst({
       where: {
         id: vehicleBrandId,
-        tenantId: user.tenantId,
       },
     });
 
@@ -167,10 +162,9 @@ export async function PATCH(
     }
 
     // Verificar que la línea existe, pertenece al tenant y a la marca
-    const line = await prisma.vehicleLine.findFirst({
+    const line = await tenantPrisma.vehicleLine.findFirst({
       where: {
         id: vehicleLineId,
-        tenantId: user.tenantId,
         brandId: vehicleBrandId,
       },
     });
@@ -186,9 +180,8 @@ export async function PATCH(
     }
 
     // Verificar que no exista otro template con el mismo nombre para la misma marca/línea (excluyendo el actual)
-    const duplicateTemplate = await prisma.maintenanceTemplate.findFirst({
+    const duplicateTemplate = await tenantPrisma.maintenanceTemplate.findFirst({
       where: {
-        tenantId: user.tenantId,
         vehicleBrandId,
         vehicleLineId,
         name: name.trim(),
@@ -208,7 +201,7 @@ export async function PATCH(
       );
     }
 
-    const updatedTemplate = await prisma.maintenanceTemplate.update({
+    const updatedTemplate = await tenantPrisma.maintenanceTemplate.update({
       where: {
         id: mantTemplateId,
       },
@@ -239,7 +232,6 @@ export async function PATCH(
                   select: {
                     id: true,
                     name: true,
-                    mantType: true,
                     type: true,
                   },
                 },
@@ -271,9 +263,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManageMaintenancePrograms(user)) {
@@ -291,10 +283,9 @@ export async function DELETE(
     }
 
     // Verificar que el template existe y pertenece al tenant
-    const existingTemplate = await prisma.maintenanceTemplate.findUnique({
+    const existingTemplate = await tenantPrisma.maintenanceTemplate.findUnique({
       where: {
         id: mantTemplateId,
-        tenantId: user.tenantId,
       },
     });
 
@@ -306,9 +297,8 @@ export async function DELETE(
     }
 
     // Verificar si hay vehículos asignados a este template antes de eliminar
-    const vehiclePlansCount = await prisma.vehicleMantProgram.count({
+    const vehiclePlansCount = await tenantPrisma.vehicleMantProgram.count({
       where: {
-        tenantId: user.tenantId,
         generatedFrom: {
           contains: existingTemplate.name,
         },
@@ -327,7 +317,7 @@ export async function DELETE(
     }
 
     // Usar soft delete cambiando el status a INACTIVE
-    await prisma.maintenanceTemplate.update({
+    await tenantPrisma.maintenanceTemplate.update({
       where: {
         id: mantTemplateId,
       },

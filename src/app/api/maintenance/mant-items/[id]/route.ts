@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { requireMasterDataMutationPermission } from '@/lib/permissions';
 
@@ -8,10 +8,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -46,7 +45,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.mantItem.delete({
+    await tenantPrisma.mantItem.delete({
       where: { id: mantItemId },
     });
 
@@ -62,10 +61,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -75,23 +73,11 @@ export async function PATCH(
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
-    const { name, description, mantType, categoryId, type } = await req.json();
+    const { name, description, categoryId, type } = await req.json();
 
     if (!name || name.trim() === '') {
       return NextResponse.json(
         { error: 'El nombre es requerido' },
-        { status: 400 }
-      );
-    }
-
-    if (
-      !mantType ||
-      !['PREVENTIVE', 'PREDICTIVE', 'CORRECTIVE', 'EMERGENCY'].includes(
-        mantType
-      )
-    ) {
-      return NextResponse.json(
-        { error: 'Tipo de mantenimiento inválido' },
         { status: 400 }
       );
     }
@@ -103,7 +89,7 @@ export async function PATCH(
       );
     }
 
-    if (type && !['ACTION', 'PART', 'SERVICE'].includes(type)) {
+    if (type && !['PART', 'SERVICE'].includes(type)) {
       return NextResponse.json(
         { error: 'Tipo de item inválido' },
         { status: 400 }
@@ -151,7 +137,7 @@ export async function PATCH(
     }
 
     // Verificar duplicados en el mismo scope
-    const duplicateItem = await prisma.mantItem.findFirst({
+    const duplicateItem = await tenantPrisma.mantItem.findFirst({
       where: {
         tenantId: existingItem.tenantId,
         name: name.trim(),
@@ -166,12 +152,11 @@ export async function PATCH(
       );
     }
 
-    const updatedMantItem = await prisma.mantItem.update({
+    const updatedMantItem = await tenantPrisma.mantItem.update({
       where: { id: mantItemId },
       data: {
         name: name.trim(),
         description: description?.trim() || null,
-        mantType,
         categoryId,
         type: type || existingItem.type,
       },

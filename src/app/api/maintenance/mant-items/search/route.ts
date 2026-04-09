@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { requireCurrentUser } from '@/lib/auth';
 import { Prisma } from '@prisma/client';
 
 /**
@@ -9,14 +8,14 @@ import { Prisma } from '@prisma/client';
  */
 export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
     const q = searchParams.get('q') || '';
-    const type = searchParams.get('type'); // ACTION, PART, SERVICE
+    const type = searchParams.get('type'); // PART, SERVICE
 
     const where: Prisma.MantItemWhereInput = {
       OR: [{ tenantId: user.tenantId }, { tenantId: null, isGlobal: true }],
@@ -27,27 +26,15 @@ export async function GET(request: NextRequest) {
       where.name = { contains: q.trim(), mode: 'insensitive' };
     }
 
-    if (type && ['ACTION', 'PART', 'SERVICE'].includes(type)) {
-      where.type = type as 'ACTION' | 'PART' | 'SERVICE';
+    if (type && ['PART', 'SERVICE'].includes(type)) {
+      where.type = type as 'PART' | 'SERVICE';
     }
 
-    const items = await prisma.mantItem.findMany({
+    const items = await tenantPrisma.mantItem.findMany({
       where,
       include: {
         category: {
           select: { name: true },
-        },
-        parts: {
-          include: {
-            masterPart: {
-              select: {
-                id: true,
-                code: true,
-                description: true,
-                referencePrice: true,
-              },
-            },
-          },
         },
       },
       take: 20,
@@ -60,16 +47,6 @@ export async function GET(request: NextRequest) {
       description: item.description,
       type: item.type,
       categoryName: item.category.name,
-      parts: item.parts.map(p => ({
-        masterPartId: p.masterPart.id,
-        code: p.masterPart.code,
-        description: p.masterPart.description,
-        referencePrice: p.masterPart.referencePrice
-          ? Number(p.masterPart.referencePrice)
-          : null,
-        quantity: Number(p.quantity),
-        isPrimary: p.isPrimary,
-      })),
     }));
 
     return NextResponse.json(results);

@@ -13,6 +13,11 @@ import {
   Package,
   ShoppingCart,
   BookOpen,
+  Plug2,
+  Landmark,
+  Clock,
+  Droplets,
+  Disc3,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -36,28 +41,70 @@ export const dataAdminSidebar: SidebarItem[] = [
     icon: LayoutDashboard,
     label: 'Dashboard',
     href: '/dashboard',
-    roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER], // TECHNICIAN y DRIVER no ven dashboard
+    roles: [
+      UserRole.SUPER_ADMIN,
+      UserRole.OWNER,
+      UserRole.MANAGER,
+      UserRole.COORDINATOR,
+    ], // TECHNICIAN y DRIVER no ven dashboard
   },
   {
     icon: Building2,
     label: 'Empresa',
-    roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
+    roles: [
+      UserRole.SUPER_ADMIN,
+      UserRole.OWNER,
+      UserRole.MANAGER,
+      UserRole.COORDINATOR,
+    ],
     subItems: [
       {
         label: 'Información',
         href: '/dashboard/empresa/informacion',
-        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
+        ],
       },
       {
         label: 'Configuración',
         icon: Settings,
         href: '/dashboard/empresa/configuracion',
-        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
+        ],
       },
       {
         label: 'Sucursales',
         href: '/dashboard/empresa/sucursales',
-        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
+        ],
+      },
+      {
+        label: 'Integraciones',
+        icon: Plug2,
+        href: '/dashboard/empresa/integraciones/siigo',
+        roles: [UserRole.OWNER, UserRole.MANAGER, UserRole.COORDINATOR],
+      },
+      {
+        label: 'Centros de Costos',
+        icon: Landmark,
+        href: '/dashboard/cost-centers',
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
+        ],
       },
     ],
   },
@@ -69,6 +116,7 @@ export const dataAdminSidebar: SidebarItem[] = [
       UserRole.OWNER,
       UserRole.MANAGER,
       UserRole.TECHNICIAN,
+      UserRole.COORDINATOR,
       UserRole.DRIVER,
     ],
     subItems: [
@@ -79,28 +127,49 @@ export const dataAdminSidebar: SidebarItem[] = [
           UserRole.SUPER_ADMIN,
           UserRole.OWNER,
           UserRole.MANAGER,
+          UserRole.COORDINATOR,
           UserRole.TECHNICIAN,
         ],
       },
       {
         label: 'Marcas',
         href: '/dashboard/vehicles/brands',
-        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
+        ],
       },
       {
         label: 'Líneas',
         href: '/dashboard/vehicles/lines',
-        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
+        ],
       },
       {
         label: 'Tipos',
         href: '/dashboard/vehicles/types',
-        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
+        ],
       },
       {
         label: 'Documentos Obligatorios',
         href: '/dashboard/vehicles/documents',
-        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
+        ],
       },
       {
         label: 'Odómetro',
@@ -110,10 +179,34 @@ export const dataAdminSidebar: SidebarItem[] = [
           UserRole.SUPER_ADMIN,
           UserRole.OWNER,
           UserRole.MANAGER,
+          UserRole.COORDINATOR,
           UserRole.TECHNICIAN,
           UserRole.DRIVER,
         ],
       }, // Todos registran km
+      {
+        label: 'Vales de Combustible',
+        icon: Droplets,
+        href: '/dashboard/fuel/vouchers',
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.PURCHASER,
+        ],
+      },
+      {
+        label: 'Neumáticos',
+        icon: Disc3,
+        href: '/dashboard/assets',
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
+          UserRole.TECHNICIAN,
+        ],
+      },
     ],
   },
   {
@@ -123,6 +216,7 @@ export const dataAdminSidebar: SidebarItem[] = [
       UserRole.SUPER_ADMIN,
       UserRole.OWNER,
       UserRole.MANAGER,
+      UserRole.COORDINATOR,
       UserRole.PURCHASER,
       UserRole.TECHNICIAN,
     ],
@@ -130,28 +224,42 @@ export const dataAdminSidebar: SidebarItem[] = [
       {
         label: 'Master Items',
         href: '/dashboard/maintenance/mant-items',
-        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
+        ],
       },
       {
         label: 'Categorías',
         href: '/dashboard/maintenance/mant-categories',
-        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
+        ],
       },
       {
-        label: 'Plantillas Planes Mantenimiento',
+        label: 'Planes de Mantenimiento',
         href: '/dashboard/maintenance/mant-template',
-        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
-      },
-      {
-        label: 'Paquetes de Mantenimiento',
-        icon: ClipboardCheck,
-        href: '/dashboard/maintenance/packages',
-        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
+        ],
       },
       {
         label: 'Programas Vehículos',
         href: '/dashboard/maintenance/vehicle-programs',
-        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
+        ],
       },
       {
         label: 'Órdenes de Trabajo',
@@ -160,6 +268,7 @@ export const dataAdminSidebar: SidebarItem[] = [
           UserRole.SUPER_ADMIN,
           UserRole.OWNER,
           UserRole.MANAGER,
+          UserRole.COORDINATOR,
           UserRole.PURCHASER,
           UserRole.TECHNICIAN,
         ],
@@ -172,6 +281,7 @@ export const dataAdminSidebar: SidebarItem[] = [
           UserRole.SUPER_ADMIN,
           UserRole.OWNER,
           UserRole.MANAGER,
+          UserRole.COORDINATOR,
           UserRole.PURCHASER,
         ],
       }, // PURCHASER gestiona facturas
@@ -183,6 +293,7 @@ export const dataAdminSidebar: SidebarItem[] = [
           UserRole.SUPER_ADMIN,
           UserRole.OWNER,
           UserRole.MANAGER,
+          UserRole.COORDINATOR,
           UserRole.PURCHASER,
         ],
       },
@@ -190,7 +301,23 @@ export const dataAdminSidebar: SidebarItem[] = [
         label: 'KB Autopartes',
         icon: BookOpen,
         href: '/dashboard/maintenance/vehicle-parts',
-        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
+        ],
+      },
+      {
+        label: 'Tempario',
+        icon: Clock,
+        href: '/dashboard/maintenance/tempario',
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
+        ],
       },
       {
         label: 'Alertas',
@@ -199,6 +326,7 @@ export const dataAdminSidebar: SidebarItem[] = [
           UserRole.SUPER_ADMIN,
           UserRole.OWNER,
           UserRole.MANAGER,
+          UserRole.COORDINATOR,
           UserRole.TECHNICIAN,
         ],
       },
@@ -211,6 +339,7 @@ export const dataAdminSidebar: SidebarItem[] = [
       UserRole.SUPER_ADMIN,
       UserRole.OWNER,
       UserRole.MANAGER,
+      UserRole.COORDINATOR,
       UserRole.PURCHASER,
       UserRole.TECHNICIAN,
     ],
@@ -222,16 +351,30 @@ export const dataAdminSidebar: SidebarItem[] = [
           UserRole.SUPER_ADMIN,
           UserRole.OWNER,
           UserRole.MANAGER,
+          UserRole.COORDINATOR,
           UserRole.PURCHASER,
         ],
       },
       {
-        label: 'Compras',
-        href: '/dashboard/inventory/purchases/new',
+        label: 'Stock',
+        href: '/dashboard/inventory/stock',
         roles: [
           UserRole.SUPER_ADMIN,
           UserRole.OWNER,
           UserRole.MANAGER,
+          UserRole.COORDINATOR,
+          UserRole.PURCHASER,
+          UserRole.TECHNICIAN,
+        ],
+      },
+      {
+        label: 'Compras',
+        href: '/dashboard/inventory/purchases',
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
           UserRole.PURCHASER,
         ],
       }, // PURCHASER gestiona compras
@@ -244,13 +387,19 @@ export const dataAdminSidebar: SidebarItem[] = [
       UserRole.SUPER_ADMIN,
       UserRole.OWNER,
       UserRole.MANAGER,
+      UserRole.COORDINATOR,
       UserRole.TECHNICIAN,
     ],
     subItems: [
       {
         label: 'Crear',
         href: '/dashboard/checklist/crear',
-        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
+        ],
       },
       {
         label: 'Inspeccionar',
@@ -259,6 +408,7 @@ export const dataAdminSidebar: SidebarItem[] = [
           UserRole.SUPER_ADMIN,
           UserRole.OWNER,
           UserRole.MANAGER,
+          UserRole.COORDINATOR,
           UserRole.TECHNICIAN,
         ],
       },
@@ -269,6 +419,7 @@ export const dataAdminSidebar: SidebarItem[] = [
           UserRole.SUPER_ADMIN,
           UserRole.OWNER,
           UserRole.MANAGER,
+          UserRole.COORDINATOR,
           UserRole.TECHNICIAN,
         ],
       },
@@ -281,18 +432,29 @@ export const dataAdminSidebar: SidebarItem[] = [
       UserRole.SUPER_ADMIN,
       UserRole.OWNER,
       UserRole.MANAGER,
+      UserRole.COORDINATOR,
       UserRole.PURCHASER,
     ],
     subItems: [
       {
         label: 'Técnicos',
         href: '/dashboard/people/technician',
-        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
+        ],
       },
       {
         label: 'Conductores',
         href: '/dashboard/people/driver',
-        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
+        ],
       },
       {
         label: 'Proveedores',
@@ -301,6 +463,7 @@ export const dataAdminSidebar: SidebarItem[] = [
           UserRole.SUPER_ADMIN,
           UserRole.OWNER,
           UserRole.MANAGER,
+          UserRole.COORDINATOR,
           UserRole.PURCHASER,
         ],
       }, // PURCHASER gestiona proveedores
@@ -309,29 +472,60 @@ export const dataAdminSidebar: SidebarItem[] = [
   {
     icon: BarChart2,
     label: 'Reportes',
-    roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
+    roles: [
+      UserRole.SUPER_ADMIN,
+      UserRole.OWNER,
+      UserRole.MANAGER,
+      UserRole.COORDINATOR,
+    ],
     subItems: [
       {
         label: 'Costos',
         href: '/dashboard/reports/maintenance-costs',
-        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
+        ],
       }, // TECHNICIAN no ve costos
       {
         label: 'Estado Flota',
         href: '/dashboard/reports/fleet-status',
-        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
+        ],
       },
       {
         label: 'Eficiencia',
         href: '/dashboard/reports/maintenance-efficiency',
-        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
+        ],
+      },
+      {
+        label: 'Combustible',
+        icon: Droplets,
+        href: '/dashboard/reports/fuel-analytics',
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
+        ],
       },
     ],
   },
   {
     icon: Settings,
     label: 'Configuración',
-    roles: [UserRole.SUPER_ADMIN, UserRole.OWNER], // Solo SUPER_ADMIN y OWNER gestionan usuarios
+    roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.COORDINATOR], // Solo SUPER_ADMIN, OWNER y COORDINATOR gestionan usuarios y docs
     subItems: [
       {
         label: 'Tenant',
@@ -344,10 +538,20 @@ export const dataAdminSidebar: SidebarItem[] = [
         roles: [UserRole.SUPER_ADMIN, UserRole.OWNER],
       },
       {
+        label: 'Auditoría',
+        href: '/dashboard/admin/audit-log',
+        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
+      },
+      {
+        label: 'Watchdog de Precios',
+        href: '/dashboard/admin/watchdog',
+        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER],
+      },
+      {
         label: 'Tipos de Documento',
         icon: FileCheck,
         href: '/dashboard/admin/document-types',
-        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER],
+        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.COORDINATOR],
       },
       {
         label: 'Roles',

@@ -1,12 +1,13 @@
-import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
-import { ItemClosureType, WorkOrderStatus } from '@prisma/client';
+import { requireCurrentUser } from '@/lib/auth';
+import { WorkOrderStatus } from '@prisma/client';
 import {
   canExecuteWorkOrders,
   canApproveWorkOrder,
   canCloseWorkOrder,
+  canOverrideWorkOrderFreeze,
 } from '@/lib/permissions';
+import { workOrderPayloadSchema } from '@/lib/validations/work-order';
 
 // ========================================
 // ALLOWED TRANSITIONS — WO Lifecycle FSM
@@ -19,42 +20,21 @@ type RoleGuard =
   | 'canApproveWorkOrder'
   | 'canCloseWorkOrder';
 
-interface TransitionRule {
-  allowedRoles: RoleGuard[];
-}
-
-const ALLOWED_TRANSITIONS: Record<
-  WorkOrderStatus,
-  Partial<Record<WorkOrderStatus, TransitionRule>>
-> = {
+const ALLOWED_TRANSITIONS: Record<string, Record<string, string>> = {
   PENDING: {
-    IN_PROGRESS: { allowedRoles: ['canExecuteWorkOrders'] },
-    PENDING_APPROVAL: { allowedRoles: ['canApproveWorkOrder'] },
-    CANCELLED: { allowedRoles: ['canApproveWorkOrder'] },
+    PENDING_APPROVAL: 'canExecuteWorkOrders',
+    CANCELLED: 'canApproveWorkOrder',
   },
   PENDING_APPROVAL: {
-    APPROVED: { allowedRoles: ['canApproveWorkOrder'] },
-    REJECTED: { allowedRoles: ['canApproveWorkOrder'] },
-    CANCELLED: { allowedRoles: ['canApproveWorkOrder'] },
+    APPROVED: 'canApproveWorkOrder',
+    REJECTED: 'canApproveWorkOrder',
   },
-  APPROVED: {
-    IN_PROGRESS: { allowedRoles: ['canExecuteWorkOrders'] },
-    CANCELLED: { allowedRoles: ['canApproveWorkOrder'] },
-  },
+  APPROVED: { IN_PROGRESS: 'canExecuteWorkOrders' },
   IN_PROGRESS: {
-    COMPLETED: { allowedRoles: ['canCloseWorkOrder'] },
-    PENDING_INVOICE: { allowedRoles: ['canExecuteWorkOrders'] },
-    PENDING_APPROVAL: { allowedRoles: ['canApproveWorkOrder'] },
-    CANCELLED: { allowedRoles: ['canApproveWorkOrder'] },
+    PENDING_INVOICE: 'canCloseWorkOrder',
+    CANCELLED: 'canApproveWorkOrder',
   },
-  PENDING_INVOICE: {
-    COMPLETED: { allowedRoles: ['canCloseWorkOrder'] },
-    CANCELLED: { allowedRoles: ['canApproveWorkOrder'] },
-  },
-  // Terminal states — no transitions out
-  COMPLETED: {},
-  REJECTED: {},
-  CANCELLED: {},
+  PENDING_INVOICE: { COMPLETED: 'canCloseWorkOrder' },
 };
 
 /**
@@ -67,9 +47,9 @@ export async function GET(
   try {
     const { id } = await params;
     console.log(`====== [GET WO] STARTING REQUEST ID: ${id} ======`);
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const workOrderId = id;
@@ -77,10 +57,9 @@ export async function GET(
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
-    const workOrder = await prisma.workOrder.findUnique({
+    const workOrder = await tenantPrisma.workOrder.findUnique({
       where: {
         id: workOrderId,
-        tenantId: user.tenantId,
       },
       include: {
         vehicle: {
@@ -127,6 +106,15 @@ export async function GET(
                 type: true,
               },
             },
+            provider: {
+              select: { id: true, name: true },
+            },
+            purchaseOrderItems: {
+              select: { id: true },
+            },
+            workOrderSubTasks: {
+              orderBy: { sequence: 'asc' },
+            },
           },
         },
         invoices: {
@@ -146,6 +134,60 @@ export async function GET(
         },
         workOrderExpenses: true,
         approvals: true,
+        internalWorkTickets: {
+          include: {
+            laborEntries: {
+              select: {
+                id: true,
+                workOrderItemId: true,
+                hours: true,
+                laborCost: true,
+                notes: true,
+              },
+            },
+            partEntries: {
+              select: {
+                id: true,
+                workOrderItemId: true,
+                quantity: true,
+                unitCost: true,
+                totalCost: true,
+              },
+            },
+          },
+        },
+        purchaseOrders: {
+          select: {
+            id: true,
+            orderNumber: true,
+            status: true,
+            type: true,
+            total: true,
+            notes: true,
+            provider: {
+              select: { id: true, name: true },
+            },
+            items: {
+              select: {
+                id: true,
+                quantity: true,
+                unitPrice: true,
+                workOrderItem: {
+                  select: {
+                    description: true,
+                    mantItem: { select: { name: true } },
+                  },
+                },
+              },
+            },
+          },
+        },
+        costCenterRef: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 
@@ -198,7 +240,7 @@ Stack: ${error instanceof Error ? error.stack : 'N/A'}
  */
 function checkRoleGuard(
   guard: RoleGuard,
-  user: Awaited<ReturnType<typeof getCurrentUser>>
+  user: NonNullable<Awaited<ReturnType<typeof requireCurrentUser>>['user']>
 ): boolean {
   if (!user) return false;
   switch (guard) {
@@ -221,9 +263,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -235,8 +277,8 @@ export async function PATCH(
     const body = await request.json();
 
     // Validar que la WO existe y pertenece al tenant
-    const existingWO = await prisma.workOrder.findUnique({
-      where: { id: workOrderId, tenantId: user.tenantId },
+    const existingWO = await tenantPrisma.workOrder.findUnique({
+      where: { id: workOrderId },
       include: { maintenanceAlerts: true },
     });
 
@@ -254,11 +296,31 @@ export async function PATCH(
       completionMileage,
       technicianId,
       providerId,
+      costCenterId,
+      priority, // NUEVO
+      description, // NUEVO
+      notes, // NUEVO
     } = body;
 
     // Preparar datos para actualizar
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateData: Record<string, any> = {};
+
+    if (costCenterId !== undefined) {
+      updateData.costCenterId = costCenterId;
+    }
+
+    if (priority !== undefined) {
+      updateData.priority = priority;
+    }
+
+    if (description !== undefined) {
+      updateData.description = description;
+    }
+
+    if (notes !== undefined) {
+      updateData.notes = notes;
+    }
 
     if (status) {
       const fromStatus = existingWO.status as WorkOrderStatus;
@@ -270,9 +332,9 @@ export async function PATCH(
       // 2. Check the user's role satisfies at least one allowed guard
       // ──────────────────────────────────────────────────────────────
       const allowedTargets = ALLOWED_TRANSITIONS[fromStatus];
-      const transitionRule = allowedTargets?.[toStatus];
+      const requiredGuard = allowedTargets?.[toStatus];
 
-      if (!transitionRule) {
+      if (!requiredGuard) {
         return NextResponse.json(
           {
             error: `Transición inválida: no se puede pasar de ${fromStatus} a ${toStatus}`,
@@ -281,9 +343,10 @@ export async function PATCH(
         );
       }
 
-      // Check at least one role guard passes for this user
-      const hasRolePermission = transitionRule.allowedRoles.some(guard =>
-        checkRoleGuard(guard, user)
+      // Check that user's role satisfies the required guard
+      const hasRolePermission = checkRoleGuard(
+        requiredGuard as RoleGuard,
+        user
       );
 
       if (!hasRolePermission) {
@@ -298,34 +361,228 @@ export async function PATCH(
       // ──────────────────────────────────────────────────────────────
       // Status-specific side effects
       // ──────────────────────────────────────────────────────────────
-      if (toStatus === 'COMPLETED') {
-        // FASE 6.7: Validar que no haya items pendientes de cierre
-        const pendingItems = await prisma.workOrderItem.count({
-          where: {
-            workOrderId,
-            closureType: ItemClosureType.PENDING,
-            status: { not: 'CANCELLED' },
-          },
+      if (toStatus === 'APPROVED') {
+        // APPROVED: generate PO for EXTERNAL/INTERNAL_PURCHASE items + create InternalWorkTicket
+        const result = await tenantPrisma.$transaction(async tx => {
+          const stockWarnings: string[] = [];
+
+          const allActiveItems = await tx.workOrderItem.findMany({
+            where: { workOrderId, status: { not: 'CANCELLED' } },
+            include: { mantItem: { select: { type: true, name: true } } },
+          });
+
+          // Load WO details
+          const wo = await tx.workOrder.findUnique({
+            where: { id: workOrderId },
+            select: { providerId: true, technicianId: true },
+          });
+
+          // Group EXTERNAL / INTERNAL_PURCHASE items by providerId to create POs
+          const purchaseItems = allActiveItems.filter(
+            i =>
+              i.itemSource === 'EXTERNAL' ||
+              i.itemSource === 'INTERNAL_PURCHASE'
+          );
+
+          const createdPurchaseOrderIds: string[] = [];
+          const year = new Date().getFullYear();
+
+          const grouped = new Map<string, typeof purchaseItems>();
+          for (const item of purchaseItems) {
+            const pid = item.providerId ?? wo?.providerId ?? null;
+            if (!pid) {
+              stockWarnings.push(
+                `Sin proveedor para generar OC: ${item.mantItem.name}`
+              );
+              continue;
+            }
+            const arr = grouped.get(pid) ?? [];
+            arr.push(item);
+            grouped.set(pid, arr);
+          }
+
+          for (const [provId, provItems] of grouped.entries()) {
+            const count = await tx.purchaseOrder.count({
+              where: {
+                tenantId: user.tenantId,
+                orderNumber: { startsWith: `OC-${year}-` },
+              },
+            });
+            const orderNumber = `OC-${year}-${String(count + 1).padStart(6, '0')}`;
+            const subtotal = provItems.reduce(
+              (sum, i) => sum + Number(i.totalCost),
+              0
+            );
+
+            const po = await tx.purchaseOrder.create({
+              data: {
+                tenantId: user.tenantId,
+                workOrderId,
+                providerId: provId,
+                orderNumber,
+                type: 'PARTS',
+                status: 'PENDING_APPROVAL',
+                requestedBy: user.id,
+                subtotal,
+                taxRate: 0,
+                taxAmount: 0,
+                total: subtotal,
+                items: {
+                  create: provItems.map(item => ({
+                    tenantId: user.tenantId,
+                    workOrderItemId: item.id,
+                    mantItemId: item.mantItemId,
+                    masterPartId: item.masterPartId,
+                    description: item.description,
+                    quantity: item.quantity,
+                    unitPrice: item.unitPrice,
+                    total: item.totalCost,
+                    status: 'PENDING' as const,
+                    receivedQty: 0,
+                  })),
+                },
+              },
+            });
+
+            createdPurchaseOrderIds.push(po.id);
+          }
+
+          // Create InternalWorkTicket (idempotent — only if not yet created)
+          let ticket: { id: string; ticketNumber: string } | null = null;
+          const woTechnicianId = wo?.technicianId ?? null;
+
+          const existingTicket = await tx.internalWorkTicket.findFirst({
+            where: { workOrderId: workOrderId },
+          });
+
+          if (!existingTicket && woTechnicianId) {
+            const laborItems = allActiveItems.filter(
+              i => i.mantItem.type !== 'PART'
+            );
+            const totalLaborCost = laborItems.reduce(
+              (sum, i) => sum + Number(i.totalCost),
+              0
+            );
+
+            const ticketCount = await tx.internalWorkTicket.count({
+              where: {
+                tenantId: user.tenantId,
+                ticketNumber: { startsWith: `TKT-${year}-` },
+              },
+            });
+            const ticketNumber = `TKT-${year}-${String(ticketCount + 1).padStart(6, '0')}`;
+
+            const createdTicket = await tx.internalWorkTicket.create({
+              data: {
+                tenantId: user.tenantId,
+                workOrderId,
+                ticketNumber,
+                technicianId: woTechnicianId,
+                totalLaborHours: 0,
+                totalLaborCost,
+                totalPartsCost: 0,
+                totalCost: totalLaborCost,
+                status: 'DRAFT',
+                laborEntries: {
+                  create: laborItems.map(item => ({
+                    tenantId: user.tenantId,
+                    workOrderItemId: item.id,
+                    technicianId: woTechnicianId,
+                    description: item.mantItem.name,
+                    hours: 0,
+                    hourlyRate: 0,
+                    laborCost: Number(item.totalCost),
+                  })),
+                },
+              },
+            });
+
+            ticket = {
+              id: createdTicket.id,
+              ticketNumber: createdTicket.ticketNumber,
+            };
+          } else if (!woTechnicianId) {
+            stockWarnings.push(
+              'La OT no tiene técnico asignado — ticket de taller no generado'
+            );
+          }
+
+          const updatedWo = await tx.workOrder.update({
+            where: { id: workOrderId },
+            data: { status: 'APPROVED' },
+            include: {
+              vehicle: { select: { id: true, licensePlate: true } },
+              maintenanceAlerts: true,
+              workOrderItems: true,
+            },
+          });
+
+          return {
+            workOrder: updatedWo,
+            ticket,
+            purchaseOrders: createdPurchaseOrderIds,
+            stockWarnings,
+          };
         });
 
-        if (pendingItems > 0) {
-          return NextResponse.json(
-            {
-              error: `No se puede completar la OT. Hay ${pendingItems} item(s) pendientes de cierre. Genere las OC/Tickets correspondientes primero.`,
-            },
-            { status: 400 }
-          );
-        }
+        const serialized = JSON.parse(
+          JSON.stringify(result, (_key, value) =>
+            typeof value === 'bigint' ? value.toString() : value
+          )
+        );
+        return NextResponse.json(serialized);
+      } else if (toStatus === 'PENDING_INVOICE') {
+        // T-02 (simplified): Only update status + compute actualCost + set endDate
+        // PO/ticket generation was moved to APPROVED transition
+        const result = await tenantPrisma.$transaction(async tx => {
+          const itemsAgg = await tx.workOrderItem.aggregate({
+            where: { workOrderId, status: { not: 'CANCELLED' } },
+            _sum: { totalCost: true },
+          });
+          const expensesAgg = await tx.workOrderExpense.aggregate({
+            where: { workOrderId, status: 'APPROVED' },
+            _sum: { amount: true },
+          });
+          const computedActualCost =
+            Number(itemsAgg._sum.totalCost ?? 0) +
+            Number(expensesAgg._sum.amount ?? 0);
 
-        // TASK 2.4: Auto-compute actualCost inside a transaction
-        const result = await prisma.$transaction(async tx => {
-          // Sum WorkOrderItem costs
+          const wo = await tx.workOrder.update({
+            where: { id: workOrderId },
+            data: {
+              status: 'PENDING_INVOICE',
+              actualCost: computedActualCost,
+              endDate: new Date(),
+              ...(completionMileage !== undefined
+                ? { completionMileage: Number(completionMileage) }
+                : {}),
+              ...(technicianId !== undefined ? { technicianId } : {}),
+              ...(providerId !== undefined ? { providerId } : {}),
+            },
+            include: {
+              vehicle: { select: { id: true, licensePlate: true } },
+              maintenanceAlerts: true,
+              workOrderItems: true,
+            },
+          });
+
+          return wo;
+        });
+
+        const serialized = JSON.parse(
+          JSON.stringify(result, (_key, value) =>
+            typeof value === 'bigint' ? value.toString() : value
+          )
+        );
+        return NextResponse.json(serialized);
+      } else if (toStatus === 'COMPLETED') {
+        // T-03: COMPLETED branch — removed pendingItems guard; compute cost and close
+        const result = await tenantPrisma.$transaction(async tx => {
           const itemsAgg = await tx.workOrderItem.aggregate({
             where: { workOrderId, status: { not: 'CANCELLED' } },
             _sum: { totalCost: true },
           });
 
-          // Sum approved WorkOrderExpense amounts
           const expensesAgg = await tx.workOrderExpense.aggregate({
             where: { workOrderId, status: 'APPROVED' },
             _sum: { amount: true },
@@ -343,7 +600,7 @@ export async function PATCH(
             data: { status: 'COMPLETED' },
           });
 
-          // FASE 6.2: Close MaintenanceAlerts linked to this WO
+          // Close MaintenanceAlerts linked to this WO
           await tx.maintenanceAlert.updateMany({
             where: { workOrderId },
             data: {
@@ -369,7 +626,6 @@ export async function PATCH(
             });
           }
 
-          // Update WorkOrder status + computed actualCost
           const wo = await tx.workOrder.update({
             where: { id: workOrderId },
             data: {
@@ -401,7 +657,7 @@ export async function PATCH(
       } else if (toStatus === 'REJECTED') {
         // TASK 2.3: REJECTED — revert linked MaintenanceAlerts from CLOSED → PENDING
         // (mirrors the CANCELLED logic in DELETE handler)
-        await prisma.$transaction(async tx => {
+        await tenantPrisma.$transaction(async tx => {
           await tx.workOrder.update({
             where: { id: workOrderId },
             data: { status: 'REJECTED' },
@@ -430,7 +686,7 @@ export async function PATCH(
         });
 
         // Fetch updated WO to return
-        const updatedWO = await prisma.workOrder.findUnique({
+        const updatedWO = await tenantPrisma.workOrder.findUnique({
           where: { id: workOrderId },
           include: {
             vehicle: { select: { id: true, licensePlate: true } },
@@ -473,7 +729,7 @@ export async function PATCH(
     }
 
     // Actualizar WorkOrder
-    const workOrder = await prisma.workOrder.update({
+    const workOrder = await tenantPrisma.workOrder.update({
       where: { id: workOrderId },
       data: updateData,
       include: {
@@ -515,14 +771,14 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Validar permisos (solo OWNER/MANAGER pueden cancelar)
-    const { canManageVehicles } = await import('@/lib/permissions');
-    if (!canManageVehicles(user)) {
+    // Validar permisos (solo OWNER/MANAGER/COORDINATOR pueden cancelar OTs)
+    const { canApproveWorkOrder } = await import('@/lib/permissions');
+    if (!canApproveWorkOrder(user)) {
       return NextResponse.json(
         { error: 'No tienes permisos para cancelar órdenes de trabajo' },
         { status: 403 }
@@ -536,8 +792,8 @@ export async function DELETE(
     }
 
     // Validar que existe
-    const existingWO = await prisma.workOrder.findUnique({
-      where: { id: workOrderId, tenantId: user.tenantId },
+    const existingWO = await tenantPrisma.workOrder.findUnique({
+      where: { id: workOrderId },
       include: {
         maintenanceAlerts: true,
       },
@@ -559,7 +815,7 @@ export async function DELETE(
     }
 
     // Cancelar WorkOrder y revertir alertas a PENDING
-    await prisma.$transaction(async tx => {
+    await tenantPrisma.$transaction(async tx => {
       // 1. Cambiar WO a CANCELLED
       await tx.workOrder.update({
         where: { id: workOrderId },
@@ -605,6 +861,196 @@ export async function DELETE(
       {
         error: error instanceof Error ? error.message : 'Error interno',
       },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * PUT - Sincroniza la Work Order usando el Payload Unificado
+ */
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { user, tenantPrisma } = await requireCurrentUser();
+    if (!user)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { id } = await params;
+    const workOrderId = id;
+
+    const existingWO = await tenantPrisma.workOrder.findUnique({
+      where: { id: workOrderId },
+    });
+    if (!existingWO)
+      return NextResponse.json({ error: 'OT no encontrada' }, { status: 404 });
+
+    if (!canOverrideWorkOrderFreeze(user)) {
+      if (
+        existingWO.status !== 'PENDING' &&
+        existingWO.status !== 'IN_PROGRESS' &&
+        existingWO.status !== 'PENDING_APPROVAL' &&
+        existingWO.status !== 'APPROVED'
+      ) {
+        return NextResponse.json(
+          { error: 'No editar ítems de OTs cerradas/en revisión financiera' },
+          { status: 400 }
+        );
+      }
+    }
+
+    const json = await request.json();
+    const result = workOrderPayloadSchema.safeParse(json);
+    if (!result.success)
+      return NextResponse.json(
+        { error: 'Payload inválido', details: result.error.errors },
+        { status: 400 }
+      );
+
+    const data = result.data;
+    const newItemsIds = data.items.map(i => i.id).filter(Boolean) as string[];
+    const estimatedCost = data.items.reduce(
+      (acc, item) => acc + item.unitPrice * item.quantity,
+      0
+    );
+
+    const updatedWorkOrder = await tenantPrisma.$transaction(async tx => {
+      const wo = await tx.workOrder.update({
+        where: { id: workOrderId },
+        data: {
+          title: data.title,
+          description: data.description || null,
+          mantType: data.mantType,
+          priority: data.priority,
+          workType: data.workType,
+          technicianId: data.technicianId || null,
+          estimatedCost,
+          startDate: data.scheduledDate
+            ? new Date(data.scheduledDate)
+            : undefined,
+          costCenterId: data.costCenterId || null,
+        },
+      });
+
+      if (newItemsIds.length > 0) {
+        await tx.workOrderItem.deleteMany({
+          where: { workOrderId, id: { notIn: newItemsIds } },
+        });
+      } else {
+        await tx.workOrderItem.deleteMany({ where: { workOrderId } });
+      }
+
+      for (const item of data.items) {
+        // Simplificamos el update por motivos de seguridad en React
+        const itemUpserted = item.id
+          ? await tx.workOrderItem.update({
+              where: { id: item.id },
+              data: {
+                mantItemId: item.mantItemId,
+                description: item.description,
+                closureType: item.closureType as any,
+                itemSource: item.itemSource as any,
+                providerId: item.providerId || null,
+                unitPrice: item.unitPrice,
+                quantity: item.quantity,
+                totalCost: item.unitPrice * item.quantity,
+                masterPartId: item.masterPartId || null,
+              },
+            })
+          : await tx.workOrderItem.create({
+              data: {
+                tenantId: user.tenantId,
+                workOrderId,
+                mantItemId: item.mantItemId,
+                description: item.description,
+                closureType: item.closureType as any,
+                itemSource: item.itemSource as any,
+                providerId: item.providerId || null,
+                unitPrice: item.unitPrice,
+                quantity: item.quantity,
+                totalCost: item.unitPrice * item.quantity,
+                purchasedBy: user.id,
+                status: 'PENDING',
+                supplier: 'N/A',
+                masterPartId: item.masterPartId || null,
+              },
+            });
+
+        if (item.subTasks && item.subTasks.length > 0) {
+          const newSubTaskIds = item.subTasks
+            .map(s => s.id)
+            .filter(Boolean) as string[];
+          if (newSubTaskIds.length > 0) {
+            await tx.workOrderSubTask.deleteMany({
+              where: {
+                workOrderItemId: itemUpserted.id,
+                id: { notIn: newSubTaskIds },
+                status: 'PENDING',
+              },
+            });
+          } else {
+            await tx.workOrderSubTask.deleteMany({
+              where: { workOrderItemId: itemUpserted.id, status: 'PENDING' },
+            });
+          }
+
+          for (const [idx, sub] of item.subTasks.entries()) {
+            if (sub.id) {
+              await tx.workOrderSubTask.update({
+                where: { id: sub.id },
+                data: {
+                  procedureId: sub.procedureId || null,
+                  temparioItemId: sub.temparioItemId || null,
+                  description: sub.description || null,
+                  standardHours: sub.standardHours || null,
+                  directHours: sub.directHours || null,
+                  status: sub.status as any,
+                  notes: sub.notes || null,
+                  sequence: idx,
+                },
+              });
+            } else {
+              await tx.workOrderSubTask.create({
+                data: {
+                  workOrderItemId: itemUpserted.id,
+                  procedureId: sub.procedureId || null,
+                  temparioItemId: sub.temparioItemId || null,
+                  description: sub.description || null,
+                  standardHours: sub.standardHours || null,
+                  directHours: sub.directHours || null,
+                  status: sub.status as any,
+                  notes: sub.notes || null,
+                  sequence: idx,
+                },
+              });
+            }
+          }
+        } else {
+          await tx.workOrderSubTask.deleteMany({
+            where: { workOrderItemId: itemUpserted.id },
+          });
+        }
+      }
+      return wo;
+    });
+
+    const serializedWorkOrder = JSON.parse(
+      JSON.stringify(updatedWorkOrder, (_key, value) =>
+        typeof value === 'bigint' ? value.toString() : value
+      )
+    );
+    return NextResponse.json(
+      {
+        ...serializedWorkOrder,
+        estimatedCost: updatedWorkOrder.estimatedCost?.toNumber() || 0,
+      },
+      { status: 200 }
+    );
+  } catch (error: unknown) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Error interno' },
       { status: 500 }
     );
   }

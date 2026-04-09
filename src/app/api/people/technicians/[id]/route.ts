@@ -1,5 +1,4 @@
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { canManageMasterData } from '@/lib/permissions';
 
@@ -10,10 +9,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const technicianId = id;
@@ -24,11 +22,10 @@ export async function GET(
       );
     }
 
-    const technician = await prisma.technician.findUnique({
+    const technician = await tenantPrisma.technician.findUnique({
       where: {
         id: technicianId,
-        tenantId: user.tenantId,
-      },
+        },
     });
 
     if (!technician) {
@@ -55,10 +52,9 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManageMasterData(user)) {
@@ -86,11 +82,10 @@ export async function PUT(
     }
 
     // Verificar que el técnico existe
-    const existingTechnician = await prisma.technician.findUnique({
+    const existingTechnician = await tenantPrisma.technician.findUnique({
       where: {
         id: technicianId,
-        tenantId: user.tenantId,
-      },
+        },
     });
 
     if (!existingTechnician) {
@@ -101,9 +96,8 @@ export async function PUT(
     }
 
     // Verificar duplicados
-    const duplicateTechnician = await prisma.technician.findFirst({
+    const duplicateTechnician = await tenantPrisma.technician.findFirst({
       where: {
-        tenantId: user.tenantId,
         name: name.trim(),
         id: {
           not: technicianId,
@@ -118,11 +112,10 @@ export async function PUT(
       );
     }
 
-    const updatedTechnician = await prisma.technician.update({
+    const updatedTechnician = await tenantPrisma.technician.update({
       where: {
         id: technicianId,
-        tenantId: user.tenantId,
-      },
+        },
       data: {
         name: name.trim(),
         email: email?.trim() || null,
@@ -148,10 +141,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManageMasterData(user)) {
@@ -169,11 +161,10 @@ export async function DELETE(
       );
     }
 
-    const existingTechnician = await prisma.technician.findUnique({
+    const existingTechnician = await tenantPrisma.technician.findUnique({
       where: {
         id: technicianId,
-        tenantId: user.tenantId,
-      },
+        },
     });
 
     if (!existingTechnician) {
@@ -184,11 +175,10 @@ export async function DELETE(
     }
 
     // Soft delete - cambiar status a INACTIVE
-    await prisma.technician.update({
+    await tenantPrisma.technician.update({
       where: {
         id: technicianId,
-        tenantId: user.tenantId,
-      },
+        },
       data: {
         status: 'INACTIVE',
       },

@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import type { MaintenanceAlert } from '@/lib/hooks/useMaintenanceAlerts';
 
 interface VehicleGroup {
-  vehicleId: number;
+  vehicleId: string;
   vehiclePlate: string;
   vehiclePhoto: string;
   brandName: string;
@@ -25,7 +25,7 @@ interface RiskVehicle extends VehicleGroup {
 
 export function HighRiskVehicles() {
   const { groupedAlerts, isLoading } = useAlertsGroupedByVehicle();
-  const [expandedVehicle, setExpandedVehicle] = useState<number | null>(null);
+  const [expandedVehicle, setExpandedVehicle] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -262,13 +262,12 @@ export function HighRiskVehicles() {
                                   {alert.itemName}
                                 </span>
                                 <span
-                                  className={`font-bold ${
-                                    isOverdue
+                                  className={`font-bold ${isOverdue
                                       ? 'text-red-600'
                                       : isUrgent
                                         ? 'text-orange-600'
                                         : 'text-gray-700'
-                                  }`}
+                                    }`}
                                 >
                                   {isOverdue
                                     ? `${Math.abs(alert.kmToMaintenance)} km VENCIDO`

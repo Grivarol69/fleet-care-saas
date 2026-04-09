@@ -1,6 +1,5 @@
-import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { PurchaseOrderStatus } from '@prisma/client';
 import { Resend } from 'resend';
 import { renderToBuffer } from '@react-pdf/renderer';
@@ -18,15 +17,15 @@ interface RouteParams {
  */
 export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
 
-    const purchaseOrder = await prisma.purchaseOrder.findUnique({
-      where: { id, tenantId: user.tenantId },
+    const purchaseOrder = await tenantPrisma.purchaseOrder.findUnique({
+      where: { id, },
       include: {
         workOrder: {
           include: {
@@ -77,9 +76,9 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
  */
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManagePurchases(user)) {
@@ -94,8 +93,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const { action, notes } = body;
 
     // Obtener OC actual
-    const currentPO = await prisma.purchaseOrder.findUnique({
-      where: { id, tenantId: user.tenantId },
+    const currentPO = await tenantPrisma.purchaseOrder.findUnique({
+      where: { id, },
     });
 
     if (!currentPO) {
@@ -184,7 +183,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       updateData.approvedAt = new Date();
     } else if (action === 'send') {
       // Enviar email al proveedor con PDF adjunto
-      const fullPO = await prisma.purchaseOrder.findUnique({
+      const fullPO = await tenantPrisma.purchaseOrder.findUnique({
         where: { id },
         include: {
           provider: true,
@@ -221,7 +220,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       }
 
       // Obtener nombre del tenant
-      const tenant = await prisma.tenant.findUnique({
+      const tenant = await tenantPrisma.tenant.findUnique({
         where: { id: user.tenantId },
         select: { name: true },
       });
@@ -338,7 +337,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       updateData.sentAt = new Date();
     }
 
-    const updatedPO = await prisma.purchaseOrder.update({
+    const updatedPO = await tenantPrisma.purchaseOrder.update({
       where: { id },
       data: updateData,
       include: {
@@ -362,9 +361,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
  */
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!canManagePurchases(user)) {
@@ -376,8 +375,8 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 
     const { id } = await params;
 
-    const purchaseOrder = await prisma.purchaseOrder.findUnique({
-      where: { id, tenantId: user.tenantId },
+    const purchaseOrder = await tenantPrisma.purchaseOrder.findUnique({
+      where: { id, },
     });
 
     if (!purchaseOrder) {
@@ -394,7 +393,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    await prisma.purchaseOrder.delete({
+    await tenantPrisma.purchaseOrder.delete({
       where: { id },
     });
 

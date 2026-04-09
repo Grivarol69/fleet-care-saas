@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from 'next/server';
+import { requireCurrentUser } from '@/lib/auth';
 import { isOwner, isManager, isSuperAdmin } from '@/lib/permissions';
 
 /**
@@ -10,22 +10,21 @@ import { isOwner, isManager, isSuperAdmin } from '@/lib/permissions';
  */
 export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const status = request.nextUrl.searchParams.get('status');
     const canManage = isSuperAdmin(user) || isOwner(user) || isManager(user);
 
     const where = {
-      tenantId: user.tenantId,
       ...(status && { status: status as 'PENDING' | 'APPROVED' | 'REJECTED' }),
       // Si no es management, solo ve sus propias solicitudes
       ...(!canManage && { requestedBy: user.id }),
     };
 
-    const requests = await prisma.mantItemRequest.findMany({
+    const requests = await tenantPrisma.mantItemRequest.findMany({
       where,
       include: {
         category: { select: { id: true, name: true } },
@@ -47,15 +46,14 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(req: Request) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const {
       suggestedName,
       description,
-      mantType,
       categoryId,
       type,
       justification,
@@ -70,18 +68,6 @@ export async function POST(req: Request) {
       );
     }
 
-    if (
-      !mantType ||
-      !['PREVENTIVE', 'PREDICTIVE', 'CORRECTIVE', 'EMERGENCY'].includes(
-        mantType
-      )
-    ) {
-      return NextResponse.json(
-        { error: 'Tipo de mantenimiento inválido' },
-        { status: 400 }
-      );
-    }
-
     if (!categoryId || categoryId <= 0) {
       return NextResponse.json(
         { error: 'Categoría inválida' },
@@ -89,7 +75,7 @@ export async function POST(req: Request) {
       );
     }
 
-    if (type && !['ACTION', 'PART', 'SERVICE'].includes(type)) {
+    if (type && !['PART', 'SERVICE'].includes(type)) {
       return NextResponse.json(
         { error: 'Tipo de item inválido' },
         { status: 400 }
@@ -111,14 +97,13 @@ export async function POST(req: Request) {
       );
     }
 
-    const itemRequest = await prisma.mantItemRequest.create({
+    const itemRequest = await tenantPrisma.mantItemRequest.create({
       data: {
         tenantId: user.tenantId,
         suggestedName: suggestedName.trim(),
         description: description?.trim() || null,
-        mantType,
         categoryId,
-        type: type || 'ACTION',
+        type: type || 'SERVICE',
         justification: justification?.trim() || null,
         similarItems: similarItems || null,
         requestedBy: user.id,

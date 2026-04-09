@@ -1,22 +1,16 @@
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Devolver tipos GLOBALES + del tenant (solo activos)
-    const types = await prisma.vehicleType.findMany({
+    // Devolver tipos globales y del tenant — el interceptor tenant-prisma aplica OR[tenantId, isGlobal]
+    const types = await tenantPrisma.vehicleType.findMany({
       where: {
-        OR: [
-          { isGlobal: true }, // Tipos globales (Knowledge Base)
-          { tenantId: user.tenantId }, // Tipos custom del tenant
-        ],
         status: 'ACTIVE',
       },
       orderBy: {
@@ -35,10 +29,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const user = await getCurrentUser();
-
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { name, isGlobal } = await req.json();
@@ -80,7 +73,7 @@ export async function POST(req: Request) {
     }
 
     // Verificar que no exista un tipo con el mismo nombre
-    const existingType = await prisma.vehicleType.findFirst({
+    const existingType = await tenantPrisma.vehicleType.findFirst({
       where: {
         tenantId: targetTenant,
         name: name.trim(),
@@ -91,7 +84,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'El tipo ya existe' }, { status: 409 });
     }
 
-    const type = await prisma.vehicleType.create({
+    const type = await tenantPrisma.vehicleType.create({
       data: {
         name: name.trim(),
         tenantId: targetTenant,

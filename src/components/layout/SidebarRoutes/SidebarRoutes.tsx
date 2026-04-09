@@ -57,7 +57,7 @@ export function SidebarRoutes() {
 
   if (loading) {
     return (
-      <div className="flex flex-col justify-between h-full">
+      <div className="flex flex-col justify-between h-full overflow-y-auto">
         <div className="p-2 md:p-6">
           <p className="mb-2 text-sm font-semibold text-slate-500">
             Cargando...
@@ -68,7 +68,7 @@ export function SidebarRoutes() {
   }
 
   return (
-    <div className="flex flex-col justify-between h-full">
+    <div className="flex flex-col justify-between h-full overflow-y-auto">
       <div>
         <div className="p-2 md:p-6">
           <p className="mb-2 text-sm font-semibold text-slate-500">

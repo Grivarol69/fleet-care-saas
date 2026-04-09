@@ -19,18 +19,26 @@ describe('Shared Utils', () => {
   });
 
   describe('formatCurrency', () => {
-    it('should format COP by default', () => {
-      // Note: non-breaking space might be used by Intl
-      const result = formatCurrency(1000);
-      // We check for "COP" or "$" and the number format
-      expect(result).toMatch(/\$|COP/);
-      expect(result).toMatch(/1\.000/);
+    it('formats COP with the project locale defaults', () => {
+      expect(formatCurrency(1000)).toBe(
+        new Intl.NumberFormat('es-CO', {
+          style: 'currency',
+          currency: 'COP',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        }).format(1000)
+      );
     });
 
-    it('should format USD if specified', () => {
-      // This depends on the locale 'es-CO' implementation of USD which might be "USD 1,000.00" or similar
-      const result = formatCurrency(1000, 'USD');
-      expect(result).toMatch(/USD|US\$/);
+    it('formats the requested currency instead of always using COP', () => {
+      expect(formatCurrency(1000, 'USD')).toBe(
+        new Intl.NumberFormat('es-CO', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        }).format(1000)
+      );
     });
   });
 });

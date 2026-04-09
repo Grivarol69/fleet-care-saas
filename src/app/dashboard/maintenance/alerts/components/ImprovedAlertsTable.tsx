@@ -17,8 +17,8 @@ interface VehicleGroup {
 
 interface Props {
   vehicles: VehicleGroup[];
-  selectedAlertIds: number[];
-  onSelectionChange: (ids: number[]) => void;
+  selectedAlertIds: string[];
+  onSelectionChange: (ids: string[]) => void;
   onCreateWorkOrder: () => void;
 }
 
@@ -28,7 +28,7 @@ export function ImprovedAlertsTable({
   onSelectionChange,
   onCreateWorkOrder,
 }: Props) {
-  const handleToggleAlert = (alertId: number) => {
+  const handleToggleAlert = (alertId: string) => {
     if (selectedAlertIds.includes(alertId)) {
       onSelectionChange(selectedAlertIds.filter(id => id !== alertId));
     } else {

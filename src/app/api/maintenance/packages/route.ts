@@ -1,12 +1,12 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { canManageMaintenancePrograms } from '@/lib/permissions';
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const { user } = await requireCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -83,10 +83,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar que el template existe
-    const template = await prisma.maintenanceTemplate.findFirst({
+    const template = await tenantPrisma.maintenanceTemplate.findFirst({
       where: {
         id: templateId,
-        tenantId: user.tenantId, // Solo permitir editar templates propios
+        // Solo permitir editar templates propios
       },
     });
 
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar que no existe otro paquete con el mismo triggerKm en este template
-    const existingPackage = await prisma.maintenancePackage.findFirst({
+    const existingPackage = await tenantPrisma.maintenancePackage.findFirst({
       where: {
         templateId: templateId,
         triggerKm: triggerKm,
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const newPackage = await prisma.maintenancePackage.create({
+    const newPackage = await tenantPrisma.maintenancePackage.create({
       data: {
         templateId,
         name,

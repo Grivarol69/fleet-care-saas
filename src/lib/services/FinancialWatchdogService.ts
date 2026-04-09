@@ -1,6 +1,30 @@
 import { prisma } from '@/lib/prisma';
 import { AlertType, AlertLevel, AlertStatus } from '@prisma/client';
 
+const DEFAULT_THRESHOLD = 10;
+
+export async function getThresholdForCategory(
+  tenantId: string,
+  category: string | null
+): Promise<number> {
+  const configs = await prisma.watchdogConfiguration.findMany({
+    where: { tenantId, isActive: true },
+  });
+
+  // 1. Category-specific config
+  if (category) {
+    const specific = configs.find(c => c.category === category);
+    if (specific) return Number(specific.threshold);
+  }
+
+  // 2. Global config (category = null)
+  const global = configs.find(c => c.category === null);
+  if (global) return Number(global.threshold);
+
+  // 3. Default
+  return DEFAULT_THRESHOLD;
+}
+
 /**
  * Service dedicated to financial monitoring and alert generation.
  * " The Watchdog "
@@ -35,8 +59,11 @@ export class FinancialWatchdogService {
     const referencePrice = Number(masterPart.referencePrice);
     const proposedPrice = Number(unitPrice);
 
-    // 2. Define Threshold (e.g., 10% tolerance)
-    const DEVIATION_TOLERANCE_PERCENT = 10;
+    // 2. Resolve threshold dynamically (category-specific → global → 10% default)
+    const DEVIATION_TOLERANCE_PERCENT = await getThresholdForCategory(
+      tenantId,
+      masterPart.category ?? null
+    );
     const maxAllowedPrice =
       referencePrice * (1 + DEVIATION_TOLERANCE_PERCENT / 100);
 
@@ -136,6 +163,71 @@ export class FinancialWatchdogService {
           `[WATCHDOG] Alert created: Budget overrun for WO #${workOrderId}`
         );
       }
+    }
+  }
+
+  /**
+   * Checks if a fuel voucher's price per unit deviates significantly
+   * from the rolling average for the same fuel type in this tenant.
+   * Requires at least 2 prior vouchers to establish a baseline.
+   */
+  static async checkFuelPriceDeviation(
+    tenantId: string,
+    fuelType: string,
+    pricePerUnit: number,
+    currentVoucherId: string,
+    vehicleId: string
+  ) {
+    // Get last 5 vouchers of same fuelType (excluding the one just created)
+    const recent = await prisma.fuelVoucher.findMany({
+      where: {
+        tenantId,
+        fuelType: fuelType as import('@prisma/client').FuelVoucherFuelType,
+        pricePerUnit: { not: null },
+        id: { not: currentVoucherId },
+      },
+      orderBy: { date: 'desc' },
+      take: 5,
+      select: { pricePerUnit: true },
+    });
+
+    if (recent.length < 2) return; // Not enough history to establish baseline
+
+    const prices = recent.map(v => Number(v.pricePerUnit));
+    const avgPrice = prices.reduce((sum, p) => sum + p, 0) / prices.length;
+
+    if (avgPrice === 0) return;
+
+    const thresholdPct = await getThresholdForCategory(tenantId, 'COMBUSTIBLE');
+    const maxAllowed = avgPrice * (1 + thresholdPct / 100);
+
+    if (pricePerUnit > maxAllowed) {
+      const deviationPercent = Math.round(
+        ((pricePerUnit - avgPrice) / avgPrice) * 100
+      );
+
+      await prisma.financialAlert.create({
+        data: {
+          tenantId,
+          type: AlertType.PRICE_DEVIATION,
+          severity:
+            deviationPercent > 30 ? AlertLevel.HIGH : AlertLevel.FINANCIAL,
+          status: AlertStatus.PENDING,
+          message: `Precio de combustible (${fuelType}): $${pricePerUnit.toLocaleString()}/L vs promedio $${avgPrice.toFixed(0)}/L (+${deviationPercent}%)`,
+          details: {
+            fuelType,
+            pricePerUnit,
+            averagePrice: avgPrice,
+            deviationPercent,
+            sampleSize: recent.length,
+            vehicleId,
+          },
+        },
+      });
+
+      console.log(
+        `[WATCHDOG] Alert created: Fuel price deviation of ${deviationPercent}% for ${fuelType}`
+      );
     }
   }
 

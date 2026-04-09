@@ -151,4 +151,41 @@ Se aplican on-demand al crear una OT correctiva, a diferencia de las preventivas
 
 ---
 
-_Ultima actualizacion: 2026-02-11_
+## 6. KB Population con Claude Vision API
+
+**Prioridad:** Alta (post-Siigo)
+**Estado:** Idea aprobada, pendiente de implementacion
+
+### Concepto
+
+Usar Claude Vision API para parsear PDFs de manuales de servicio oficiales de fabricantes y extraer planes de mantenimiento estructurados directamente al Knowledge Base global del SaaS.
+
+### Flujo
+
+1. SUPER_ADMIN sube PDF de manual de servicio (Toyota, Ford, Hino, Mazda, GM, etc.)
+2. Claude API extrae: intervalos de mantenimiento (km/tiempo), items, cantidades, especificaciones, numeros de parte OEM
+3. SUPER_ADMIN revisa propuesta en pantalla de administracion
+4. Aprueba y publica al KB global → disponible para todos los tenants
+
+### Por que es estrategico
+
+- `MantItemVehiclePart` (KB de numeros de parte por vehiculo/marca/linea/año) es el **activo mas valioso y dificil de copiar** del SaaS
+- Un manual de Hilux contiene literalmente: "cada 5.000 km aceite motor 5W30 5.5L + filtro 90915-YZZN2" → MantItem + MasterPart con numero de parte OEM
+- Poblar esto manualmente tomania semanas; con Claude Vision son horas
+
+### Fuentes de datos
+
+- **Manuales OEM:** Toyota TIS, Ford ETIS, Hino Colombia, Mazda Colombia, GM Colmotores
+- **Distribuidores CO:** Sofasa, Americana de Repuestos, Bosch Colombia (tienen equivalencias)
+- **Internacionales:** RockAuto, PartsGeek, NAPA (numeros de parte por año/marca/modelo/motor)
+- **Primer cliente:** probablemente tiene excel con numeros de parte de su flota → semilla del KB
+
+### Alcance tecnico
+
+- Endpoint SUPER_ADMIN: POST /api/admin/kb/import-manual (PDF upload → Claude Vision parse → propuesta JSON)
+- Pantalla de revision: MantItems propuestos + MasterParts + numeros de parte para aprobar/editar/rechazar
+- Batch import al KB global una vez aprobado
+
+---
+
+_Ultima actualizacion: 2026-03-02_

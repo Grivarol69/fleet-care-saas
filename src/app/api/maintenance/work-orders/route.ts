@@ -1,17 +1,17 @@
-import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
-import { Prisma } from '@prisma/client';
+import { requireCurrentUser } from '@/lib/auth';
+import { Prisma, WorkOrderStatus } from '@prisma/client';
 import { canCreateWorkOrders } from '@/lib/permissions';
+import { workOrderPayloadSchema } from '@/lib/validations/work-order';
 
 /**
  * GET - Listar WorkOrders con filtros
  */
 export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -19,26 +19,51 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const mantType = searchParams.get('mantType');
     const limit = searchParams.get('limit');
+    const hasInternalWork = searchParams.get('hasInternalWork');
+    const assignedToMe = searchParams.get('assignedToMe');
 
     // Construir filtros
-    const where: Prisma.WorkOrderWhereInput = {
-      tenantId: user.tenantId,
-    };
+    const where: Prisma.WorkOrderWhereInput = {};
 
     if (vehicleId) {
       where.vehicleId = vehicleId;
     }
 
     if (status) {
-      where.status = status as Prisma.EnumWorkOrderStatusFilter<'WorkOrder'>;
+      const statusList = status.split(',').map(s => s.trim());
+      if (statusList.length === 1) {
+        where.status =
+          statusList[0] as Prisma.EnumWorkOrderStatusFilter<'WorkOrder'>;
+      } else {
+        where.status = { in: statusList as WorkOrderStatus[] };
+      }
     }
 
     if (mantType) {
       where.mantType = mantType as Prisma.EnumMantTypeFilter<'WorkOrder'>;
     }
 
+    if (hasInternalWork === 'true') {
+      where.workOrderItems = {
+        some: {
+          itemSource: 'INTERNAL_STOCK',
+        },
+      };
+    }
+
+    if (assignedToMe === 'true') {
+      // Resolver el technicanId del usuario actual server-side
+      const technician = await tenantPrisma.technician.findFirst({
+        where: { userId: user.id },
+        select: { id: true },
+      });
+      if (technician) {
+        where.technicianId = technician.id;
+      }
+    }
+
     // Obtener WorkOrders con relaciones
-    const workOrders = await prisma.workOrder.findMany({
+    const workOrders = await tenantPrisma.workOrder.findMany({
       where,
       include: {
         vehicle: {
@@ -75,6 +100,14 @@ export async function GET(request: NextRequest) {
             description: true,
             totalCost: true,
             status: true,
+            itemSource: true,
+            _count: {
+              select: { workOrderSubTasks: true },
+            },
+            workOrderSubTasks: {
+              where: { status: 'DONE' },
+              select: { id: true },
+            },
           },
         },
         invoices: {
@@ -83,6 +116,12 @@ export async function GET(request: NextRequest) {
             invoiceNumber: true,
             totalAmount: true,
             status: true,
+          },
+        },
+        costCenterRef: {
+          select: {
+            id: true,
+            name: true,
           },
         },
       },
@@ -105,159 +144,38 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST - Crear WorkOrder desde alertas de mantenimiento
+ * POST - Crear WorkOrder Unificada
  */
 export async function POST(request: NextRequest) {
-  let bodyLog: any = null;
   try {
-    console.log('====== [POST WO] STARTING REQUEST ======');
-
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log('[POST WO] User found:', user?.email);
-
-    // Validar permisos (OWNER, MANAGER pueden crear WO)
-
     if (!canCreateWorkOrders(user)) {
-      console.log('[POST WO] Permission denied for user:', user.email);
       return NextResponse.json(
         { error: 'No tienes permisos para crear órdenes de trabajo' },
         { status: 403 }
       );
     }
-    console.log('[POST WO] Permission granted.');
 
-    const body = await request.json();
-    bodyLog = body;
-    console.log('[POST WO] Payload received:', JSON.stringify(body));
+    const json = await request.json();
+    const result = workOrderPayloadSchema.safeParse(json);
 
-    const {
-      vehicleId,
-      alertIds,
-      title,
-      description,
-      technicianId: rawTechId,
-      providerId: rawProvId,
-      scheduledDate,
-      priority = 'MEDIUM',
-      mantType = 'PREVENTIVE',
-      workType = 'EXTERNAL',
-    } = body;
-
-    // Sanitize IDs
-    const technicianId = rawTechId ? String(rawTechId) : null;
-    const providerId = rawProvId ? String(rawProvId) : null;
-
-    // Validaciones
-    // Si NO es Correctivo, requerimos alertIds
-    if (!vehicleId) {
+    if (!result.success) {
       return NextResponse.json(
-        { error: 'vehicleId es requerido' },
+        { error: 'Invalid payload', details: result.error.errors },
         { status: 400 }
       );
     }
 
-    if (mantType !== 'CORRECTIVE' && (!alertIds || alertIds.length === 0)) {
-      return NextResponse.json(
-        { error: 'alertIds son requeridos para mantenimientos no correctivos' },
-        { status: 400 }
-      );
-    }
+    const data = result.data;
 
-    if (!title || !title.trim()) {
-      return NextResponse.json(
-        { error: 'El título es requerido' },
-        { status: 400 }
-      );
-    }
-
-    // 1. Obtener las alertas seleccionadas con precios de referencia de partes
-    let alerts: any[] = [];
-    if (alertIds && alertIds.length > 0) {
-      alerts = await prisma.maintenanceAlert.findMany({
-        where: {
-          id: { in: alertIds },
-          status: { in: ['PENDING', 'ACKNOWLEDGED', 'SNOOZED'] },
-          vehicleId,
-          tenantId: user.tenantId,
-        },
-        include: {
-          programItem: {
-            include: {
-              mantItem: {
-                include: {
-                  parts: {
-                    include: {
-                      masterPart: {
-                        select: { referencePrice: true },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      });
-    }
-
-    // Validación: Si es preventivo O se enviaron alertIds, deben existir alertas válidas
-    if (
-      (mantType === 'PREVENTIVE' || (alertIds && alertIds.length > 0)) &&
-      alerts.length === 0
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            'No se encontraron alertas válidas para el mantenimiento preventivo',
-        },
-        { status: 404 }
-      );
-    }
-
-    // Si es CORRECTIVE y no hay alertas, permitimos continuar
-    if (mantType === 'CORRECTIVE' && alerts.length === 0) {
-      // Logica para WO correctiva sin alertas
-      console.log('[POST WO] Creating Corrective WO without alerts');
-    }
-
-    // 2. Calcular costos con fallback en cascada por alerta
-    const alertCosts = alerts.map(alert => {
-      if (!alert.programItem) return 0;
-
-      // Fallback 1: programItem.estimatedCost
-      const programItemCost = alert.programItem.estimatedCost?.toNumber();
-      if (programItemCost && programItemCost > 0) return programItemCost;
-
-      // Fallback 2: Suma de referencePrice * quantity de las partes del mantItem
-      if (alert.programItem.mantItem && alert.programItem.mantItem.parts) {
-        const partsCost = alert.programItem.mantItem.parts.reduce(
-          (sum: number, part: any) => {
-            const price = part.masterPart.referencePrice?.toNumber() || 0;
-            const qty = Number(part.quantity) || 1;
-            return sum + price * qty;
-          },
-          0
-        );
-        if (partsCost > 0) return partsCost;
-      }
-
-      // Fallback 3: alert.estimatedCost (snapshot al crear la alerta)
-      const alertCost = alert.estimatedCost?.toNumber();
-      if (alertCost && alertCost > 0) return alertCost;
-
-      // Fallback 4: 0
-      return 0;
-    });
-
-    const estimatedCost = alertCosts.reduce((sum, cost) => sum + cost, 0);
-
-    // 3. Obtener km actual del vehículo
-    const vehicle = await prisma.vehicle.findUnique({
-      where: { id: vehicleId, tenantId: user.tenantId },
+    // Obtener km actual del vehículo y su costCenterId
+    const vehicle = await tenantPrisma.vehicle.findUnique({
+      where: { id: data.vehicleId },
+      select: { mileage: true, costCenterId: true },
     });
 
     if (!vehicle) {
@@ -267,94 +185,131 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Crear WorkOrder
-    const workOrder = await prisma.workOrder.create({
-      data: {
-        tenantId: user.tenantId,
-        vehicleId,
-        title,
-        description: description || null,
-        mantType,
-        priority,
-        status: 'PENDING',
-        workType: workType as 'EXTERNAL' | 'INTERNAL' | 'MIXED',
-        technicianId: technicianId || null,
-        providerId: providerId || null,
-        creationMileage: vehicle.mileage,
-        estimatedCost,
-        requestedBy: user.id,
-        startDate: scheduledDate ? new Date(scheduledDate) : null,
-        isPackageWork: alerts.length > 1,
-        packageName: alerts.length > 1 ? title : null,
-      },
-    });
-
-    // 5. Actualizar alertas (vincular con WorkOrder y cambiar estado)
-    if (alerts.length > 0) {
-      const now = new Date();
-      const firstAlert = alerts[0];
-      // Safe access because length check passed
-      const alertCreatedAt = firstAlert.createdAt;
-      const responseTimeMinutes = Math.floor(
-        (now.getTime() - alertCreatedAt.getTime()) / (1000 * 60)
-      );
-
-      await prisma.maintenanceAlert.updateMany({
-        where: { id: { in: alertIds } },
-        data: {
-          status: 'IN_PROGRESS',
-          workOrderId: workOrder.id,
-          workOrderCreatedAt: now,
-          workOrderCreatedBy: user.id,
-          responseTimeMinutes,
-        },
-      });
-    }
-
-    // 6. Actualizar VehicleProgramItems
-    const programItemIds = alerts
-      .map(a => a.programItemId)
-      .filter((id): id is string => !!id);
-    if (programItemIds.length > 0) {
-      await prisma.vehicleProgramItem.updateMany({
-        where: { id: { in: programItemIds } },
-        data: { status: 'IN_PROGRESS' },
-      });
-    }
-
-    // 7. Crear WorkOrderItems con costos calculados
-    await Promise.all(
-      alerts.map((alert, index) => {
-        const itemCost = alertCosts[index] ?? 0;
-        return prisma.workOrderItem.create({
-          data: {
-            tenantId: user.tenantId,
-            workOrderId: workOrder.id,
-            mantItemId: alert.programItem.mantItemId,
-            description: alert.itemName,
-            supplier: providerId ? 'from-provider' : 'N/A',
-            unitPrice: itemCost,
-            quantity: 1,
-            totalCost: itemCost,
-            purchasedBy: user.id,
-            status: 'PENDING',
-          },
-        });
-      })
+    // Calcular estimatedCost
+    const estimatedCost = data.items.reduce(
+      (acc, item) => acc + item.unitPrice * item.quantity,
+      0
     );
 
-    // 7. Crear WorkOrderItems
-    // ... (item creation logic is fine)
+    // Usaremos db.$transaction para asegurar atomicidad
+    const workOrder = await tenantPrisma.$transaction(async tx => {
+      // 1. Crear la Work Order
+      const newWo = await tx.workOrder.create({
+        data: {
+          tenantId: user.tenantId,
+          vehicleId: data.vehicleId,
+          title: data.title,
+          description: data.description || null,
+          mantType: data.mantType,
+          priority: data.priority,
+          status: data.status,
+          workType: data.workType,
+          technicianId: data.technicianId || null,
+          providerId: null, // Legacy, we use providerId on WorkOrderItems now
+          creationMileage: vehicle.mileage,
+          estimatedCost,
+          requestedBy: user.id,
+          startDate: data.scheduledDate ? new Date(data.scheduledDate) : null,
+          costCenterId: data.costCenterId || vehicle.costCenterId || null,
 
-    // FIX: Prisma Decimal/BigInt serialization issue in Next.js
+          isPackageWork:
+            data.alertIds && data.alertIds.length > 1 ? true : false,
+          packageName:
+            data.alertIds && data.alertIds.length > 1 ? data.title : null,
+
+          // 2. Crear los WorkOrderItems con sus SubTasks
+          workOrderItems: {
+            create: data.items.map(item => ({
+              tenantId: user.tenantId,
+              mantItemId: item.mantItemId,
+              description: item.description,
+              closureType: item.closureType as any,
+              itemSource: item.itemSource as any,
+              providerId: item.providerId || null,
+              unitPrice: item.unitPrice,
+              quantity: item.quantity,
+              totalCost: item.unitPrice * item.quantity,
+              purchasedBy: user.id,
+              status: 'PENDING',
+              supplier: 'N/A', // Legacy field, keeping string for safety
+              masterPartId: item.masterPartId || null,
+
+              // 3. Crear SubTasks si existen
+              workOrderSubTasks:
+                item.subTasks && item.subTasks.length > 0
+                  ? {
+                      create: item.subTasks.map((sub, idx) => ({
+                        procedureId: sub.procedureId || null,
+                        temparioItemId: sub.temparioItemId || null,
+                        description: sub.description || null,
+                        standardHours: sub.standardHours || null,
+                        directHours: sub.directHours || null,
+                        status: sub.status as any,
+                        notes: sub.notes || null,
+                        sequence: idx,
+                      })),
+                    }
+                  : undefined,
+            })),
+          },
+        },
+        include: {
+          workOrderItems: {
+            include: {
+              workOrderSubTasks: true,
+            },
+          },
+        },
+      });
+
+      // 4. Actualizar estado de Alertas ligadas
+      if (data.alertIds && data.alertIds.length > 0) {
+        // Fetch alerts to get createdAt
+        const alerts = await tx.maintenanceAlert.findMany({
+          where: { id: { in: data.alertIds } },
+        });
+
+        if (alerts.length > 0) {
+          const firstAlert = alerts[0];
+          const now = new Date();
+          const responseTimeMinutes = Math.floor(
+            (now.getTime() - firstAlert.createdAt.getTime()) / (1000 * 60)
+          );
+
+          await tx.maintenanceAlert.updateMany({
+            where: { id: { in: data.alertIds } },
+            data: {
+              status: 'IN_PROGRESS',
+              workOrderId: newWo.id,
+              workOrderCreatedAt: now,
+              workOrderCreatedBy: user.id,
+              responseTimeMinutes,
+            },
+          });
+
+          // Actualizar VehicleProgramItems vinculados
+          const programItemIds = alerts
+            .map(a => a.programItemId)
+            .filter((id): id is string => !!id);
+
+          if (programItemIds.length > 0) {
+            await tx.vehicleProgramItem.updateMany({
+              where: { id: { in: programItemIds } },
+              data: { status: 'IN_PROGRESS' },
+            });
+          }
+        }
+      }
+
+      return newWo;
+    });
+
     const serializedWorkOrder = JSON.parse(
       JSON.stringify(workOrder, (_key, value) =>
         typeof value === 'bigint' ? value.toString() : value
       )
     );
 
-    // Also convert Decimals manually if needed, but typically JSON.stringify handles simple decimals as strings or validation fails.
-    // Safest is to return just what we need or a sanitized copy.
     return NextResponse.json(
       {
         ...serializedWorkOrder,
@@ -363,33 +318,9 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error: unknown) {
-    console.error('====== [POST WO] FATAL ERROR ======');
-
-    try {
-      const fs = require('fs');
-      const path = require('path');
-      const logPath = path.join(process.cwd(), 'debug_error.log');
-      const errorMsg = `
-[${new Date().toISOString()}] FATAL ERROR IN POST /api/maintenance/work-orders
-Error: ${error instanceof Error ? error.message : String(error)}
-Stack: ${error instanceof Error ? error.stack : 'N/A'}
-Payload: ${JSON.stringify(bodyLog || 'Payload not read')}
-----------------------------------------
-`;
-      fs.appendFileSync(logPath, errorMsg);
-    } catch (logErr) {
-      console.error('Failed to write to log file', logErr);
-    }
-
-    console.error(error);
-    if (error instanceof Error) {
-      console.error('Msg:', error.message);
-      console.error('Stack:', error.stack);
-    }
+    console.error('[POST WO] ERROR:', error);
     return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Error interno',
-      },
+      { error: error instanceof Error ? error.message : 'Error interno' },
       { status: 500 }
     );
   }

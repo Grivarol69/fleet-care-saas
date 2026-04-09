@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 
 export type FleetVehicleStatus = {
   id: string;
@@ -22,6 +21,8 @@ export type FleetVehicleStatus = {
     daysSinceUpdate: number;
     status: 'OK' | 'WARNING' | 'CRITICAL';
   };
+  // Alertas de neumáticos
+  tireAlerts: number;
   // Estado combinado
   overallStatus: 'OK' | 'WARNING' | 'CRITICAL';
   // Conductor asignado (si hay)
@@ -48,7 +49,7 @@ const ODOMETER_CRITICAL_DAYS = 10;
 
 export async function GET() {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -56,7 +57,7 @@ export async function GET() {
     const tenantId = user.tenantId;
 
     // Obtener todos los vehículos activos con sus datos relacionados
-    const vehicles = await prisma.vehicle.findMany({
+    const vehicles = await tenantPrisma.vehicle.findMany({
       where: {
         tenantId: tenantId,
         status: 'ACTIVE',
@@ -77,7 +78,7 @@ export async function GET() {
     });
 
     // Obtener alertas de mantenimiento agrupadas por vehículo
-    const alertsByVehicle = await prisma.maintenanceAlert.groupBy({
+    const alertsByVehicle = await tenantPrisma.maintenanceAlert.groupBy({
       by: ['vehicleId', 'priority'],
       where: {
         tenantId: tenantId,
@@ -86,8 +87,19 @@ export async function GET() {
       _count: true,
     });
 
+    // Obtener alertas de activos serializados agrupadas por vehículo
+    const itemAlertCounts = await tenantPrisma.serializedItemAlert.groupBy({
+      by: ['vehicleId'],
+      where: { status: 'ACTIVE', vehicleId: { not: null } },
+      _count: { id: true },
+    });
+
+    const tireAlertByVehicle = Object.fromEntries(
+      itemAlertCounts.map(r => [r.vehicleId!, r._count.id])
+    );
+
     // Obtener último registro de odómetro por vehículo
-    const lastOdometerByVehicle = await prisma.odometerLog.findMany({
+    const lastOdometerByVehicle = await tenantPrisma.odometerLog.findMany({
       where: {
         vehicle: { tenantId: tenantId },
       },
@@ -134,6 +146,7 @@ export async function GET() {
     const fleetStatus: FleetVehicleStatus[] = vehicles.map(vehicle => {
       const alerts = alertsMap.get(vehicle.id) || { critical: 0, warning: 0 };
       const lastOdometer = odometerMap.get(vehicle.id);
+      const tireAlerts = tireAlertByVehicle[vehicle.id] ?? 0;
 
       // Calcular días desde última actualización de odómetro
       let daysSinceUpdate = 999; // Si nunca se ha registrado
@@ -161,13 +174,14 @@ export async function GET() {
         maintenanceStatus = 'WARNING';
       }
 
-      // Estado combinado: el peor de los dos
+      // Estado combinado: el peor de mantenimiento, odómetro y neumáticos
       let overallStatus: 'OK' | 'WARNING' | 'CRITICAL' = 'OK';
       if (maintenanceStatus === 'CRITICAL' || odometerStatus === 'CRITICAL') {
         overallStatus = 'CRITICAL';
       } else if (
         maintenanceStatus === 'WARNING' ||
-        odometerStatus === 'WARNING'
+        odometerStatus === 'WARNING' ||
+        tireAlerts > 0
       ) {
         overallStatus = 'WARNING';
       }
@@ -188,6 +202,7 @@ export async function GET() {
           critical: alerts.critical,
           warning: alerts.warning,
         },
+        tireAlerts,
         odometer: {
           lastUpdate: lastOdometer?.recordedAt || null,
           daysSinceUpdate,
