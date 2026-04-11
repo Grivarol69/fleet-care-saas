@@ -369,20 +369,42 @@ export async function POST(request: NextRequest) {
 
       // 4. Si tiene workOrderId, actualizar estado de WorkOrder
       if (workOrderId) {
-        // FASE 6.1: Solo marcar como EXTERNAL_INVOICE los items con itemSource = EXTERNAL
-        // Los items INTERNAL_STOCK se cierran con ticket interno
-        await tx.workOrderItem.updateMany({
-          where: {
-            workOrderId,
-            itemSource: ItemSource.EXTERNAL,
-          },
-          data: {
-            status: 'COMPLETED',
-            closureType: ItemClosureType.EXTERNAL_INVOICE,
-            closedAt: new Date(),
-            closedBy: user.id,
-          },
-        });
+        // Cerrar solo los ítems vinculados a esta OC específica.
+        // Si no hay OC, cerrar todos los EXTERNAL de la OT (factura directa sin OC).
+        if (purchaseOrderId && purchaseOrder) {
+          const poWOItemIds = purchaseOrder.items
+            .map(i => i.workOrderItemId)
+            .filter((wid): wid is string => !!wid);
+
+          if (poWOItemIds.length > 0) {
+            await tx.workOrderItem.updateMany({
+              where: {
+                id: { in: poWOItemIds },
+                itemSource: ItemSource.EXTERNAL,
+              },
+              data: {
+                status: 'COMPLETED',
+                closureType: ItemClosureType.EXTERNAL_INVOICE,
+                closedAt: new Date(),
+                closedBy: user.id,
+              },
+            });
+          }
+        } else {
+          // Factura directa sin OC: cerrar todos los EXTERNAL de la OT
+          await tx.workOrderItem.updateMany({
+            where: {
+              workOrderId,
+              itemSource: ItemSource.EXTERNAL,
+            },
+            data: {
+              status: 'COMPLETED',
+              closureType: ItemClosureType.EXTERNAL_INVOICE,
+              closedAt: new Date(),
+              closedBy: user.id,
+            },
+          });
+        }
 
         // Verificar si TODOS los items de la OT están cerrados para marcar OT como COMPLETED
         const pendingWOItems = await tx.workOrderItem.count({

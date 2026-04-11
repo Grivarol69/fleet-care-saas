@@ -7,6 +7,7 @@ import { PurchaseOrderPDF } from '@/components/pdf/PurchaseOrderPDF';
 import { PurchaseOrderEmail } from '@/emails/PurchaseOrderEmail';
 import React from 'react';
 import { canManagePurchases } from '@/lib/permissions';
+import { FinancialWatchdogService } from '@/lib/services/FinancialWatchdogService';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -25,7 +26,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     const { id } = await params;
 
     const purchaseOrder = await tenantPrisma.purchaseOrder.findUnique({
-      where: { id, },
+      where: { id },
       include: {
         workOrder: {
           include: {
@@ -94,7 +95,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     // Obtener OC actual
     const currentPO = await tenantPrisma.purchaseOrder.findUnique({
-      where: { id, },
+      where: { id },
     });
 
     if (!currentPO) {
@@ -346,6 +347,24 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       },
     });
 
+    // Al aprobar, registrar los precios aceptados como referencia en el Watchdog.
+    // Esto actualiza MasterPart.referencePrice y graba en PartPriceHistory,
+    // para que la comparación al facturar use el precio del presupuesto aprobado.
+    if (action === 'approve') {
+      for (const item of updatedPO.items) {
+        if (item.masterPartId) {
+          await FinancialWatchdogService.updateReferencePrice(
+            user.tenantId,
+            item.masterPartId,
+            Number(item.unitPrice),
+            currentPO.providerId,
+            Number(item.quantity),
+            { approvedBy: user.id }
+          );
+        }
+      }
+    }
+
     return NextResponse.json(updatedPO);
   } catch (error: unknown) {
     console.error('[PURCHASE_ORDER_PATCH]', error);
@@ -376,7 +395,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     const { id } = await params;
 
     const purchaseOrder = await tenantPrisma.purchaseOrder.findUnique({
-      where: { id, },
+      where: { id },
     });
 
     if (!purchaseOrder) {

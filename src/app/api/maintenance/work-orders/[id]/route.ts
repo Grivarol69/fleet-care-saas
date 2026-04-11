@@ -170,6 +170,7 @@ export async function GET(
             items: {
               select: {
                 id: true,
+                description: true,
                 quantity: true,
                 unitPrice: true,
                 workOrderItem: {
@@ -368,7 +369,10 @@ export async function PATCH(
 
           const allActiveItems = await tx.workOrderItem.findMany({
             where: { workOrderId, status: { not: 'CANCELLED' } },
-            include: { mantItem: { select: { type: true, name: true } } },
+            include: {
+              mantItem: { select: { type: true, name: true } },
+              purchaseOrderItems: { select: { id: true } },
+            },
           });
 
           // Load WO details
@@ -380,8 +384,9 @@ export async function PATCH(
           // Group EXTERNAL / INTERNAL_PURCHASE items by providerId to create POs
           const purchaseItems = allActiveItems.filter(
             i =>
-              i.itemSource === 'EXTERNAL' ||
-              i.itemSource === 'INTERNAL_PURCHASE'
+              (i.itemSource === 'EXTERNAL' ||
+                i.itemSource === 'INTERNAL_PURCHASE') &&
+              i.purchaseOrderItems.length === 0
           );
 
           const createdPurchaseOrderIds: string[] = [];
@@ -389,7 +394,7 @@ export async function PATCH(
 
           const grouped = new Map<string, typeof purchaseItems>();
           for (const item of purchaseItems) {
-            const pid = item.providerId ?? wo?.providerId ?? null;
+            const pid = item.providerId ?? null;
             if (!pid) {
               stockWarnings.push(
                 `Sin proveedor para generar OC: ${item.mantItem.name}`
@@ -414,13 +419,16 @@ export async function PATCH(
               0
             );
 
+            const allParts = provItems.every(i => i.mantItem.type === 'PART');
+            const type = allParts ? 'PARTS' : 'SERVICES';
+
             const po = await tx.purchaseOrder.create({
               data: {
                 tenantId: user.tenantId,
                 workOrderId,
                 providerId: provId,
                 orderNumber,
-                type: 'PARTS',
+                type,
                 status: 'PENDING_APPROVAL',
                 requestedBy: user.id,
                 subtotal,
