@@ -41,7 +41,13 @@ import {
   Truck,
   Calendar,
   Receipt,
+  Pencil,
+  Check,
+  X,
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -141,6 +147,22 @@ export default function PurchaseOrderDetailPage() {
     description: string;
   }>({ open: false, action: '', title: '', description: '' });
 
+  // Edición inline de ítems (DRAFT)
+  const [editingItem, setEditingItem] = useState<{
+    id: string;
+    unitPrice: string;
+    quantity: string;
+  } | null>(null);
+
+  // Modal de edición post-aprobación (APPROVED/SENT/PARTIAL) — requiere nota
+  const [overrideDialog, setOverrideDialog] = useState<{
+    open: boolean;
+    itemId: string;
+    unitPrice: string;
+    quantity: string;
+    notes: string;
+  } | null>(null);
+
   const {
     data: purchaseOrder,
     isLoading,
@@ -213,6 +235,50 @@ export default function PurchaseOrderDetailPage() {
   const confirmAction = () => {
     statusMutation.mutate({ action: actionDialog.action });
   };
+
+  const itemMutation = useMutation({
+    mutationFn: async ({
+      itemId,
+      unitPrice,
+      quantity,
+      notes,
+    }: {
+      itemId: string;
+      unitPrice?: number;
+      quantity?: number;
+      notes?: string;
+    }) => {
+      const res = await fetch(`/api/purchase-orders/${poId}/items/${itemId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ unitPrice, quantity, notes }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Error al actualizar');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-order', poId] });
+      toast({
+        title: 'Ítem actualizado',
+        description: 'Precio y cantidad actualizados.',
+      });
+      setEditingItem(null);
+      setOverrideDialog(null);
+    },
+    onError: (err: Error) => {
+      toast({
+        title: 'Error',
+        description: err.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const EDITABLE_STATUSES = new Set(['DRAFT', 'APPROVED', 'SENT', 'PARTIAL']);
+  const POST_APPROVAL_STATUSES = new Set(['APPROVED', 'SENT', 'PARTIAL']);
 
   const getAvailableActions = (status: string) => {
     const actions: Record<string, string[]> = {
@@ -433,33 +499,142 @@ export default function PurchaseOrderDetailPage() {
                 <TableHead className="text-right">P. Unitario</TableHead>
                 <TableHead className="text-right">Total</TableHead>
                 <TableHead>Estado</TableHead>
+                <TableHead className="w-10"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {purchaseOrder.items.map(item => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">
-                    {item.description}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
-                    {item.masterPart?.code || item.mantItem?.name || '-'}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {Number(item.quantity)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {formatCurrency(Number(item.unitPrice))}
-                  </TableCell>
-                  <TableCell className="text-right font-medium">
-                    {formatCurrency(Number(item.total))}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">
-                      {itemStatusLabels[item.status] || item.status}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {purchaseOrder.items.map(item => {
+                const isEditing = editingItem?.id === item.id;
+                const isDraft = purchaseOrder.status === 'DRAFT';
+                const isPostApproval = POST_APPROVAL_STATUSES.has(
+                  purchaseOrder.status
+                );
+                const canEdit = EDITABLE_STATUSES.has(purchaseOrder.status);
+
+                return (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">
+                      {item.description}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {item.masterPart?.code || item.mantItem?.name || '-'}
+                    </TableCell>
+
+                    {/* Cantidad — editable inline si DRAFT */}
+                    <TableCell className="text-right">
+                      {isEditing && isDraft ? (
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          className="w-20 h-7 text-right text-sm ml-auto"
+                          value={editingItem.quantity}
+                          onChange={e =>
+                            setEditingItem({
+                              ...editingItem,
+                              quantity: e.target.value,
+                            })
+                          }
+                        />
+                      ) : (
+                        Number(item.quantity)
+                      )}
+                    </TableCell>
+
+                    {/* Precio unitario — editable inline si DRAFT */}
+                    <TableCell className="text-right">
+                      {isEditing && isDraft ? (
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          className="w-32 h-7 text-right text-sm font-mono ml-auto"
+                          value={editingItem.unitPrice}
+                          onChange={e =>
+                            setEditingItem({
+                              ...editingItem,
+                              unitPrice: e.target.value,
+                            })
+                          }
+                        />
+                      ) : (
+                        formatCurrency(Number(item.unitPrice))
+                      )}
+                    </TableCell>
+
+                    <TableCell className="text-right font-medium">
+                      {isEditing && isDraft
+                        ? formatCurrency(
+                            Number(editingItem.quantity) *
+                              Number(editingItem.unitPrice)
+                          )
+                        : formatCurrency(Number(item.total))}
+                    </TableCell>
+
+                    <TableCell>
+                      <Badge variant="outline">
+                        {itemStatusLabels[item.status] || item.status}
+                      </Badge>
+                    </TableCell>
+
+                    {/* Acciones de edición por fila */}
+                    <TableCell>
+                      {isEditing && isDraft ? (
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 w-7 p-0 text-green-600"
+                            disabled={itemMutation.isPending}
+                            onClick={() =>
+                              itemMutation.mutate({
+                                itemId: item.id,
+                                unitPrice: Number(editingItem.unitPrice),
+                                quantity: Number(editingItem.quantity),
+                              })
+                            }
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 w-7 p-0 text-muted-foreground"
+                            onClick={() => setEditingItem(null)}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      ) : canEdit ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                          onClick={() => {
+                            if (isDraft) {
+                              setEditingItem({
+                                id: item.id,
+                                unitPrice: String(Number(item.unitPrice)),
+                                quantity: String(Number(item.quantity)),
+                              });
+                            } else if (isPostApproval) {
+                              setOverrideDialog({
+                                open: true,
+                                itemId: item.id,
+                                unitPrice: String(Number(item.unitPrice)),
+                                quantity: String(Number(item.quantity)),
+                                notes: '',
+                              });
+                            }
+                          }}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      ) : null}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
 
@@ -542,6 +717,105 @@ export default function PurchaseOrderDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Modal edición post-aprobación — requiere nota */}
+      <AlertDialog
+        open={overrideDialog?.open ?? false}
+        onOpenChange={open => {
+          if (!open) setOverrideDialog(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Modificar ítem aprobado</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta OC ya fue aprobada. Cualquier cambio de precio o cantidad
+              quedará registrado en el historial de auditoría. Ingresá una
+              justificación.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {overrideDialog && (
+            <div className="space-y-4 py-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="override-qty">Cantidad</Label>
+                  <Input
+                    id="override-qty"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={overrideDialog.quantity}
+                    onChange={e =>
+                      setOverrideDialog({
+                        ...overrideDialog,
+                        quantity: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="override-price">Precio unitario</Label>
+                  <Input
+                    id="override-price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={overrideDialog.unitPrice}
+                    onChange={e =>
+                      setOverrideDialog({
+                        ...overrideDialog,
+                        unitPrice: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="override-notes">
+                  Motivo de la modificación{' '}
+                  <span className="text-destructive">*</span>
+                </Label>
+                <Textarea
+                  id="override-notes"
+                  placeholder="Ej: Ajuste por variación de tipo de cambio acordada con el proveedor..."
+                  value={overrideDialog.notes}
+                  onChange={e =>
+                    setOverrideDialog({
+                      ...overrideDialog,
+                      notes: e.target.value,
+                    })
+                  }
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={itemMutation.isPending}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={
+                itemMutation.isPending || !overrideDialog?.notes?.trim()
+              }
+              onClick={() => {
+                if (!overrideDialog) return;
+                itemMutation.mutate({
+                  itemId: overrideDialog.itemId,
+                  unitPrice: Number(overrideDialog.unitPrice),
+                  quantity: Number(overrideDialog.quantity),
+                  notes: overrideDialog.notes,
+                });
+              }}
+            >
+              {itemMutation.isPending && (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              )}
+              Guardar y registrar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Action Dialog */}
       <AlertDialog
