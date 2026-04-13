@@ -10,6 +10,12 @@ export type WorkOrderSubTask = {
 export type WorkOrderItem = {
   id: string;
   description: string;
+  quantity: number;
+  unitPrice: number;
+  totalCost: number;
+  supplier?: string | null;
+  provider?: { name: string } | null;
+  itemSource?: string | null;
   mantItem: { name: string; type: string };
   workOrderSubTasks?: WorkOrderSubTask[];
 };
@@ -51,10 +57,58 @@ export const pdfStyles = StyleSheet.create({
     paddingVertical: 5,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
+    alignItems: 'flex-start',
   },
   rowIndex: { width: 20, color: '#999' },
-  rowName: { flex: 1 },
+  rowName: { flex: 2 },
   rowDesc: { flex: 1, color: '#666', fontSize: 9 },
+  rowQty: { width: 32, textAlign: 'right', color: '#555', fontSize: 9 },
+  rowPrice: { width: 64, textAlign: 'right', fontSize: 9 },
+  rowTotal: { width: 72, textAlign: 'right', fontWeight: 'bold', fontSize: 9 },
+  supplierTag: {
+    fontSize: 8,
+    color: '#6366f1',
+    marginTop: 2,
+  },
+  sectionTotal: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingTop: 6,
+    paddingBottom: 2,
+    marginTop: 2,
+    gap: 8,
+  },
+  sectionTotalLabel: { fontSize: 9, color: '#555' },
+  sectionTotalValue: {
+    width: 72,
+    textAlign: 'right',
+    fontSize: 9,
+    fontWeight: 'bold',
+  },
+  grandTotal: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    borderTopWidth: 1,
+    borderTopColor: '#333',
+    marginTop: 16,
+    paddingTop: 8,
+    gap: 8,
+  },
+  grandTotalLabel: { fontSize: 10, fontWeight: 'bold' },
+  grandTotalValue: {
+    width: 80,
+    textAlign: 'right',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    paddingVertical: 3,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    marginBottom: 2,
+  },
+  tableHeaderText: { fontSize: 8, color: '#888', fontWeight: 'bold' },
   subTaskBlock: {
     marginLeft: 20,
     marginTop: 3,
@@ -99,6 +153,15 @@ export const pdfStyles = StyleSheet.create({
   },
 });
 
+function fmt(n: number) {
+  return new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(n);
+}
+
 export function TicketPDF({
   ticketNumber,
   workOrder,
@@ -115,6 +178,10 @@ export function TicketPDF({
     month: '2-digit',
     year: 'numeric',
   });
+
+  const totalServices = services.reduce((s, i) => s + Number(i.totalCost), 0);
+  const totalParts = parts.reduce((s, i) => s + Number(i.totalCost), 0);
+  const grandTotal = totalServices + totalParts;
 
   return (
     <Document>
@@ -157,6 +224,38 @@ export function TicketPDF({
             <Text style={pdfStyles.sectionTitle}>
               Trabajos / Servicios ({services.length})
             </Text>
+            {/* Table header */}
+            <View style={pdfStyles.tableHeader}>
+              <Text style={[pdfStyles.tableHeaderText, { width: 20 }]}>#</Text>
+              <Text style={[pdfStyles.tableHeaderText, { flex: 2 }]}>
+                Descripción
+              </Text>
+              <Text style={[pdfStyles.tableHeaderText, { flex: 1 }]}> </Text>
+              <Text
+                style={[
+                  pdfStyles.tableHeaderText,
+                  { width: 32, textAlign: 'right' },
+                ]}
+              >
+                Cant.
+              </Text>
+              <Text
+                style={[
+                  pdfStyles.tableHeaderText,
+                  { width: 64, textAlign: 'right' },
+                ]}
+              >
+                P. Unit.
+              </Text>
+              <Text
+                style={[
+                  pdfStyles.tableHeaderText,
+                  { width: 72, textAlign: 'right' },
+                ]}
+              >
+                Total
+              </Text>
+            </View>
             {services.map((item, i) => (
               <View key={item.id}>
                 <View style={pdfStyles.row}>
@@ -164,7 +263,16 @@ export function TicketPDF({
                   <Text style={pdfStyles.rowName}>{item.mantItem.name}</Text>
                   {item.description ? (
                     <Text style={pdfStyles.rowDesc}>{item.description}</Text>
-                  ) : null}
+                  ) : (
+                    <Text style={pdfStyles.rowDesc}> </Text>
+                  )}
+                  <Text style={pdfStyles.rowQty}>{Number(item.quantity)}</Text>
+                  <Text style={pdfStyles.rowPrice}>
+                    {fmt(Number(item.unitPrice))}
+                  </Text>
+                  <Text style={pdfStyles.rowTotal}>
+                    {fmt(Number(item.totalCost))}
+                  </Text>
                 </View>
                 {item.workOrderSubTasks &&
                   item.workOrderSubTasks.length > 0 && (
@@ -183,6 +291,16 @@ export function TicketPDF({
                   )}
               </View>
             ))}
+            {totalServices > 0 && (
+              <View style={pdfStyles.sectionTotal}>
+                <Text style={pdfStyles.sectionTotalLabel}>
+                  Subtotal servicios:
+                </Text>
+                <Text style={pdfStyles.sectionTotalValue}>
+                  {fmt(totalServices)}
+                </Text>
+              </View>
+            )}
           </View>
         )}
 
@@ -191,15 +309,86 @@ export function TicketPDF({
             <Text style={pdfStyles.sectionTitle}>
               Repuestos ({parts.length})
             </Text>
-            {parts.map((item, i) => (
-              <View key={item.id} style={pdfStyles.row}>
-                <Text style={pdfStyles.rowIndex}>{i + 1}.</Text>
-                <Text style={pdfStyles.rowName}>{item.mantItem.name}</Text>
-                {item.description ? (
-                  <Text style={pdfStyles.rowDesc}>{item.description}</Text>
-                ) : null}
+            {/* Table header */}
+            <View style={pdfStyles.tableHeader}>
+              <Text style={[pdfStyles.tableHeaderText, { width: 20 }]}>#</Text>
+              <Text style={[pdfStyles.tableHeaderText, { flex: 2 }]}>
+                Repuesto
+              </Text>
+              <Text style={[pdfStyles.tableHeaderText, { flex: 1 }]}>
+                Ref. / Proveedor
+              </Text>
+              <Text
+                style={[
+                  pdfStyles.tableHeaderText,
+                  { width: 32, textAlign: 'right' },
+                ]}
+              >
+                Cant.
+              </Text>
+              <Text
+                style={[
+                  pdfStyles.tableHeaderText,
+                  { width: 64, textAlign: 'right' },
+                ]}
+              >
+                P. Unit.
+              </Text>
+              <Text
+                style={[
+                  pdfStyles.tableHeaderText,
+                  { width: 72, textAlign: 'right' },
+                ]}
+              >
+                Total
+              </Text>
+            </View>
+            {parts.map((item, i) => {
+              const supplierName = item.provider?.name ?? item.supplier ?? null;
+              const isExternal = item.itemSource === 'EXTERNAL_PURCHASE';
+              return (
+                <View key={item.id} style={pdfStyles.row}>
+                  <Text style={pdfStyles.rowIndex}>{i + 1}.</Text>
+                  <View style={{ flex: 2 }}>
+                    <Text style={pdfStyles.rowName}>{item.mantItem.name}</Text>
+                    {isExternal && supplierName && (
+                      <Text style={pdfStyles.supplierTag}>
+                        Compra externa · {supplierName}
+                      </Text>
+                    )}
+                  </View>
+                  {item.description ? (
+                    <Text style={pdfStyles.rowDesc}>{item.description}</Text>
+                  ) : (
+                    <Text style={pdfStyles.rowDesc}> </Text>
+                  )}
+                  <Text style={pdfStyles.rowQty}>{Number(item.quantity)}</Text>
+                  <Text style={pdfStyles.rowPrice}>
+                    {fmt(Number(item.unitPrice))}
+                  </Text>
+                  <Text style={pdfStyles.rowTotal}>
+                    {fmt(Number(item.totalCost))}
+                  </Text>
+                </View>
+              );
+            })}
+            {totalParts > 0 && (
+              <View style={pdfStyles.sectionTotal}>
+                <Text style={pdfStyles.sectionTotalLabel}>
+                  Subtotal repuestos:
+                </Text>
+                <Text style={pdfStyles.sectionTotalValue}>
+                  {fmt(totalParts)}
+                </Text>
               </View>
-            ))}
+            )}
+          </View>
+        )}
+
+        {grandTotal > 0 && (
+          <View style={pdfStyles.grandTotal}>
+            <Text style={pdfStyles.grandTotalLabel}>TOTAL:</Text>
+            <Text style={pdfStyles.grandTotalValue}>{fmt(grandTotal)}</Text>
           </View>
         )}
 

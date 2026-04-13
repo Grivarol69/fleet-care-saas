@@ -171,8 +171,11 @@ async function main() {
   await prisma.packageItem.deleteMany({});
   await prisma.maintenancePackage.deleteMany({});
   await prisma.maintenanceTemplate.deleteMany({});
+  await prisma.mantItemProcedureStep.deleteMany({});
   await prisma.mantItem.deleteMany({});
   await prisma.mantCategory.deleteMany({});
+  await prisma.temparioItem.deleteMany({});
+  await prisma.tempario.deleteMany({});
   await prisma.partCompatibility.deleteMany({});
   await prisma.inventoryItem.deleteMany({});
   await prisma.masterPart.deleteMany({});

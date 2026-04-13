@@ -51,7 +51,9 @@ export function CreateWorkOrderModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [technicianId, setTechnicianId] = useState<string | undefined>(undefined);
+  const [technicianId, setTechnicianId] = useState<string | undefined>(
+    undefined
+  );
   const [modality, setModality] = useState<'INTERNAL' | 'EXTERNAL'>('INTERNAL');
   const [scheduledDate, setScheduledDate] = useState('');
   const [priority, setPriority] = useState('MEDIUM');
@@ -123,7 +125,8 @@ export function CreateWorkOrderModal({
         description,
         technicianId:
           technicianId && technicianId !== 'NONE' ? technicianId : null,
-        modality,
+        workType: modality,
+        mantType: 'PREVENTIVE',
         scheduledDate: scheduledDate || null,
         priority,
       });
