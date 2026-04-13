@@ -235,14 +235,14 @@ export default function DocumentsPage() {
                           <div className="flex items-center gap-4">
                             <StatusIcon status={item.status} />
                             <div>
-                              <p className="font-medium flex items-center gap-2">
+                              <span className="font-medium flex items-center gap-2">
                                 {item.name}
                                 {item.isMandatory && (
                                   <Badge variant="outline" className="text-xs">
                                     Obligatorio
                                   </Badge>
                                 )}
-                              </p>
+                              </span>
                               <p className="text-sm text-slate-500">
                                 {item.document
                                   ? `Vence: ${item.document.expiryDate ? new Date(item.document.expiryDate).toLocaleDateString() : 'N/A'}`
