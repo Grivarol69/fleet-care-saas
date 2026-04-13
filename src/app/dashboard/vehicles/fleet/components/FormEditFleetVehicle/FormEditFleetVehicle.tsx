@@ -28,6 +28,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { LookupSelectField } from '@/components/ui/LookupSelectField';
+import { FormAddBrand } from '@/app/dashboard/vehicles/brands/components/FormAddBrand';
+import { FormEditBrand } from '@/app/dashboard/vehicles/brands/components/FormEditBrand';
+import { FormAddLine } from '@/app/dashboard/vehicles/lines/components/FormAddLine';
+import { FormEditLine } from '@/app/dashboard/vehicles/lines/components/FormEditLine';
+import { FormAddType } from '@/app/dashboard/vehicles/types/components/FormAddType';
+import { FormEditType } from '@/app/dashboard/vehicles/types/components/FormEditType';
 import { UploadButton } from '@/lib/uploadthing';
 import axios from 'axios';
 import { useToast } from '@/components/hooks/use-toast';
@@ -65,16 +72,20 @@ const formSchema = z.object({
 type VehicleBrand = {
   id: string;
   name: string;
+  isGlobal: boolean;
 };
 
 type VehicleLine = {
   id: string;
   name: string;
+  brandId: string;
+  isGlobal: boolean;
 };
 
 type VehicleType = {
   id: string;
   name: string;
+  isGlobal: boolean;
 };
 
 interface FleetVehicle {
@@ -322,28 +333,47 @@ export function FormEditFleetVehicle({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Marca *</FormLabel>
-                          <Select
-                            onValueChange={value =>
-                              field.onChange(Number(value))
-                            }
-                            value={field.value.toString()}
-                          >
-                            <FormControl>
-                              <SelectTrigger disabled={isLoading}>
-                                <SelectValue placeholder="Seleccione marca" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {vehicleBrands.map(brand => (
-                                <SelectItem
-                                  key={brand.id}
-                                  value={brand.id.toString()}
-                                >
-                                  {brand.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <LookupSelectField<VehicleBrand>
+                            label="Marca"
+                            placeholder="Seleccione marca"
+                            value={field.value || ''}
+                            onChange={field.onChange}
+                            items={vehicleBrands}
+                            onItemsChange={setVehicleBrands}
+                            disabled={isLoading}
+                            deleteEndpoint={id => `/api/vehicles/brands/${id}`}
+                            renderCreateDialog={({
+                              isOpen,
+                              setIsOpen,
+                              onSuccess,
+                            }) => (
+                              <FormAddBrand
+                                isOpen={isOpen}
+                                setIsOpen={setIsOpen}
+                                onAddBrand={brand =>
+                                  onSuccess({ ...brand, isGlobal: false })
+                                }
+                              />
+                            )}
+                            renderEditDialog={({
+                              item,
+                              isOpen,
+                              setIsOpen,
+                              onSuccess,
+                            }) => (
+                              <FormEditBrand
+                                isOpen={isOpen}
+                                setIsOpen={setIsOpen}
+                                brand={item}
+                                onEditBrand={brand =>
+                                  onSuccess({
+                                    ...brand,
+                                    isGlobal: item.isGlobal,
+                                  })
+                                }
+                              />
+                            )}
+                          />
                           <FormMessage />
                         </FormItem>
                       )}
@@ -356,28 +386,54 @@ export function FormEditFleetVehicle({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Línea *</FormLabel>
-                          <Select
-                            onValueChange={value =>
-                              field.onChange(Number(value))
-                            }
-                            value={field.value.toString()}
-                          >
-                            <FormControl>
-                              <SelectTrigger disabled={isLoading}>
-                                <SelectValue placeholder="Seleccione línea" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {vehicleLines.map(line => (
-                                <SelectItem
-                                  key={line.id}
-                                  value={line.id.toString()}
-                                >
-                                  {line.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <LookupSelectField<VehicleLine>
+                            label="Línea"
+                            placeholder="Seleccione línea"
+                            value={field.value || ''}
+                            onChange={field.onChange}
+                            items={vehicleLines}
+                            onItemsChange={setVehicleLines}
+                            disabled={isLoading}
+                            deleteEndpoint={id => `/api/vehicles/lines/${id}`}
+                            renderCreateDialog={({
+                              isOpen,
+                              setIsOpen,
+                              onSuccess,
+                            }) => (
+                              <FormAddLine
+                                isOpen={isOpen}
+                                setIsOpen={setIsOpen}
+                                onAddLine={line =>
+                                  onSuccess({
+                                    id: line.id,
+                                    name: line.name,
+                                    brandId: line.brandId,
+                                    isGlobal: false,
+                                  })
+                                }
+                              />
+                            )}
+                            renderEditDialog={({
+                              item,
+                              isOpen,
+                              setIsOpen,
+                              onSuccess,
+                            }) => (
+                              <FormEditLine
+                                isOpen={isOpen}
+                                setIsOpen={setIsOpen}
+                                line={item}
+                                onEditLine={line =>
+                                  onSuccess({
+                                    id: line.id,
+                                    name: line.name,
+                                    brandId: line.brandId,
+                                    isGlobal: item.isGlobal,
+                                  })
+                                }
+                              />
+                            )}
+                          />
                           <FormMessage />
                         </FormItem>
                       )}
@@ -390,28 +446,47 @@ export function FormEditFleetVehicle({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Tipo *</FormLabel>
-                          <Select
-                            onValueChange={value =>
-                              field.onChange(Number(value))
-                            }
-                            value={field.value.toString()}
-                          >
-                            <FormControl>
-                              <SelectTrigger disabled={isLoading}>
-                                <SelectValue placeholder="Seleccione tipo" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {vehicleTypes.map(type => (
-                                <SelectItem
-                                  key={type.id}
-                                  value={type.id.toString()}
-                                >
-                                  {type.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <LookupSelectField<VehicleType>
+                            label="Tipo"
+                            placeholder="Seleccione tipo"
+                            value={field.value || ''}
+                            onChange={field.onChange}
+                            items={vehicleTypes}
+                            onItemsChange={setVehicleTypes}
+                            disabled={isLoading}
+                            deleteEndpoint={id => `/api/vehicles/types/${id}`}
+                            renderCreateDialog={({
+                              isOpen,
+                              setIsOpen,
+                              onSuccess,
+                            }) => (
+                              <FormAddType
+                                isOpen={isOpen}
+                                setIsOpen={setIsOpen}
+                                onAddType={type =>
+                                  onSuccess({ ...type, isGlobal: false })
+                                }
+                              />
+                            )}
+                            renderEditDialog={({
+                              item,
+                              isOpen,
+                              setIsOpen,
+                              onSuccess,
+                            }) => (
+                              <FormEditType
+                                isOpen={isOpen}
+                                setIsOpen={setIsOpen}
+                                type={item}
+                                onEditType={type =>
+                                  onSuccess({
+                                    ...type,
+                                    isGlobal: item.isGlobal,
+                                  })
+                                }
+                              />
+                            )}
+                          />
                           <FormMessage />
                         </FormItem>
                       )}

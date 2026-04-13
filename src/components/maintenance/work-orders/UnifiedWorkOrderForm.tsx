@@ -592,7 +592,14 @@ export function UnifiedWorkOrderForm({
                           <CommandList className="max-h-64">
                             <CommandEmpty>Sin resultados.</CommandEmpty>
                             <CommandGroup>
-                              {temparioItems.map((item: any) => (
+                              {[
+                                ...new Map(
+                                  temparioItems.map((item: any) => [
+                                    item.code,
+                                    item,
+                                  ])
+                                ).values(),
+                              ].map((item: any) => (
                                 <CommandItem
                                   key={item.id}
                                   value={`${item.code} ${item.description}`}

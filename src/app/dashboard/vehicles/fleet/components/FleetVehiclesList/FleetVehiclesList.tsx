@@ -50,6 +50,16 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
+type CvDocument = {
+  type: string;
+  typeName: string;
+  documentNumber?: string | null;
+  entity?: string | null;
+  expiryDate?: string | null;
+  fileUrl: string;
+  fileName: string;
+};
+
 export function FleetVehiclesList() {
   const [data, setData] = useState<FleetVehicle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,6 +76,8 @@ export function FleetVehiclesList() {
   const [sendingVehicleCV, setSendingVehicleCV] = useState<FleetVehicle | null>(
     null
   );
+  const [cvDocuments, setCvDocuments] = useState<CvDocument[]>([]);
+  const [cvDocumentsLoading, setCvDocumentsLoading] = useState(false);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -141,6 +153,41 @@ export function FleetVehiclesList() {
     },
     [toast]
   );
+
+  const handleViewCV = useCallback(async (vehicle: FleetVehicle) => {
+    setViewingVehicleCV(vehicle);
+    setCvDocuments([]);
+    setIsCVDialogOpen(true);
+    setCvDocumentsLoading(true);
+    try {
+      const response = await axios.get(
+        `/api/vehicles/documents?vehiclePlate=${encodeURIComponent(vehicle.licensePlate)}`
+      );
+      const docs: CvDocument[] = response.data.map(
+        (doc: {
+          documentType: { code: string; name: string };
+          documentNumber?: string | null;
+          entity?: string | null;
+          expiryDate?: string | null;
+          fileUrl: string;
+          fileName: string;
+        }) => ({
+          type: doc.documentType.code,
+          typeName: doc.documentType.name,
+          documentNumber: doc.documentNumber,
+          entity: doc.entity,
+          expiryDate: doc.expiryDate ?? null,
+          fileUrl: doc.fileUrl,
+          fileName: doc.fileName,
+        })
+      );
+      setCvDocuments(docs);
+    } catch {
+      setCvDocuments([]);
+    } finally {
+      setCvDocumentsLoading(false);
+    }
+  }, []);
 
   const columns = useMemo<ColumnDef<FleetVehicle>[]>(
     () => [
@@ -300,12 +347,7 @@ export function FleetVehiclesList() {
 
                   <DropdownMenuSeparator />
 
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setViewingVehicleCV(vehicle);
-                      setIsCVDialogOpen(true);
-                    }}
-                  >
+                  <DropdownMenuItem onClick={() => handleViewCV(vehicle)}>
                     <FileText className="mr-2 h-4 w-4" />
                     Ver CV
                   </DropdownMenuItem>
@@ -510,6 +552,7 @@ export function FleetVehiclesList() {
         <VehicleCVViewer
           isOpen={isCVDialogOpen}
           setIsOpen={setIsCVDialogOpen}
+          vehicleId={viewingVehicleCV.id}
           vehicle={{
             licensePlate: viewingVehicleCV.licensePlate,
             brand: viewingVehicleCV.brand,
@@ -547,7 +590,8 @@ export function FleetVehiclesList() {
               emergencyContactPhone: viewingVehicleCV.emergencyContactPhone,
             }),
           }}
-          documents={viewingVehicleCV.documents || []}
+          documents={cvDocuments}
+          documentsLoading={cvDocumentsLoading}
         />
       )}
 

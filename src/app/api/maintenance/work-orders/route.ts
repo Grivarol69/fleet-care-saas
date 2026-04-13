@@ -172,6 +172,37 @@ export async function POST(request: NextRequest) {
 
     const data = result.data;
 
+    // Si no vienen items pero sí alertIds, construirlos desde las alertas
+    if (data.items.length === 0 && data.alertIds && data.alertIds.length > 0) {
+      const alerts = await tenantPrisma.maintenanceAlert.findMany({
+        where: { id: { in: data.alertIds } },
+        include: { programItem: { select: { mantItemId: true } } },
+      });
+
+      if (alerts.length === 0) {
+        return NextResponse.json(
+          { error: 'No se encontraron alertas válidas' },
+          { status: 400 }
+        );
+      }
+
+      data.items = alerts.map(alert => ({
+        mantItemId: alert.programItem?.mantItemId ?? alert.id,
+        description: alert.itemName,
+        unitPrice: alert.estimatedCost?.toNumber() ?? 0,
+        quantity: 1,
+        closureType: 'PENDING' as const,
+        itemSource: 'EXTERNAL' as const,
+      }));
+    }
+
+    if (data.items.length === 0) {
+      return NextResponse.json(
+        { error: 'Se requiere al menos un ítem' },
+        { status: 400 }
+      );
+    }
+
     // Obtener km actual del vehículo y su costCenterId
     const vehicle = await tenantPrisma.vehicle.findUnique({
       where: { id: data.vehicleId },

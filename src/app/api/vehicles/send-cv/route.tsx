@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { VehicleCVEmail } from '@/emails/VehicleCVEmail';
+import { renderAsync } from '@react-email/components';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { VehicleCV } from '@/app/dashboard/vehicles/fleet/components/VehicleCV/VehicleCV';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
+import { mergePdfWithAttachments } from '@/lib/pdf-merge';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -121,15 +123,9 @@ export async function POST(req: NextRequest) {
       />
     );
 
-    // Preparar attachments: CV + documentos del vehículo
-    const attachments: Array<{ filename: string; content: Buffer }> = [
-      {
-        filename: `CV_${vehicle.licensePlate}_${new Date().toISOString().split('T')[0]}.pdf`,
-        content: pdfBuffer,
-      },
-    ];
+    // Descargar documentos y fusionar en un único PDF
+    const docAttachments: Array<{ buffer: Buffer; name: string }> = [];
 
-    // Descargar y adjuntar documentos activos del vehículo
     for (const doc of vehicle.documents) {
       try {
         if (!doc.fileUrl) continue;
@@ -138,32 +134,45 @@ export async function POST(req: NextRequest) {
         if (!response.ok) continue;
 
         const buffer = Buffer.from(await response.arrayBuffer());
-
-        // Generar nombre descriptivo para el archivo
         const docTypeName =
           doc.documentType.name.replace(/\s+/g, '_') || 'Documento';
-        const extension = doc.fileUrl.split('.').pop()?.toLowerCase() || 'pdf';
 
-        attachments.push({
-          filename: `${docTypeName}_${vehicle.licensePlate}.${extension}`,
-          content: buffer,
+        docAttachments.push({
+          buffer,
+          name: `${docTypeName}_${vehicle.licensePlate}`,
         });
       } catch (error) {
         console.error(`Error downloading document ${doc.id}:`, error);
-        // Continuar con los demás documentos aunque uno falle
       }
     }
+
+    const finalPdfBuffer =
+      docAttachments.length > 0
+        ? await mergePdfWithAttachments(pdfBuffer, docAttachments)
+        : pdfBuffer;
+
+    const attachments = [
+      {
+        filename: `CV_${vehicle.licensePlate}_${new Date().toISOString().split('T')[0]}.pdf`,
+        content: finalPdfBuffer,
+      },
+    ];
+
+    // Pre-render email component to HTML (avoids render$1 error in server context)
+    const emailHtml = await renderAsync(
+      VehicleCVEmail({
+        vehiclePlate: vehicle.licensePlate,
+        recipientName: recipientName || 'Estimado usuario',
+        tenantName: tenant?.name || 'FleetCare',
+      })
+    );
 
     // Enviar email con Resend
     const { data, error } = await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'noreply@fleetcare.com',
       to: [recipientEmail],
       subject: `Hoja de Vida del Vehículo ${vehicle.licensePlate}`,
-      react: VehicleCVEmail({
-        vehiclePlate: vehicle.licensePlate,
-        recipientName: recipientName || 'Estimado usuario',
-        tenantName: tenant?.name || 'FleetCare',
-      }),
+      html: emailHtml,
       attachments,
     });
 

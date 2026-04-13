@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
+import { PDFViewer } from '@react-pdf/renderer';
 import { VehicleCV } from './VehicleCV';
 import {
   Dialog,
@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, Loader2 } from 'lucide-react';
+import { Download, ExternalLink, FileText, Loader2 } from 'lucide-react';
 
 interface Tenant {
   name: string;
@@ -19,9 +19,12 @@ interface Tenant {
 
 interface Document {
   type: string;
+  typeName?: string;
   documentNumber?: string | null;
   expiryDate?: string | null;
   entity?: string | null;
+  fileUrl?: string;
+  fileName?: string;
 }
 
 interface Vehicle {
@@ -70,24 +73,51 @@ interface VehicleCVViewerProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   vehicle: Vehicle;
+  vehicleId?: string;
   tenant?: Tenant;
   documents?: Document[];
+  documentsLoading?: boolean;
 }
 
 export function VehicleCVViewer({
   isOpen,
   setIsOpen,
   vehicle,
+  vehicleId,
   tenant,
   documents = [],
+  documentsLoading = false,
 }: VehicleCVViewerProps) {
   const [isClient, setIsClient] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   React.useEffect(() => {
     setIsClient(true);
   }, []);
 
   const fileName = `CV_${vehicle.licensePlate}_${new Date().toISOString().split('T')[0]}.pdf`;
+
+  const handleDownload = async () => {
+    if (!vehicleId) return;
+    setIsDownloading(true);
+    try {
+      const res = await fetch(
+        `/api/vehicles/vehicles/${vehicleId}/cv-download`
+      );
+      if (!res.ok) throw new Error('Error generando PDF');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   if (!isClient) {
     return (
@@ -110,53 +140,34 @@ export function VehicleCVViewer({
         <DialogHeader className="px-6 pt-6 pb-4">
           <DialogTitle className="flex items-center justify-between">
             <span>CV del Vehículo - {vehicle.licensePlate}</span>
-            <PDFDownloadLink
-              document={
-                <VehicleCV
-                  vehicle={vehicle as VehicleCVData}
-                  {...(tenant && {
-                    tenant: {
-                      name: tenant.name,
-                      ...(tenant.logo && { logo: tenant.logo }),
-                    },
-                  })}
-                  documents={documents.map(doc => ({
-                    type: doc.type,
-                    ...(doc.documentNumber && {
-                      documentNumber: doc.documentNumber,
-                    }),
-                    ...(doc.expiryDate && { expiryDate: doc.expiryDate }),
-                    ...(doc.entity && { entity: doc.entity }),
-                  }))}
-                />
-              }
-              fileName={fileName}
-            >
-              {({ loading }) => (
-                <Button size="sm" disabled={loading}>
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Preparando...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="mr-2 h-4 w-4" />
-                      Descargar PDF
-                    </>
-                  )}
-                </Button>
-              )}
-            </PDFDownloadLink>
+            {vehicleId ? (
+              <Button
+                size="sm"
+                disabled={isDownloading}
+                onClick={handleDownload}
+              >
+                {isDownloading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Preparando...
+                  </>
+                ) : (
+                  <>
+                    <Download className="mr-2 h-4 w-4" />
+                    Descargar PDF
+                  </>
+                )}
+              </Button>
+            ) : null}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="w-full flex-1 px-6 pb-6">
+        <div className="w-full flex-1 px-6 pb-6 flex gap-4 overflow-hidden min-h-0">
           <PDFViewer
             width="100%"
             height="100%"
-            showToolbar={true}
-            className="rounded-lg"
+            showToolbar={false}
+            className="rounded-lg flex-1 min-w-0"
           >
             <VehicleCV
               vehicle={vehicle as VehicleCVData}
@@ -168,6 +179,7 @@ export function VehicleCVViewer({
               })}
               documents={documents.map(doc => ({
                 type: doc.type,
+                typeName: doc.typeName,
                 ...(doc.documentNumber && {
                   documentNumber: doc.documentNumber,
                 }),
@@ -176,6 +188,36 @@ export function VehicleCVViewer({
               }))}
             />
           </PDFViewer>
+
+          {(documentsLoading || documents.length > 0) && (
+            <div className="w-56 flex-shrink-0 flex flex-col gap-2 overflow-y-auto">
+              <p className="font-semibold text-sm">Documentos adjuntos</p>
+              {documentsLoading ? (
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Cargando...
+                </div>
+              ) : (
+                documents
+                  .filter(d => d.fileUrl)
+                  .map((doc, i) => (
+                    <a
+                      key={i}
+                      href={doc.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 p-2 rounded border hover:bg-accent text-sm transition-colors"
+                    >
+                      <FileText className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                      <span className="truncate flex-1">
+                        {doc.typeName || doc.type}
+                      </span>
+                      <ExternalLink className="h-3 w-3 flex-shrink-0 text-muted-foreground" />
+                    </a>
+                  ))
+              )}
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
