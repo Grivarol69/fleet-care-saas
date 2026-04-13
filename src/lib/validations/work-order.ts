@@ -59,7 +59,7 @@ export const workOrderPayloadSchema = z.object({
   technicianId: z.string().optional().nullable(),
   costCenterId: z.string().optional().nullable(),
   scheduledDate: z.string().or(z.date()).optional().nullable(),
-  items: z.array(workOrderItemSchema).min(1, 'At least one item is required'),
+  items: z.array(workOrderItemSchema).optional().default([]),
 });
 
 export type WorkOrderPayload = z.infer<typeof workOrderPayloadSchema>;
