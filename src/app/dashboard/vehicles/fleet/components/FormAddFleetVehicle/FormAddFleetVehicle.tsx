@@ -28,6 +28,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { LookupSelectField } from '@/components/ui/LookupSelectField';
+import { FormAddBrand } from '@/app/dashboard/vehicles/brands/components/FormAddBrand';
+import { FormEditBrand } from '@/app/dashboard/vehicles/brands/components/FormEditBrand';
+import { FormAddLine } from '@/app/dashboard/vehicles/lines/components/FormAddLine';
+import { FormEditLine } from '@/app/dashboard/vehicles/lines/components/FormEditLine';
+import { FormAddType } from '@/app/dashboard/vehicles/types/components/FormAddType';
+import { FormEditType } from '@/app/dashboard/vehicles/types/components/FormEditType';
 import { UploadButton } from '@/lib/uploadthing';
 import axios from 'axios';
 import { useToast } from '@/components/hooks/use-toast';
@@ -35,34 +42,35 @@ import { useRouter } from 'next/navigation';
 import { Loader2, X } from 'lucide-react';
 
 // Schema del formulario
-const formSchema = z.object({
-  photo: z.string().min(1, 'La imagen es requerida'),
-  licensePlate: z.string().min(3, 'La placa debe tener al menos 3 caracteres'),
-  typePlate: z.enum(['PARTICULAR', 'PUBLICO']),
-  brandId: z.string().min(1).min(1, 'Seleccione una marca'),
-  lineId: z.string().min(1).min(1, 'Seleccione una línea'),
-  typeId: z.string().min(1).min(1, 'Seleccione un tipo'),
-  mileage: z.coerce.number().min(0, 'El kilometraje debe ser positivo'),
-  cylinder: z.coerce.number().optional(),
-  bodyWork: z.string().optional(),
-  engineNumber: z.string().optional(),
-  chasisNumber: z.string().optional(),
-  ownerCard: z.string().optional(),
-  color: z.string().min(1, 'El color es requerido'),
-  owner: z.enum(['OWN', 'LEASED', 'RENTED', 'THIRD_PARTY']),
-  costCenterId: z.string().optional().nullable(),
-  year: z.coerce
-    .number()
-    .min(1900, 'Ingrese un año válido')
-    .max(new Date().getFullYear() + 1),
-  situation: z.string().min(1, 'Seleccione el estado'),
-}).refine(
-  (data) => data.owner !== 'THIRD_PARTY' || !!data.costCenterId,
-  {
+const formSchema = z
+  .object({
+    photo: z.string().min(1, 'La imagen es requerida'),
+    licensePlate: z
+      .string()
+      .min(3, 'La placa debe tener al menos 3 caracteres'),
+    typePlate: z.enum(['PARTICULAR', 'PUBLICO']),
+    brandId: z.string().min(1).min(1, 'Seleccione una marca'),
+    lineId: z.string().min(1).min(1, 'Seleccione una línea'),
+    typeId: z.string().min(1).min(1, 'Seleccione un tipo'),
+    mileage: z.coerce.number().min(0, 'El kilometraje debe ser positivo'),
+    cylinder: z.coerce.number().optional(),
+    bodyWork: z.string().optional(),
+    engineNumber: z.string().optional(),
+    chasisNumber: z.string().optional(),
+    ownerCard: z.string().optional(),
+    color: z.string().min(1, 'El color es requerido'),
+    owner: z.enum(['OWN', 'LEASED', 'RENTED', 'THIRD_PARTY']),
+    costCenterId: z.string().optional().nullable(),
+    year: z.coerce
+      .number()
+      .min(1900, 'Ingrese un año válido')
+      .max(new Date().getFullYear() + 1),
+    situation: z.string().min(1, 'Seleccione el estado'),
+  })
+  .refine(data => data.owner !== 'THIRD_PARTY' || !!data.costCenterId, {
     message: 'El centro de costos es requerido para vehículos de terceros',
     path: ['costCenterId'],
-  }
-);
+  });
 
 type CostCenter = {
   id: string;
@@ -73,16 +81,20 @@ type CostCenter = {
 type VehicleBrand = {
   id: string;
   name: string;
+  isGlobal: boolean;
 };
 
 type VehicleLine = {
   id: string;
   name: string;
+  brandId: string;
+  isGlobal: boolean;
 };
 
 type VehicleType = {
   id: string;
   name: string;
+  isGlobal: boolean;
 };
 
 import { FleetVehicle } from '../SharedTypes/sharedTypes';
@@ -136,12 +148,14 @@ export function FormAddFleetVehicle({
 
   const fetchData = useCallback(async () => {
     try {
-      const [brandsRes, linesRes, typesRes, costCentersRes] = await Promise.all([
-        axios.get('/api/vehicles/brands'),
-        axios.get('/api/vehicles/lines'),
-        axios.get('/api/vehicles/types'),
-        axios.get<CostCenter[]>('/api/cost-centers'),
-      ]);
+      const [brandsRes, linesRes, typesRes, costCentersRes] = await Promise.all(
+        [
+          axios.get('/api/vehicles/brands'),
+          axios.get('/api/vehicles/lines'),
+          axios.get('/api/vehicles/types'),
+          axios.get<CostCenter[]>('/api/cost-centers'),
+        ]
+      );
 
       setVehicleBrands(brandsRes.data);
       setVehicleLines(linesRes.data);
@@ -277,26 +291,44 @@ export function FormAddFleetVehicle({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Marca *</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
+                      <LookupSelectField<VehicleBrand>
+                        label="Marca"
+                        placeholder="Seleccione marca"
                         value={field.value || ''}
-                      >
-                        <FormControl>
-                          <SelectTrigger disabled={isLoading}>
-                            <SelectValue placeholder="Seleccione marca" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {vehicleBrands.map(brand => (
-                            <SelectItem
-                              key={brand.id}
-                              value={brand.id.toString()}
-                            >
-                              {brand.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        onChange={field.onChange}
+                        items={vehicleBrands}
+                        onItemsChange={setVehicleBrands}
+                        disabled={isLoading}
+                        deleteEndpoint={id => `/api/vehicles/brands/${id}`}
+                        renderCreateDialog={({
+                          isOpen,
+                          setIsOpen,
+                          onSuccess,
+                        }) => (
+                          <FormAddBrand
+                            isOpen={isOpen}
+                            setIsOpen={setIsOpen}
+                            onAddBrand={brand =>
+                              onSuccess({ ...brand, isGlobal: false })
+                            }
+                          />
+                        )}
+                        renderEditDialog={({
+                          item,
+                          isOpen,
+                          setIsOpen,
+                          onSuccess,
+                        }) => (
+                          <FormEditBrand
+                            isOpen={isOpen}
+                            setIsOpen={setIsOpen}
+                            brand={item}
+                            onEditBrand={brand =>
+                              onSuccess({ ...brand, isGlobal: item.isGlobal })
+                            }
+                          />
+                        )}
+                      />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -309,26 +341,54 @@ export function FormAddFleetVehicle({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Línea *</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
+                      <LookupSelectField<VehicleLine>
+                        label="Línea"
+                        placeholder="Seleccione línea"
                         value={field.value || ''}
-                      >
-                        <FormControl>
-                          <SelectTrigger disabled={isLoading}>
-                            <SelectValue placeholder="Seleccione línea" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {vehicleLines.map(line => (
-                            <SelectItem
-                              key={line.id}
-                              value={line.id.toString()}
-                            >
-                              {line.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        onChange={field.onChange}
+                        items={vehicleLines}
+                        onItemsChange={setVehicleLines}
+                        disabled={isLoading}
+                        deleteEndpoint={id => `/api/vehicles/lines/${id}`}
+                        renderCreateDialog={({
+                          isOpen,
+                          setIsOpen,
+                          onSuccess,
+                        }) => (
+                          <FormAddLine
+                            isOpen={isOpen}
+                            setIsOpen={setIsOpen}
+                            onAddLine={line =>
+                              onSuccess({
+                                id: line.id,
+                                name: line.name,
+                                brandId: line.brandId,
+                                isGlobal: false,
+                              })
+                            }
+                          />
+                        )}
+                        renderEditDialog={({
+                          item,
+                          isOpen,
+                          setIsOpen,
+                          onSuccess,
+                        }) => (
+                          <FormEditLine
+                            isOpen={isOpen}
+                            setIsOpen={setIsOpen}
+                            line={item}
+                            onEditLine={line =>
+                              onSuccess({
+                                id: line.id,
+                                name: line.name,
+                                brandId: line.brandId,
+                                isGlobal: item.isGlobal,
+                              })
+                            }
+                          />
+                        )}
+                      />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -341,26 +401,44 @@ export function FormAddFleetVehicle({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tipo *</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
+                      <LookupSelectField<VehicleType>
+                        label="Tipo"
+                        placeholder="Seleccione tipo"
                         value={field.value || ''}
-                      >
-                        <FormControl>
-                          <SelectTrigger disabled={isLoading}>
-                            <SelectValue placeholder="Seleccione tipo" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {vehicleTypes.map(type => (
-                            <SelectItem
-                              key={type.id}
-                              value={type.id.toString()}
-                            >
-                              {type.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        onChange={field.onChange}
+                        items={vehicleTypes}
+                        onItemsChange={setVehicleTypes}
+                        disabled={isLoading}
+                        deleteEndpoint={id => `/api/vehicles/types/${id}`}
+                        renderCreateDialog={({
+                          isOpen,
+                          setIsOpen,
+                          onSuccess,
+                        }) => (
+                          <FormAddType
+                            isOpen={isOpen}
+                            setIsOpen={setIsOpen}
+                            onAddType={type =>
+                              onSuccess({ ...type, isGlobal: false })
+                            }
+                          />
+                        )}
+                        renderEditDialog={({
+                          item,
+                          isOpen,
+                          setIsOpen,
+                          onSuccess,
+                        }) => (
+                          <FormEditType
+                            isOpen={isOpen}
+                            setIsOpen={setIsOpen}
+                            type={item}
+                            onEditType={type =>
+                              onSuccess({ ...type, isGlobal: item.isGlobal })
+                            }
+                          />
+                        )}
+                      />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -433,7 +511,7 @@ export function FormAddFleetVehicle({
                     <FormItem>
                       <FormLabel>Propietario *</FormLabel>
                       <Select
-                        onValueChange={(value) => {
+                        onValueChange={value => {
                           field.onChange(value);
                           if (value !== 'THIRD_PARTY') {
                             form.setValue('costCenterId', null);
@@ -450,7 +528,9 @@ export function FormAddFleetVehicle({
                           <SelectItem value="OWN">Propio</SelectItem>
                           <SelectItem value="LEASED">Arrendado</SelectItem>
                           <SelectItem value="RENTED">Rentado</SelectItem>
-                          <SelectItem value="THIRD_PARTY">Tercero (administrado)</SelectItem>
+                          <SelectItem value="THIRD_PARTY">
+                            Tercero (administrado)
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -477,7 +557,7 @@ export function FormAddFleetVehicle({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {costCenters.map((cc) => (
+                            {costCenters.map(cc => (
                               <SelectItem key={cc.id} value={cc.id}>
                                 {cc.code} — {cc.name}
                               </SelectItem>

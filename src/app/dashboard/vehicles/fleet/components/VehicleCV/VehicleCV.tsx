@@ -231,6 +231,7 @@ interface VehicleCVProps {
   };
   documents?: Array<{
     type: string;
+    typeName?: string;
     documentNumber?: string;
     expiryDate?: string;
     entity?: string;
@@ -412,6 +413,27 @@ export const VehicleCV: React.FC<VehicleCVProps> = ({
           <Text style={styles.docSmallLabel}>Entidad:</Text>
           <Text style={styles.docSmallValue}>{insurance?.entity || 'N/A'}</Text>
         </View>
+
+        {/* Documentos adicionales (tipos distintos de los 3 estándar) */}
+        {documents
+          .filter(
+            d =>
+              d.type !== 'SOAT' &&
+              d.type !== 'TECNOMECANICA' &&
+              d.type !== 'INSURANCE'
+          )
+          .map((doc, i) => (
+            <View key={i} style={styles.docsRow}>
+              <Text style={styles.docLabel}>{doc.typeName || doc.type}</Text>
+              <Text style={styles.docValue}>{doc.documentNumber || 'N/A'}</Text>
+              <Text style={styles.docSmallLabel}>Vence:</Text>
+              <Text style={styles.docSmallValue}>
+                {formatDate(doc.expiryDate)}
+              </Text>
+              <Text style={styles.docSmallLabel}>Entidad:</Text>
+              <Text style={styles.docSmallValue}>{doc.entity || 'N/A'}</Text>
+            </View>
+          ))}
 
         {/* Contacto de emergencia */}
         {(vehicle.emergencyContactName || vehicle.emergencyContactPhone) && (
