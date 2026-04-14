@@ -11,7 +11,7 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 // Rutas de admin que NO requieren organización (solo SUPER_ADMIN)
-const isAdminRoute = createRouteMatcher(['/admin(.*)', '/api/admin(.*)']);
+const isAdminRoute = createRouteMatcher(['/admin(.*)']);
 
 export default clerkMiddleware(async (auth, request) => {
   const { userId, orgId } = await auth();
