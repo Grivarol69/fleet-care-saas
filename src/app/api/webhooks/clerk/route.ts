@@ -134,6 +134,8 @@ export async function POST(req: Request) {
       case 'organizationMembership.created': {
         const { organization, public_user_data, role } = evt.data;
         const email = public_user_data.identifier;
+        // El rol de Clerk (admin/member) solo se usa al crear el usuario por primera vez.
+        // Roles de negocio se gestionan desde FleetCareRolesTable en nuestra UI.
         const dbRole = mapClerkRoleToDbRole(role);
         console.log(
           `[WEBHOOK] Membership created for ${email} in org ${organization.id} as ${dbRole}`
@@ -168,7 +170,7 @@ export async function POST(req: Request) {
             },
           },
           create: {
-            id: public_user_data.user_id, // Usar el ID de Clerk para consistencia completa
+            id: public_user_data.user_id,
             tenantId: organization.id,
             email: email,
             firstName: public_user_data.first_name || 'Usuario',
@@ -177,10 +179,9 @@ export async function POST(req: Request) {
             isActive: true,
           },
           update: {
-            role: dbRole,
+            // No sobreescribir el rol — puede haber sido asignado manualmente
+            // desde FleetCareRolesTable. Solo reactivar si estaba inactivo.
             isActive: true,
-            // Podríamos actualizar el id aquí si queremos forzarlo,
-            // pero Prisma no recomienda cambiar IDs en upsert/update.
           },
         });
         console.log(`[WEBHOOK] User upserted via membership: ${user.id}`);
@@ -188,21 +189,12 @@ export async function POST(req: Request) {
       }
 
       case 'organizationMembership.updated': {
-        const { organization, public_user_data, role } = evt.data;
+        const { organization, public_user_data } = evt.data;
         const email = public_user_data.identifier;
-        const dbRole = mapClerkRoleToDbRole(role);
-
-        const updated = await prisma.user.updateMany({
-          where: {
-            tenantId: organization.id,
-            email: email,
-          },
-          data: {
-            role: dbRole,
-          },
-        });
+        // Roles de negocio se gestionan 100% desde nuestra UI (FleetCareRolesTable).
+        // Cambios de rol en Clerk (admin ↔ member) no afectan roles en DB.
         console.log(
-          `[WEBHOOK] Membership updated for ${email} (${updated.count} records)`
+          `[WEBHOOK] Membership updated for ${email} in org ${organization.id} (Clerk role change ignored — business roles managed in DB)`
         );
         break;
       }

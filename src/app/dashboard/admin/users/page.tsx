@@ -1,7 +1,15 @@
 'use client';
 
 import { OrganizationProfile } from '@clerk/nextjs';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Info } from 'lucide-react';
 import { FleetCareRolesTable } from './FleetCareRolesTable';
 
 export default function UserManagementPage() {
@@ -9,7 +17,9 @@ export default function UserManagementPage() {
     <div className="flex-1 space-y-6 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Gestión de Equipo</h2>
+          <h2 className="text-3xl font-bold tracking-tight">
+            Gestión de Equipo
+          </h2>
           <p className="text-slate-500">
             Administra los miembros de tu organización, roles e invitaciones.
           </p>
@@ -34,13 +44,23 @@ export default function UserManagementPage() {
         </CardContent>
       </Card>
 
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          Invitá miembros desde el panel de arriba usando el rol{' '}
+          <strong>Member</strong>. Una vez que acepten la invitación aparecerán
+          aquí con rol <strong>Conductor</strong> por defecto. Usá la tabla de
+          abajo para asignarles el rol correcto.
+        </AlertDescription>
+      </Alert>
+
       {/* Sección 2: Fleet Care roles — roles de negocio no gestionados por Clerk */}
       <Card>
         <CardHeader>
           <CardTitle>Roles Fleet Care</CardTitle>
           <CardDescription>
-            Asigna los roles operativos del sistema. Estos roles controlan el acceso a módulos como
-            mantenimiento, compras e inventario.
+            Asigna los roles operativos del sistema. Estos roles controlan el
+            acceso a módulos como mantenimiento, compras e inventario.
           </CardDescription>
         </CardHeader>
         <CardContent>
