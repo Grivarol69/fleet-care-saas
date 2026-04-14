@@ -71,6 +71,14 @@ export default clerkMiddleware(async (auth, request) => {
     if (url.pathname.startsWith('/api')) {
       return NextResponse.next();
     }
+    // Rutas de auth de Clerk: no reescribir para que Clerk procese
+    // correctamente el __clerk_ticket de invitaciones de organización
+    if (
+      url.pathname.startsWith('/sign-in') ||
+      url.pathname.startsWith('/sign-up')
+    ) {
+      return NextResponse.next();
+    }
   }
 
   const response = NextResponse.rewrite(url);
