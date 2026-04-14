@@ -9,7 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/hooks/use-toast';
 import axios from 'axios';
-import { ChevronDown, Plus, Pencil, Trash2 } from 'lucide-react';
+import { ChevronDown, Plus, Pencil, Trash2, Check } from 'lucide-react';
 import { LookupItem, LookupSelectFieldProps } from './LookupSelectField.types';
 
 export function LookupSelectField<T extends LookupItem>({
@@ -126,46 +126,44 @@ export function LookupSelectField<T extends LookupItem>({
               items.map(item => (
                 <div
                   key={item.id}
-                  className="flex items-center gap-1 rounded-md px-2 py-1 hover:bg-accent"
+                  className="group flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent cursor-pointer"
+                  onClick={() => handleSelect(item)}
                 >
+                  {value === item.id ? (
+                    <Check className="h-4 w-4 text-primary shrink-0" />
+                  ) : (
+                    <span className="w-4 shrink-0" />
+                  )}
                   <span className="text-sm flex-1 truncate min-w-0">
                     {item.name}
                   </span>
-                  <div className="flex gap-1 shrink-0">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={value === item.id ? 'default' : 'outline'}
-                      className="h-6 px-2 text-xs"
-                      onClick={() => handleSelect(item)}
+                  {!item.isGlobal && (
+                    <div
+                      className="flex gap-1 shrink-0 invisible group-hover:visible"
+                      onClick={e => e.stopPropagation()}
                     >
-                      Seleccionar
-                    </Button>
-                    {!item.isGlobal && (
-                      <>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          className="h-6 w-6 p-0"
-                          title="Editar"
-                          onClick={() => handleEditClick(item)}
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                          title="Eliminar"
-                          onClick={() => handleDelete(item)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </>
-                    )}
-                  </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0"
+                        title="Editar"
+                        onClick={() => handleEditClick(item)}
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                        title="Eliminar"
+                        onClick={() => handleDelete(item)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ))
             )}

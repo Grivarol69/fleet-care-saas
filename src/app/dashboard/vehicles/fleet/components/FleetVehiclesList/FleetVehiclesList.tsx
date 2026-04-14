@@ -27,6 +27,7 @@ import { FormAddFleetVehicle } from '../FormAddFleetVehicle';
 import { FormEditFleetVehicle } from '../FormEditFleetVehicle';
 import { VehicleCVViewer } from '../VehicleCV';
 import { SendCVDialog } from '../SendCVDialog';
+import { MaintenanceHistoryDialog } from '../MaintenanceHistory';
 import axios from 'axios';
 import { useToast } from '@/components/hooks/use-toast';
 import Image from 'next/image';
@@ -76,6 +77,7 @@ export function FleetVehiclesList() {
   const [sendingVehicleCV, setSendingVehicleCV] = useState<FleetVehicle | null>(
     null
   );
+  const [historyVehicleId, setHistoryVehicleId] = useState<string | null>(null);
   const [cvDocuments, setCvDocuments] = useState<CvDocument[]>([]);
   const [cvDocumentsLoading, setCvDocumentsLoading] = useState(false);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -353,6 +355,12 @@ export function FleetVehiclesList() {
                   </DropdownMenuItem>
 
                   <DropdownMenuItem
+                    onClick={() => setHistoryVehicleId(vehicle.id)}
+                  >
+                    Ver Historial
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
                     onClick={() => {
                       setSendingVehicleCV(vehicle);
                       setIsSendEmailDialogOpen(true);
@@ -601,6 +609,13 @@ export function FleetVehiclesList() {
           setIsOpen={setIsSendEmailDialogOpen}
           vehicleId={sendingVehicleCV.id}
           vehiclePlate={sendingVehicleCV.licensePlate}
+        />
+      )}
+
+      {historyVehicleId && (
+        <MaintenanceHistoryDialog
+          vehicleId={historyVehicleId}
+          onClose={() => setHistoryVehicleId(null)}
         />
       )}
     </div>
