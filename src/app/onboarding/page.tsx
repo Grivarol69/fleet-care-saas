@@ -16,7 +16,13 @@ export default async function OnboardingPage() {
   const user = await currentUser();
   if (!user) return redirect('/sign-in');
 
-  const { orgId } = await auth();
+  const { orgId, orgRole } = await auth();
+
+  // Usuarios invitados (org:member) nunca deben ver el wizard de setup.
+  // El wizard es solo para el admin que creó la organización.
+  if (orgId && orgRole && orgRole !== 'org:admin') {
+    return redirect('/dashboard');
+  }
   const email = user.emailAddresses?.[0]?.emailAddress || '';
 
   if (!orgId) {
@@ -24,8 +30,12 @@ export default async function OnboardingPage() {
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
         <div className="w-full max-w-md space-y-8 text-center">
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold text-slate-900">Crea tu Empresa</h1>
-            <p className="text-slate-500">Para comenzar, crea tu primera organización en Fleet Care.</p>
+            <h1 className="text-3xl font-bold text-slate-900">
+              Crea tu Empresa
+            </h1>
+            <p className="text-slate-500">
+              Para comenzar, crea tu primera organización en Fleet Care.
+            </p>
           </div>
           <OrganizationList
             hidePersonal
@@ -41,22 +51,23 @@ export default async function OnboardingPage() {
   // el usuario del tenant equivocado en caso de multi-org
   const dbUser: UserWithTenant | null = orgId
     ? await prisma.user.findFirst({
-      where: { email, tenantId: orgId },
-      include: { tenant: true },
-    })
+        where: { email, tenantId: orgId },
+        include: { tenant: true },
+      })
     : await prisma.user.findFirst({
-      where: { email },
-      include: { tenant: true },
-    });
+        where: { email },
+        include: { tenant: true },
+      });
 
   let tenant = dbUser?.tenant || undefined;
 
   // Si el usuario no fue creado aún por el webhook, pero sí tenemos el orgId,
   // buscamos el Tenant directamente para saber en qué paso estamos.
   if (!tenant && orgId) {
-    tenant = await prisma.tenant.findUnique({
-      where: { id: orgId },
-    }) || undefined;
+    tenant =
+      (await prisma.tenant.findUnique({
+        where: { id: orgId },
+      })) || undefined;
   }
 
   // Si no tiene tenant, es usuario nuevo sin invitación -> Crear Tenant
