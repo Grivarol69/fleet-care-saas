@@ -3,6 +3,7 @@ import { currentUser } from '@clerk/nextjs/server';
 import {
   extractDocumentData,
   extractInvoiceData,
+  extractPropertyCardData,
 } from '@/lib/ocr/claude-vision';
 
 const f = createUploadthing();
@@ -106,6 +107,48 @@ export const ourFileRouter = {
         ocrTaxAmount: ocr.taxAmount ?? null,
         ocrTotal: ocr.total ?? null,
         ocrItemsJson: ocr.items ? JSON.stringify(ocr.items) : null,
+      };
+    }),
+  // Property card uploader (Licencia de Tránsito / Tarjeta de Propiedad)
+  propertyCardUploader: f({
+    pdf: {
+      maxFileSize: '8MB',
+      maxFileCount: 1,
+    },
+    image: {
+      maxFileSize: '4MB',
+      maxFileCount: 1,
+    },
+  })
+    .middleware(async () => {
+      const user = await currentUser();
+      if (!user) throw new Error('Unauthorized');
+
+      return {
+        userId: user.id,
+        userEmail: user.emailAddresses[0]?.emailAddress,
+      };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      console.log('Property card upload complete:', file.url);
+      const ocr = await extractPropertyCardData(file.url);
+      console.log('[OCR_PROPERTY_CARD] confidence:', ocr.confidence);
+      return {
+        uploadedBy: metadata.userId,
+        fileUrl: file.url,
+        ocrConfidence: ocr.confidence,
+        ocrLicensePlate: ocr.licensePlate ?? null,
+        ocrBrandName: ocr.brandName ?? null,
+        ocrLineName: ocr.lineName ?? null,
+        ocrTypeName: ocr.typeName ?? null,
+        ocrYear: ocr.year ?? null,
+        ocrColor: ocr.color ?? null,
+        ocrEngineNumber: ocr.engineNumber ?? null,
+        ocrChasisNumber: ocr.chasisNumber ?? null,
+        ocrOwnerCard: ocr.ownerCard ?? null,
+        ocrCylinder: ocr.cylinder ?? null,
+        ocrFuelType: ocr.fuelType ?? null,
+        ocrServiceType: ocr.serviceType ?? null,
       };
     }),
 } satisfies FileRouter;

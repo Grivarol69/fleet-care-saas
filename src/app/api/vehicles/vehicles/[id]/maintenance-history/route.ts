@@ -34,7 +34,7 @@ export async function GET(
       where: {
         vehicleId: id,
         tenantId: user.tenantId,
-        status: 'COMPLETED',
+        status: { in: ['COMPLETED', 'CLOSED'] },
       },
       orderBy: { endDate: 'desc' },
       include: {
@@ -44,6 +44,16 @@ export async function GET(
             mantItem: { select: { name: true } },
             masterPart: { select: { description: true, code: true } },
             provider: { select: { name: true } },
+          },
+        },
+        invoices: {
+          select: {
+            id: true,
+            invoiceNumber: true,
+            invoiceDate: true,
+            totalAmount: true,
+            attachmentUrl: true,
+            supplier: { select: { name: true } },
           },
         },
       },

@@ -71,7 +71,7 @@ export async function POST(
     }
 
     // Resolve inventoryItemId for PART items via masterPartId
-    const partItems = items.filter(i => i.mantItem.type === 'PART');
+    const partItems = items.filter(i => i.mantItem?.type === 'PART');
     const masterPartIds = partItems
       .map(i => i.masterPartId)
       .filter((id): id is string => id !== null);
@@ -89,7 +89,7 @@ export async function POST(
     );
 
     // Compute totals
-    const laborItems = items.filter(i => i.mantItem.type !== 'PART');
+    const laborItems = items.filter(i => i.mantItem?.type !== 'PART');
     const totalLaborCost = laborItems.reduce(
       (sum, i) => sum + Number(i.totalCost),
       0
@@ -127,7 +127,7 @@ export async function POST(
               tenantId: user.tenantId,
               workOrderItemId: item.id,
               technicianId: workOrder.technicianId,
-              description: item.mantItem.name,
+              description: item.mantItem?.name ?? item.description,
               hours: 0,
               hourlyRate: 0,
               laborCost: Number(item.totalCost),

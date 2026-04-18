@@ -235,7 +235,7 @@ export async function PATCH(
             await tx.maintenanceAlert.update({
               where: { id: maintenanceAlert.id },
               data: {
-                status: 'COMPLETED',
+                status: 'CLOSED',
                 actualCost: invoiceItem.total,
                 wasOnTime,
                 closedAt: now,
@@ -306,7 +306,7 @@ export async function PATCH(
             where: { id: invoice.workOrderId },
             data: {
               actualCost: totalActualCost,
-              status: allItemsCompleted ? 'COMPLETED' : 'IN_PROGRESS',
+              status: allItemsCompleted ? 'COMPLETED' : 'APPROVED',
             },
           });
 

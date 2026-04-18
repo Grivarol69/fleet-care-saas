@@ -6,13 +6,14 @@ import { DocumentStats } from '@/components/layout/DocumentStats';
 import { FleetStatusBoard } from '@/components/dashboard';
 import { FinancialDashboard } from '@/components/dashboard/FinancialDashboard';
 import { WorkOrdersTab } from '@/components/dashboard/WorkOrdersTab';
-import { BarChart3, Truck, FileText, ClipboardList } from 'lucide-react';
+import { BarChart3, Truck, FileText, ClipboardList, Calendar } from 'lucide-react';
+import { MaintenanceCalendar } from '@/components/layout/MaintenanceCalendar/MaintenanceCalendar';
 
 export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="financial" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
           <TabsTrigger value="financial" className="gap-2">
             <BarChart3 className="h-4 w-4" />
             <span className="hidden sm:inline">Situación Financiera</span>
@@ -32,6 +33,11 @@ export default function DashboardPage() {
             <FileText className="h-4 w-4" />
             <span className="hidden sm:inline">Documentos</span>
             <span className="sm:hidden">Docs</span>
+          </TabsTrigger>
+          <TabsTrigger value="schedule" className="gap-2">
+            <Calendar className="h-4 w-4" />
+            <span className="hidden sm:inline">Calendario</span>
+            <span className="sm:hidden">Cal</span>
           </TabsTrigger>
         </TabsList>
 
@@ -55,6 +61,11 @@ export default function DashboardPage() {
         {/* Tab 4: Documentos */}
         <TabsContent value="documents" className="mt-6">
           <DocumentStats />
+        </TabsContent>
+
+        {/* Tab 5: Calendario de Mantenimiento */}
+        <TabsContent value="schedule" className="mt-6">
+          <MaintenanceCalendar />
         </TabsContent>
       </Tabs>
     </div>

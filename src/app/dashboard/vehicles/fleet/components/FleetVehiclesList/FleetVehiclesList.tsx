@@ -23,7 +23,6 @@ import {
 import { FleetVehicle } from '../SharedTypes/sharedTypes';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { FormAddFleetVehicle } from '../FormAddFleetVehicle';
 import { FormEditFleetVehicle } from '../FormEditFleetVehicle';
 import { VehicleCVViewer } from '../VehicleCV';
 import { SendCVDialog } from '../SendCVDialog';
@@ -31,6 +30,7 @@ import { MaintenanceHistoryDialog } from '../MaintenanceHistory';
 import axios from 'axios';
 import { useToast } from '@/components/hooks/use-toast';
 import Image from 'next/image';
+import Link from 'next/link';
 import { DownloadBtn } from './DownloadBtn';
 import {
   ArrowUpDown,
@@ -40,6 +40,7 @@ import {
   FileText,
   Mail,
   MessageCircle,
+  History,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -65,7 +66,6 @@ export function FleetVehiclesList() {
   const [data, setData] = useState<FleetVehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'own' | 'third_party'
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCVDialogOpen, setIsCVDialogOpen] = useState(false);
   const [isSendEmailDialogOpen, setIsSendEmailDialogOpen] = useState(false);
@@ -357,6 +357,7 @@ export function FleetVehiclesList() {
                   <DropdownMenuItem
                     onClick={() => setHistoryVehicleId(vehicle.id)}
                   >
+                    <History className="mr-2 h-4 w-4" />
                     Ver Historial
                   </DropdownMenuItem>
 
@@ -417,8 +418,10 @@ export function FleetVehiclesList() {
     <div className="space-y-4">
       {/* Header con botones */}
       <div className="flex justify-between items-center">
-        <Button onClick={() => setIsAddDialogOpen(true)}>
-          Agregar Vehículo
+        <Button asChild>
+          <Link href="/dashboard/vehicles/fleet/new">
+            Agregar Vehículo
+          </Link>
         </Button>
         <DownloadBtn data={data} fileName="vehiculos" />
       </div>
@@ -535,15 +538,6 @@ export function FleetVehiclesList() {
       </div>
 
       {/* Diálogos */}
-      <FormAddFleetVehicle
-        isOpen={isAddDialogOpen}
-        setIsOpen={setIsAddDialogOpen}
-        onAddFleetVehicle={vehicle => {
-          setData([...data, vehicle]);
-          fetchFleetVehicles(); // Refrescar para obtener datos completos con relaciones
-        }}
-      />
-
       {editingFleetVehicle && (
         <FormEditFleetVehicle
           isOpen={isEditDialogOpen}

@@ -61,6 +61,7 @@ export async function POST(req: Request) {
         vehicleLineId: body.vehicleLineId,
         version: sourceTemplate.version,
         isDefault: false,
+        clonedFromId: sourceTemplate.id,
         // Deep copy packages
         packages: {
           create: sourceTemplate.packages.map(pkg => ({

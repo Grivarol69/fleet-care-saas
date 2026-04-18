@@ -9,8 +9,8 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
 export function SidebarItems(props: SidebarItemsProps) {
-  const { item } = props;
-  const { label, icon: Icon, href, subItems } = item;
+  const { item, onAction } = props;
+  const { label, icon: Icon, href, action, subItems } = item;
   const [isOpen, setIsOpen] = useState(false);
 
   const pathname = usePathname();
@@ -51,6 +51,14 @@ export function SidebarItems(props: SidebarItemsProps) {
         <Link href={href} className={itemClassName}>
           {itemContent}
         </Link>
+      ) : action ? (
+        <button
+          type="button"
+          onClick={() => onAction?.()}
+          className={`${itemClassName} w-full text-left`}
+        >
+          {itemContent}
+        </button>
       ) : (
         <div onClick={toggleSubMenu} className={itemClassName}>
           {itemContent}

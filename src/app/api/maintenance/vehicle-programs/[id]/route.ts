@@ -188,9 +188,9 @@ export async function DELETE(
       return new NextResponse('Program not found', { status: 404 });
     }
 
-    // Verificar que no hay items en progreso
+    // Verificar que no hay items activos (aprobados/en ejecución)
     const itemsInProgress = existingProgram.packages.some(pkg =>
-      pkg.items.some(item => item.status === 'IN_PROGRESS')
+      pkg.items.some(item => item.status === 'APPROVED')
     );
 
     if (itemsInProgress) {

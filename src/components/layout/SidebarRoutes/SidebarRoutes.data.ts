@@ -18,6 +18,7 @@ import {
   Clock,
   Droplets,
   Disc3,
+  PlusCircle,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -27,6 +28,7 @@ type SidebarItem = {
   icon: LucideIcon;
   label: string;
   href?: string;
+  action?: string;
   subItems?: {
     label: string;
     icon?: LucideIcon;
@@ -47,6 +49,12 @@ export const dataAdminSidebar: SidebarItem[] = [
       UserRole.MANAGER,
       UserRole.COORDINATOR,
     ], // TECHNICIAN y DRIVER no ven dashboard
+  },
+  {
+    icon: PlusCircle,
+    label: 'Nueva OT',
+    action: 'nueva-ot',
+    roles: [UserRole.OWNER, UserRole.MANAGER, UserRole.COORDINATOR],
   },
   {
     icon: Building2,
@@ -244,6 +252,21 @@ export const dataAdminSidebar: SidebarItem[] = [
       {
         label: 'Planes de Mantenimiento',
         href: '/dashboard/maintenance/mant-template',
+        roles: [UserRole.SUPER_ADMIN],
+      },
+      {
+        label: 'Planes Globales',
+        href: '/dashboard/maintenance/planes-globales',
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
+        ],
+      },
+      {
+        label: 'Mis Planes',
+        href: '/dashboard/maintenance/mis-planes',
         roles: [
           UserRole.SUPER_ADMIN,
           UserRole.OWNER,

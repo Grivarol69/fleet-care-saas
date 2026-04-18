@@ -61,12 +61,14 @@ export type FormAddLineProps = {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   onAddLine: (line: VehicleLine) => void;
+  initialName?: string;
 };
 
 export function FormAddLine({
   isOpen,
   setIsOpen,
   onAddLine,
+  initialName,
 }: FormAddLineProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingBrands, setIsLoadingBrands] = useState(true);
@@ -75,10 +77,16 @@ export function FormAddLine({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      brandId: '', // Se validará que sea > 0
+      name: initialName ?? '',
+      brandId: '',
     },
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      form.reset({ name: initialName ?? '', brandId: '' });
+    }
+  }, [isOpen, initialName, form]);
 
   const router = useRouter();
   const { toast } = useToast();

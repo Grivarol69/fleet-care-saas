@@ -309,7 +309,7 @@ export async function GET() {
 
       if (mantType === 'PREVENTIVE' || mantType === 'PREDICTIVE') {
         preventiveSpent += amount;
-      } else if (mantType === 'CORRECTIVE' || mantType === 'EMERGENCY') {
+      } else if (mantType === 'CORRECTIVE') {
         correctiveSpent += amount;
       }
     });
