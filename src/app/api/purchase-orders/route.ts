@@ -141,21 +141,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generar numero de OC
-    const year = new Date().getFullYear();
-    const lastOC = await tenantPrisma.purchaseOrder.findFirst({
-      where: {
-        orderNumber: { startsWith: `OC-${year}-` },
-      },
-      orderBy: { orderNumber: 'desc' },
-    });
+    // Los totales se preparan antes
 
-    let nextNumber = 1;
-    if (lastOC) {
-      const lastNum = parseInt(lastOC.orderNumber.split('-')[2] || '0');
-      nextNumber = lastNum + 1;
-    }
-    const orderNumber = `OC-${year}-${nextNumber.toString().padStart(6, '0')}`;
 
     // Calcular totales
     const subtotal = items.reduce(
@@ -171,6 +158,25 @@ export async function POST(request: NextRequest) {
 
     // Crear OC con items en transaccion
     const purchaseOrder = await tenantPrisma.$transaction(async tx => {
+      // 0. Autonumerado OC
+      const currentYear = new Date().getFullYear();
+      const seq = await tx.tenantSequence.upsert({
+        where: {
+          tenantId_entityType: {
+            tenantId: user.tenantId,
+            entityType: 'PURCHASE_ORDER',
+          },
+        },
+        update: { lastValue: { increment: 1 } },
+        create: {
+          tenantId: user.tenantId,
+          entityType: 'PURCHASE_ORDER',
+          lastValue: 1,
+          prefix: 'OC-',
+        },
+      });
+      const orderNumber = `OC-${currentYear}-${String(seq.lastValue).padStart(6, '0')}`;
+
       const po = await tx.purchaseOrder.create({
         data: {
           tenantId: user.tenantId,

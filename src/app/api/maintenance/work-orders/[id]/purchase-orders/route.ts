@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireCurrentUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 import {
   canExecuteWorkOrders,
   canOverrideWorkOrderFreeze,
@@ -109,18 +110,23 @@ export async function POST(
       groupedByProvider
     )) {
       try {
-        const purchaseOrder = await tenantPrisma.$transaction(async tx => {
-          const count = await tx.purchaseOrder.count({
+        const purchaseOrder = await prisma.$transaction(async tx => {
+          const seq = await tx.tenantSequence.upsert({
             where: {
+              tenantId_entityType: {
+                tenantId: user.tenantId,
+                entityType: 'PURCHASE_ORDER',
+              },
+            },
+            update: { lastValue: { increment: 1 } },
+            create: {
               tenantId: user.tenantId,
-              orderNumber: { startsWith: `OC-${year}-` },
+              entityType: 'PURCHASE_ORDER',
+              lastValue: 1,
+              prefix: 'OC-',
             },
           });
-
-          const orderNumber = `OC-${year}-${String(count + 1).padStart(
-            6,
-            '0'
-          )}`;
+          const orderNumber = `OC-${year}-${String(seq.lastValue).padStart(6, '0')}`;
 
           const allParts = providerItems.every(
             item => item.mantItem?.type === 'PART'

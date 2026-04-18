@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -30,15 +30,22 @@ export function FormAddBrand({
   isOpen,
   setIsOpen,
   onAddBrand,
+  initialName,
 }: FormAddBrandProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
+      name: initialName ?? '',
     },
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      form.reset({ name: initialName ?? '' });
+    }
+  }, [isOpen, initialName, form]);
 
   const router = useRouter();
   const { toast } = useToast();

@@ -162,7 +162,7 @@ export function FormEditPackage({
             </TabsTrigger>
             <TabsTrigger value="items" className="flex items-center gap-2">
               <List className="h-4 w-4" />
-              Items ({packageData.packageItems?.length || 0})
+              Items ({packageData._count?.packageItems ?? packageData.packageItems?.length ?? 0})
             </TabsTrigger>
           </TabsList>
 

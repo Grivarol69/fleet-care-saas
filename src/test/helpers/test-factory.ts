@@ -353,7 +353,7 @@ export async function createTestWorkOrder(
     mantType: 'PREVENTIVE' | 'CORRECTIVE' | 'PREDICTIVE';
     workType: 'EXTERNAL' | 'INTERNAL' | 'MIXED';
     priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | 'URGENT';
-    status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+    status: 'PENDING' | 'APPROVED' | 'COMPLETED' | 'CLOSED' | 'REJECTED' | 'CANCELLED';
     estimatedCost: number;
     creationMileage: number;
   }> = {}

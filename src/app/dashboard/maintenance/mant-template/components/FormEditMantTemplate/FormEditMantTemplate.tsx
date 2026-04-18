@@ -127,17 +127,21 @@ export function FormEditMantTemplate({
       );
       setFilteredLines(filtered);
 
-      // Reset line selection if current selected line doesn't belong to new brand
-      const currentLineId = form.getValues('vehicleLineId');
-      const isCurrentLineValid = filtered.some(
-        line => line.id === currentLineId
-      );
-      if (currentLineId && currentLineId !== '' && !isCurrentLineValid) {
-        form.setValue('vehicleLineId', '');
+      // Only reset line if data is loaded — avoids clearing during initial fetch race
+      if (vehicleLines.length > 0) {
+        const currentLineId = form.getValues('vehicleLineId');
+        const isCurrentLineValid = filtered.some(
+          line => line.id === currentLineId
+        );
+        if (currentLineId && currentLineId !== '' && !isCurrentLineValid) {
+          form.setValue('vehicleLineId', '');
+        }
       }
     } else {
       setFilteredLines([]);
-      form.setValue('vehicleLineId', '');
+      if (vehicleLines.length > 0) {
+        form.setValue('vehicleLineId', '');
+      }
     }
   }, [selectedBrandId, vehicleLines, form]);
 

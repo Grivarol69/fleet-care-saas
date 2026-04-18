@@ -33,6 +33,7 @@ type CurrentUser = {
 
 type WorkOrder = {
   id: string;
+  code: string | null;
   title: string;
   description: string | null;
   notes: string | null; // NUEVO
@@ -154,13 +155,23 @@ type WorkOrder = {
     }>;
   }>;
   purchaseOrders: Array<{
-    // NUEVO
     id: string;
     orderNumber: string;
     status: string;
+    type: string;
     total: number;
     notes: string | null;
     provider: { id: string; name: string } | null;
+    items: Array<{
+      id: string;
+      description: string;
+      quantity: number;
+      unitPrice: number;
+      workOrderItem: {
+        description: string;
+        mantItem: { name: string } | null;
+      } | null;
+    }>;
   }>;
 };
 
@@ -232,11 +243,13 @@ export default function WorkOrderDetailPage() {
 
   const handleUpdate = async (updates: Partial<WorkOrder>) => {
     try {
-      await axios.patch(`/api/maintenance/work-orders/${workOrderId}`, updates);
-      toast({
-        title: 'Actualizado',
-        description: 'La orden de trabajo ha sido actualizada',
-      });
+      if (Object.keys(updates).length > 0) {
+        await axios.patch(`/api/maintenance/work-orders/${workOrderId}`, updates);
+        toast({
+          title: 'Actualizado',
+          description: 'La orden de trabajo ha sido actualizada',
+        });
+      }
       fetchWorkOrder();
     } catch (error) {
       console.error('Error updating work order:', error);
@@ -294,7 +307,7 @@ export default function WorkOrderDetailPage() {
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="editor">Ítems (Unificado)</TabsTrigger>
           <TabsTrigger value="compras">Órdenes de Compra</TabsTrigger>
-          <TabsTrigger value="cierre">Cierre Financiero</TabsTrigger>
+          <TabsTrigger value="cierre">Resumen OT</TabsTrigger>
           <TabsTrigger value="actividad">Historial</TabsTrigger>
         </TabsList>
 

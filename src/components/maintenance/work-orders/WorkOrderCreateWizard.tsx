@@ -68,7 +68,11 @@ const formSchema = z.object({
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
   alertIds: z.array(z.string()).optional(),
   technicianId: z.string().optional(),
-  modality: z.enum(['INTERNAL', 'EXTERNAL']).default('INTERNAL'),
+  workType: z.enum(['INTERNAL', 'EXTERNAL', 'MIXED']).default('INTERNAL'),
+  scheduledDate: z.string().optional(),
+  startTime: z.string().regex(/^\d{2}:\d{2}$/).optional().or(z.literal('')),
+  endTime: z.string().regex(/^\d{2}:\d{2}$/).optional().or(z.literal('')),
+  vehicleLocation: z.string().optional(),
 });
 
 type Vehicle = {
@@ -86,7 +90,13 @@ type MaintenanceAlert = {
   status: string;
 };
 
-export function WorkOrderCreateWizard() {
+interface WorkOrderCreateWizardProps {
+  onSuccess?: () => void;
+  defaultDate?: string;
+  defaultVehicleId?: string;
+}
+
+export function WorkOrderCreateWizard({ onSuccess, defaultDate, defaultVehicleId }: WorkOrderCreateWizardProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
@@ -106,7 +116,7 @@ export function WorkOrderCreateWizard() {
       mantType: 'CORRECTIVE',
       priority: 'MEDIUM',
       alertIds: [],
-      modality: 'INTERNAL',
+      workType: 'INTERNAL',
     },
   });
 
@@ -123,6 +133,24 @@ export function WorkOrderCreateWizard() {
       fetchAlerts(vehicleId);
     }
   }, [vehicleId, vehicles]);
+
+  // Pre-fill defaultDate
+  useEffect(() => {
+    if (defaultDate) {
+      form.setValue('scheduledDate', defaultDate);
+    }
+  }, [defaultDate]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Pre-fill defaultVehicleId (after vehicles are loaded)
+  useEffect(() => {
+    if (defaultVehicleId && vehicles.length > 0) {
+      const v = vehicles.find(veh => veh.id === defaultVehicleId);
+      if (v) {
+        form.setValue('vehicleId', defaultVehicleId);
+        setSelectedVehicle(v);
+      }
+    }
+  }, [defaultVehicleId, vehicles]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch all vehicles at start for local search in Combobox
   useEffect(() => {
@@ -161,7 +189,11 @@ export function WorkOrderCreateWizard() {
         priority: values.priority,
         alertIds: values.alertIds || [],
         technicianId: values.technicianId || undefined,
-        modality: values.modality,
+        workType: values.workType,
+        scheduledDate: values.scheduledDate || undefined,
+        startTime: values.startTime || undefined,
+        endTime: values.endTime || undefined,
+        vehicleLocation: values.vehicleLocation || undefined,
       };
 
       const res = await axios.post('/api/maintenance/work-orders', payload);
@@ -171,6 +203,7 @@ export function WorkOrderCreateWizard() {
         description: `La orden #${res.data.id} ha sido creada exitosamente.`,
       });
 
+      onSuccess?.();
       // Redirect to detail
       router.push(`/dashboard/maintenance/work-orders/${res.data.id}`);
     } catch (error: any) {
@@ -357,7 +390,7 @@ export function WorkOrderCreateWizard() {
               <CardContent className="space-y-6">
                 <FormField
                   control={form.control}
-                  name="modality"
+                  name="workType"
                   render={({ field }) => (
                     <FormItem className="space-y-3">
                       <FormLabel>Modalidad de Trabajo</FormLabel>
@@ -552,6 +585,80 @@ export function WorkOrderCreateWizard() {
                         <Textarea
                           placeholder="Detalles sobre el trabajo a realizar..."
                           className="resize-none"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="scheduledDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Fecha Programada (opcional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="date"
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="startTime"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Hora desde (opcional)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="time"
+                            {...field}
+                            value={field.value ?? ''}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="endTime"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Hora hasta (opcional)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="time"
+                            {...field}
+                            value={field.value ?? ''}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="vehicleLocation"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Ubicación del vehículo (opcional)</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Ej: Taller norte, calle 123..."
+                          className="resize-none"
+                          rows={2}
                           {...field}
                         />
                       </FormControl>

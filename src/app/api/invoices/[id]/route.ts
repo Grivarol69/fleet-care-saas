@@ -334,28 +334,18 @@ export async function DELETE(
         where: { id },
       });
 
-      // 3. Si tenía workOrder, revertir a PENDING_INVOICE
+      // 3. Si tenía workOrder y estaba CLOSED, revertir a COMPLETED (factura eliminada)
       if (existingInvoice.workOrderId) {
-        await tx.workOrder.update({
+        const linkedWo = await tx.workOrder.findUnique({
           where: { id: existingInvoice.workOrderId },
-          data: {
-            status: 'PENDING_INVOICE',
-            actualCost: null,
-            endDate: null,
-          },
+          select: { status: true },
         });
-
-        // Revertir items a IN_PROGRESS
-        await tx.workOrderItem.updateMany({
-          where: { workOrderId: existingInvoice.workOrderId },
-          data: { status: 'IN_PROGRESS' },
-        });
-
-        // Revertir alertas a IN_PROGRESS
-        await tx.maintenanceAlert.updateMany({
-          where: { workOrderId: existingInvoice.workOrderId },
-          data: { status: 'IN_PROGRESS' },
-        });
+        if (linkedWo?.status === 'CLOSED') {
+          await tx.workOrder.update({
+            where: { id: existingInvoice.workOrderId },
+            data: { status: 'COMPLETED' },
+          });
+        }
 
         // Revertir program items a PENDING
         const alerts = await tx.maintenanceAlert.findMany({

@@ -1,14 +1,12 @@
-import { Check, Clock, FileText, ShieldCheck, Wrench } from 'lucide-react';
+import { Check, Clock, FileText, ShieldCheck, Archive } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { WorkOrderStatus } from '@prisma/client';
 
 export const WORK_ORDER_STATUS_FLOW = [
   { id: 'PENDING', label: 'Planificación', icon: FileText },
-  { id: 'PENDING_APPROVAL', label: 'Esperando Aprobación', icon: Clock },
   { id: 'APPROVED', label: 'Aprobada', icon: ShieldCheck },
-  { id: 'IN_PROGRESS', label: 'En Progreso', icon: Wrench },
-  { id: 'PENDING_INVOICE', label: 'Esperando Facturas', icon: Clock },
-  { id: 'COMPLETED', label: 'Completada', icon: Check },
+  { id: 'COMPLETED', label: 'Completada', icon: Clock },
+  { id: 'CLOSED', label: 'Cerrada', icon: Archive },
 ];
 
 export function WorkOrderStepper({
@@ -24,8 +22,8 @@ export function WorkOrderStepper({
     return (
       <div className="p-4 bg-destructive/10 text-destructive rounded-lg font-semibold flex items-center justify-center">
         {currentStatus === 'CANCELLED'
-          ? '🔴 Orden Cancelada'
-          : '🚫 Orden Rechazada'}
+          ? 'Orden Cancelada'
+          : 'Orden Rechazada'}
       </div>
     );
   }
@@ -41,7 +39,7 @@ export function WorkOrderStepper({
         return (
           <div
             key={step.id}
-            className="flex flex-col items-center gap-2 bg-background px-3 relative z-10 w-1/5"
+            className="flex flex-col items-center gap-2 bg-background px-3 relative z-10 w-1/4"
           >
             <div
               className={cn(
