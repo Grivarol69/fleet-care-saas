@@ -63,7 +63,7 @@ describe.skipIf(!runIntegration)('Dashboard API integration metrics', () => {
       const wo = await createTestWorkOrder(tenant.id, vd2.vehicle.id, user.id);
       await prisma.workOrder.update({
         where: { id: wo.id },
-        data: { status: 'IN_PROGRESS' },
+        data: { status: 'APPROVED' },
       });
 
       const response = await GET_NAVBAR_STATS();
@@ -157,7 +157,7 @@ describe.skipIf(!runIntegration)('Dashboard API integration metrics', () => {
 
       await prisma.workOrder.update({
         where: { id: woInProgress.id },
-        data: { status: 'IN_PROGRESS' },
+        data: { status: 'APPROVED' },
       });
       await prisma.workOrder.update({
         where: { id: woCompleted.id },

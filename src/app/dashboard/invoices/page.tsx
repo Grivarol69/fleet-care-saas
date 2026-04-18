@@ -92,6 +92,24 @@ export default function InvoicesPage() {
     router.push(`/dashboard/invoices/${id}`);
   };
 
+  const handleMarkAsPaid = async (id: string) => {
+    try {
+      await axios.patch(`/api/invoices/${id}`, { status: 'PAID' });
+      toast({
+        title: 'Factura pagada',
+        description: 'La factura ha sido marcada como pagada',
+      });
+      fetchInvoices();
+    } catch (error) {
+      console.error('Error marking invoice as paid:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo actualizar el estado de la factura',
+        variant: 'destructive',
+      });
+    }
+  };
+
   // Filtrado en cliente
   const filteredInvoices = useMemo(() => {
     return invoices.filter(inv => {
@@ -154,6 +172,7 @@ export default function InvoicesPage() {
         invoices={filteredInvoices}
         isLoading={isLoading}
         onViewDetail={handleViewDetail}
+        onMarkAsPaid={handleMarkAsPaid}
       />
     </div>
   );

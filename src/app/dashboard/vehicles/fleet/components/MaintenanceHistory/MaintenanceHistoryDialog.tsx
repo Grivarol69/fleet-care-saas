@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table,
   TableBody,
@@ -31,8 +32,10 @@ import {
   Calendar as CalendarIcon,
   ChevronDown,
   ChevronRight,
+  ExternalLink,
+  FileText,
 } from 'lucide-react';
-import { PDFDownloadLink } from '@react-pdf/renderer';
+import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
 import { MaintenanceHistoryPDF } from './MaintenanceHistoryPDF';
 
 interface MaintenanceHistoryDialogProps {
@@ -154,6 +157,9 @@ export function MaintenanceHistoryDialog({
     return (
       <Dialog open onOpenChange={onClose}>
         <DialogContent className="max-w-6xl h-[90vh]">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Historial de Mantenimiento</DialogTitle>
+          </DialogHeader>
           <div className="w-full h-full flex items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
@@ -200,33 +206,45 @@ export function MaintenanceHistoryDialog({
               </span>
             </div>
 
-            <PDFDownloadLink
-              document={
-                <MaintenanceHistoryPDF
-                  vehicle={data.vehicle}
-                  workOrders={filteredWorkOrders}
-                />
-              }
-              fileName={`Historial_${data.vehicle.licensePlate}_${new Date().toISOString().split('T')[0]}.pdf`}
-            >
-              {({ loading }) => (
-                <Button size="sm" disabled={loading}>
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Preparando...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="mr-2 h-4 w-4" />
-                      Descargar PDF
-                    </>
-                  )}
-                </Button>
-              )}
-            </PDFDownloadLink>
+            <div className="flex items-center gap-4">
+              
+              <PDFDownloadLink
+                document={
+                  <MaintenanceHistoryPDF
+                    vehicle={data.vehicle}
+                    workOrders={filteredWorkOrders}
+                  />
+                }
+                fileName={`Historial_${data.vehicle.licensePlate}_${new Date().toISOString().split('T')[0]}.pdf`}
+              >
+                {({ loading }) => (
+                  <Button size="sm" disabled={loading}>
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Preparando...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="mr-2 h-4 w-4" />
+                        Descargar PDF
+                      </>
+                    )}
+                  </Button>
+                )}
+              </PDFDownloadLink>
+            </div>
           </DialogTitle>
         </DialogHeader>
+
+        <Tabs defaultValue="table" className="flex-1 flex flex-col min-h-0">
+          <div className="px-6 pt-2 pb-2 border-b flex justify-end bg-muted/10">
+            <TabsList>
+              <TabsTrigger value="table">Tabla Interactiva</TabsTrigger>
+              <TabsTrigger value="pdf">Vista Previa PDF</TabsTrigger>
+            </TabsList>
+          </div>
+          <TabsContent value="table" className="flex-1 flex flex-col m-0 min-h-0 data-[state=inactive]:hidden">
 
         <div className="px-6 py-2 border-y bg-muted/20 shrink-0 flex gap-4 items-end flex-wrap">
           <div className="flex flex-col gap-1 w-48">
@@ -289,7 +307,7 @@ export function MaintenanceHistoryDialog({
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-10"></TableHead>
-                  <TableHead>Fecha</TableHead>
+                  <TableHead>Fechas (Inicio / Fin)</TableHead>
                   <TableHead>Kilometraje</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Trabajo</TableHead>
@@ -333,10 +351,11 @@ export function MaintenanceHistoryDialog({
                               <ChevronRight className="h-4 w-4" />
                             )}
                           </TableCell>
-                          <TableCell className="font-medium">
-                            {wo.endDate
-                              ? new Date(wo.endDate).toLocaleDateString('es-CO')
-                              : 'N/A'}
+                          <TableCell className="font-medium text-xs">
+                            <div className="flex flex-col gap-1">
+                              <span title="Fecha de Inicio">I: {wo.createdAt ? new Date(wo.createdAt).toLocaleDateString('es-CO') : '--'}</span>
+                              <span title="Fecha de Fin">F: {wo.endDate ? new Date(wo.endDate).toLocaleDateString('es-CO') : '--'}</span>
+                            </div>
                           </TableCell>
                           <TableCell>
                             {wo.completionMileage?.toLocaleString('es-CO') ||
@@ -431,6 +450,69 @@ export function MaintenanceHistoryDialog({
                                     {wo.notes}
                                   </div>
                                 )}
+
+                                {wo.invoices && wo.invoices.length > 0 && (
+                                  <div className="mt-4">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <FileText className="h-4 w-4 text-blue-600" />
+                                      <span className="font-semibold text-sm">Facturas de Compra Registradas</span>
+                                    </div>
+                                    <Table>
+                                      <TableHeader>
+                                        <TableRow className="bg-muted/30">
+                                          <TableHead className="text-xs">
+                                            Factura Nº
+                                          </TableHead>
+                                          <TableHead className="text-xs">
+                                            Fecha
+                                          </TableHead>
+                                          <TableHead className="text-xs">
+                                            Proveedor
+                                          </TableHead>
+                                          <TableHead className="text-xs text-right">
+                                            Total
+                                          </TableHead>
+                                          <TableHead className="text-xs text-center w-24">
+                                            Archivo
+                                          </TableHead>
+                                        </TableRow>
+                                      </TableHeader>
+                                      <TableBody>
+                                        {wo.invoices.map((inv: any) => (
+                                          <TableRow key={inv.id} className="bg-white">
+                                            <TableCell className="text-xs font-mono font-medium">
+                                              {inv.invoiceNumber}
+                                            </TableCell>
+                                            <TableCell className="text-xs">
+                                              {inv.invoiceDate ? new Date(inv.invoiceDate).toLocaleDateString('es-CO') : '--'}
+                                            </TableCell>
+                                            <TableCell className="text-xs">
+                                              {inv.supplier?.name || '--'}
+                                            </TableCell>
+                                            <TableCell className="text-xs text-right font-semibold text-blue-700">
+                                              {formatCurrency(Number(inv.totalAmount) || 0)}
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                              {inv.attachmentUrl ? (
+                                                <a 
+                                                  href={inv.attachmentUrl} 
+                                                  target="_blank" 
+                                                  rel="noopener noreferrer" 
+                                                  className="inline-flex items-center justify-center text-blue-600 hover:text-blue-800 transition-colors"
+                                                  title="Ver Factura Original"
+                                                >
+                                                  <ExternalLink className="h-4 w-4" />
+                                                </a>
+                                              ) : (
+                                                <span className="text-xs text-muted-foreground">--</span>
+                                              )}
+                                            </TableCell>
+                                          </TableRow>
+                                        ))}
+                                      </TableBody>
+                                    </Table>
+                                  </div>
+                                )}
                               </div>
                             </TableCell>
                           </TableRow>
@@ -443,6 +525,19 @@ export function MaintenanceHistoryDialog({
             </Table>
           </div>
         </div>
+        </TabsContent>
+
+        <TabsContent value="pdf" className="flex-1 p-6 m-0 min-h-0 data-[state=inactive]:hidden object-contain">
+          <div className="w-full h-full rounded-md border min-h-[500px]">
+            <PDFViewer width="100%" height="100%" className="rounded-md">
+              <MaintenanceHistoryPDF
+                vehicle={data.vehicle}
+                workOrders={filteredWorkOrders}
+              />
+            </PDFViewer>
+          </div>
+        </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

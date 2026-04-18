@@ -4,11 +4,19 @@ import { useEffect, useState } from 'react';
 import { dataAdminSidebar } from './SidebarRoutes.data';
 import { SidebarItems } from '../SidebarItems/SidebarItems';
 import { UserRole } from '@prisma/client';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { WorkOrderCreateWizard } from '@/components/maintenance/work-orders/WorkOrderCreateWizard';
 
 export function SidebarRoutes() {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -68,20 +76,35 @@ export function SidebarRoutes() {
   }
 
   return (
-    <div className="flex flex-col justify-between h-full overflow-y-auto">
-      <div>
-        <div className="p-2 md:p-6">
-          <p className="mb-2 text-sm font-semibold text-slate-500">
-            MENÚ{' '}
-            {userRole && (
-              <span className="text-xs text-slate-400">({userRole})</span>
-            )}
-          </p>
-          {filteredItems.map(item => (
-            <SidebarItems key={item.label} item={item} />
-          ))}
+    <>
+      <div className="flex flex-col justify-between h-full overflow-y-auto">
+        <div>
+          <div className="p-2 md:p-6">
+            <p className="mb-2 text-sm font-semibold text-slate-500">
+              MENÚ{' '}
+              {userRole && (
+                <span className="text-xs text-slate-400">({userRole})</span>
+              )}
+            </p>
+            {filteredItems.map(item => (
+              <SidebarItems
+                key={item.label}
+                item={item}
+                onAction={item.action === 'nueva-ot' ? () => setWizardOpen(true) : undefined}
+              />
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+
+      <Dialog open={wizardOpen} onOpenChange={setWizardOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Nueva Orden de Trabajo</DialogTitle>
+          </DialogHeader>
+          <WorkOrderCreateWizard onSuccess={() => setWizardOpen(false)} />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

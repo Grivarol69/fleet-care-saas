@@ -6,7 +6,7 @@ import axios from 'axios';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/hooks/use-toast';
-import { ArrowLeft, Trash2, Printer } from 'lucide-react';
+import { ArrowLeft, Trash2, Printer, CreditCard } from 'lucide-react';
 import { DetailsTab } from '../components/InvoiceDetail/DetailsTab';
 import { ItemsTab } from '../components/InvoiceDetail/ItemsTab';
 import {
@@ -102,6 +102,7 @@ export default function InvoiceDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const invoiceId = params.id as string;
 
@@ -155,6 +156,25 @@ export default function InvoiceDetailPage() {
 
   const handlePrint = () => {
     router.push(`/dashboard/invoices/${invoiceId}/print`);
+  };
+
+  const handleStatusChange = async (newStatus: 'APPROVED' | 'PAID') => {
+    setIsTransitioning(true);
+    try {
+      await axios.patch(`/api/invoices/${invoiceId}`, { status: newStatus });
+      toast({
+        title: newStatus === 'APPROVED' ? 'Factura aprobada' : 'Factura marcada como pagada',
+      });
+      fetchInvoice();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'No se pudo actualizar el estado de la factura',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsTransitioning(false);
+    }
   };
 
   if (isLoading) {
@@ -223,6 +243,16 @@ export default function InvoiceDetailPage() {
             <Printer className="mr-2 h-4 w-4" />
             Imprimir
           </Button>
+          {(invoice.status === 'PENDING' || invoice.status === 'APPROVED') && (
+            <Button
+              size="sm"
+              disabled={isTransitioning}
+              onClick={() => handleStatusChange('PAID')}
+            >
+              <CreditCard className="mr-2 h-4 w-4" />
+              {isTransitioning ? 'Procesando...' : 'Marcar como Pagada'}
+            </Button>
+          )}
           {canDelete && (
             <Button
               variant="destructive"

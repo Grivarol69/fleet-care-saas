@@ -146,6 +146,76 @@ export async function extractInvoiceData(
   }
 }
 
+export interface PropertyCardOCRResult {
+  licensePlate: string | null;
+  brandName: string | null;
+  lineName: string | null;
+  typeName: string | null;
+  year: number | null;
+  color: string | null;
+  engineNumber: string | null;
+  chasisNumber: string | null;
+  ownerCard: string | null;
+  cylinder: number | null;
+  fuelType: 'DIESEL' | 'GASOLINA' | 'GAS' | 'ELECTRICO' | 'HIBRIDO' | null;
+  serviceType: 'PUBLICO' | 'PARTICULAR' | 'OFICIAL' | null;
+  confidence: number;
+}
+
+export async function extractPropertyCardData(
+  fileUrl: string
+): Promise<PropertyCardOCRResult> {
+  try {
+    const client = getClient();
+    if (!client) return { confidence: 0, licensePlate: null, brandName: null, lineName: null, typeName: null, year: null, color: null, engineNumber: null, chasisNumber: null, ownerCard: null, cylinder: null, fuelType: null, serviceType: null };
+
+    const { data, mediaType } = await fetchFileAsBase64(fileUrl);
+    const fileContent = buildContentBlock(data, mediaType);
+
+    const response = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 800,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            ...(fileContent as Anthropic.ContentBlockParam[]),
+            {
+              type: 'text',
+              text: `Analiza esta Licencia de Tránsito colombiana (tarjeta de propiedad vehicular) y extrae los datos. Responde SOLO con JSON válido, sin texto adicional ni bloques de código markdown:
+{
+  "licensePlate": "PLACA en mayúsculas sin espacios ni guiones o null",
+  "brandName": "MARCA del vehículo en mayúsculas o null",
+  "lineName": "LÍNEA o modelo del vehículo o null",
+  "typeName": "CLASE DE VEHÍCULO (ej: VOLQUETA, BUS, CAMION, AUTOMOVIL) o null",
+  "year": número del año MODELO (4 dígitos) o null,
+  "color": "COLOR en mayúsculas o null",
+  "engineNumber": "NÚMERO DE MOTOR exacto o null",
+  "chasisNumber": "NÚMERO DE CHASIS o VIN exacto o null",
+  "ownerCard": "número de LICENCIA DE TRÁNSITO (no el VIN ni serie, es el número de la licencia del propietario/tarjeta) o null",
+  "cylinder": número entero de CILINDRADA en cc (parsear "6.370" → 6370, remover puntos de miles) o null,
+  "fuelType": uno de: DIESEL, GASOLINA, GAS, ELECTRICO, HIBRIDO — según COMBUSTIBLE del documento, o null,
+  "serviceType": uno de: PUBLICO, PARTICULAR, OFICIAL — según SERVICIO del documento, o null,
+  "confidence": número del 0 al 100 indicando confianza global en la extracción
+}`,
+            },
+          ],
+        },
+      ],
+    });
+
+    const textBlock = response.content[0];
+    const text = textBlock?.type === 'text' ? textBlock.text : '{}';
+    const cleaned = text.replace(/```json\n?|\n?```/g, '').trim();
+    const result = JSON.parse(cleaned) as PropertyCardOCRResult;
+
+    return { ...result, confidence: result.confidence ?? 60 };
+  } catch (error) {
+    console.error('[OCR_PROPERTY_CARD] Error:', error);
+    return { confidence: 0, licensePlate: null, brandName: null, lineName: null, typeName: null, year: null, color: null, engineNumber: null, chasisNumber: null, ownerCard: null, cylinder: null, fuelType: null, serviceType: null };
+  }
+}
+
 export async function extractDocumentData(
   fileUrl: string
 ): Promise<DocumentOCRResult> {

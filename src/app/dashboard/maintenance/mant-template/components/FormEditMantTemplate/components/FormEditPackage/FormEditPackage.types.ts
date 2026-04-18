@@ -10,6 +10,9 @@ export interface MaintenancePackage {
   templateId: string;
   status: 'ACTIVE' | 'INACTIVE';
   packageItems?: PackageItem[];
+  _count?: {
+    packageItems: number;
+  };
   createdAt: string;
   updatedAt: string;
 }

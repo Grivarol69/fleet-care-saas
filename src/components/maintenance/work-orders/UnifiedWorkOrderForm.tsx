@@ -33,7 +33,6 @@ import {
   Loader2,
   Plus,
   Trash2,
-  GitMerge,
   ChevronDown,
   ChevronsUpDown,
 } from 'lucide-react';
@@ -65,6 +64,7 @@ const FROZEN_WO_STATUSES = new Set([
   'IN_PROGRESS',
   'PENDING_INVOICE',
   'COMPLETED',
+  'CLOSED',
   'REJECTED',
   'CANCELLED',
 ]);
@@ -150,21 +150,8 @@ export function UnifiedWorkOrderForm({
   const partsArray = useFieldArray({ control: form.control, name: 'parts' });
 
   const [showAddPartDialog, setShowAddPartDialog] = useState(false);
-  const [temparioItems, setTemparioItems] = useState<any[]>([]);
-  const [temparioPickerMode, setTemparioPickerMode] = useState<
-    Record<number, boolean>
-  >({});
-  const [temparioPickerSelected, setTemparioPickerSelected] = useState<
-    Record<number, string>
-  >({});
   const [mantItemComboOpen, setMantItemComboOpen] = useState<
     Record<number, boolean>
-  >({});
-  const [temparioComboOpen, setTemparioComboOpen] = useState<
-    Record<number, boolean>
-  >({});
-  const [temparioPickerHours, setTemparioPickerHours] = useState<
-    Record<number, number>
   >({});
 
   const servicesWatch = useWatch({ control: form.control, name: 'services' });
@@ -193,6 +180,32 @@ export function UnifiedWorkOrderForm({
       .then(res => setTechnicians(res.data || []));
   }, []);
 
+  // Reinicializar form cuando initialData cambia (ej: después de onRefresh tras PUT)
+  useEffect(() => {
+    if (!initialData?.id) return;
+    const services = (initialData?.workOrderItems || [])
+      .filter((i: any) => i.mantItem?.type === 'SERVICE' || i.mantItem?.type === 'ACTION')
+      .map(mapItem);
+    const parts = (initialData?.workOrderItems || [])
+      .filter((i: any) => i.mantItem?.type === 'PART')
+      .map(mapItem);
+    form.reset({
+      vehicleId: initialData?.vehicleId || '',
+      title: initialData?.title || '',
+      description: initialData?.description || '',
+      mantType: initialData?.mantType || 'CORRECTIVE',
+      priority: initialData?.priority || 'MEDIUM',
+      status: initialData?.status || 'PENDING',
+      workType: initialData?.workType || 'MIXED',
+      technicianId: initialData?.technicianId || null,
+      costCenterId: initialData?.costCenterId || null,
+      scheduledDate: initialData?.startDate || null,
+      services,
+      parts,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialData?.id, (initialData?.workOrderItems ?? []).length]);
+
   const onSubmit = async (data: any) => {
     setIsLoading(true);
     try {
@@ -213,6 +226,7 @@ export function UnifiedWorkOrderForm({
           title: 'Orden Actualizada',
           description: 'Los ítems se sincronizaron.',
         });
+        onRefresh?.();
       } else {
         const res = await axios.post('/api/maintenance/work-orders', payload);
         toast({
@@ -283,566 +297,173 @@ export function UnifiedWorkOrderForm({
     }
   };
 
-  const handleLoadTempario = async (index: number, mantItemId: string) => {
-    const vehicleId = form.getValues('vehicleId');
-    const selectedVehicle = vehicles.find(v => v.id === vehicleId);
-    if (!selectedVehicle?.brandId) {
-      toast({
-        title: 'Sin marca',
-        description:
-          'El vehículo no tiene marca — no se puede buscar Tempario.',
-      });
-      return;
-    }
-    if (!selectedVehicle || !mantItemId) return;
-
-    try {
-      const res = await axios.get(
-        `/api/maintenance/tempario/lookup?mantItemId=${mantItemId}&vehicleBrandId=${selectedVehicle.brandId}&vehicleLineId=${selectedVehicle.lineId}`
-      );
-      const procedure = res.data;
-      if (procedure && procedure.steps) {
-        const newSteps = procedure.steps.map((s: any) => ({
-          procedureId: procedure.id,
-          temparioItemId: s.temparioItemId,
-          description: s.temparioItem.description,
-          standardHours: s.standardHours,
-          status: 'PENDING',
-        }));
-        form.setValue(`services.${index}.subTasks`, newSteps);
-        setTemparioPickerMode(prev => ({ ...prev, [index]: false }));
-        toast({
-          title: 'Despiece Cargado',
-          description: `Se conectaron ${newSteps.length} tareas del Tempario a este servicio.`,
-        });
-      }
-    } catch (e) {
-      // Sin receta completa → habilitar picker de ítems individuales
-      if (temparioItems.length === 0) {
-        const res = await axios.get('/api/maintenance/tempario-items');
-        setTemparioItems(res.data || []);
-      }
-      setTemparioPickerMode(prev => ({ ...prev, [index]: true }));
-      toast({
-        title: 'Sin receta automática',
-        description:
-          'Seleccioná las tareas manualmente desde el catálogo de Tempario.',
-      });
-    }
-  };
-
   const renderServiceRow = (field: any, index: number) => {
     const itemSource = form.watch(`services.${index}.itemSource`);
-    const mantItemId = form.watch(`services.${index}.mantItemId`);
     const subTasks = form.watch(`services.${index}.subTasks`);
-    const selectedMantItem = mantItems.find((m: any) => m.id === mantItemId);
+    const isExternal = itemSource === 'EXTERNAL';
 
     return (
-      <Card key={field.id} className="shadow-sm">
-        <CardContent className="pt-4 flex flex-col gap-3">
-          {/* Línea 1: Select MantItem + Toggle Origen + Trash */}
-          <div className="flex items-end gap-2">
-            <div className="flex-1">
-              <FormField
-                control={form.control}
-                name={`services.${index}.mantItemId`}
-                render={({ field: mantField }) => (
-                  <FormItem>
-                    <FormLabel>Servicio / Tarea</FormLabel>
-                    <Popover
-                      open={mantItemComboOpen[index] || false}
-                      onOpenChange={o =>
-                        setMantItemComboOpen(prev => ({ ...prev, [index]: o }))
-                      }
-                    >
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          className="w-full justify-between font-normal"
-                        >
-                          <span className="truncate">
-                            {mantField.value
-                              ? mantItems.find(
-                                  (m: any) => m.id === mantField.value
-                                )?.name
-                              : 'Seleccione'}
-                          </span>
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[380px] p-0" align="start">
-                        <Command>
-                          <CommandInput placeholder="Buscar servicio..." />
-                          <CommandList>
-                            <CommandEmpty>Sin resultados.</CommandEmpty>
-                            <CommandGroup>
-                              {mantItems
-                                .filter(
-                                  (mi: any) =>
-                                    mi.type === 'SERVICE' ||
-                                    mi.type === 'ACTION'
-                                )
-                                .map((mi: any) => (
-                                  <CommandItem
-                                    key={mi.id}
-                                    value={mi.name}
-                                    onSelect={() => {
-                                      handleMantItemSelect(
-                                        mi.id,
-                                        index,
-                                        'services',
-                                        mantField.onChange
-                                      );
-                                      setMantItemComboOpen(prev => ({
-                                        ...prev,
-                                        [index]: false,
-                                      }));
-                                    }}
-                                  >
-                                    {mi.name}
-                                  </CommandItem>
-                                ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="flex gap-1 pb-[2px]">
-              <Button
-                type="button"
-                size="sm"
-                variant={
-                  itemSource === 'INTERNAL_STOCK' ? 'default' : 'outline'
-                }
-                onClick={() =>
-                  form.setValue(
-                    `services.${index}.itemSource`,
-                    'INTERNAL_STOCK'
-                  )
-                }
-              >
-                Taller Propio
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant={itemSource === 'EXTERNAL' ? 'default' : 'outline'}
-                onClick={() =>
-                  form.setValue(`services.${index}.itemSource`, 'EXTERNAL')
-                }
-              >
-                Servicio Externo
-              </Button>
-            </div>
-            <Button
-              type="button"
-              variant="destructive"
-              size="icon"
-              className="mb-[2px]"
-              onClick={() => servicesArray.remove(index)}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-
-          {/* Línea 2: Descripción + Cant + Precio */}
-          <div className="flex items-end gap-2">
-            <div className="flex-1">
-              <FormField
-                control={form.control}
-                name={`services.${index}.description`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descripción</FormLabel>
-                    <FormControl>
-                      <Input {...field} disabled={isFrozen} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="w-20">
-              <FormField
-                control={form.control}
-                name={`services.${index}.quantity`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cant.</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        {...field}
-                        onChange={e => field.onChange(Number(e.target.value))}
-                        disabled={isFrozen}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="w-28">
-              <FormField
-                control={form.control}
-                name={`services.${index}.unitPrice`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Precio</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        {...field}
-                        onChange={e => field.onChange(Number(e.target.value))}
-                        disabled={isFrozen}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
-
-          {/* Línea 3: Proveedor (solo si EXTERNAL) */}
-          {itemSource === 'EXTERNAL' && (
-            <div>
-              <FormField
-                control={form.control}
-                name={`services.${index}.providerId`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Proveedor</FormLabel>
-                    <Select
-                      value={field.value || ''}
-                      onValueChange={field.onChange}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {providers.map((p: any) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-            </div>
-          )}
-
-          {/* Línea 4: Despiece de Tareas (solo si INTERNAL_STOCK + SERVICE/ACTION) */}
-          {(selectedMantItem?.type === 'SERVICE' ||
-            selectedMantItem?.type === 'ACTION') &&
-            itemSource === 'INTERNAL_STOCK' && (
-              <div className="border-t pt-3 mt-1 flex flex-col gap-3">
-                <div className="flex justify-between items-center">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Despiece de Tareas
-                  </p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleLoadTempario(index, mantItemId)}
+      <div key={field.id}>
+        <div
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+            isExternal
+              ? 'bg-blue-50/40 border-blue-200'
+              : 'bg-muted/20 border-border'
+          }`}
+        >
+          {/* Servicio selector */}
+          <div className="w-[190px] shrink-0">
+            <FormField
+              control={form.control}
+              name={`services.${index}.mantItemId`}
+              render={({ field: mantField }) => (
+                <FormItem className="space-y-0">
+                  <Popover
+                    open={mantItemComboOpen[index] || false}
+                    onOpenChange={o =>
+                      setMantItemComboOpen(prev => ({ ...prev, [index]: o }))
+                    }
                   >
-                    <GitMerge className="w-4 h-4 mr-2" /> Cargar Despiece
-                  </Button>
-                </div>
-
-                {/* Picker manual cuando no hay receta completa */}
-                {temparioPickerMode[index] && (
-                  <div className="flex gap-2 items-center">
-                    <Popover
-                      open={temparioComboOpen[index] || false}
-                      onOpenChange={o =>
-                        setTemparioComboOpen(prev => ({ ...prev, [index]: o }))
-                      }
-                    >
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          className="flex-1 h-8 text-sm justify-between font-normal"
-                        >
-                          <span className="truncate">
-                            {temparioPickerSelected[index]
-                              ? (() => {
-                                  const t = temparioItems.find(
-                                    (t: any) =>
-                                      t.id === temparioPickerSelected[index]
-                                  );
-                                  return t
-                                    ? `${t.code} — ${t.description}`
-                                    : 'Seleccionar tarea del Tempario...';
-                                })()
-                              : 'Seleccionar tarea del Tempario...'}
-                          </span>
-                          <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[480px] p-0" align="start">
-                        <Command>
-                          <CommandInput placeholder="Buscar por código o descripción..." />
-                          <CommandList className="max-h-64">
-                            <CommandEmpty>Sin resultados.</CommandEmpty>
-                            <CommandGroup>
-                              {[
-                                ...new Map(
-                                  temparioItems.map((item: any) => [
-                                    item.code,
-                                    item,
-                                  ])
-                                ).values(),
-                              ].map((item: any) => (
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className="w-full justify-between font-normal h-8 text-xs"
+                      >
+                        <span className="truncate">
+                          {mantField.value
+                            ? mantItems.find(
+                                (m: any) => m.id === mantField.value
+                              )?.name
+                            : 'Seleccione...'}
+                        </span>
+                        <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[380px] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Buscar servicio..." />
+                        <CommandList>
+                          <CommandEmpty>Sin resultados.</CommandEmpty>
+                          <CommandGroup>
+                            {mantItems
+                              .filter(
+                                (mi: any) =>
+                                  mi.type === 'SERVICE' ||
+                                  mi.type === 'ACTION'
+                              )
+                              .map((mi: any) => (
                                 <CommandItem
-                                  key={item.id}
-                                  value={`${item.code} ${item.description}`}
+                                  key={mi.id}
+                                  value={mi.name}
                                   onSelect={() => {
-                                    setTemparioPickerSelected(prev => ({
-                                      ...prev,
-                                      [index]: item.id,
-                                    }));
-                                    setTemparioPickerHours(prev => ({
-                                      ...prev,
-                                      [index]: Number(item.referenceHours),
-                                    }));
-                                    setTemparioComboOpen(prev => ({
+                                    handleMantItemSelect(
+                                      mi.id,
+                                      index,
+                                      'services',
+                                      mantField.onChange
+                                    );
+                                    setMantItemComboOpen(prev => ({
                                       ...prev,
                                       [index]: false,
                                     }));
                                   }}
                                 >
-                                  <span className="font-mono text-xs text-muted-foreground w-14 shrink-0">
-                                    {item.code}
-                                  </span>
-                                  <span className="flex-1 truncate">
-                                    {item.description}
-                                  </span>
-                                  <span className="ml-2 text-xs text-muted-foreground shrink-0">
-                                    {Number(item.referenceHours)}h
-                                  </span>
+                                  {mi.name}
                                 </CommandItem>
                               ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                    <div className="flex items-center gap-1 shrink-0">
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Descripción */}
+          <div className="flex-1 min-w-0">
+            <FormField
+              control={form.control}
+              name={`services.${index}.description`}
+              render={({ field }) => (
+                <FormItem className="space-y-0">
+                  <FormControl>
+                    <Input
+                      className="h-8 text-xs"
+                      {...field}
+                      disabled={isFrozen}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Cant */}
+          <div className="w-14 shrink-0">
+            <FormField
+              control={form.control}
+              name={`services.${index}.quantity`}
+              render={({ field }) => (
+                <FormItem className="space-y-0">
+                  <FormControl>
+                    <Input
+                      type="number"
+                      className="h-8 text-xs text-center"
+                      {...field}
+                      onChange={e => field.onChange(Number(e.target.value))}
+                      disabled={isFrozen}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Precio */}
+          <div className="w-28 shrink-0">
+            <FormField
+              control={form.control}
+              name={`services.${index}.unitPrice`}
+              render={({ field }) => (
+                <FormItem className="space-y-0">
+                  <FormControl>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        $
+                      </span>
                       <Input
                         type="number"
                         min={0}
-                        step={0.5}
-                        placeholder="Hrs"
-                        className="w-16 h-8 text-sm text-center"
-                        value={temparioPickerHours[index] ?? ''}
-                        onChange={e =>
-                          setTemparioPickerHours(prev => ({
-                            ...prev,
-                            [index]: Number(e.target.value),
-                          }))
-                        }
-                      />
-                      <span className="text-xs text-muted-foreground">h</span>
-                    </div>
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => {
-                        const selectedId = temparioPickerSelected[index];
-                        if (!selectedId) return;
-                        const item = temparioItems.find(
-                          (t: any) => t.id === selectedId
-                        );
-                        if (!item) return;
-                        const hours =
-                          temparioPickerHours[index] ??
-                          Number(item.referenceHours);
-                        const current =
-                          form.getValues(`services.${index}.subTasks`) || [];
-                        form.setValue(`services.${index}.subTasks`, [
-                          ...current,
-                          {
-                            temparioItemId: item.id,
-                            description: item.description,
-                            standardHours: hours,
-                            status: 'PENDING',
-                            procedureId: null,
-                          },
-                        ]);
-                        setTemparioPickerSelected(prev => ({
-                          ...prev,
-                          [index]: '',
-                        }));
-                        setTemparioPickerHours(prev => ({
-                          ...prev,
-                          [index]: 0,
-                        }));
-                        setTemparioComboOpen(prev => ({
-                          ...prev,
-                          [index]: false,
-                        }));
-                      }}
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
-                )}
-
-                {subTasks && subTasks.length > 0 && (
-                  <Collapsible
-                    className="w-full border rounded-md"
-                    defaultOpen={true}
-                  >
-                    <div className="flex items-center justify-between px-4 py-3 bg-muted/30">
-                      <h4 className="text-sm font-semibold">
-                        {subTasks.length} Tareas
-                      </h4>
-                      <CollapsibleTrigger asChild>
-                        <Button type="button" variant="ghost" size="sm">
-                          <ChevronDown className="h-4 w-4" />
-                        </Button>
-                      </CollapsibleTrigger>
-                    </div>
-                    <CollapsibleContent className="p-4 space-y-2 bg-background">
-                      {subTasks.map((t: any, sIdx: number) => (
-                        <div
-                          key={sIdx}
-                          className="flex justify-between items-center gap-4 p-2 border-b last:border-0 text-sm"
-                        >
-                          <span className="text-muted-foreground flex-1">
-                            {t.description}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <span className="bg-secondary text-secondary-foreground font-mono text-xs px-2 py-0.5 rounded">
-                              {t.standardHours}h
-                            </span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                              onClick={() => {
-                                const tasks = (
-                                  form.getValues(
-                                    `services.${index}.subTasks`
-                                  ) || []
-                                ).filter((_: any, i: number) => i !== sIdx);
-                                form.setValue(
-                                  `services.${index}.subTasks`,
-                                  tasks
-                                );
-                              }}
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </CollapsibleContent>
-                  </Collapsible>
-                )}
-              </div>
-            )}
-        </CardContent>
-      </Card>
-    );
-  };
-
-  const renderPartRow = (field: any, index: number) => {
-    const itemSource = form.watch(`parts.${index}.itemSource`);
-
-    return (
-      <Card key={field.id} className="shadow-sm">
-        <CardContent className="pt-4 flex flex-col gap-3">
-          <div className="flex items-end gap-2">
-            <div className="flex-1">
-              <FormField
-                control={form.control}
-                name={`parts.${index}.description`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descripción</FormLabel>
-                    <FormControl>
-                      <Input {...field} disabled={isFrozen} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="w-20">
-              <FormField
-                control={form.control}
-                name={`parts.${index}.quantity`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cant.</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
+                        step="any"
+                        className="h-8 text-xs"
                         {...field}
                         onChange={e => field.onChange(Number(e.target.value))}
                         disabled={isFrozen}
                       />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="w-28">
-              <FormField
-                control={form.control}
-                name={`parts.${index}.unitPrice`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Precio</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        {...field}
-                        onChange={e => field.onChange(Number(e.target.value))}
-                        disabled={isFrozen}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="pb-[2px]">
-              <Badge variant="outline" className="text-xs">
-                {itemSource === 'INTERNAL_STOCK' ? 'Taller' : 'Externo'}
-              </Badge>
-            </div>
-            <Button
-              type="button"
-              variant="destructive"
-              size="icon"
-              className="mb-[2px]"
-              onClick={() => partsArray.remove(index)}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
+                    </div>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
           </div>
-          {itemSource === 'EXTERNAL' && (
-            <div>
+
+          {/* Proveedor */}
+          <div className="w-40 shrink-0">
+            {isExternal ? (
               <FormField
                 control={form.control}
-                name={`parts.${index}.providerId`}
+                name={`services.${index}.providerId`}
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Proveedor</FormLabel>
+                  <FormItem className="space-y-0">
                     <Select
                       value={field.value || ''}
                       onValueChange={field.onChange}
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccione" />
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="Proveedor..." />
                       </SelectTrigger>
                       <SelectContent>
                         {providers.map((p: any) => (
@@ -855,10 +476,250 @@ export function UnifiedWorkOrderForm({
                   </FormItem>
                 )}
               />
-            </div>
+            ) : (
+              <span className="text-xs text-muted-foreground italic px-2">
+                —
+              </span>
+            )}
+          </div>
+
+          {/* Tipo toggle */}
+          <div className="flex gap-1 shrink-0">
+            <Button
+              type="button"
+              size="sm"
+              variant={
+                itemSource === 'INTERNAL_STOCK' ? 'default' : 'outline'
+              }
+              className="h-7 px-2 text-xs"
+              onClick={() =>
+                form.setValue(
+                  `services.${index}.itemSource`,
+                  'INTERNAL_STOCK'
+                )
+              }
+            >
+              Propio
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={itemSource === 'EXTERNAL' ? 'default' : 'outline'}
+              className="h-7 px-2 text-xs"
+              onClick={() =>
+                form.setValue(`services.${index}.itemSource`, 'EXTERNAL')
+              }
+            >
+              Externo
+            </Button>
+          </div>
+
+          {/* Delete */}
+          {!isFrozen && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={() => servicesArray.remove(index)}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
           )}
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Subtareas (debajo de la fila, colapsable) */}
+        {subTasks && subTasks.length > 0 && (
+          <Collapsible className="border-x border-b rounded-b-lg -mt-px mb-1">
+            <div className="flex items-center justify-between px-3 py-1.5 bg-muted/30">
+              <span className="text-xs font-medium text-muted-foreground">
+                {subTasks.length} tarea{subTasks.length !== 1 ? 's' : ''}
+              </span>
+              <CollapsibleTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                >
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </CollapsibleTrigger>
+            </div>
+            <CollapsibleContent className="px-3 pb-2 space-y-1 bg-background">
+              {subTasks.map((t: any, sIdx: number) => (
+                <div
+                  key={sIdx}
+                  className="flex justify-between items-center gap-3 py-1 border-b last:border-0 text-xs"
+                >
+                  <span className="text-muted-foreground flex-1">
+                    {t.description}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="bg-secondary text-secondary-foreground font-mono text-[10px] px-1.5 py-0.5 rounded">
+                      {t.standardHours}h
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-5 w-5 p-0 text-destructive hover:text-destructive"
+                      onClick={() => {
+                        const tasks = (
+                          form.getValues(`services.${index}.subTasks`) || []
+                        ).filter((_: any, i: number) => i !== sIdx);
+                        form.setValue(`services.${index}.subTasks`, tasks);
+                      }}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </CollapsibleContent>
+          </Collapsible>
+        )}
+      </div>
+    );
+  };
+
+  const renderPartRow = (field: any, index: number) => {
+    const itemSource = form.watch(`parts.${index}.itemSource`);
+    const isExternal = itemSource === 'EXTERNAL';
+
+    return (
+      <div
+        key={field.id}
+        className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+          isExternal
+            ? 'bg-orange-50/40 border-orange-200'
+            : 'bg-muted/20 border-border'
+        }`}
+      >
+        {/* Descripción */}
+        <div className="flex-1 min-w-0">
+          <FormField
+            control={form.control}
+            name={`parts.${index}.description`}
+            render={({ field }) => (
+              <FormItem className="space-y-0">
+                <FormControl>
+                  <Input
+                    className="h-8 text-xs"
+                    {...field}
+                    disabled={isFrozen}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {/* Cant */}
+        <div className="w-14 shrink-0">
+          <FormField
+            control={form.control}
+            name={`parts.${index}.quantity`}
+            render={({ field }) => (
+              <FormItem className="space-y-0">
+                <FormControl>
+                  <Input
+                    type="number"
+                    className="h-8 text-xs text-center"
+                    {...field}
+                    onChange={e => field.onChange(Number(e.target.value))}
+                    disabled={isFrozen}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {/* Precio */}
+        <div className="w-28 shrink-0">
+          <FormField
+            control={form.control}
+            name={`parts.${index}.unitPrice`}
+            render={({ field }) => (
+              <FormItem className="space-y-0">
+                <FormControl>
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      $
+                    </span>
+                    <Input
+                      type="number"
+                      min={0}
+                      step="any"
+                      className="h-8 text-xs"
+                      {...field}
+                      onChange={e => field.onChange(Number(e.target.value))}
+                      disabled={isFrozen}
+                    />
+                  </div>
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {/* Proveedor */}
+        <div className="w-40 shrink-0">
+          {isExternal ? (
+            <FormField
+              control={form.control}
+              name={`parts.${index}.providerId`}
+              render={({ field }) => (
+                <FormItem className="space-y-0">
+                  <Select
+                    value={field.value || ''}
+                    onValueChange={field.onChange}
+                  >
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Proveedor..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {providers.map((p: any) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
+          ) : (
+            <span className="text-xs text-muted-foreground italic px-2">
+              —
+            </span>
+          )}
+        </div>
+
+        {/* Badge tipo */}
+        <div className="shrink-0 w-16 text-center">
+          <Badge
+            variant={isExternal ? 'secondary' : 'default'}
+            className="text-xs"
+          >
+            {itemSource === 'INTERNAL_STOCK' ? 'Taller' : 'Externo'}
+          </Badge>
+        </div>
+
+        {/* Delete */}
+        {!isFrozen && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={() => partsArray.remove(index)}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </Button>
+        )}
+      </div>
     );
   };
 
@@ -992,6 +853,7 @@ export function UnifiedWorkOrderForm({
                   type="button"
                   variant="secondary"
                   className="bg-blue-100 hover:bg-blue-200 text-blue-900"
+                  disabled={isFrozen}
                   onClick={() =>
                     servicesArray.append({
                       mantItemId: '',
@@ -1007,14 +869,29 @@ export function UnifiedWorkOrderForm({
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4 pt-6 bg-slate-50/30">
-              {servicesArray.fields.length === 0 && (
+            <CardContent className="pt-4 pb-5 bg-slate-50/30">
+              {servicesArray.fields.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">
                   No hay servicios agregados todavía.
                 </p>
-              )}
-              {servicesArray.fields.map((field, index) =>
-                renderServiceRow(field, index)
+              ) : (
+                <>
+                  {/* Column headers */}
+                  <div className="flex items-center gap-2 px-3 pb-1 text-[11px] font-medium text-muted-foreground">
+                    <div className="w-[190px] shrink-0">Servicio / Tarea</div>
+                    <div className="flex-1 min-w-0">Descripción</div>
+                    <div className="w-14 shrink-0 text-center">Cant.</div>
+                    <div className="w-28 shrink-0">Precio</div>
+                    <div className="w-40 shrink-0">Proveedor</div>
+                    <div className="w-[104px] shrink-0">Tipo</div>
+                    <div className="w-7 shrink-0" />
+                  </div>
+                  <div className="space-y-2">
+                    {servicesArray.fields.map((field, index) =>
+                      renderServiceRow(field, index)
+                    )}
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
@@ -1034,48 +911,65 @@ export function UnifiedWorkOrderForm({
                 type="button"
                 variant="secondary"
                 className="bg-orange-100 hover:bg-orange-200 text-orange-900"
+                disabled={isFrozen}
                 onClick={() => setShowAddPartDialog(true)}
               >
                 <Plus className="w-4 h-4 mr-2" /> Añadir Repuesto
               </Button>
             </CardHeader>
-            <CardContent className="space-y-4 pt-6 bg-slate-50/30">
-              {partsArray.fields.length === 0 && (
+            <CardContent className="pt-4 pb-5 bg-slate-50/30">
+              {partsArray.fields.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">
                   No hay repuestos agregados todavía.
                 </p>
-              )}
-              {partsArray.fields.map((field, index) =>
-                renderPartRow(field, index)
+              ) : (
+                <>
+                  {/* Column headers */}
+                  <div className="flex items-center gap-2 px-3 pb-1 text-[11px] font-medium text-muted-foreground">
+                    <div className="flex-1 min-w-0">Descripción</div>
+                    <div className="w-14 shrink-0 text-center">Cant.</div>
+                    <div className="w-28 shrink-0">Precio</div>
+                    <div className="w-40 shrink-0">Proveedor</div>
+                    <div className="w-16 shrink-0 text-center">Origen</div>
+                    <div className="w-7 shrink-0" />
+                  </div>
+                  <div className="space-y-2">
+                    {partsArray.fields.map((field, index) =>
+                      renderPartRow(field, index)
+                    )}
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
 
-          <Card className="border-muted shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">
-                4. Notas / Observaciones
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Observaciones, diagnóstico inicial, condiciones del vehículo al ingreso..."
-                        className="min-h-[100px] resize-y"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
+          {!isEditing && (
+            <Card className="border-muted shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">
+                  4. Notas / Observaciones
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Observaciones, diagnóstico inicial, condiciones del vehículo al ingreso..."
+                          className="min-h-[100px] resize-y"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+          )}
 
           <AddItemDialog
             mode={initialData?.id ? 'endpoint' : 'form'}
@@ -1108,7 +1002,8 @@ export function UnifiedWorkOrderForm({
                       } as any);
                     }
                     setShowAddPartDialog(false);
-                    onRefresh?.();
+                    // No llamar onRefresh aquí: causaría un form.reset() que borra
+                    // servicios inline no guardados aún en DB
                   }
                 : undefined
             }

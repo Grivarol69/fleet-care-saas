@@ -3,7 +3,6 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
-import { pdf } from '@react-pdf/renderer';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,11 +26,10 @@ import {
   Check,
   X,
   Loader2,
+  Ticket,
 } from 'lucide-react';
 import { InternalTicketDialog } from './InternalTicketDialog';
-import { TicketPDF } from './TicketPDF';
-import type { WorkOrderItem, WorkOrderSummary } from './TicketPDF';
-import { Ticket } from 'lucide-react';
+import type { WorkOrderSummary } from './TicketPDF';
 
 type CurrentUser = {
   id: string;
@@ -39,9 +37,9 @@ type CurrentUser = {
   isSuperAdmin: boolean;
 };
 
-// Tipo mínimo necesario para el header
 type WorkOrderForHeader = {
   id: string;
+  code: string | null;
   title: string;
   description: string | null;
   status: string;
@@ -67,19 +65,14 @@ type WorkOrderHeaderProps = {
 
 const statusConfig: Record<
   string,
-  {
-    label: string;
-    variant: 'secondary' | 'default' | 'outline' | 'destructive';
-  }
+  { label: string; variant: 'secondary' | 'default' | 'outline' | 'destructive' }
 > = {
-  PENDING: { label: 'Abierta', variant: 'secondary' },
-  PENDING_APPROVAL: { label: 'En Aprobación', variant: 'outline' },
-  APPROVED: { label: 'Aprobada', variant: 'outline' },
-  IN_PROGRESS: { label: 'En Trabajo', variant: 'default' },
-  PENDING_INVOICE: { label: 'Por Cerrar', variant: 'outline' },
-  COMPLETED: { label: 'Cerrada', variant: 'default' },
-  REJECTED: { label: 'Rechazada', variant: 'destructive' },
-  CANCELLED: { label: 'Cancelada', variant: 'outline' },
+  PENDING:    { label: 'Planificación', variant: 'secondary' },
+  APPROVED:   { label: 'Aprobada',      variant: 'default' },
+  COMPLETED:  { label: 'Completada',    variant: 'outline' },
+  CLOSED:     { label: 'Cerrada',       variant: 'default' },
+  REJECTED:   { label: 'Rechazada',     variant: 'destructive' },
+  CANCELLED:  { label: 'Cancelada',     variant: 'outline' },
 };
 
 function isManagerOrAbove(user: CurrentUser): boolean {
@@ -106,20 +99,15 @@ export function WorkOrderHeader({
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showMileageDialog, setShowMileageDialog] = useState(false);
   const [closureKm, setClosureKm] = useState(
-    workOrder.completionMileage?.toString() ?? ''
+    workOrder.completionMileage?.toString() || workOrder.vehicle.mileage.toString()
   );
   const [showTicketDialog, setShowTicketDialog] = useState(false);
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
 
-  // Inline description edit state
-  const EDITABLE_DESCRIPTION_STATUSES = new Set([
-    'APPROVED',
-    'IN_PROGRESS',
-    'PENDING_INVOICE',
-    'COMPLETED',
-  ]);
-  const canEditDescription = EDITABLE_DESCRIPTION_STATUSES.has(
-    workOrder.status
-  );
+  // Inline description edit
+  const EDITABLE_STATUSES = new Set(['PENDING', 'APPROVED']);
+  const canEditDescription = EDITABLE_STATUSES.has(workOrder.status);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [descriptionDraft, setDescriptionDraft] = useState(
     workOrder.description ?? ''
@@ -132,157 +120,39 @@ export function WorkOrderHeader({
     variant: 'outline' as const,
   };
 
-  const canDelete =
-    workOrder.status !== 'COMPLETED' && workOrder.status !== 'CANCELLED';
+  const canDelete = !['COMPLETED', 'CLOSED', 'CANCELLED'].includes(workOrder.status);
 
-  const handleTransition = async (toStatus: string) => {
+  // ── Transition handlers ──────────────────────────────────────────
+
+  const handleApprove = async () => {
     setIsTransitioning(true);
     try {
-      const updates: Record<string, unknown> = { status: toStatus };
-      if (toStatus === 'COMPLETED' && closureKm) {
-        updates.completionMileage = parseInt(closureKm, 10);
-      }
-      await onUpdate(updates);
-    } finally {
-      setIsTransitioning(false);
-      setShowMileageDialog(false);
-    }
-  };
-
-  const handleCloseToPendingInvoice = async () => {
-    setIsTransitioning(true);
-    try {
-      const patchBody: Record<string, unknown> = {
-        status: 'PENDING_INVOICE',
-      };
-      if (closureKm) {
-        patchBody.completionMileage = parseInt(closureKm, 10);
-      }
-
       const res = await axios.patch(
         `/api/maintenance/work-orders/${workOrder.id}`,
-        patchBody
+        { status: 'APPROVED' }
       );
-
       const data = res.data as {
-        workOrder?: unknown;
-        ticket?: { id: string; ticketNumber: string } | null;
-        purchaseOrders?: string[];
         stockWarnings?: string[];
+        purchaseOrders?: string[];
+        ticket?: { ticketNumber: string } | null;
       };
 
-      // Show warnings
-      if (data.stockWarnings && data.stockWarnings.length > 0) {
-        for (const warning of data.stockWarnings) {
-          toast({
-            title: 'Advertencia de stock',
-            description: warning,
-            variant: 'destructive',
-          });
-        }
+      for (const w of data.stockWarnings ?? []) {
+        toast({ title: 'Advertencia', description: w, variant: 'destructive' });
       }
-
-      // Show OC count
-      if (data.purchaseOrders && data.purchaseOrders.length > 0) {
-        toast({
-          title: 'Órdenes de compra generadas',
-          description: `Se generaron ${data.purchaseOrders.length} OC(s) para repuestos sin stock.`,
-        });
-      }
-
-      // Auto-download PDF if ticket was generated
-      if (data.ticket) {
-        const { ticketNumber } = data.ticket;
-
-        const activeItems = (workOrder.workOrderItems ?? []).filter(
-          i => i.status !== 'CANCELLED'
-        );
-        const woSummary: WorkOrderSummary = {
-          title: workOrder.title,
-          description: workOrder.description ?? null,
-          vehicle: {
-            licensePlate: workOrder.vehicle.licensePlate,
-            brand: { name: workOrder.vehicle.brand.name },
-            line: { name: workOrder.vehicle.line.name },
-          },
-          technician: workOrder.technician
-            ? { name: workOrder.technician.name }
-            : null,
-        };
-        const services: WorkOrderItem[] = activeItems.filter(
-          i => i.mantItem.type !== 'PART'
-        );
-        const parts: WorkOrderItem[] = activeItems.filter(
-          i => i.mantItem.type === 'PART'
-        );
-
-        try {
-          const blob = await pdf(
-            <TicketPDF
-              ticketNumber={ticketNumber}
-              workOrder={woSummary}
-              services={services}
-              parts={parts}
-            />
-          ).toBlob();
-
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `${ticketNumber}.pdf`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-
-          toast({
-            title: 'Ticket descargado',
-            description: `${ticketNumber} generado y descargado.`,
-          });
-        } catch {
-          toast({
-            title: 'Error al generar PDF',
-            description: 'El ticket se creó pero no se pudo descargar el PDF.',
-            variant: 'destructive',
-          });
-        }
-      }
-
-      // Trigger page refresh
+      toast({
+        title: `OT aprobada. ${data.purchaseOrders?.length ?? 0} OC generadas`,
+      });
       await onUpdate({});
     } catch (err) {
       const msg =
         axios.isAxiosError(err) && err.response?.data?.error
           ? err.response.data.error
-          : 'No se pudo cerrar la orden de trabajo.';
-      toast({
-        title: 'Error al cerrar OT',
-        description: msg,
-        variant: 'destructive',
-      });
+          : 'No se pudo aprobar la orden de trabajo.';
+      toast({ title: 'Error al aprobar OT', description: msg, variant: 'destructive' });
     } finally {
       setIsTransitioning(false);
-      setShowMileageDialog(false);
-    }
-  };
-
-  const [showApproveDialog, setShowApproveDialog] = useState(false);
-  const [showRejectDialog, setShowRejectDialog] = useState(false);
-
-  const handleSendToApproval = async () => {
-    setIsTransitioning(true);
-    try {
-      await fetch(`/api/maintenance/work-orders/${workOrder.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'PENDING_APPROVAL' }),
-      });
-      await onUpdate({});
-      toast({ title: 'OT enviada a aprobación' });
-    } catch {
-      toast({ title: 'Error', variant: 'destructive' });
-    } finally {
-      setIsTransitioning(false);
+      setShowApproveDialog(false);
     }
   };
 
@@ -304,116 +174,44 @@ export function WorkOrderHeader({
     }
   };
 
-  const handleStartWork = async () => {
+  const handleComplete = async () => {
     setIsTransitioning(true);
     try {
-      await fetch(`/api/maintenance/work-orders/${workOrder.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'IN_PROGRESS' }),
-      });
-      await onUpdate({});
-      toast({ title: 'Trabajo iniciado' });
-    } catch {
-      toast({ title: 'Error', variant: 'destructive' });
-    } finally {
-      setIsTransitioning(false);
-    }
-  };
+      const body: Record<string, unknown> = { status: 'COMPLETED' };
+      const finalKm = closureKm ? parseInt(closureKm, 10) : workOrder.vehicle.mileage;
+      body.completionMileage = finalKm;
 
-  const handleApprove = async () => {
-    setIsTransitioning(true);
-    try {
-      const res = await axios.patch(
-        `/api/maintenance/work-orders/${workOrder.id}`,
-        { status: 'APPROVED' }
-      );
-
-      const data = res.data as {
-        workOrder?: unknown;
-        ticket?: { id: string; ticketNumber: string } | null;
-        purchaseOrders?: string[];
-        stockWarnings?: string[];
-      };
-
-      if (data.stockWarnings && data.stockWarnings.length > 0) {
-        for (const warning of data.stockWarnings) {
-          toast({
-            title: 'Advertencia',
-            description: warning,
-            variant: 'destructive',
-          });
-        }
-      }
-
-      if (data.ticket) {
-        const { ticketNumber } = data.ticket;
-        const activeItems = (workOrder.workOrderItems ?? []).filter(
-          i => i.status !== 'CANCELLED'
-        );
-        const woSummary: WorkOrderSummary = {
-          title: workOrder.title,
-          description: workOrder.description ?? null,
-          vehicle: {
-            licensePlate: workOrder.vehicle.licensePlate,
-            brand: { name: workOrder.vehicle.brand.name },
-            line: { name: workOrder.vehicle.line.name },
-          },
-          technician: workOrder.technician
-            ? { name: workOrder.technician.name }
-            : null,
-        };
-        const services: WorkOrderItem[] = activeItems.filter(
-          i => i.mantItem.type !== 'PART'
-        );
-        const parts: WorkOrderItem[] = activeItems.filter(
-          i => i.mantItem.type === 'PART'
-        );
-
-        try {
-          const blob = await pdf(
-            <TicketPDF
-              ticketNumber={ticketNumber}
-              workOrder={woSummary}
-              services={services}
-              parts={parts}
-            />
-          ).toBlob();
-
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `${ticketNumber}.pdf`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-        } catch {
-          toast({
-            title: 'Error al generar PDF',
-            description: 'El ticket se creó pero no se pudo descargar.',
-            variant: 'destructive',
-          });
-        }
-      }
-
-      toast({
-        title: `Aprobada. ${data.purchaseOrders?.length ?? 0} OC generadas`,
-      });
+      await axios.patch(`/api/maintenance/work-orders/${workOrder.id}`, body);
+      toast({ title: 'OT marcada como completada' });
       await onUpdate({});
     } catch (err) {
       const msg =
         axios.isAxiosError(err) && err.response?.data?.error
           ? err.response.data.error
-          : 'No se pudo aprobar la orden de trabajo.';
-      toast({
-        title: 'Error al aprobar OT',
-        description: msg,
-        variant: 'destructive',
-      });
+          : 'No se pudo completar la orden de trabajo.';
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
     } finally {
       setIsTransitioning(false);
-      setShowApproveDialog(false);
+      setShowMileageDialog(false);
+    }
+  };
+
+  const handleClose = async () => {
+    setIsTransitioning(true);
+    try {
+      await axios.patch(`/api/maintenance/work-orders/${workOrder.id}`, {
+        status: 'CLOSED',
+      });
+      toast({ title: 'OT cerrada' });
+      await onUpdate({});
+    } catch (err) {
+      const msg =
+        axios.isAxiosError(err) && err.response?.data?.error
+          ? err.response.data.error
+          : 'No se pudo cerrar la orden de trabajo.';
+      toast({ title: 'Error al cerrar OT', description: msg, variant: 'destructive' });
+    } finally {
+      setIsTransitioning(false);
     }
   };
 
@@ -440,30 +238,16 @@ export function WorkOrderHeader({
     }
   };
 
+  // ── Action buttons per status ────────────────────────────────────
+
   const renderActionButtons = () => {
     if (!currentUser) return null;
-    const status = workOrder.status;
+    const { status } = workOrder;
 
-    if (status === 'PENDING' && canExecute(currentUser)) {
-      return (
-        <Button
-          size="sm"
-          disabled={isTransitioning}
-          onClick={handleSendToApproval}
-        >
-          {isTransitioning ? 'Procesando...' : 'Enviar a Aprobación'}
-        </Button>
-      );
-    }
-
-    if (status === 'PENDING_APPROVAL' && isManagerOrAbove(currentUser)) {
+    if (status === 'PENDING' && isManagerOrAbove(currentUser)) {
       return (
         <>
-          <Button
-            size="sm"
-            disabled={isTransitioning}
-            onClick={() => setShowApproveDialog(true)}
-          >
+          <Button size="sm" disabled={isTransitioning} onClick={() => setShowApproveDialog(true)}>
             Aprobar OT
           </Button>
           <Button
@@ -481,38 +265,24 @@ export function WorkOrderHeader({
 
     if (status === 'APPROVED' && canExecute(currentUser)) {
       return (
-        <Button size="sm" disabled={isTransitioning} onClick={handleStartWork}>
-          {isTransitioning ? 'Procesando...' : 'Iniciar Trabajo'}
+        <Button size="sm" disabled={isTransitioning} onClick={() => setShowMileageDialog(true)}>
+          {isTransitioning ? 'Procesando...' : 'Completar OT'}
         </Button>
       );
     }
 
-    if (status === 'IN_PROGRESS' && isManagerOrAbove(currentUser)) {
+    if (status === 'COMPLETED' && isManagerOrAbove(currentUser)) {
       return (
-        <Button
-          size="sm"
-          disabled={isTransitioning}
-          onClick={() => setShowMileageDialog(true)}
-        >
-          {isTransitioning ? 'Procesando...' : 'Cerrar OT'}
-        </Button>
-      );
-    }
-
-    if (status === 'PENDING_INVOICE' && isManagerOrAbove(currentUser)) {
-      return (
-        <Button
-          size="sm"
-          disabled={isTransitioning}
-          onClick={() => handleTransition('COMPLETED')}
-        >
-          {isTransitioning ? 'Procesando...' : 'Marcar como Completada'}
+        <Button size="sm" disabled={isTransitioning} onClick={handleClose}>
+          {isTransitioning ? 'Cerrando...' : 'Cerrar OT'}
         </Button>
       );
     }
 
     return null;
   };
+
+  // ── Derived data ─────────────────────────────────────────────────
 
   const internalItems = (workOrder.workOrderItems ?? []).filter(
     i => i.itemSource === 'INTERNAL_STOCK' && i.status !== 'CANCELLED'
@@ -525,9 +295,7 @@ export function WorkOrderHeader({
       brand: { name: workOrder.vehicle.brand.name },
       line: { name: workOrder.vehicle.line.name },
     },
-    technician: workOrder.technician
-      ? { name: workOrder.technician.name }
-      : null,
+    technician: workOrder.technician ? { name: workOrder.technician.name } : null,
   };
 
   return (
@@ -545,15 +313,18 @@ export function WorkOrderHeader({
           </Button>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
+              {workOrder.code && (
+                <span className="text-xs font-mono font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded shrink-0">
+                  {workOrder.code}
+                </span>
+              )}
               <h1 className="text-xl font-bold truncate">{workOrder.title}</h1>
               <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
             </div>
             <p className="text-sm text-muted-foreground">
               {workOrder.vehicle.licensePlate} · {workOrder.vehicle.brand.name}{' '}
               {workOrder.vehicle.line.name} ·{' '}
-              {workOrder.technician
-                ? workOrder.technician.name
-                : 'Sin técnico asignado'}
+              {workOrder.technician ? workOrder.technician.name : 'Sin técnico asignado'}
             </p>
           </div>
         </div>
@@ -561,14 +332,8 @@ export function WorkOrderHeader({
         {/* Right: actions */}
         <div className="flex items-center gap-2 shrink-0">
           {internalItems.length > 0 &&
-            ['IN_PROGRESS', 'PENDING_INVOICE', 'COMPLETED'].includes(
-              workOrder.status
-            ) && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowTicketDialog(true)}
-              >
+            ['APPROVED', 'COMPLETED', 'CLOSED'].includes(workOrder.status) && (
+              <Button variant="outline" size="sm" onClick={() => setShowTicketDialog(true)}>
                 <Ticket className="w-4 h-4 mr-2" /> Ticket de Taller
               </Button>
             )}
@@ -586,14 +351,14 @@ export function WorkOrderHeader({
         </div>
       </div>
 
-      {/* Notas / Observaciones inline edit (visible post-aprobación) */}
-      {canEditDescription && (
+      {/* Notas inline edit */}
+      {(workOrder.description || canEditDescription) && (
         <div className="mb-4 rounded-lg border bg-card px-4 py-3">
           <div className="flex items-center justify-between mb-1">
             <span className="text-sm font-medium text-muted-foreground">
               Notas / Observaciones
             </span>
-            {!isEditingDescription && (
+            {canEditDescription && !isEditingDescription && (
               <Button
                 type="button"
                 variant="ghost"
@@ -659,18 +424,16 @@ export function WorkOrderHeader({
         </div>
       )}
 
-      {/* Dialog para kilometraje de cierre */}
+      {/* Dialog: Completar OT (con km de cierre) */}
       <Dialog open={showMileageDialog} onOpenChange={setShowMileageDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Cerrar Orden de Trabajo</DialogTitle>
+            <DialogTitle>Completar Orden de Trabajo</DialogTitle>
+            <DialogDescription>
+              Registrá el kilometraje al cierre del trabajo.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <p className="text-sm text-muted-foreground">
-              Se deducirá el stock de repuestos disponibles, se generarán
-              órdenes de compra para los faltantes y se descargará el ticket de
-              taller.
-            </p>
             <div className="space-y-2">
               <Label>Kilometraje al cierre</Label>
               <Input
@@ -680,23 +443,16 @@ export function WorkOrderHeader({
                 placeholder={workOrder.vehicle.mileage.toString()}
               />
               <p className="text-xs text-muted-foreground">
-                Km actual del vehículo:{' '}
-                {workOrder.vehicle.mileage.toLocaleString()} km
+                Km actual del vehículo: {workOrder.vehicle.mileage.toLocaleString()} km
               </p>
             </div>
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowMileageDialog(false)}
-            >
+            <Button variant="outline" onClick={() => setShowMileageDialog(false)}>
               Cancelar
             </Button>
-            <Button
-              disabled={isTransitioning}
-              onClick={handleCloseToPendingInvoice}
-            >
-              {isTransitioning ? 'Cerrando...' : 'Confirmar cierre'}
+            <Button disabled={isTransitioning} onClick={handleComplete}>
+              {isTransitioning ? 'Procesando...' : 'Confirmar'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -725,16 +481,12 @@ export function WorkOrderHeader({
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                La OT no tiene técnico asignado — no se generará Ticket de
-                Taller.
+                La OT no tiene técnico asignado — no se generará Ticket de Taller.
               </AlertDescription>
             </Alert>
           )}
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowApproveDialog(false)}
-            >
+            <Button variant="outline" onClick={() => setShowApproveDialog(false)}>
               Cancelar
             </Button>
             <Button disabled={isTransitioning} onClick={handleApprove}>
@@ -750,22 +502,15 @@ export function WorkOrderHeader({
           <DialogHeader>
             <DialogTitle>Rechazar Orden de Trabajo</DialogTitle>
             <DialogDescription>
-              La OT volverá al estado anterior y las alertas de mantenimiento se
+              La OT volverá al estado PENDING y las alertas de mantenimiento se
               revertirán.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowRejectDialog(false)}
-            >
+            <Button variant="outline" onClick={() => setShowRejectDialog(false)}>
               Cancelar
             </Button>
-            <Button
-              variant="destructive"
-              disabled={isTransitioning}
-              onClick={handleReject}
-            >
+            <Button variant="destructive" disabled={isTransitioning} onClick={handleReject}>
               {isTransitioning ? 'Rechazando...' : 'Confirmar Rechazo'}
             </Button>
           </DialogFooter>

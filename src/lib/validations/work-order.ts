@@ -15,7 +15,7 @@ export const workOrderSubTaskSchema = z.object({
 
 export const workOrderItemSchema = z.object({
   id: z.string().optional(),
-  mantItemId: z.string(),
+  mantItemId: z.string().optional().nullable(),
   description: z.string(),
   closureType: z
     .enum([
@@ -45,11 +45,9 @@ export const workOrderPayloadSchema = z.object({
   status: z
     .enum([
       'PENDING',
-      'PENDING_APPROVAL',
       'APPROVED',
-      'IN_PROGRESS',
-      'PENDING_INVOICE',
       'COMPLETED',
+      'CLOSED',
       'REJECTED',
       'CANCELLED',
     ])
@@ -57,8 +55,12 @@ export const workOrderPayloadSchema = z.object({
   workType: z.enum(['EXTERNAL', 'INTERNAL', 'MIXED']).default('EXTERNAL'),
   alertIds: z.array(z.string()).optional(),
   technicianId: z.string().optional().nullable(),
+  providerId: z.string().optional().nullable(),
   costCenterId: z.string().optional().nullable(),
   scheduledDate: z.string().or(z.date()).optional().nullable(),
+  startTime: z.string().regex(/^\d{2}:\d{2}$/).optional().nullable(),
+  endTime: z.string().regex(/^\d{2}:\d{2}$/).optional().nullable(),
+  vehicleLocation: z.string().optional().nullable(),
   items: z.array(workOrderItemSchema).optional().default([]),
 });
 

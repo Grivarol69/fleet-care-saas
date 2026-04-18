@@ -10,6 +10,8 @@ export type SidebarItemsProps = {
     label: string;
     icon: LucideIcon;
     href?: string;
+    action?: string;
     subItems?: SubItem[];
   };
+  onAction?: () => void;
 };

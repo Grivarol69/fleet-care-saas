@@ -17,7 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Eye, FileText, Printer, Download } from 'lucide-react';
+import { MoreHorizontal, Eye, FileText, Printer, Download, CreditCard } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow, format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -68,6 +68,7 @@ type InvoicesListProps = {
   invoices: Invoice[];
   isLoading: boolean;
   onViewDetail?: (id: string) => void;
+  onMarkAsPaid?: (id: string) => void;
 };
 
 const statusConfig = {
@@ -82,6 +83,7 @@ export function InvoicesList({
   invoices,
   isLoading,
   onViewDetail,
+  onMarkAsPaid,
 }: InvoicesListProps) {
   const router = useRouter();
 
@@ -260,6 +262,15 @@ export function InvoicesList({
                         <Printer className="mr-2 h-4 w-4" />
                         Imprimir
                       </DropdownMenuItem>
+                      {invoice.status === 'PENDING' && onMarkAsPaid && (
+                        <DropdownMenuItem
+                          onClick={() => onMarkAsPaid(invoice.id)}
+                          className="text-green-600 focus:text-green-600"
+                        >
+                          <CreditCard className="mr-2 h-4 w-4" />
+                          Marcar como Pagada
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>

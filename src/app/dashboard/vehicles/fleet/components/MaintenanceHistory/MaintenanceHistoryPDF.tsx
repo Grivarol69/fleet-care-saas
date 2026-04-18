@@ -207,7 +207,10 @@ export const MaintenanceHistoryPDF: React.FC<MaintenanceHistoryPDFProps> = ({
           return (
             <View key={wo.id || idx} style={styles.woContainer} wrap={false}>
               <View style={styles.woHeaderRow}>
-                <Text style={styles.woColDate}>{formatDate(wo.endDate)}</Text>
+                <View style={[styles.woColDate, { flexDirection: 'column' }]}>
+                  <Text>I: {formatDate(wo.createdAt)}</Text>
+                  <Text>F: {formatDate(wo.endDate)}</Text>
+                </View>
                 <Text style={styles.woColKm}>
                   {wo.completionMileage?.toLocaleString('es-CO') || '--'} km
                 </Text>

@@ -1,0 +1,38 @@
+schema: spec-driven
+
+context: |
+  Tech stack: Next.js 15 (App Router, webpack), Prisma + PostgreSQL (Neon), Clerk auth, Shadcn/UI, Tailwind CSS
+  Architecture: Multi-tenant SaaS, 46 Prisma models, ~90 API routes, 10 modules, 7 roles
+  Auth: Clerk org = tenantId; getCurrentUser()/requireCurrentUser() in src/lib/auth.ts
+  API pattern: tenantPrisma for queries (auto-filter tenantId), NextResponse.json responses
+  Components: function components + hooks only; no class components, no TS enums (use const obj)
+  Testing: No test framework configured (type-check + lint only)
+  Style: ESLint + Tailwind; Shadcn/UI base components in src/components/ui/
+
+rules:
+  proposal:
+    - Identify affected Prisma models and API routes
+    - Include rollback plan for schema changes
+    - Note role permissions impact (7 roles)
+  specs:
+    - Use Given/When/Then format for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+    - Reference exact Prisma field names
+  design:
+    - Include data flow diagrams for new API routes
+    - Document how tenantPrisma isolation is maintained
+  tasks:
+    - Group by phase (schema, API, UI, integration)
+    - Use hierarchical numbering (1.1, 1.2, etc.)
+    - Keep tasks completable in one session
+  apply:
+    - Follow no-class, no-enum, function-component rules from CLAUDE.md
+    - Use existing Shadcn/UI components — do not add new UI libraries
+    - Load typescript-pro and frontend-developer skills for implementation
+  verify:
+    - Run pnpm type-check after changes
+    - Test API routes manually via browser or curl
+    - Verify tenantId isolation on all new queries
+  archive:
+    - Confirm pnpm type-check passes before archiving
+    - Update openspec/changes/index.md status to done
