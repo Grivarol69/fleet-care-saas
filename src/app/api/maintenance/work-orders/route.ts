@@ -193,14 +193,8 @@ export async function POST(request: NextRequest) {
         quantity: 1,
         closureType: 'PENDING' as const,
         itemSource: 'EXTERNAL' as const,
+        providerId: data.providerId || null,
       }));
-    }
-
-    if (data.items.length === 0) {
-      return NextResponse.json(
-        { error: 'Se requiere al menos un ítem' },
-        { status: 400 }
-      );
     }
 
     // Obtener km actual del vehículo y su costCenterId
@@ -224,10 +218,13 @@ export async function POST(request: NextRequest) {
 
     // Usaremos db.$transaction para asegurar atomicidad
     const workOrder = await tenantPrisma.$transaction(async tx => {
+      // 0. Código se asigna al aprobar la OT, no al crearla
+
       // 1. Crear la Work Order
       const newWo = await tx.workOrder.create({
         data: {
           tenantId: user.tenantId,
+          code: null,
           vehicleId: data.vehicleId,
           title: data.title,
           description: data.description || null,
@@ -240,7 +237,23 @@ export async function POST(request: NextRequest) {
           creationMileage: vehicle.mileage,
           estimatedCost,
           requestedBy: user.id,
-          startDate: data.scheduledDate ? new Date(data.scheduledDate) : null,
+          startDate: (() => {
+            if (!data.scheduledDate) return null;
+            const base = new Date(data.scheduledDate);
+            if (data.startTime) {
+              const [h, m] = data.startTime.split(':').map(Number);
+              base.setHours(h, m, 0, 0);
+            }
+            return base;
+          })(),
+          endDate: (() => {
+            if (!data.scheduledDate || !data.endTime) return null;
+            const base = new Date(data.scheduledDate);
+            const [h, m] = data.endTime.split(':').map(Number);
+            base.setHours(h, m, 0, 0);
+            return base;
+          })(),
+          notes: data.vehicleLocation || null,
           costCenterId: data.costCenterId || vehicle.costCenterId || null,
 
           isPackageWork:
@@ -252,7 +265,7 @@ export async function POST(request: NextRequest) {
           workOrderItems: {
             create: data.items.map(item => ({
               tenantId: user.tenantId,
-              mantItemId: item.mantItemId,
+              mantItemId: item.mantItemId!,
               description: item.description,
               closureType: item.closureType as any,
               itemSource: item.itemSource as any,
@@ -326,7 +339,7 @@ export async function POST(request: NextRequest) {
           if (programItemIds.length > 0) {
             await tx.vehicleProgramItem.updateMany({
               where: { id: { in: programItemIds } },
-              data: { status: 'IN_PROGRESS' },
+              data: { status: 'APPROVED' },
             });
           }
         }

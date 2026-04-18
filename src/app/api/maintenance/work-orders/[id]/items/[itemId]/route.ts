@@ -180,42 +180,12 @@ export async function PATCH(
       },
     });
 
-    // TASK 2.5: Auto-trigger PENDING_INVOICE when all items are closed
-    // If a closureType was updated, check whether any items in this WO
-    // still have closureType === PENDING. If none remain, auto-advance
-    // the WO status to PENDING_INVOICE (only if currently IN_PROGRESS).
-    let woPendingInvoiceTriggered = false;
-    if (updates.closureType !== undefined) {
-      const currentWO = await tenantPrisma.workOrder.findUnique({
-        where: { id: workOrderId },
-        select: { status: true },
-      });
-
-      if (currentWO?.status === 'IN_PROGRESS') {
-        const pendingCount = await tenantPrisma.workOrderItem.count({
-          where: {
-            workOrderId,
-            closureType: ItemClosureType.PENDING,
-            status: { not: 'CANCELLED' },
-          },
-        });
-
-        if (pendingCount === 0) {
-          await tenantPrisma.workOrder.update({
-            where: { id: workOrderId },
-            data: { status: 'PENDING_INVOICE' },
-          });
-          woPendingInvoiceTriggered = true;
-        }
-      }
-    }
-
     return NextResponse.json({
       success: true,
       item: {
         id: updatedItem.id,
-        mantItemName: updatedItem.mantItem.name,
-        mantItemType: updatedItem.mantItem.type,
+        mantItemName: updatedItem.mantItem?.name ?? updatedItem.description,
+        mantItemType: updatedItem.mantItem?.type ?? 'SERVICE',
         itemSource: updatedItem.itemSource,
         closureType: updatedItem.closureType,
         status: updatedItem.status,
@@ -228,9 +198,6 @@ export async function PATCH(
           ? { id: updatedItem.provider.id, name: updatedItem.provider.name }
           : null,
       },
-      ...(woPendingInvoiceTriggered
-        ? { workOrderStatusChanged: 'PENDING_INVOICE' }
-        : {}),
     });
   } catch (error) {
     console.error('[WORK_ORDER_ITEM_PATCH]', error);
@@ -299,14 +266,14 @@ export async function GET(
 
     return NextResponse.json({
       workOrderItemId: item.id,
-      mantItemId: item.mantItem.id,
-      mantItemName: item.mantItem.name,
-      mantItemType: item.mantItem.type,
-      categoryName: item.mantItem.category.name,
+      mantItemId: item.mantItem?.id ?? null,
+      mantItemName: item.mantItem?.name ?? item.description,
+      mantItemType: item.mantItem?.type ?? 'SERVICE',
+      categoryName: item.mantItem?.category.name ?? null,
       masterPartId: item.masterPart?.id || null,
       masterPartCode: item.masterPart?.code || null,
       masterPartDescription: item.masterPart?.description || null,
-      description: item.description || item.mantItem.name,
+      description: item.description || item.mantItem?.name,
       quantity: item.quantity,
       unitPrice: Number(item.unitPrice),
       totalCost: Number(item.totalCost),

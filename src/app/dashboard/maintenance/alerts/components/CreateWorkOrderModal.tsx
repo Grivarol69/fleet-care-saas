@@ -26,7 +26,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useMaintenanceAlerts } from '@/lib/hooks/useMaintenanceAlerts';
 import { CheckCircle2, Clock, DollarSign, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/hooks/use-toast';
-import { useTechnicians } from '@/lib/hooks/usePeople';
+import { useTechnicians, useProviders } from '@/lib/hooks/usePeople';
 
 interface Props {
   isOpen: boolean;
@@ -47,13 +47,13 @@ export function CreateWorkOrderModal({
   const { data: allAlerts } = useMaintenanceAlerts();
 
   const { data: technicians = [] } = useTechnicians();
+  const { data: providers = [] } = useProviders();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [technicianId, setTechnicianId] = useState<string | undefined>(
-    undefined
-  );
+  const [technicianId, setTechnicianId] = useState<string | undefined>(undefined);
+  const [providerId, setProviderId] = useState<string | undefined>(undefined);
   const [modality, setModality] = useState<'INTERNAL' | 'EXTERNAL'>('INTERNAL');
   const [scheduledDate, setScheduledDate] = useState('');
   const [priority, setPriority] = useState('MEDIUM');
@@ -125,6 +125,10 @@ export function CreateWorkOrderModal({
         description,
         technicianId:
           technicianId && technicianId !== 'NONE' ? technicianId : null,
+        providerId:
+          modality === 'EXTERNAL' && providerId && providerId !== 'NONE'
+            ? providerId
+            : null,
         workType: modality,
         mantType: 'PREVENTIVE',
         scheduledDate: scheduledDate || null,
@@ -246,6 +250,34 @@ export function CreateWorkOrderModal({
                 </ToggleGroupItem>
               </ToggleGroup>
             </div>
+
+            {/* Proveedor (solo EXTERNAL) */}
+            {modality === 'EXTERNAL' && (
+              <div className="space-y-2">
+                <Label htmlFor="provider">Proveedor del servicio</Label>
+                <Select
+                  value={providerId || 'NONE'}
+                  onValueChange={val =>
+                    setProviderId(val === 'NONE' ? undefined : val)
+                  }
+                >
+                  <SelectTrigger id="provider">
+                    <SelectValue placeholder="Seleccionar proveedor..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">Sin asignar</SelectItem>
+                    {providers.map(p => (
+                      <SelectItem key={p.id} value={p.id.toString()}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Se asignará a todos los ítems de la OT
+                </p>
+              </div>
+            )}
 
             {/* Título */}
             <div className="space-y-2">

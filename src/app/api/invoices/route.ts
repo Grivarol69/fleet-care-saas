@@ -180,9 +180,9 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (purchaseOrder.status !== 'SENT') {
+      if (purchaseOrder.status === 'CANCELLED') {
         return NextResponse.json(
-          { error: 'Solo se pueden facturar OC en estado SENT' },
+          { error: 'No se pueden facturar OC en estado CANCELADA' },
           { status: 400 }
         );
       }
@@ -426,11 +426,11 @@ export async function POST(request: NextRequest) {
             },
           });
 
-          // 5. Actualizar MaintenanceAlerts vinculadas a COMPLETED
+          // 5. Cerrar MaintenanceAlerts vinculadas
           await tx.maintenanceAlert.updateMany({
             where: { workOrderId },
             data: {
-              status: 'COMPLETED',
+              status: 'CLOSED',
               closedAt: new Date(),
             },
           });

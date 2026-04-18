@@ -1,6 +1,26 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 
+export interface ScheduleResponse {
+  scheduledWorkOrders: {
+    id: string;
+    title: string;
+    startDate: string;
+    endDate: string | null;
+    notes: string | null;
+    priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+    status: 'PENDING' | 'APPROVED';
+    vehicle: { licensePlate: string };
+  }[];
+  pendingAlerts: {
+    id: string;
+    itemName: string;
+    vehiclePlate: string;
+    kmToMaintenance: number;
+    alertLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  }[];
+}
+
 // Types
 export interface MaintenanceAlert {
   id: string;
@@ -227,6 +247,20 @@ export function useAlertsGroupedByVehicle(filters?: AlertFilters) {
     groupedAlerts: groupedAlerts ? Object.values(groupedAlerts) : [],
     ...rest,
   };
+}
+
+/**
+ * Hook para obtener el calendario de mantenimiento (WOs programados + alertas pendientes)
+ */
+export function useMaintenanceSchedule() {
+  return useQuery({
+    queryKey: ['maintenance-schedule'],
+    queryFn: async () => {
+      const { data } = await axios.get<ScheduleResponse>('/api/maintenance/schedule');
+      return data;
+    },
+    staleTime: 60 * 1000, // 1 min (schedule cambia menos que alertas)
+  });
 }
 
 /**

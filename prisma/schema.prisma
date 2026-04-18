@@ -20,6 +20,9 @@ model Tenant {
   logo     String?
   country  String  @default("CO") // ISO 3166-1 alpha-2
   currency String  @default("COP") // Moneda local
+  address  String? // Dirección legal para documentos PDF
+  phone    String? // Teléfono de contacto para documentos PDF
+  taxId    String? // NIT/RUT/CUIT para cabecera de documentos PDF
 
   onboardingStatus OnboardingStatus @default(PENDING)
 
@@ -80,9 +83,23 @@ model Tenant {
   serializedItemAlerts   SerializedItemAlert[]
   auditLogs              AuditLog[]
   watchdogConfigs        WatchdogConfiguration[]
+  tenantSequences        TenantSequence[]
 
   @@index([slug])
   @@index([subscriptionStatus])
+}
+
+model TenantSequence {
+  id         String  @id @default(uuid())
+  tenantId   String
+  entityType String  // Ej: "WORK_ORDER", "PURCHASE_ORDER"
+  lastValue  Int     @default(0)
+  prefix     String? // Ej: "OT-2026-", "OC-2026-"
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, entityType])
+  @@index([tenantId])
 }
 
 model CostCenter {
@@ -560,20 +577,24 @@ model MaintenanceTemplate {
   vehicleLineId  String // Requerido: específico para una línea
   version        String   @default("1.0") // Para tracking de versiones
   isDefault      Boolean  @default(false) // Template por defecto para esta marca/línea
+  clonedFromId   String? // Traceability: ID del template global del que fue clonado
   status         Status   @default(ACTIVE)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  tenant   Tenant?              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  brand    VehicleBrand         @relation(fields: [vehicleBrandId], references: [id])
-  line     VehicleLine          @relation(fields: [vehicleLineId], references: [id])
-  packages MaintenancePackage[]
+  tenant     Tenant?               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  brand      VehicleBrand          @relation(fields: [vehicleBrandId], references: [id])
+  line       VehicleLine           @relation(fields: [vehicleLineId], references: [id])
+  packages   MaintenancePackage[]
+  clonedFrom MaintenanceTemplate?  @relation("TemplateClones", fields: [clonedFromId], references: [id])
+  clones     MaintenanceTemplate[] @relation("TemplateClones")
 
   @@unique([tenantId, name])
   @@index([vehicleBrandId])
   @@index([vehicleLineId])
   @@index([isDefault])
   @@index([isGlobal])
+  @@index([clonedFromId])
 }
 
 model MaintenancePackage {
@@ -636,6 +657,7 @@ model PackageItem {
 model WorkOrder {
   id              String          @id @default(uuid())
   tenantId        String
+  code            String?
   vehicleId       String
   title           String
   description     String?
@@ -687,6 +709,7 @@ model WorkOrder {
   costCenterId           String?
   costCenterRef          CostCenter?             @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
 
+  @@unique([tenantId, code])
   @@index([tenantId])
   @@index([vehicleId])
   @@index([status])
@@ -696,9 +719,9 @@ model WorkOrder {
 }
 
 model WorkOrderItem {
-  id          String @id @default(uuid())
+  id          String  @id @default(uuid())
   workOrderId String
-  mantItemId  String
+  mantItemId  String? // Nullable: NULL = trabajo libre sin ítem de catálogo
   tenantId    String
 
   // Detalles del item/repuesto
@@ -748,7 +771,7 @@ model WorkOrderItem {
   updatedAt        DateTime        @updatedAt
 
   workOrder          WorkOrder           @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
-  mantItem           MantItem            @relation(fields: [mantItemId], references: [id])
+  mantItem           MantItem?           @relation(fields: [mantItemId], references: [id])
   tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   invoiceItems       InvoiceItem[] // ✅ Items de factura vinculados
   ticketLaborEntries TicketLaborEntry[]
@@ -1828,11 +1851,9 @@ enum Priority {
 
 enum WorkOrderStatus {
   PENDING // Creada, sin asignar
-  PENDING_APPROVAL // Esperando aprobación Manager/Owner
-  APPROVED // Aprobada, lista para ejecución
-  IN_PROGRESS // Técnico trabajando
-  PENDING_INVOICE // Trabajo terminado, esperando factura
-  COMPLETED // Cerrada con factura registrada
+  APPROVED // Aprobada por Manager/Owner, lista para ejecución
+  COMPLETED // Trabajo terminado
+  CLOSED // Cierre financiero confirmado (requiere ≥1 factura)
   REJECTED // Rechazada por Manager/Owner
   CANCELLED // Cancelada manualmente
 }

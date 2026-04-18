@@ -43,6 +43,12 @@ export async function POST(
     if (!workOrderItem)
       return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
 
+    if (!workOrderItem.mantItemId)
+      return NextResponse.json(
+        { error: 'Sin procedimiento registrado para este vehículo/tarea' },
+        { status: 404 }
+      );
+
     const { brandId, lineId } = workOrderItem.workOrder.vehicle;
 
     const procedure = await resolveProcedure(

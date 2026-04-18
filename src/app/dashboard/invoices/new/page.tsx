@@ -1231,6 +1231,7 @@ function NewInvoiceContent() {
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">
                   Sube el PDF o imagen de la factura para respaldo documental
+                  {selectedPO && ' (Los ítems se mantienen pre-cargados desde la OC)'}
                 </p>
                 <UploadButton
                   endpoint="invoiceUploader"
@@ -1278,7 +1279,7 @@ function NewInvoiceContent() {
                           ...(typeof sd?.ocrTotal === 'number' && {
                             total: sd.ocrTotal,
                           }),
-                          ...(parsedItems !== undefined && {
+                          ...(parsedItems !== undefined && !selectedPO && {
                             items: parsedItems,
                           }),
                         };

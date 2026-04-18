@@ -27,11 +27,19 @@ import {
   Search,
   AlertTriangle,
   FileBarChart,
+  Plus,
 } from 'lucide-react';
 import { UserButton, OrganizationSwitcher } from '@clerk/nextjs';
 import { SidebarRoutes } from '../SidebarRoutes';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { WorkOrderCreateWizard } from '@/components/maintenance/work-orders/WorkOrderCreateWizard';
 
 interface NavbarStats {
   totalVehicles: number;
@@ -50,6 +58,7 @@ export function Navbar() {
     monthCosts: '0',
   });
   const [searchQuery, setSearchQuery] = useState('');
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   useEffect(() => {
     // Fetch navbar stats
@@ -245,6 +254,17 @@ export function Navbar() {
 
         {/* Org Switcher + User */}
         <div className="flex items-center gap-3">
+          <Button
+            size="sm"
+            className="gap-2"
+            onClick={() => setWizardOpen(true)}
+          >
+            <Plus className="h-4 w-4" />
+            Nuevo Mantenimiento
+          </Button>
+
+          <Separator orientation="vertical" className="h-6" />
+
           <OrganizationSwitcher
             hidePersonal={false}
             afterSelectOrganizationUrl="/dashboard"
@@ -269,6 +289,15 @@ export function Navbar() {
           />
         </div>
       </div>
+
+      <Dialog open={wizardOpen} onOpenChange={setWizardOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Nueva Orden de Trabajo</DialogTitle>
+          </DialogHeader>
+          <WorkOrderCreateWizard onSuccess={() => setWizardOpen(false)} />
+        </DialogContent>
+      </Dialog>
 
       {/* Mobile simplified navbar */}
       <div className="flex xl:hidden items-center justify-between w-full px-4 py-3 gap-2">

@@ -115,7 +115,7 @@ export function FormAssignProgram({
     try {
       const [vehiclesRes, templatesRes] = await Promise.all([
         axios.get('/api/vehicles/vehicles'),
-        axios.get('/api/maintenance/mant-template'),
+        axios.get('/api/maintenance/mant-template?source=custom'),
       ]);
 
       setVehicles(vehiclesRes.data);
@@ -300,7 +300,7 @@ export function FormAssignProgram({
                         </SelectContent>
                       </Select>
                       <FormDescription>
-                        Solo se muestran templates compatibles con{' '}
+                        Solo se muestran tus planes propios compatibles con{' '}
                         {selectedVehicle.brand.name} {selectedVehicle.line.name}
                       </FormDescription>
                       <FormMessage />

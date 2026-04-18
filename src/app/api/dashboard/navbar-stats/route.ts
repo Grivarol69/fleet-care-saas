@@ -22,10 +22,10 @@ export async function GET() {
       },
     });
 
-    // Get open work orders (IN_PROGRESS status)
+    // Get open work orders (PENDING or APPROVED = not yet completed)
     const openWorkOrders = await tenantPrisma.workOrder.count({
       where: {
-        status: 'IN_PROGRESS',
+        status: { in: ['PENDING', 'APPROVED'] },
       },
     });
 

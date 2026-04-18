@@ -172,7 +172,7 @@ describe('Work Order Integration (PATCH)', () => {
     // Advance WO to PENDING_INVOICE first (items still have closureType=PENDING)
     await prisma.workOrder.update({
       where: { id: workOrderId },
-      data: { status: 'PENDING_INVOICE' },
+      data: { status: 'APPROVED' },
     });
 
     const body = { status: 'COMPLETED' };
@@ -201,7 +201,7 @@ describe('Work Order Integration (PATCH)', () => {
     });
     await prisma.workOrder.update({
       where: { id: workOrderId },
-      data: { status: 'PENDING_INVOICE' },
+      data: { status: 'APPROVED' },
     });
 
     const body = { status: 'COMPLETED' };
@@ -389,7 +389,7 @@ describe('Work Order PATCH — Role-Based Transition Guards', () => {
     // Advance WO to PENDING_INVOICE state so the transition would otherwise be valid
     await prisma.workOrder.update({
       where: { id: workOrderId },
-      data: { status: 'PENDING_INVOICE' },
+      data: { status: 'APPROVED' },
     });
     await prisma.workOrderItem.updateMany({
       where: { workOrderId },
@@ -414,7 +414,7 @@ describe('Work Order PATCH — Role-Based Transition Guards', () => {
 
     await prisma.workOrder.update({
       where: { id: workOrderId },
-      data: { status: 'PENDING_APPROVAL' },
+      data: { status: 'PENDING' },
     });
 
     const req = new NextRequest(
@@ -436,7 +436,7 @@ describe('Work Order PATCH — Role-Based Transition Guards', () => {
     // Advance WO to PENDING_INVOICE and close items
     await prisma.workOrder.update({
       where: { id: workOrderId },
-      data: { status: 'PENDING_INVOICE' },
+      data: { status: 'APPROVED' },
     });
     await prisma.workOrderItem.updateMany({
       where: { workOrderId },
@@ -486,7 +486,7 @@ describe('Work Order PATCH — Role-Based Transition Guards', () => {
     // Advance WO to PENDING_APPROVAL first
     await prisma.workOrder.update({
       where: { id: workOrderId },
-      data: { status: 'PENDING_APPROVAL' },
+      data: { status: 'PENDING' },
     });
 
     // Build the required hierarchy: Template → Package → Program → ProgramPackage → ProgramItem → Alert
@@ -672,7 +672,7 @@ describe('Work Order Item PATCH — Auto PENDING_INVOICE trigger', () => {
         title: 'AutoPI Test Order',
         mantType: 'CORRECTIVE',
         priority: 'MEDIUM',
-        status: 'IN_PROGRESS',
+        status: 'APPROVED',
         creationMileage: 8000,
         requestedBy: userId,
         workOrderItems: {

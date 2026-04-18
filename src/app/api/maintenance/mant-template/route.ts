@@ -2,17 +2,28 @@ import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { canManageMaintenancePrograms } from '@/lib/permissions';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const { user, tenantPrisma } = await requireCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Devolver templates globales y del tenant — el interceptor tenant-prisma aplica OR[tenantId, isGlobal]
+    const { searchParams } = new URL(req.url);
+    const source = searchParams.get('source');
+
+    let sourceFilter = {};
+    if (source === 'custom') {
+      sourceFilter = { tenantId: user.tenantId, isGlobal: false };
+    } else if (source === 'global') {
+      sourceFilter = { isGlobal: true, tenantId: null };
+    }
+    // no source param → tenantPrisma OR filter applies naturally
+
     const mantTemplates = await tenantPrisma.maintenanceTemplate.findMany({
       where: {
         status: 'ACTIVE',
+        ...sourceFilter,
       },
       include: {
         brand: {

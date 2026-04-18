@@ -1,12 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   ShoppingCart,
   Receipt,
   Loader2,
   ChevronDown,
   ChevronRight,
+  FileText,
+  AlertCircle,
+  Download,
+  Mail,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import {
@@ -20,53 +25,35 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
-import { canViewCosts, canOverrideWorkOrderFreeze } from '@/lib/permissions';
+import { canViewCosts } from '@/lib/permissions';
 import { useToast } from '@/components/hooks/use-toast';
 import { ExpensesTab } from './ExpensesTab';
-import { Checkbox } from '@/components/ui/checkbox';
 import axios from 'axios';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { pdf } from '@react-pdf/renderer';
+import { PurchaseOrderFullPDF } from '@/app/dashboard/purchase-orders/components/PurchaseOrderFullPDF';
+import { SendPODialog } from '@/app/dashboard/purchase-orders/components/SendPODialog';
 
-const PO_STATUS_NO_INVOICE = new Set([
-  'DRAFT',
-  'PENDING_APPROVAL',
-  'APPROVED',
-  'SENT',
-  'PARTIAL',
-]);
+const PO_INVOICE_STATUSES = new Set(['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'SENT', 'PARTIAL', 'COMPLETED']);
 
 export function ComprasTab({ workOrder, currentUser, onRefresh }: any) {
   const showCosts = canViewCosts(currentUser as any);
-  const isOverride = canOverrideWorkOrderFreeze(currentUser as any);
   const { toast } = useToast();
+  const router = useRouter();
   const [actioningId, setActioningId] = useState<string | null>(null);
-  const [selectedExternalIds, setSelectedExternalIds] = useState<string[]>([]);
   const [isGeneratingOC, setIsGeneratingOC] = useState(false);
   const [expandedPoId, setExpandedPoId] = useState<string | null>(null);
-  const [regenerateItem, setRegenerateItem] = useState<any | null>(null);
-  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [downloadingPoId, setDownloadingPoId] = useState<string | null>(null);
+  const [sendPoDialogState, setSendPoDialogState] = useState<{isOpen: boolean, poId: string, poNumber: string}>({isOpen: false, poId: '', poNumber: ''});
 
   const pendingExternalItems = (workOrder.workOrderItems || []).filter(
     (i: any) =>
-      i.itemSource === 'EXTERNAL' &&
+      (i.itemSource === 'EXTERNAL' || i.itemSource === 'INTERNAL_PURCHASE') &&
       i.status !== 'CANCELLED' &&
       (!i.purchaseOrderItems || i.purchaseOrderItems.length === 0)
   );
 
-  const poLinkedExternalItems = (workOrder.workOrderItems || []).filter(
-    (i: any) =>
-      (i.itemSource === 'EXTERNAL' || i.itemSource === 'INTERNAL_PURCHASE') &&
-      i.status !== 'CANCELLED' &&
-      i.purchaseOrderItems?.length > 0
+  const pendingWithProvider = pendingExternalItems.filter(
+    (i: any) => i.providerId
   );
 
   const pos = workOrder.purchaseOrders || [];
@@ -76,6 +63,88 @@ export function ComprasTab({ workOrder, currentUser, onRefresh }: any) {
   );
 
   const invoices = workOrder.invoices || [];
+
+  const handleDownloadPDF = async (po: any) => {
+    try {
+      setDownloadingPoId(po.id);
+      
+      const resTenant = await fetch('/api/tenants/current');
+      const tenantData = await resTenant.json();
+      const tenant = {
+        name: tenantData.name || 'Fleet Care',
+        logo: tenantData.logo || null,
+        address: tenantData.address || null,
+        phone: tenantData.phone || null,
+        taxId: tenantData.taxId || null,
+        currency: tenantData.currency || 'COP',
+      };
+
+      const items = (po.items || []).map((item: any) => ({
+        id: item.id,
+        description: item.workOrderItem?.mantItem?.name 
+          ? `${item.workOrderItem.mantItem.name}${item.workOrderItem.description ? `\n${item.workOrderItem.description}` : ''}`
+          : item.description || 'Ítem',
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        totalCost: Number(item.quantity) * Number(item.unitPrice),
+      }));
+
+      const doc = (
+        <PurchaseOrderFullPDF
+          tenant={tenant}
+          purchaseOrder={{
+            orderNumber: po.orderNumber,
+            type: po.type,
+            status: po.status,
+            notes: po.notes,
+            total: po.total,
+            createdAt: po.createdAt,
+            provider: po.provider,
+            workOrder: {
+              title: workOrder.title,
+              vehicle: workOrder.vehicle,
+            }
+          }}
+          items={items}
+        />
+      );
+
+      const asPdf = pdf(doc);
+      const blob = await asPdf.toBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Orden_Compra_${po.orderNumber}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading custom PDF', error);
+      toast({
+        title: 'Error',
+        description: 'Hubo un problema al generar el PDF.',
+        variant: 'destructive',
+      });
+    } finally {
+      setDownloadingPoId(null);
+    }
+  };
+
+  const handleGenerateAllOC = async () => {
+    if (pendingWithProvider.length === 0) return;
+    setIsGeneratingOC(true);
+    try {
+      await axios.post(
+        `/api/maintenance/work-orders/${workOrder.id}/purchase-orders`,
+        { itemIds: pendingWithProvider.map((i: any) => i.id) }
+      );
+      toast({ title: 'OC generada', description: 'Órdenes de compra creadas correctamente.' });
+      onRefresh();
+    } catch {
+      toast({ title: 'Error', description: 'No se pudo generar la OC', variant: 'destructive' });
+    } finally {
+      setIsGeneratingOC(false);
+    }
+  };
 
   const handlePoAction = async (poId: string, action: 'submit' | 'send') => {
     setActioningId(poId);
@@ -101,240 +170,36 @@ export function ComprasTab({ workOrder, currentUser, onRefresh }: any) {
     }
   };
 
-  const toggleSelect = (id: string) => {
-    setSelectedExternalIds(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    );
-  };
-
-  const handleGenerateOC = async () => {
-    setIsGeneratingOC(true);
-    try {
-      await axios.post(
-        `/api/maintenance/work-orders/${workOrder.id}/purchase-orders`,
-        { itemIds: selectedExternalIds }
-      );
-      toast({
-        title: 'OC generada',
-        description: 'Orden de compra creada correctamente.',
-      });
-      setSelectedExternalIds([]);
-      onRefresh();
-    } catch {
-      toast({
-        title: 'Error',
-        description: 'No se pudo generar la OC',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsGeneratingOC(false);
-    }
-  };
-
-  const handleRegenerateOC = async () => {
-    if (!regenerateItem) return;
-    setIsRegenerating(true);
-    try {
-      await axios.post(
-        `/api/maintenance/work-orders/${workOrder.id}/purchase-orders`,
-        { itemIds: [regenerateItem.id] }
-      );
-      toast({
-        title: 'OC regenerada',
-        description: 'Nueva orden de compra creada.',
-      });
-      setRegenerateItem(null);
-      onRefresh();
-    } catch {
-      toast({
-        title: 'Error',
-        description: 'No se pudo regenerar la OC',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsRegenerating(false);
-    }
-  };
-
-  // POs that will be cancelled on regeneration (DRAFT or PENDING_APPROVAL)
-  const cancellablePOs = (workOrder.purchaseOrders || []).filter(
-    (po: any) => po.status === 'DRAFT' || po.status === 'PENDING_APPROVAL'
-  );
-  const nonCancellablePOs = (workOrder.purchaseOrders || []).filter(
-    (po: any) => po.status === 'APPROVED' || po.status === 'SENT'
-  );
-
   return (
     <div className="space-y-6">
-      {/* Sección 0: Pendientes de OC */}
+      {/* Banner compacto: ítems pendientes de OC */}
       {pendingExternalItems.length > 0 && (
-        <Card className="border-orange-100">
-          <CardHeader className="flex flex-row items-center justify-between bg-orange-50/50 pb-4">
-            <div className="flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5 text-orange-600" />
-              <CardTitle className="text-lg text-orange-900">
-                Ítems Pendientes de Compra
-              </CardTitle>
-            </div>
-            <Button
-              variant="default"
-              disabled={
-                selectedExternalIds.length === 0 ||
-                isGeneratingOC ||
-                selectedExternalIds.some(
-                  id =>
-                    pendingExternalItems.find((i: any) => i.id === id)
-                      ?.providerId === null
-                )
-              }
-              onClick={handleGenerateOC}
-            >
-              {isGeneratingOC && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        <div className="flex items-center justify-between rounded-lg border border-orange-200 bg-orange-50 px-4 py-3">
+          <div className="flex items-center gap-2 text-sm text-orange-800">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>
+              <span className="font-semibold">{pendingExternalItems.length}</span>{' '}
+              {pendingExternalItems.length === 1 ? 'ítem externo sin OC' : 'ítems externos sin OC'}.
+              {pendingWithProvider.length < pendingExternalItems.length && (
+                <span className="ml-1 text-orange-600">
+                  ({pendingExternalItems.length - pendingWithProvider.length} sin proveedor asignado — asignar en tab Ítems)
+                </span>
               )}
-              Generar Órdenes de Compra ({selectedExternalIds.length})
+            </span>
+          </div>
+          {pendingWithProvider.length > 0 && (
+            <Button
+              size="sm"
+              variant="default"
+              disabled={isGeneratingOC}
+              onClick={handleGenerateAllOC}
+              className="ml-4 shrink-0"
+            >
+              {isGeneratingOC && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+              Generar OCs ({pendingWithProvider.length})
             </Button>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50px]"></TableHead>
-                  <TableHead>Ítem / Descripción</TableHead>
-                  <TableHead>Proveedor Asignado</TableHead>
-                  <TableHead>Cant.</TableHead>
-                  <TableHead>Precio Unit.</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pendingExternalItems.map((item: any) => (
-                  <TableRow key={item.id}>
-                    <TableCell>
-                      <Checkbox
-                        checked={selectedExternalIds.includes(item.id)}
-                        onCheckedChange={() => toggleSelect(item.id)}
-                        disabled={!item.providerId}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">{item.mantItem.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {item.description}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {item.provider?.name ? (
-                        <Badge
-                          variant="outline"
-                          className="bg-blue-50 text-blue-700"
-                        >
-                          {item.provider.name}
-                        </Badge>
-                      ) : (
-                        <span className="text-xs text-red-500 font-semibold">
-                          Falta Proveedor
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>{item.quantity}</TableCell>
-                    <TableCell>{formatCurrency(item.unitPrice)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Sección 0b: Ítems con OC — Regenerar OC (solo OWNER) */}
-      {isOverride && poLinkedExternalItems.length > 0 && (
-        <Card className="border-yellow-100">
-          <CardHeader className="flex flex-row items-center gap-2 bg-yellow-50/50 pb-4">
-            <ShoppingCart className="h-5 w-5 text-yellow-600" />
-            <CardTitle className="text-lg text-yellow-900">
-              Ítems con OC Vinculada — Regenerar
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Ítem / Descripción</TableHead>
-                  <TableHead>Proveedor</TableHead>
-                  <TableHead>OC Vinculada</TableHead>
-                  <TableHead>Cant.</TableHead>
-                  <TableHead>Precio Unit.</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {poLinkedExternalItems.map((item: any) => {
-                  const linkedPO = (workOrder.purchaseOrders || []).find(
-                    (po: any) =>
-                      po.items?.some(
-                        (poi: any) => poi.workOrderItemId === item.id
-                      )
-                  );
-                  return (
-                    <TableRow key={item.id}>
-                      <TableCell>
-                        <div className="font-medium">
-                          {item.mantItem?.name ?? '—'}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {item.description}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {item.provider?.name ? (
-                          <Badge
-                            variant="outline"
-                            className="bg-blue-50 text-blue-700"
-                          >
-                            {item.provider.name}
-                          </Badge>
-                        ) : (
-                          <span className="text-xs text-red-500 font-semibold">
-                            Falta Proveedor
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {linkedPO ? (
-                          <Badge
-                            variant="outline"
-                            className="font-mono text-xs"
-                          >
-                            {linkedPO.orderNumber}
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground text-xs">
-                            —
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell>{item.quantity}</TableCell>
-                      <TableCell>
-                        {showCosts ? formatCurrency(item.unitPrice) : '—'}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-yellow-700 border-yellow-300 hover:bg-yellow-50"
-                          disabled={!item.providerId}
-                          onClick={() => setRegenerateItem(item)}
-                        >
-                          Regenerar OC
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+          )}
+        </div>
       )}
 
       {/* Sección 1: Órdenes de Compra Generadas */}
@@ -406,9 +271,8 @@ export function ComprasTab({ workOrder, currentUser, onRefresh }: any) {
                   const poItems = po.items || [];
 
                   return (
-                    <>
+                    <React.Fragment key={po.id}>
                       <TableRow
-                        key={po.id}
                         className="cursor-pointer hover:bg-muted/40"
                         onClick={() =>
                           setExpandedPoId(isExpanded ? null : po.id)
@@ -447,19 +311,12 @@ export function ComprasTab({ workOrder, currentUser, onRefresh }: any) {
                           )}
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Badge
-                              variant={badgeVariant}
-                              className={badgeClass}
-                            >
-                              {badgeLabel}
-                            </Badge>
-                            {PO_STATUS_NO_INVOICE.has(po.status) && (
-                              <span className="text-[10px] bg-yellow-50 text-yellow-700 px-1.5 py-0.5 rounded border border-yellow-200">
-                                Sin factura
-                              </span>
-                            )}
-                          </div>
+                          <Badge
+                            variant={badgeVariant}
+                            className={badgeClass}
+                          >
+                            {badgeLabel}
+                          </Badge>
                         </TableCell>
                         <TableCell className="font-mono text-xs">
                           {showCosts ? formatCurrency(po.total) : '—'}
@@ -468,32 +325,70 @@ export function ComprasTab({ workOrder, currentUser, onRefresh }: any) {
                           {po.notes || '—'}
                         </TableCell>
                         <TableCell onClick={e => e.stopPropagation()}>
-                          {po.status === 'DRAFT' && (
+                          <div className="flex items-center gap-2">
+                            {po.status === 'DRAFT' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={isActioning}
+                                onClick={() => handlePoAction(po.id, 'submit')}
+                              >
+                                {isActioning ? (
+                                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                                ) : null}
+                                Enviar a Aprobación
+                              </Button>
+                            )}
+                            {po.status === 'APPROVED' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={isActioning}
+                                onClick={() => handlePoAction(po.id, 'send')}
+                              >
+                                {isActioning ? (
+                                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                                ) : null}
+                                Enviar OC
+                              </Button>
+                            )}
+                            {PO_INVOICE_STATUSES.has(po.status) && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-blue-700 border-blue-300 hover:bg-blue-50"
+                                onClick={() =>
+                                  router.push(
+                                    `/dashboard/invoices/new?purchaseOrderId=${po.id}`
+                                  )
+                                }
+                              >
+                                <FileText className="h-3 w-3 mr-1" />
+                                Registrar Factura
+                              </Button>
+                            )}
                             <Button
                               size="sm"
                               variant="outline"
-                              disabled={isActioning}
-                              onClick={() => handlePoAction(po.id, 'submit')}
+                              disabled={downloadingPoId === po.id}
+                              onClick={() => handleDownloadPDF(po)}
                             >
-                              {isActioning ? (
+                              {downloadingPoId === po.id ? (
                                 <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                              ) : null}
-                              Enviar a Aprobación
+                              ) : (
+                                <Download className="h-3 w-3 mr-1" />
+                              )}
+                              Descargar
                             </Button>
-                          )}
-                          {po.status === 'APPROVED' && (
                             <Button
                               size="sm"
                               variant="outline"
-                              disabled={isActioning}
-                              onClick={() => handlePoAction(po.id, 'send')}
+                              onClick={() => setSendPoDialogState({ isOpen: true, poId: po.id, poNumber: po.orderNumber })}
                             >
-                              {isActioning ? (
-                                <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                              ) : null}
-                              Enviar OC
+                              <Mail className="h-3 w-3 mr-1" />
+                              Email
                             </Button>
-                          )}
+                          </div>
                         </TableCell>
                       </TableRow>
                       {isExpanded && (
@@ -569,7 +464,7 @@ export function ComprasTab({ workOrder, currentUser, onRefresh }: any) {
                           </TableCell>
                         </TableRow>
                       )}
-                    </>
+                    </React.Fragment>
                   );
                 })}
                 <TableRow>
@@ -669,65 +564,14 @@ export function ComprasTab({ workOrder, currentUser, onRefresh }: any) {
       {/* Sección 3: Gastos Adicionales */}
       <ExpensesTab workOrder={workOrder} onRefresh={onRefresh} />
 
-      {/* Dialog: Confirmar Regeneración de OC */}
-      <AlertDialog
-        open={!!regenerateItem}
-        onOpenChange={open => {
-          if (!open) setRegenerateItem(null);
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Regenerar Orden de Compra</AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-3 text-sm">
-                {cancellablePOs.length > 0 && (
-                  <div>
-                    <p className="font-medium text-foreground">
-                      Se cancelarán las siguientes OC en estado Borrador o En
-                      Aprobación:
-                    </p>
-                    <ul className="mt-1 list-disc list-inside text-muted-foreground">
-                      {cancellablePOs.map((po: any) => (
-                        <li key={po.id} className="font-mono text-xs">
-                          {po.orderNumber}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {nonCancellablePOs.length > 0 && (
-                  <div className="rounded border border-yellow-200 bg-yellow-50 p-2">
-                    <p className="font-medium text-yellow-800">
-                      Advertencia: Las siguientes OC no se cancelarán
-                      automáticamente y quedarán activas:
-                    </p>
-                    <ul className="mt-1 list-disc list-inside text-yellow-700">
-                      {nonCancellablePOs.map((po: any) => (
-                        <li key={po.id} className="font-mono text-xs">
-                          {po.orderNumber} ({po.status})
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                <p>Se creará una nueva OC con los precios actuales del ítem.</p>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isRegenerating}>
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction
-              disabled={isRegenerating}
-              onClick={handleRegenerateOC}
-            >
-              {isRegenerating ? 'Procesando...' : 'Confirmar Regeneración'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {sendPoDialogState.isOpen && (
+        <SendPODialog
+          isOpen={sendPoDialogState.isOpen}
+          setIsOpen={(open) => setSendPoDialogState(s => ({ ...s, isOpen: open }))}
+          purchaseOrderId={sendPoDialogState.poId}
+          purchaseOrderNumber={sendPoDialogState.poNumber}
+        />
+      )}
     </div>
   );
 }

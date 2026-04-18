@@ -22,19 +22,17 @@ type RoleGuard =
 
 const ALLOWED_TRANSITIONS: Record<string, Record<string, string>> = {
   PENDING: {
-    PENDING_APPROVAL: 'canExecuteWorkOrders',
-    CANCELLED: 'canApproveWorkOrder',
-  },
-  PENDING_APPROVAL: {
     APPROVED: 'canApproveWorkOrder',
     REJECTED: 'canApproveWorkOrder',
-  },
-  APPROVED: { IN_PROGRESS: 'canExecuteWorkOrders' },
-  IN_PROGRESS: {
-    PENDING_INVOICE: 'canCloseWorkOrder',
     CANCELLED: 'canApproveWorkOrder',
   },
-  PENDING_INVOICE: { COMPLETED: 'canCloseWorkOrder' },
+  APPROVED: {
+    COMPLETED: 'canExecuteWorkOrders',
+    CANCELLED: 'canApproveWorkOrder',
+  },
+  COMPLETED: {
+    CLOSED: 'canCloseWorkOrder',
+  },
 };
 
 /**
@@ -359,13 +357,74 @@ export async function PATCH(
         );
       }
 
+      // CLOSED: hard block if no invoices linked
+      if (toStatus === 'CLOSED') {
+        const invoiceCount = await tenantPrisma.invoice.count({
+          where: { workOrderId },
+        });
+        if (invoiceCount === 0) {
+          return NextResponse.json(
+            {
+              error:
+                'Se requiere al menos una factura para cerrar la OT',
+            },
+            { status: 400 }
+          );
+        }
+        updateData.status = 'CLOSED';
+      }
+
       // ──────────────────────────────────────────────────────────────
       // Status-specific side effects
       // ──────────────────────────────────────────────────────────────
       if (toStatus === 'APPROVED') {
-        // APPROVED: generate PO for EXTERNAL/INTERNAL_PURCHASE items + create InternalWorkTicket
+        // APPROVED: assign OT code + generate POs + create InternalWorkTicket
         const result = await tenantPrisma.$transaction(async tx => {
           const stockWarnings: string[] = [];
+          const approvalYear = new Date().getFullYear();
+
+          // Assign WO code (idempotent — only if not yet assigned)
+          const existingWo = await tx.workOrder.findUnique({
+            where: { id: workOrderId },
+            select: { code: true, providerId: true, technicianId: true },
+          });
+
+          if (!existingWo?.code) {
+            const maxWO = await tx.workOrder.findFirst({
+              where: {
+                tenantId: user.tenantId,
+                code: { startsWith: 'OT-', not: null },
+              },
+              orderBy: { code: 'desc' },
+              select: { code: true },
+            });
+            const maxVal = maxWO?.code
+              ? parseInt(maxWO.code.split('-')[2] ?? '0', 10)
+              : 0;
+
+            const woSeq = await tx.tenantSequence.upsert({
+              where: {
+                tenantId_entityType: {
+                  tenantId: user.tenantId,
+                  entityType: 'WORK_ORDER',
+                },
+              },
+              update: { lastValue: { increment: 1 } },
+              create: {
+                tenantId: user.tenantId,
+                entityType: 'WORK_ORDER',
+                lastValue: maxVal + 1,
+                prefix: 'OT-',
+              },
+            });
+
+            await tx.workOrder.update({
+              where: { id: workOrderId },
+              data: {
+                code: `OT-${approvalYear}-${String(woSeq.lastValue).padStart(4, '0')}`,
+              },
+            });
+          }
 
           const allActiveItems = await tx.workOrderItem.findMany({
             where: { workOrderId, status: { not: 'CANCELLED' } },
@@ -376,7 +435,7 @@ export async function PATCH(
           });
 
           // Load WO details
-          const wo = await tx.workOrder.findUnique({
+          const wo = existingWo ?? await tx.workOrder.findUnique({
             where: { id: workOrderId },
             select: { providerId: true, technicianId: true },
           });
@@ -390,14 +449,13 @@ export async function PATCH(
           );
 
           const createdPurchaseOrderIds: string[] = [];
-          const year = new Date().getFullYear();
 
           const grouped = new Map<string, typeof purchaseItems>();
           for (const item of purchaseItems) {
             const pid = item.providerId ?? null;
             if (!pid) {
               stockWarnings.push(
-                `Sin proveedor para generar OC: ${item.mantItem.name}`
+                `Sin proveedor para generar OC: ${item.mantItem?.name ?? item.description}`
               );
               continue;
             }
@@ -407,19 +465,38 @@ export async function PATCH(
           }
 
           for (const [provId, provItems] of grouped.entries()) {
-            const count = await tx.purchaseOrder.count({
+            // Find max existing OC number to safely initialize sequence if missing
+            const maxPO = await tx.purchaseOrder.findFirst({
+              where: { tenantId: user.tenantId, orderNumber: { startsWith: 'OC-' } },
+              orderBy: { orderNumber: 'desc' },
+              select: { orderNumber: true },
+            });
+            const maxVal = maxPO
+              ? parseInt(maxPO.orderNumber.split('-')[2] ?? '0', 10)
+              : 0;
+
+            const seq = await tx.tenantSequence.upsert({
               where: {
+                tenantId_entityType: {
+                  tenantId: user.tenantId,
+                  entityType: 'PURCHASE_ORDER',
+                },
+              },
+              update: { lastValue: { increment: 1 } },
+              create: {
                 tenantId: user.tenantId,
-                orderNumber: { startsWith: `OC-${year}-` },
+                entityType: 'PURCHASE_ORDER',
+                lastValue: maxVal + 1,
+                prefix: 'OC-',
               },
             });
-            const orderNumber = `OC-${year}-${String(count + 1).padStart(6, '0')}`;
+            const orderNumber = `OC-${approvalYear}-${String(seq.lastValue).padStart(6, '0')}`;
             const subtotal = provItems.reduce(
               (sum, i) => sum + Number(i.totalCost),
               0
             );
 
-            const allParts = provItems.every(i => i.mantItem.type === 'PART');
+            const allParts = provItems.every(i => i.mantItem?.type === 'PART');
             const type = allParts ? 'PARTS' : 'SERVICES';
 
             const po = await tx.purchaseOrder.create({
@@ -465,7 +542,7 @@ export async function PATCH(
 
           if (!existingTicket && woTechnicianId) {
             const laborItems = allActiveItems.filter(
-              i => i.mantItem.type !== 'PART'
+              i => i.mantItem?.type !== 'PART'
             );
             const totalLaborCost = laborItems.reduce(
               (sum, i) => sum + Number(i.totalCost),
@@ -475,10 +552,10 @@ export async function PATCH(
             const ticketCount = await tx.internalWorkTicket.count({
               where: {
                 tenantId: user.tenantId,
-                ticketNumber: { startsWith: `TKT-${year}-` },
+                ticketNumber: { startsWith: `TKT-${approvalYear}-` },
               },
             });
-            const ticketNumber = `TKT-${year}-${String(ticketCount + 1).padStart(6, '0')}`;
+            const ticketNumber = `TKT-${approvalYear}-${String(ticketCount + 1).padStart(6, '0')}`;
 
             const createdTicket = await tx.internalWorkTicket.create({
               data: {
@@ -496,7 +573,7 @@ export async function PATCH(
                     tenantId: user.tenantId,
                     workOrderItemId: item.id,
                     technicianId: woTechnicianId,
-                    description: item.mantItem.name,
+                    description: item.mantItem?.name ?? item.description,
                     hours: 0,
                     hourlyRate: 0,
                     laborCost: Number(item.totalCost),
@@ -539,50 +616,6 @@ export async function PATCH(
           )
         );
         return NextResponse.json(serialized);
-      } else if (toStatus === 'PENDING_INVOICE') {
-        // T-02 (simplified): Only update status + compute actualCost + set endDate
-        // PO/ticket generation was moved to APPROVED transition
-        const result = await tenantPrisma.$transaction(async tx => {
-          const itemsAgg = await tx.workOrderItem.aggregate({
-            where: { workOrderId, status: { not: 'CANCELLED' } },
-            _sum: { totalCost: true },
-          });
-          const expensesAgg = await tx.workOrderExpense.aggregate({
-            where: { workOrderId, status: 'APPROVED' },
-            _sum: { amount: true },
-          });
-          const computedActualCost =
-            Number(itemsAgg._sum.totalCost ?? 0) +
-            Number(expensesAgg._sum.amount ?? 0);
-
-          const wo = await tx.workOrder.update({
-            where: { id: workOrderId },
-            data: {
-              status: 'PENDING_INVOICE',
-              actualCost: computedActualCost,
-              endDate: new Date(),
-              ...(completionMileage !== undefined
-                ? { completionMileage: Number(completionMileage) }
-                : {}),
-              ...(technicianId !== undefined ? { technicianId } : {}),
-              ...(providerId !== undefined ? { providerId } : {}),
-            },
-            include: {
-              vehicle: { select: { id: true, licensePlate: true } },
-              maintenanceAlerts: true,
-              workOrderItems: true,
-            },
-          });
-
-          return wo;
-        });
-
-        const serialized = JSON.parse(
-          JSON.stringify(result, (_key, value) =>
-            typeof value === 'bigint' ? value.toString() : value
-          )
-        );
-        return NextResponse.json(serialized);
       } else if (toStatus === 'COMPLETED') {
         // T-03: COMPLETED branch — removed pendingItems guard; compute cost and close
         const result = await tenantPrisma.$transaction(async tx => {
@@ -612,7 +645,7 @@ export async function PATCH(
           await tx.maintenanceAlert.updateMany({
             where: { workOrderId },
             data: {
-              status: 'COMPLETED',
+              status: 'CLOSED',
               closedAt: closedAt,
             },
           });
@@ -714,10 +747,6 @@ export async function PATCH(
         updateData.status = toStatus;
       }
 
-      // If WO is being started, record startDate
-      if (toStatus === 'IN_PROGRESS' && !existingWO.startDate) {
-        updateData.startDate = new Date();
-      }
     }
 
     if (actualCost !== undefined) {
@@ -898,8 +927,6 @@ export async function PUT(
     if (!canOverrideWorkOrderFreeze(user)) {
       if (
         existingWO.status !== 'PENDING' &&
-        existingWO.status !== 'IN_PROGRESS' &&
-        existingWO.status !== 'PENDING_APPROVAL' &&
         existingWO.status !== 'APPROVED'
       ) {
         return NextResponse.json(
