@@ -69,14 +69,14 @@ export function FormEditMantTemplate({
   const [vehicleLines, setVehicleLines] = useState<VehicleLine[]>([]);
   const [filteredLines, setFilteredLines] = useState<VehicleLine[]>([]);
 
-  const form = useForm<FormData>({
+  const form = useForm<FormData, unknown, FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       id: template.id,
       name: template.name,
       description: template.description || '',
-      vehicleBrandId: template.vehicleBrandId,
-      vehicleLineId: template.vehicleLineId,
+      vehicleBrandId: template.vehicleBrandId ?? undefined,
+      vehicleLineId: template.vehicleLineId ?? undefined,
     },
   });
 
@@ -113,8 +113,8 @@ export function FormEditMantTemplate({
         id: template.id,
         name: template.name,
         description: template.description || '',
-        vehicleBrandId: template.vehicleBrandId,
-        vehicleLineId: template.vehicleLineId,
+        vehicleBrandId: template.vehicleBrandId ?? undefined,
+        vehicleLineId: template.vehicleLineId ?? undefined,
       });
     }
   }, [isOpen, template, form, fetchData]);

@@ -84,6 +84,10 @@ model Tenant {
   auditLogs              AuditLog[]
   watchdogConfigs        WatchdogConfiguration[]
   tenantSequences        TenantSequence[]
+  incidentAlerts         IncidentAlert[]
+  dailyChecklists        DailyChecklist[]
+  driverTrainings        DriverTraining[]
+  checklistTemplates     ChecklistTemplate[]
 
   @@index([slug])
   @@index([subscriptionStatus])
@@ -92,7 +96,7 @@ model Tenant {
 model TenantSequence {
   id         String  @id @default(uuid())
   tenantId   String
-  entityType String  // Ej: "WORK_ORDER", "PURCHASE_ORDER"
+  entityType String // Ej: "WORK_ORDER", "PURCHASE_ORDER"
   lastValue  Int     @default(0)
   prefix     String? // Ej: "OT-2026-", "OC-2026-"
 
@@ -155,11 +159,11 @@ model User {
   priceHistoryPurchased PartPriceHistory[] @relation("PriceHistoryPurchaser")
   paymentsRegistered    InvoicePayment[]   @relation("PaymentRegistrar")
 
-  technicianProfile     Technician?
-  driverProfile         Driver?
-  serializedItemEvents  SerializedItemEvent[]
-  alertsResolved        SerializedItemAlert[] @relation("AlertResolver")
-  auditLogsActed        AuditLog[]            @relation("AuditLogActor")
+  technicianProfile    Technician?
+  driverProfile        Driver?
+  serializedItemEvents SerializedItemEvent[]
+  alertsResolved       SerializedItemAlert[] @relation("AlertResolver")
+  auditLogsActed       AuditLog[]            @relation("AuditLogActor")
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -234,7 +238,7 @@ model VehicleBrand {
   vehicles             Vehicle[]
   maintenanceTemplates MaintenanceTemplate[] // ✅ CURRENT
   mantItemVehicleParts MantItemVehiclePart[] // KB: repuestos por marca
-  mantItemProcedures   MantItemProcedure[]   // KB: procedimientos de labor
+  mantItemProcedures   MantItemProcedure[] // KB: procedimientos de labor
 
   @@unique([tenantId, name])
   @@index([isGlobal])
@@ -256,7 +260,7 @@ model VehicleLine {
   vehicles             Vehicle[]
   maintenanceTemplates MaintenanceTemplate[] // ✅ CURRENT
   mantItemVehicleParts MantItemVehiclePart[] // KB: repuestos por línea
-  mantItemProcedures   MantItemProcedure[]   // KB: procedimientos de labor
+  mantItemProcedures   MantItemProcedure[] // KB: procedimientos de labor
 
   @@unique([tenantId, brandId, name])
   @@index([brandId])
@@ -273,8 +277,11 @@ model VehicleType {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant   Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  vehicles Vehicle[]
+  tenant               Tenant?               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicles             Vehicle[]
+  checklistTemplates   ChecklistTemplate[]
+  maintenanceTemplates MaintenanceTemplate[]
+  documentRequirements DocumentRequirement[]
 
   @@unique([tenantId, name])
   @@index([isGlobal])
@@ -295,7 +302,7 @@ model Vehicle {
   situation      VehicleSituation @default(AVAILABLE)
   photo          String?
   cylinder       Int?
-  bodyWork       String?
+  bodyWork       BodyWorkType?
   engineNumber   String?
   chasisNumber   String?
   ownerCard      String?
@@ -315,10 +322,10 @@ model Vehicle {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  brand              VehicleBrand        @relation(fields: [brandId], references: [id])
-  line               VehicleLine         @relation(fields: [lineId], references: [id])
-  type               VehicleType         @relation(fields: [typeId], references: [id])
+  tenant             Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  brand              VehicleBrand            @relation(fields: [brandId], references: [id])
+  line               VehicleLine             @relation(fields: [lineId], references: [id])
+  type               VehicleType             @relation(fields: [typeId], references: [id])
   documents          Document[]
   workOrders         WorkOrder[]
   odometerLogs       OdometerLog[]
@@ -328,9 +335,11 @@ model Vehicle {
   fuelVouchers       FuelVoucher[]
   itemAssignments    VehicleItemAssignment[]
   itemAlerts         SerializedItemAlert[]
+  incidentAlerts     IncidentAlert[]
+  dailyChecklists    DailyChecklist[]
   costCenterId       String?
-  costCenter         CostCenter?         @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
-  axleConfig         String?             @default("STANDARD_4")
+  costCenter         CostCenter?             @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
+  axleConfig         String?                 @default("STANDARD_4")
 
   @@unique([tenantId, licensePlate])
   @@index([tenantId])
@@ -362,13 +371,13 @@ model MantCategory {
 }
 
 model MantItem {
-  id          String   @id @default(uuid())
+  id          String  @id @default(uuid())
   tenantId    String? // Nullable: NULL = global, populated = tenant-specific
-  isGlobal    Boolean  @default(false) // Global Knowledge Base flag
+  isGlobal    Boolean @default(false) // Global Knowledge Base flag
   name        String
   description String?
   categoryId  String
-  status      Status   @default(ACTIVE)
+  status      Status  @default(ACTIVE)
 
   // Discriminación de tipo: PART = repuesto facturable, SERVICE = labor/servicio
   type ItemType @default(SERVICE)
@@ -388,7 +397,7 @@ model MantItem {
   vehicleProgramItems VehicleProgramItem[] // ✅ CURRENT ARCHITECTURE
   vehicleParts        MantItemVehiclePart[] // KB: repuestos por marca/línea/año
   purchaseOrderItems  PurchaseOrderItem[]
-  procedures          MantItemProcedure[]   // KB: procedimientos de labor
+  procedures          MantItemProcedure[] // KB: procedimientos de labor
 
   @@unique([tenantId, name])
   @@index([categoryId])
@@ -508,7 +517,7 @@ model TemparioItem {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  tempario       Tempario               @relation(fields: [temparioId], references: [id], onDelete: Cascade)
+  tempario       Tempario                @relation(fields: [temparioId], references: [id], onDelete: Cascade)
   procedureSteps MantItemProcedureStep[]
   subTasks       WorkOrderSubTask[]
 
@@ -571,25 +580,28 @@ model MaintenanceTemplate {
   id             String   @id @default(uuid())
   tenantId       String? // Nullable: NULL = global, populated = tenant-specific
   isGlobal       Boolean  @default(false) // Global Knowledge Base flag
-  name           String // "Toyota Hilux Standard", "Ford Ranger Heavy Duty"
+  name           String
   description    String?
-  vehicleBrandId String // Requerido: específico para una marca
-  vehicleLineId  String // Requerido: específico para una línea
-  version        String   @default("1.0") // Para tracking de versiones
-  isDefault      Boolean  @default(false) // Template por defecto para esta marca/línea
+  vehicleTypeId  String // Requerido: tipo de vehículo RUNT (clasificación nacional)
+  vehicleBrandId String? // Opcional: específico para una marca
+  vehicleLineId  String? // Opcional: específico para una línea
+  version        String   @default("1.0")
+  isDefault      Boolean  @default(false)
   clonedFromId   String? // Traceability: ID del template global del que fue clonado
   status         Status   @default(ACTIVE)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  tenant     Tenant?               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  brand      VehicleBrand          @relation(fields: [vehicleBrandId], references: [id])
-  line       VehicleLine           @relation(fields: [vehicleLineId], references: [id])
-  packages   MaintenancePackage[]
-  clonedFrom MaintenanceTemplate?  @relation("TemplateClones", fields: [clonedFromId], references: [id])
-  clones     MaintenanceTemplate[] @relation("TemplateClones")
+  tenant      Tenant?               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicleType VehicleType           @relation(fields: [vehicleTypeId], references: [id])
+  brand       VehicleBrand?         @relation(fields: [vehicleBrandId], references: [id])
+  line        VehicleLine?          @relation(fields: [vehicleLineId], references: [id])
+  packages    MaintenancePackage[]
+  clonedFrom  MaintenanceTemplate?  @relation("TemplateClones", fields: [clonedFromId], references: [id])
+  clones      MaintenanceTemplate[] @relation("TemplateClones")
 
   @@unique([tenantId, name])
+  @@index([vehicleTypeId])
   @@index([vehicleBrandId])
   @@index([vehicleLineId])
   @@index([isDefault])
@@ -706,6 +718,7 @@ model WorkOrder {
   invoices               Invoice[] // ✅ Facturas vinculadas a esta WO
   internalWorkTickets    InternalWorkTicket[]
   purchaseOrders         PurchaseOrder[]
+  incidentAlerts         IncidentAlert[]
   costCenterId           String?
   costCenterRef          CostCenter?             @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
 
@@ -760,15 +773,15 @@ model WorkOrderItem {
   provider   Provider? @relation(fields: [providerId], references: [id])
 
   // Campos legacy
-  cost             Decimal?        @db.Decimal(10, 2)
-  executionMileage Int?
-  notes            String?
-  status           WorkOrderStatus @default(PENDING)
+  cost                  Decimal?        @db.Decimal(10, 2)
+  executionMileage      Int?
+  notes                 String?
+  status                WorkOrderStatus @default(PENDING)
   technicianId          String?
-  indirectHours         Decimal? @db.Decimal(6, 2)
+  indirectHours         Decimal?        @db.Decimal(6, 2)
   indirectJustification String?
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
 
   workOrder          WorkOrder           @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
   mantItem           MantItem?           @relation(fields: [mantItemId], references: [id])
@@ -778,7 +791,7 @@ model WorkOrderItem {
   ticketPartEntries  TicketPartEntry[]
   purchaseOrderItems PurchaseOrderItem[]
   workOrderSubTasks  WorkOrderSubTask[]
-  technician Technician? @relation(fields: [technicianId], references: [id])
+  technician         Technician?         @relation(fields: [technicianId], references: [id])
 
   @@index([technicianId])
   @@index([workOrderId])
@@ -874,9 +887,9 @@ model AuditLog {
   tenantId   String
   actorId    String
   action     AuditAction
-  resource   String      // e.g. "User", "WorkOrder"
+  resource   String // e.g. "User", "WorkOrder"
   resourceId String?
-  changes    Json?       // { before: ..., after: ... }
+  changes    Json? // { before: ..., after: ... }
   createdAt  DateTime    @default(now())
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -899,13 +912,12 @@ model MasterPart {
   isGlobal Boolean @default(false) // Global Knowledge Base flag
 
   // Identificación
-  code        String // "BOSCH-123", "SHELL-5W40-SYNT"
-  description String // "Filtro aceite motor BOSCH"
-  category    String // "FILTROS", "ACEITES", "LUBRICANTES"
-  subcategory String? // "FILTROS_ACEITE", "FILTROS_AIRE"
-  unit        String  @default("UNIDAD") // "UNIDAD", "LITRO", "GALÓN", "KG"
+  code           String // "BOSCH-123", "SHELL-5W40-SYNT"
+  description    String // "Filtro aceite motor BOSCH"
+  category       String // "FILTROS", "ACEITES", "LUBRICANTES"
+  subcategory    String? // "FILTROS_ACEITE", "FILTROS_AIRE"
+  unit           String              @default("UNIDAD") // "UNIDAD", "LITRO", "GALÓN", "KG"
   serializedType SerializedItemType? // NULL = No serializable, TIRE = Neumático, etc.
-
 
   // Precio referencia (último conocido)
   referencePrice  Decimal?  @db.Decimal(10, 2)
@@ -1055,7 +1067,7 @@ model InvoiceItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   serializedItems SerializedItem[]
 
   @@index([invoiceId])
@@ -1338,10 +1350,13 @@ model Driver {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  odometerLogs   OdometerLog[]
-  vehicleDrivers VehicleDriver[]
-  fuelVouchers   FuelVoucher[]
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  odometerLogs    OdometerLog[]
+  vehicleDrivers  VehicleDriver[]
+  fuelVouchers    FuelVoucher[]
+  incidentAlerts  IncidentAlert[]
+  dailyChecklists DailyChecklist[]
+  trainings       DriverTraining[]
 
   userId String? @unique
   user   User?   @relation(fields: [userId], references: [id])
@@ -1381,21 +1396,21 @@ model VehicleDriver {
 // ========================================
 
 model OdometerLog {
-  id             String              @id @default(uuid())
-  vehicleId      String
-  driverId       String?
-  tenantId       String
-  kilometers     Int?
-  hours          Int?
-  measureType    OdometerMeasureType @default(KILOMETERS)
-  recordedAt     DateTime            @default(now())
-  createdAt      DateTime            @default(now())
-  fuelVoucherId  String?             @unique
+  id            String              @id @default(uuid())
+  vehicleId     String
+  driverId      String?
+  tenantId      String
+  kilometers    Int?
+  hours         Int?
+  measureType   OdometerMeasureType @default(KILOMETERS)
+  recordedAt    DateTime            @default(now())
+  createdAt     DateTime            @default(now())
+  fuelVoucherId String?             @unique
 
-  vehicle      Vehicle      @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-  driver       Driver?      @relation(fields: [driverId], references: [id])
-  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  fuelVoucher  FuelVoucher? @relation(fields: [fuelVoucherId], references: [id])
+  vehicle     Vehicle      @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  driver      Driver?      @relation(fields: [driverId], references: [id])
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  fuelVoucher FuelVoucher? @relation(fields: [fuelVoucherId], references: [id])
 
   @@index([vehicleId])
   @@index([driverId])
@@ -1537,7 +1552,7 @@ model FinancialAlert {
 model WatchdogConfiguration {
   id        String   @id @default(uuid())
   tenantId  String
-  category  String?  // null = global (applies to all categories)
+  category  String? // null = global (applies to all categories)
   threshold Decimal  @default(10) @db.Decimal(5, 2) // percentage, e.g. 15 = 15%
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -1597,13 +1612,26 @@ model DocumentTypeConfig {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  tenant    Tenant?    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  documents Document[]
+  tenant       Tenant?               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  documents    Document[]
+  requirements DocumentRequirement[]
 
   @@unique([tenantId, code])
   @@index([isGlobal])
   @@index([countryCode])
   @@index([status])
+}
+
+model DocumentRequirement {
+  id             String  @id @default(uuid())
+  documentTypeId String
+  vehicleTypeId  String
+  isMandatory    Boolean @default(true)
+
+  documentType DocumentTypeConfig @relation(fields: [documentTypeId], references: [id], onDelete: Cascade)
+  vehicleType  VehicleType        @relation(fields: [vehicleTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([documentTypeId, vehicleTypeId])
 }
 
 // ========================================
@@ -1777,8 +1805,8 @@ enum SubscriptionStatus {
 }
 
 enum TenantPlan {
-  STARTER    // Flota básica + mantenimiento
-  GROWTH     // + Inventario + OC + Facturación
+  STARTER // Flota básica + mantenimiento
+  GROWTH // + Inventario + OC + Facturación
   ENTERPRISE // + Integraciones + Multi-sucursal + Reportes avanzados
 }
 
@@ -1828,6 +1856,35 @@ enum ServiceType {
   PUBLICO
   PARTICULAR
   OFICIAL
+}
+
+enum BodyWorkType {
+  SEDAN
+  COUPE
+  HATCHBACK
+  FAMILIAR
+  CONVERTIBLE
+  PICK_UP
+  CAMPERO
+  VAN
+  FURGON
+  MICROBUS
+  BUSETA
+  BUS
+  CAMION
+  VOLQUETA
+  TRACTOCAMION
+  CISTERNA
+  PLANCHON
+  GRUA
+  SEMIRREMOLQUE
+  REMOLQUE
+  MOTOCICLETA
+  MOTOCAR
+  TRICIMOTO
+  CUATRIMOTO
+  MAQUINARIA_AGRICOLA
+  MAQUINARIA_INDUSTRIAL
 }
 
 enum Status {
@@ -1969,7 +2026,7 @@ enum AlertCategory {
 // ========================================
 
 enum ItemType {
-  PART    // Repuesto facturable (filtro, aceite, etc.)
+  PART // Repuesto facturable (filtro, aceite, etc.)
   SERVICE // Labor/servicio (mano de obra + materiales del proveedor)
 }
 
@@ -2287,9 +2344,9 @@ model WorkOrderSubTask {
   standardHours Decimal? @db.Decimal(6, 2)
   directHours   Decimal? @db.Decimal(6, 2)
 
-  status    WorkOrderSubTaskStatus @default(PENDING)
-  sequence  Int                    @default(0)
-  notes     String?
+  status   WorkOrderSubTaskStatus @default(PENDING)
+  sequence Int                    @default(0)
+  notes    String?
 
   completedAt DateTime?
   createdAt   DateTime  @default(now())
@@ -2332,7 +2389,7 @@ enum VolumeUnit {
 model FuelVoucher {
   id            String              @id @default(uuid())
   tenantId      String
-  voucherNumber String              // COMB-YYYYMM-NNNNN, unique per tenant
+  voucherNumber String // COMB-YYYYMM-NNNNN, unique per tenant
   vehicleId     String
   driverId      String?
   providerId    String?
@@ -2344,14 +2401,14 @@ model FuelVoucher {
   pricePerUnit  Decimal?            @db.Decimal(10, 4)
   totalAmount   Decimal?            @db.Decimal(12, 2)
   notes         String?
-  createdBy     String              // Clerk userId of admin who entered the record
+  createdBy     String // Clerk userId of admin who entered the record
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
 
-  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  vehicle     Vehicle   @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-  driver      Driver?   @relation(fields: [driverId], references: [id])
-  provider    Provider? @relation(fields: [providerId], references: [id])
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicle     Vehicle      @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  driver      Driver?      @relation(fields: [driverId], references: [id])
+  provider    Provider?    @relation(fields: [providerId], references: [id])
   odometerLog OdometerLog?
 
   @@unique([tenantId, voucherNumber])
@@ -2383,27 +2440,27 @@ enum SerializedItemAlertStatus {
 }
 
 model SerializedItem {
-  id          String               @id @default(uuid())
-  tenantId    String
-  tenant      Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   invoiceItemId String?
-  invoiceItem   InvoiceItem?       @relation(fields: [invoiceItemId], references: [id], onDelete: SetNull)
+  invoiceItem   InvoiceItem? @relation(fields: [invoiceItemId], references: [id], onDelete: SetNull)
 
-  serialNumber  String
-  batchNumber   String?
+  serialNumber String
+  batchNumber  String?
 
-  type          SerializedItemType
-  status        SerializedItemStatus @default(IN_STOCK)
+  type   SerializedItemType
+  status SerializedItemStatus @default(IN_STOCK)
 
-  receivedAt    DateTime            @default(now())
-  retiredAt     DateTime?
+  receivedAt DateTime  @default(now())
+  retiredAt  DateTime?
 
-  specs         Json?
-  notes         String?
+  specs Json?
+  notes String?
 
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   events             SerializedItemEvent[]
   vehicleAssignments VehicleItemAssignment[]
@@ -2418,24 +2475,24 @@ model SerializedItem {
 }
 
 model SerializedItemEvent {
-  id               String   @id @default(uuid())
-  tenantId         String
-  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   serializedItemId String
   serializedItem   SerializedItem @relation(fields: [serializedItemId], references: [id], onDelete: Cascade)
 
-  eventType        String
+  eventType String
 
-  performedAt      DateTime @default(now())
-  performedById    String
-  performer        User     @relation(fields: [performedById], references: [id])
+  performedAt   DateTime @default(now())
+  performedById String
+  performer     User     @relation(fields: [performedById], references: [id])
 
-  vehicleKm        Int?
-  specs            Json?
-  notes            String?
+  vehicleKm Int?
+  specs     Json?
+  notes     String?
 
-  createdAt        DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([tenantId])
   @@index([serializedItemId])
@@ -2443,50 +2500,50 @@ model SerializedItemEvent {
 }
 
 model VehicleItemAssignment {
-  id               String   @id @default(uuid())
-  tenantId         String
-  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  vehicleId        String
-  vehicle          Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  vehicleId String
+  vehicle   Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
 
   serializedItemId String
   serializedItem   SerializedItem @relation(fields: [serializedItemId], references: [id], onDelete: Cascade)
 
-  position         String?
+  position String?
 
-  installedAt      DateTime @default(now())
-  removedAt        DateTime?
+  installedAt DateTime  @default(now())
+  removedAt   DateTime?
 
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
+  @@unique([serializedItemId, removedAt])
   @@index([tenantId])
   @@index([vehicleId])
   @@index([serializedItemId])
-  @@unique([serializedItemId, removedAt])
 }
 
 model SerializedItemAlert {
-  id               String                    @id @default(uuid())
-  tenantId         String
-  tenant           Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   serializedItemId String
-  serializedItem   SerializedItem            @relation(fields: [serializedItemId], references: [id], onDelete: Cascade)
+  serializedItem   SerializedItem @relation(fields: [serializedItemId], references: [id], onDelete: Cascade)
 
-  vehicleId        String?
-  vehicle          Vehicle?                  @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  vehicleId String?
+  vehicle   Vehicle? @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
 
-  alertType        String
+  alertType String
 
-  status           SerializedItemAlertStatus @default(ACTIVE)
-  message          String
+  status  SerializedItemAlertStatus @default(ACTIVE)
+  message String
 
-  createdAt        DateTime                  @default(now())
-  resolvedAt       DateTime?
-  resolvedById     String?
-  resolver         User?                     @relation("AlertResolver", fields: [resolvedById], references: [id])
+  createdAt    DateTime  @default(now())
+  resolvedAt   DateTime?
+  resolvedById String?
+  resolver     User?     @relation("AlertResolver", fields: [resolvedById], references: [id])
 
   @@index([tenantId, status])
   @@index([serializedItemId, status])
@@ -2500,4 +2557,155 @@ model ProcessedWebhookEvent {
   processedAt DateTime @default(now())
 
   @@index([processedAt])
+}
+
+// ========================================
+// HSEQ — Health, Safety, Environment, Quality
+// ========================================
+
+model IncidentAlert {
+  id          String              @id @default(uuid())
+  tenantId    String
+  clientUuid  String
+  code        String?
+  vehicleId   String
+  driverId    String?
+  reportedBy  String
+  description String
+  photoUrl    String?
+  latitude    Float?
+  longitude   Float?
+  severity    AlertLevel
+  status      IncidentAlertStatus @default(REPORTED)
+  workOrderId String?
+  dismissedBy String?
+  dismissNote String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicle   Vehicle    @relation(fields: [vehicleId], references: [id])
+  driver    Driver?    @relation(fields: [driverId], references: [id])
+  workOrder WorkOrder? @relation(fields: [workOrderId], references: [id])
+
+  @@unique([tenantId, clientUuid])
+  @@index([tenantId])
+  @@index([vehicleId])
+  @@index([status])
+  @@index([severity])
+  @@index([createdAt])
+}
+
+model DailyChecklist {
+  id         String          @id @default(uuid())
+  tenantId   String
+  clientUuid String
+  code       String?
+  vehicleId  String
+  driverId   String
+  odometer   Int
+  status     ChecklistStatus @default(OK)
+  notes      String?
+  createdAt  DateTime        @default(now())
+
+  templateId String?
+
+  tenant   Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicle  Vehicle            @relation(fields: [vehicleId], references: [id])
+  driver   Driver             @relation(fields: [driverId], references: [id])
+  template ChecklistTemplate? @relation(fields: [templateId], references: [id])
+  items    ChecklistItem[]
+
+  @@unique([tenantId, clientUuid])
+  @@index([tenantId])
+  @@index([vehicleId])
+  @@index([driverId])
+  @@index([createdAt])
+}
+
+model ChecklistItem {
+  id          String              @id @default(uuid())
+  checklistId String
+  category    String
+  label       String
+  status      ChecklistItemStatus
+  notes       String?
+
+  checklist DailyChecklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+
+  @@index([checklistId])
+}
+
+model DriverTraining {
+  id             String    @id @default(uuid())
+  tenantId       String
+  driverId       String
+  courseName     String
+  completedAt    DateTime
+  expiresAt      DateTime?
+  certificateUrl String?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  driver Driver @relation(fields: [driverId], references: [id])
+
+  @@index([tenantId])
+  @@index([driverId])
+  @@index([expiresAt])
+}
+
+model ChecklistTemplate {
+  id            String   @id @default(uuid())
+  tenantId      String? // NULL = global (SUPER_ADMIN), populated = copia tenant
+  isGlobal      Boolean  @default(false)
+  name          String
+  vehicleTypeId String // FK a VehicleType (debe ser isGlobal=true para globales)
+  countryCode   String? // NULL = todos los países
+  isActive      Boolean  @default(true)
+  clonedFromId  String? // referencia al global del que se clonó
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenant      Tenant?                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicleType VehicleType             @relation(fields: [vehicleTypeId], references: [id])
+  clonedFrom  ChecklistTemplate?      @relation("TemplateClones", fields: [clonedFromId], references: [id])
+  clones      ChecklistTemplate[]     @relation("TemplateClones")
+  items       ChecklistTemplateItem[]
+  checklists  DailyChecklist[]
+
+  @@index([tenantId])
+  @@index([vehicleTypeId])
+  @@index([isGlobal])
+  @@index([isActive])
+}
+
+model ChecklistTemplateItem {
+  id         String  @id @default(uuid())
+  templateId String
+  category   String
+  label      String
+  isRequired Boolean @default(true)
+  order      Int     @default(0)
+
+  template ChecklistTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId])
+}
+
+enum IncidentAlertStatus {
+  REPORTED
+  REVIEWED
+  WO_CREATED
+  DISMISSED
+}
+
+enum ChecklistStatus {
+  OK
+  OBSERVATION
+  CRITICAL
+}
+
+enum ChecklistItemStatus {
+  OK
+  OBSERVATION
+  CRITICAL
 }
