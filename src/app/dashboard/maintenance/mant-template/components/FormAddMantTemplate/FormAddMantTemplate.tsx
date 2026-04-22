@@ -36,6 +36,7 @@ import {
   FormAddMantTemplateProps,
   VehicleBrand,
   VehicleLine,
+  VehicleType,
 } from './FormAddMantTemplate.types';
 
 // Schema para MantTemplate
@@ -44,12 +45,11 @@ const formSchema = z.object({
     message: 'El nombre debe tener al menos 2 caracteres',
   }),
   description: z.string().optional(),
-  vehicleBrandId: z.string().min(1).min(1, {
-    message: 'Debe seleccionar una marca de vehículo',
+  vehicleTypeId: z.string().min(1, {
+    message: 'Debe seleccionar un tipo de vehículo',
   }),
-  vehicleLineId: z.string().min(1).min(1, {
-    message: 'Debe seleccionar una línea de vehículo',
-  }),
+  vehicleBrandId: z.string().optional(),
+  vehicleLineId: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -60,8 +60,10 @@ export function FormAddMantTemplate({
   onAddTemplate,
 }: FormAddMantTemplateProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingTypes, setIsLoadingTypes] = useState(true);
   const [isLoadingBrands, setIsLoadingBrands] = useState(true);
   const [isLoadingLines, setIsLoadingLines] = useState(false);
+  const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
   const [vehicleBrands, setVehicleBrands] = useState<VehicleBrand[]>([]);
   const [vehicleLines, setVehicleLines] = useState<VehicleLine[]>([]);
   const [filteredLines, setFilteredLines] = useState<VehicleLine[]>([]);
@@ -71,6 +73,7 @@ export function FormAddMantTemplate({
     defaultValues: {
       name: '',
       description: '',
+      vehicleTypeId: '',
       vehicleBrandId: '',
       vehicleLineId: '',
     },
@@ -81,6 +84,30 @@ export function FormAddMantTemplate({
 
   // Watch para filtrar líneas cuando cambia la marca
   const selectedBrandId = form.watch('vehicleBrandId');
+
+  // Fetch vehicle types when dialog opens
+  useEffect(() => {
+    const fetchTypes = async () => {
+      try {
+        setIsLoadingTypes(true);
+        const response = await axios.get('/api/vehicles/types');
+        setVehicleTypes(response.data);
+      } catch (error) {
+        console.error('Error al cargar los tipos de vehículo:', error);
+        toast({
+          title: 'Error',
+          description: 'No se pudieron cargar los tipos de vehículo',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoadingTypes(false);
+      }
+    };
+
+    if (isOpen) {
+      fetchTypes();
+    }
+  }, [isOpen, toast]);
 
   // Fetch brands when dialog opens
   useEffect(() => {
@@ -206,6 +233,7 @@ export function FormAddMantTemplate({
     if (!isOpen) {
       form.reset();
       setFilteredLines([]);
+      setVehicleTypes([]);
     }
   }, [isOpen, form]);
 
@@ -257,13 +285,55 @@ export function FormAddMantTemplate({
               )}
             />
 
+            {/* Tipo de Vehículo */}
+            <FormField
+              control={form.control}
+              name="vehicleTypeId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo de Vehículo</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value || ''}
+                    disabled={isLoading || isLoadingTypes}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={
+                            isLoadingTypes
+                              ? 'Cargando tipos...'
+                              : 'Seleccione un tipo'
+                          }
+                        />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {vehicleTypes.length === 0 && !isLoadingTypes ? (
+                        <SelectItem value="no-types" disabled>
+                          No hay tipos disponibles
+                        </SelectItem>
+                      ) : (
+                        vehicleTypes.map((vt: VehicleType) => (
+                          <SelectItem key={vt.id} value={vt.id}>
+                            {vt.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             {/* Marca de Vehículo */}
             <FormField
               control={form.control}
               name="vehicleBrandId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Marca de Vehículo</FormLabel>
+                  <FormLabel>Marca de Vehículo (Opcional)</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     value={field.value || ''}
@@ -308,7 +378,7 @@ export function FormAddMantTemplate({
               name="vehicleLineId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Línea de Vehículo</FormLabel>
+                  <FormLabel>Línea de Vehículo (Opcional)</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     value={field.value || ''}
@@ -364,7 +434,12 @@ export function FormAddMantTemplate({
               </Button>
               <Button
                 type="submit"
-                disabled={isLoading || isLoadingBrands || isLoadingLines}
+                disabled={
+                  isLoading ||
+                  isLoadingTypes ||
+                  isLoadingBrands ||
+                  isLoadingLines
+                }
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isLoading ? 'Creando...' : 'Crear Template'}

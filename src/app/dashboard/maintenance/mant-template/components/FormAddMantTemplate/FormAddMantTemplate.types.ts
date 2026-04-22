@@ -4,24 +4,34 @@ export interface FormAddMantTemplateProps {
   onAddTemplate: (template: MantTemplateResponse) => void;
 }
 
+export interface VehicleType {
+  id: string;
+  name: string;
+}
+
 export interface MantTemplateResponse {
   id: string;
   tenantId: string;
   name: string;
   description?: string | null;
-  vehicleBrandId: string;
-  vehicleLineId: string;
+  vehicleTypeId: string;
+  vehicleBrandId: string | null;
+  vehicleLineId: string | null;
   status: 'ACTIVE' | 'INACTIVE';
   createdAt: string;
   updatedAt: string;
+  vehicleType: {
+    id: string;
+    name: string;
+  };
   brand: {
     id: string;
     name: string;
-  };
+  } | null;
   line: {
     id: string;
     name: string;
-  };
+  } | null;
   planTasks: {
     id: string;
     planId: number;
