@@ -139,19 +139,23 @@ function TemplateCard({
         </div>
 
         <div className="space-y-2 mb-3">
-          <div className="flex items-center gap-2">
-            <Badge
-              variant="outline"
-              className="bg-blue-50 text-blue-700 text-xs px-2 py-0"
-            >
-              {template.brand.name}
-            </Badge>
-            <Badge
-              variant="outline"
-              className="bg-purple-50 text-purple-700 text-xs px-2 py-0"
-            >
-              {template.line.name}
-            </Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            {template.brand && (
+              <Badge
+                variant="outline"
+                className="bg-blue-50 text-blue-700 text-xs px-2 py-0"
+              >
+                {template.brand.name}
+              </Badge>
+            )}
+            {template.line && (
+              <Badge
+                variant="outline"
+                className="bg-purple-50 text-purple-700 text-xs px-2 py-0"
+              >
+                {template.line.name}
+              </Badge>
+            )}
           </div>
 
           <div className="flex items-center justify-between">
@@ -161,10 +165,11 @@ function TemplateCard({
             </div>
             <Badge
               variant={template.status === 'ACTIVE' ? 'default' : 'secondary'}
-              className={`text-xs ${template.status === 'ACTIVE'
-                ? 'bg-green-100 text-green-800'
-                : 'bg-gray-100 text-gray-800'
-                }`}
+              className={`text-xs ${
+                template.status === 'ACTIVE'
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-gray-100 text-gray-800'
+              }`}
             >
               {template.status === 'ACTIVE' ? 'Activo' : 'Inactivo'}
             </Badge>
@@ -441,25 +446,37 @@ export function MantTemplatesList() {
       .length,
   };
 
-  const safePackages = Array.isArray(packages) ? packages : (packages as any)?.data ? ((packages as any).data as MaintenancePackage[]) : [];
+  const safePackages = Array.isArray(packages)
+    ? packages
+    : (packages as any)?.data
+      ? ((packages as any).data as MaintenancePackage[])
+      : [];
   const packageMetrics = selectedTemplate
     ? {
-      total: safePackages.length,
-      preventive: safePackages.filter(p => p.packageType === 'PREVENTIVE').length,
-      corrective: safePackages.filter(p => p.packageType === 'CORRECTIVE').length,
-      predictive: safePackages.filter(p => p.packageType === 'PREDICTIVE').length,
-    }
+        total: safePackages.length,
+        preventive: safePackages.filter(p => p.packageType === 'PREVENTIVE')
+          .length,
+        corrective: safePackages.filter(p => p.packageType === 'CORRECTIVE')
+          .length,
+        predictive: safePackages.filter(p => p.packageType === 'PREDICTIVE')
+          .length,
+      }
     : null;
 
-  const safePackageItems = Array.isArray(packageItems) ? packageItems : (packageItems as any)?.data ? ((packageItems as any).data as PackageItem[]) : [];
+  const safePackageItems = Array.isArray(packageItems)
+    ? packageItems
+    : (packageItems as any)?.data
+      ? ((packageItems as any).data as PackageItem[])
+      : [];
   const itemMetrics = selectedPackage
     ? {
-      total: safePackageItems.length,
-      low: safePackageItems.filter(i => i.priority === 'LOW').length,
-      medium: safePackageItems.filter(i => i.priority === 'MEDIUM').length,
-      high: safePackageItems.filter(i => i.priority === 'HIGH').length,
-      critical: safePackageItems.filter(i => i.priority === 'CRITICAL').length,
-    }
+        total: safePackageItems.length,
+        low: safePackageItems.filter(i => i.priority === 'LOW').length,
+        medium: safePackageItems.filter(i => i.priority === 'MEDIUM').length,
+        high: safePackageItems.filter(i => i.priority === 'HIGH').length,
+        critical: safePackageItems.filter(i => i.priority === 'CRITICAL')
+          .length,
+      }
     : null;
 
   // Columnas para templates (no usado - usando grid de cards en su lugar)
@@ -731,12 +748,12 @@ export function MantTemplatesList() {
     const matchesSearch =
       searchTerm === '' ||
       t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.brand.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.line.name.toLowerCase().includes(searchTerm.toLowerCase());
+      (t.brand?.name ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (t.line?.name ?? '').toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesBrand =
       selectedBrandFilter === 'all' ||
-      t.brand.id.toString() === selectedBrandFilter;
+      (t.brand?.id ?? '').toString() === selectedBrandFilter;
 
     return matchesSearch && matchesBrand;
   });
@@ -966,8 +983,12 @@ export function MantTemplatesList() {
                         {selectedTemplate.name}
                       </h3>
                       <p className="text-green-600 text-xs">
-                        {selectedTemplate.brand.name} -{' '}
-                        {selectedTemplate.line.name}
+                        {[
+                          selectedTemplate.brand?.name,
+                          selectedTemplate.line?.name,
+                        ]
+                          .filter(Boolean)
+                          .join(' — ')}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -1045,9 +1066,9 @@ export function MantTemplatesList() {
                                 {header.isPlaceholder
                                   ? null
                                   : flexRender(
-                                    header.column.columnDef.header,
-                                    header.getContext()
-                                  )}
+                                      header.column.columnDef.header,
+                                      header.getContext()
+                                    )}
                               </TableHead>
                             ))}
                           </TableRow>
@@ -1193,9 +1214,9 @@ export function MantTemplatesList() {
                                   {header.isPlaceholder
                                     ? null
                                     : flexRender(
-                                      header.column.columnDef.header,
-                                      header.getContext()
-                                    )}
+                                        header.column.columnDef.header,
+                                        header.getContext()
+                                      )}
                                 </TableHead>
                               ))}
                             </TableRow>

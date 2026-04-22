@@ -24,6 +24,12 @@ export async function GET(
         id: mantTemplateId,
       },
       include: {
+        vehicleType: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         brand: {
           select: {
             id: true,
@@ -108,7 +114,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
-    const { name, description, vehicleBrandId, vehicleLineId } =
+    const { name, description, vehicleTypeId, vehicleBrandId, vehicleLineId } =
       await req.json();
 
     // Validación de campos requeridos
@@ -119,21 +125,7 @@ export async function PATCH(
       );
     }
 
-    if (!vehicleBrandId) {
-      return NextResponse.json(
-        { error: 'La marca del vehículo es requerida' },
-        { status: 400 }
-      );
-    }
-
-    if (!vehicleLineId) {
-      return NextResponse.json(
-        { error: 'La línea del vehículo es requerida' },
-        { status: 400 }
-      );
-    }
-
-    // Verificar que el template existe y pertenece al tenant
+    // Verificar que el template existe
     const existingTemplate = await tenantPrisma.maintenanceTemplate.findFirst({
       where: {
         id: mantTemplateId,
@@ -147,56 +139,30 @@ export async function PATCH(
       );
     }
 
-    // Verificar que la marca existe y pertenece al tenant
-    const brand = await tenantPrisma.vehicleBrand.findFirst({
-      where: {
-        id: vehicleBrandId,
-      },
-    });
-
-    if (!brand) {
-      return NextResponse.json(
-        { error: 'Marca de vehículo no encontrada' },
-        { status: 404 }
-      );
+    // Verificar vehicleType si se provee
+    if (vehicleTypeId) {
+      const vehicleType = await tenantPrisma.vehicleType.findFirst({
+        where: { id: vehicleTypeId },
+      });
+      if (!vehicleType) {
+        return NextResponse.json(
+          { error: 'Tipo de vehículo no encontrado' },
+          { status: 404 }
+        );
+      }
     }
 
-    // Verificar que la línea existe, pertenece al tenant y a la marca
-    const line = await tenantPrisma.vehicleLine.findFirst({
-      where: {
-        id: vehicleLineId,
-        brandId: vehicleBrandId,
-      },
-    });
-
-    if (!line) {
-      return NextResponse.json(
-        {
-          error:
-            'Línea de vehículo no encontrada o no pertenece a la marca especificada',
-        },
-        { status: 404 }
-      );
-    }
-
-    // Verificar que no exista otro template con el mismo nombre para la misma marca/línea (excluyendo el actual)
+    // Verificar que no exista otro template con el mismo nombre (excluyendo el actual)
     const duplicateTemplate = await tenantPrisma.maintenanceTemplate.findFirst({
       where: {
-        vehicleBrandId,
-        vehicleLineId,
         name: name.trim(),
-        id: {
-          not: mantTemplateId,
-        },
+        id: { not: mantTemplateId },
       },
     });
 
     if (duplicateTemplate) {
       return NextResponse.json(
-        {
-          error:
-            'Ya existe un template con este nombre para esta combinación de marca/línea',
-        },
+        { error: 'Ya existe un template con este nombre' },
         { status: 409 }
       );
     }
@@ -208,10 +174,17 @@ export async function PATCH(
       data: {
         name: name.trim(),
         description: description?.trim() || null,
-        vehicleBrandId,
-        vehicleLineId,
+        ...(vehicleTypeId ? { vehicleTypeId } : {}),
+        vehicleBrandId: vehicleBrandId || null,
+        vehicleLineId: vehicleLineId || null,
       },
       include: {
+        vehicleType: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         brand: {
           select: {
             id: true,
