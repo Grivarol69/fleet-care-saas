@@ -6,8 +6,8 @@ import { canManageMaintenancePrograms } from '@/lib/permissions';
 const cloneSchema = z.object({
   templateId: z.string(),
   name: z.string().min(1, 'Name is required'),
-  vehicleBrandId: z.string().min(1, 'Brand is required'),
-  vehicleLineId: z.string().min(1, 'Line is required'),
+  vehicleBrandId: z.string().optional(),
+  vehicleLineId: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -57,8 +57,9 @@ export async function POST(req: Request) {
       data: {
         name: body.name,
         description: sourceTemplate.description,
-        vehicleBrandId: body.vehicleBrandId,
-        vehicleLineId: body.vehicleLineId,
+        vehicleTypeId: sourceTemplate.vehicleTypeId,
+        vehicleBrandId: body.vehicleBrandId || null,
+        vehicleLineId: body.vehicleLineId || null,
         version: sourceTemplate.version,
         isDefault: false,
         clonedFromId: sourceTemplate.id,

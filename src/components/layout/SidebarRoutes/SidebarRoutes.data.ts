@@ -435,6 +435,11 @@ export const dataAdminSidebar: SidebarItem[] = [
           UserRole.COORDINATOR,
         ],
       },
+      {
+        label: 'Templates',
+        href: '/dashboard/hseq/templates',
+        roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.MANAGER],
+      },
     ],
   },
   {

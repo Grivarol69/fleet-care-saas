@@ -3,20 +3,25 @@ export type MantTemplatesListProps = {
   tenantId: string;
   name: string;
   description?: string | null;
-  vehicleBrandId: string;
-  vehicleLineId: string;
+  vehicleTypeId: string;
+  vehicleBrandId: string | null;
+  vehicleLineId: string | null;
   status: 'ACTIVE' | 'INACTIVE';
   createdAt: string;
   updatedAt: string;
   // Relaciones
+  vehicleType: {
+    id: string;
+    name: string;
+  };
   brand: {
     id: string;
     name: string;
-  };
+  } | null;
   line: {
     id: string;
     name: string;
-  };
+  } | null;
   packages?: MaintenancePackage[];
   planTasks?: PlanTaskProps[];
 };

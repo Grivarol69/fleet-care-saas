@@ -28,7 +28,7 @@ export function getTenantPrisma(tenantId: string) {
 
           const isGlobalModel = globalModels.has(model);
           // Clonamos de forma segura sin JSON.parse para no romper objetos tipo Date o Decimal
-          const argsClone: any = args ? { ...args } : {};
+          const argsClone: any = args ? { ...(args as any) } : {};
 
           // 1. Operaciones de ESCRITURA (create, createMany)
           if (operation === 'create') {

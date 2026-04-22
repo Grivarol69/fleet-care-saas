@@ -493,10 +493,14 @@ describe('Work Order PATCH — Role-Based Transition Guards', () => {
     const brand = await prisma.vehicleBrand.findFirst({ where: { tenantId } });
     const line = await prisma.vehicleLine.findFirst({ where: { tenantId } });
 
+    const vehicleType = await prisma.vehicleType.findFirst({
+      where: { tenantId },
+    });
     const template = await prisma.maintenanceTemplate.create({
       data: {
         tenantId,
         name: 'Guard Template',
+        vehicleTypeId: vehicleType!.id,
         vehicleBrandId: brand!.id,
         vehicleLineId: line!.id,
       },
