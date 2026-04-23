@@ -35,9 +35,9 @@ export async function GET() {
       );
     }
 
-    const assignment = await tp.vehicleDriver.findFirst({
+    const assignment = await tp.driverShift.findFirst({
       where: { driverId: driver.id, status: 'ACTIVE' },
-      orderBy: [{ isPrimary: 'desc' }, { startDate: 'desc' }],
+      orderBy: { startTime: 'desc' },
       include: {
         vehicle: {
           include: {
