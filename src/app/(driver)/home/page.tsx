@@ -9,7 +9,9 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { getTenantPrisma } from '@/lib/tenant-prisma';
-import { VehicleCard, VehicleCardEmpty } from '../_components/VehicleCard';
+import { VehicleCard } from '../_components/VehicleCard';
+import { endDriverShift } from '@/actions/driver';
+import { VehicleSituation } from '@prisma/client';
 
 async function getDriverData(userId: string, tenantId: string) {
   const tp = getTenantPrisma(tenantId);
@@ -23,9 +25,9 @@ async function getDriverData(userId: string, tenantId: string) {
       activeIncidents: [],
     };
 
-  const assignment = await tp.vehicleDriver.findFirst({
+  const assignment = await tp.driverShift.findFirst({
     where: { driverId: driver.id, status: 'ACTIVE' },
-    orderBy: [{ isPrimary: 'desc' }, { startDate: 'desc' }],
+    orderBy: { startTime: 'desc' },
     include: {
       vehicle: {
         include: {
@@ -84,10 +86,14 @@ const SEVERITY_COLOR: Record<string, string> = {
 
 export default async function HomeScreen() {
   const { user } = await requireCurrentUser();
-  if (!user) redirect('/sign-in');
+  if (!user) redirect('/home/login');
 
   const { driver, vehicle, todayChecklist, activeIncidents } =
     await getDriverData(user.id, user.tenantId);
+
+  if (!vehicle) {
+    redirect('/home/checkin');
+  }
 
   const now = new Date();
   const hour = now.getHours();
@@ -128,11 +134,9 @@ export default async function HomeScreen() {
             brandName={vehicle.brand?.name}
             lineName={vehicle.line?.name}
             lastOdometerKm={vehicle.odometerLogs[0]?.kilometers}
-            situation={vehicle.situation as any}
+            situation={vehicle.situation as VehicleSituation}
           />
-        ) : (
-          <VehicleCardEmpty />
-        )}
+        ) : null}
 
         {vehicle && (
           <div className="bg-white rounded-xl shadow-sm p-4">
@@ -219,6 +223,17 @@ export default async function HomeScreen() {
             </div>
           </div>
         )}
+
+        <div className="pt-6 border-t border-gray-200 mt-8">
+          <form action={endDriverShift}>
+            <button
+              type="submit"
+              className="w-full flex items-center justify-center py-4 bg-red-50 text-red-600 font-bold rounded-xl border border-red-100 active:bg-red-100 transition-colors"
+            >
+              Terminar Turno (Soltar Vehículo)
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
