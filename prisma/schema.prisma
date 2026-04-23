@@ -88,6 +88,7 @@ model Tenant {
   dailyChecklists        DailyChecklist[]
   driverTrainings        DriverTraining[]
   checklistTemplates     ChecklistTemplate[]
+  driverShifts           DriverShift[]
 
   @@index([slug])
   @@index([subscriptionStatus])
@@ -337,6 +338,7 @@ model Vehicle {
   itemAlerts         SerializedItemAlert[]
   incidentAlerts     IncidentAlert[]
   dailyChecklists    DailyChecklist[]
+  driverShifts       DriverShift[]
   costCenterId       String?
   costCenter         CostCenter?             @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
   axleConfig         String?                 @default("STANDARD_4")
@@ -1353,6 +1355,7 @@ model Driver {
   tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   odometerLogs    OdometerLog[]
   vehicleDrivers  VehicleDriver[]
+  driverShifts    DriverShift[]
   fuelVouchers    FuelVoucher[]
   incidentAlerts  IncidentAlert[]
   dailyChecklists DailyChecklist[]
@@ -1389,6 +1392,30 @@ model VehicleDriver {
   @@index([driverId])
   @@index([status])
   @@index([startDate])
+}
+
+model DriverShift {
+  id            String      @id @default(uuid())
+  tenantId      String
+  driverId      String
+  vehicleId     String
+  startTime     DateTime    @default(now())
+  endTime       DateTime?
+  startMileage  Int?
+  endMileage    Int?
+  status        ShiftStatus @default(ACTIVE)
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  tenant        Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  driver        Driver      @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  vehicle       Vehicle     @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([driverId])
+  @@index([vehicleId])
+  @@index([status])
 }
 
 // ========================================
@@ -2708,4 +2735,9 @@ enum ChecklistItemStatus {
   OK
   OBSERVATION
   CRITICAL
+}
+
+enum ShiftStatus {
+  ACTIVE
+  COMPLETED
 }

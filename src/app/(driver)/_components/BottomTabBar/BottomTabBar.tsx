@@ -13,6 +13,10 @@ const TABS = [
 export function BottomTabBar() {
   const pathname = usePathname();
 
+  if (pathname === '/home/login') {
+    return null;
+  }
+
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 flex items-center"
