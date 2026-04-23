@@ -41,7 +41,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { name, email, phone, licenseNumber, licenseExpiry } =
+    const { name, email, phone, licenseNumber, licenseExpiry, userId } =
       await req.json();
 
     if (!name || name.trim() === '') {
@@ -75,6 +75,7 @@ export async function POST(req: Request) {
         phone: phone?.trim() || null,
         licenseNumber: licenseNumber?.trim() || null,
         licenseExpiry: licenseExpiry ? new Date(licenseExpiry) : null,
+        userId: userId || null,
       },
     });
 

@@ -22,6 +22,10 @@ export default async function DashboardLayout({
     redirect('/onboarding');
   }
 
+  if (user.role === 'DRIVER') {
+    redirect('/home');
+  }
+
   return (
     <div className="flex w-full h-full">
       <div className="hidden h-full xl:block w-80 xl:fixed border-r">
