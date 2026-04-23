@@ -27,6 +27,7 @@ import { FormEditFleetVehicle } from '../FormEditFleetVehicle';
 import { VehicleCVViewer } from '../VehicleCV';
 import { SendCVDialog } from '../SendCVDialog';
 import { MaintenanceHistoryDialog } from '../MaintenanceHistory';
+import { AssignDriverDialog } from '../AssignDriverDialog';
 import axios from 'axios';
 import { useToast } from '@/components/hooks/use-toast';
 import Image from 'next/image';
@@ -41,6 +42,7 @@ import {
   Mail,
   MessageCircle,
   History,
+  UserCheck,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -78,6 +80,9 @@ export function FleetVehiclesList() {
     null
   );
   const [historyVehicleId, setHistoryVehicleId] = useState<string | null>(null);
+  const [assigningVehicle, setAssigningVehicle] = useState<FleetVehicle | null>(
+    null
+  );
   const [cvDocuments, setCvDocuments] = useState<CvDocument[]>([]);
   const [cvDocumentsLoading, setCvDocumentsLoading] = useState(false);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -362,6 +367,13 @@ export function FleetVehiclesList() {
                   </DropdownMenuItem>
 
                   <DropdownMenuItem
+                    onClick={() => setAssigningVehicle(vehicle)}
+                  >
+                    <UserCheck className="mr-2 h-4 w-4" />
+                    Asignar conductor
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
                     onClick={() => {
                       setSendingVehicleCV(vehicle);
                       setIsSendEmailDialogOpen(true);
@@ -419,9 +431,7 @@ export function FleetVehiclesList() {
       {/* Header con botones */}
       <div className="flex justify-between items-center">
         <Button asChild>
-          <Link href="/dashboard/vehicles/fleet/new">
-            Agregar Vehículo
-          </Link>
+          <Link href="/dashboard/vehicles/fleet/new">Agregar Vehículo</Link>
         </Button>
         <DownloadBtn data={data} fileName="vehiculos" />
       </div>
@@ -610,6 +620,16 @@ export function FleetVehiclesList() {
         <MaintenanceHistoryDialog
           vehicleId={historyVehicleId}
           onClose={() => setHistoryVehicleId(null)}
+        />
+      )}
+
+      {assigningVehicle && (
+        <AssignDriverDialog
+          isOpen={!!assigningVehicle}
+          setIsOpen={open => {
+            if (!open) setAssigningVehicle(null);
+          }}
+          vehicle={assigningVehicle}
         />
       )}
     </div>
