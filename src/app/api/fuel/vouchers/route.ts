@@ -126,6 +126,45 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Vehicle not found' }, { status: 404 });
     }
 
+    // Nivel 1: block if vehicle has a CRITICAL checklist today
+    // Nivel 2: block if vehicle has an active CRITICAL incident
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const [criticalChecklist, criticalIncident] = await Promise.all([
+      tenantPrisma.dailyChecklist.findFirst({
+        where: { vehicleId, status: 'CRITICAL', createdAt: { gte: today } },
+        select: { id: true },
+      }),
+      tenantPrisma.incidentAlert.findFirst({
+        where: {
+          vehicleId,
+          severity: 'CRITICAL',
+          status: { in: ['REPORTED', 'REVIEWED'] },
+        },
+        select: { id: true },
+      }),
+    ]);
+    if (criticalChecklist) {
+      return NextResponse.json(
+        {
+          error: 'VEHICLE_BLOCKED_CHECKLIST',
+          message:
+            'El vehículo tiene un checklist CRÍTICO hoy. Resuelva las observaciones antes de registrar combustible.',
+        },
+        { status: 409 }
+      );
+    }
+    if (criticalIncident) {
+      return NextResponse.json(
+        {
+          error: 'VEHICLE_BLOCKED_INCIDENT',
+          message:
+            'El vehículo tiene una novedad CRÍTICA activa. Resuelva el incidente antes de registrar combustible.',
+        },
+        { status: 409 }
+      );
+    }
+
     // Validate odometer > last reading for vehicle
     const lastReading = await tenantPrisma.odometerLog.findFirst({
       where: { vehicleId, measureType: 'KILOMETERS' },
