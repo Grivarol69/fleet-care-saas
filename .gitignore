@@ -95,3 +95,11 @@ docs/
 # Temporary scripts
 scripts/runt-*
 scripts/scrape-*
+
+# Seeds — datos internos/demo, no subir al repo público
+prisma/seed.ts
+prisma/seed.kb.ts
+prisma/seed-multitenancy.ts
+prisma/seed-staging-demo.ts
+prisma/seed-stress.ts
+prisma/seeds/
