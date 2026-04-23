@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
           { status: 404 }
         );
       }
-      const assignment = await tenantPrisma.vehicleDriver.findFirst({
+      const assignment = await tenantPrisma.driverShift.findFirst({
         where: { vehicleId, driverId: driver.id, status: 'ACTIVE' },
       });
       if (!assignment) {
