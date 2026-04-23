@@ -13,7 +13,7 @@ const withPWA = withPWAInit({
     aggressiveFrontEndNavCaching: true,
     reloadOnOnline: true,
     fallbacks: {
-        document: '/driver/home',
+        document: '/home',
     },
 });
 
@@ -157,12 +157,11 @@ const nextConfig: NextConfig = {
     // Configuración para redirects si es necesario
     async redirects() {
         return [
-            // Ejemplo: redirigir rutas antiguas si las tienes
-            // {
-            //   source: '/old-dashboard',
-            //   destination: '/dashboard',
-            //   permanent: true,
-            // },
+            {
+                source: '/',
+                destination: '/home',
+                permanent: false,
+            },
         ];
     },
 
