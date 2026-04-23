@@ -1,5 +1,12 @@
-import { redirect } from 'next/navigation';
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function DriverRoot() {
-  redirect('/home');
+  const router = useRouter();
+  useEffect(() => {
+    router.replace('/home');
+  }, [router]);
+  return null;
 }
