@@ -1,8 +1,20 @@
 import type { NextConfig } from 'next';
+import withPWAInit from '@ducanh2912/next-pwa';
 
 // Bundle analyzer
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
     enabled: process.env.ANALYZE === 'true',
+});
+
+const withPWA = withPWAInit({
+    dest: 'public',
+    disable: process.env.NODE_ENV === 'development',
+    cacheOnFrontEndNav: true,
+    aggressiveFrontEndNavCaching: true,
+    reloadOnOnline: true,
+    fallbacks: {
+        document: '/driver/home',
+    },
 });
 
 const nextConfig: NextConfig = {
@@ -180,4 +192,4 @@ const nextConfig: NextConfig = {
     output: 'standalone', // Para optimizar deployments en contenedores
 };
 
-export default withBundleAnalyzer(nextConfig);
+export default withBundleAnalyzer(withPWA(nextConfig));

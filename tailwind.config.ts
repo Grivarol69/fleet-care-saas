@@ -20,6 +20,20 @@ const config = {
     	},
     	extend: {
     		colors: {
+    			driver: {
+    				ok:          '#16A34A',
+    				'ok-fg':     '#FFFFFF',
+    				observation: '#D97706',
+    				'obs-fg':    '#FFFFFF',
+    				critical:    '#DC2626',
+    				'crit-fg':   '#FFFFFF',
+    				pending:     '#E2E8F0',
+    				'pend-fg':   '#64748B',
+    				header:      '#1E3A5F',
+    				'header-fg': '#F8FAFC',
+    				surface:     '#FFFFFF',
+    				bg:          '#F1F5F9',
+    			},
     			border: 'hsl(var(--border))',
     			input: 'hsl(var(--input))',
     			ring: 'hsl(var(--ring))',
@@ -67,6 +81,14 @@ const config = {
     			sm: 'calc(var(--radius) - 4px)'
     		},
     		keyframes: {
+    			'slide-in-right': {
+    				from: { transform: 'translateX(100%)' },
+    				to:   { transform: 'translateX(0)' },
+    			},
+    			'slide-out-left': {
+    				from: { transform: 'translateX(0)' },
+    				to:   { transform: 'translateX(-100%)' },
+    			},
     			'accordion-down': {
     				from: {
     					height: '0'
@@ -86,7 +108,9 @@ const config = {
     		},
     		animation: {
     			'accordion-down': 'accordion-down 0.2s ease-out',
-    			'accordion-up': 'accordion-up 0.2s ease-out'
+    			'accordion-up': 'accordion-up 0.2s ease-out',
+    			'slide-in-right': 'slide-in-right 0.2s ease-out',
+    			'slide-out-left': 'slide-out-left 0.2s ease-out',
     		}
     	}
     },

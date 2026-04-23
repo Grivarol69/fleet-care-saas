@@ -91,3 +91,7 @@ docs/
 !package.json
 !package-lock.json
 !tsconfig.json
+
+# Temporary scripts
+scripts/runt-*
+scripts/scrape-*
