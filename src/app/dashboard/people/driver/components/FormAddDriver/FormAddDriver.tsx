@@ -3,6 +3,7 @@
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect, useState } from 'react';
 
 import {
   Dialog,
@@ -20,6 +21,13 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 import axios from 'axios';
 import { useToast } from '@/components/hooks/use-toast';
@@ -27,11 +35,20 @@ import { useRouter } from 'next/navigation';
 import { formSchema } from './FormAddDriver.form';
 import { FormAddDriverProps } from './FormAddDriver.types';
 
+type AvailableUser = {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string;
+};
+
 export function FormAddDriver({
   isOpen,
   setIsOpen,
   onAddDriver,
 }: FormAddDriverProps) {
+  const [availableUsers, setAvailableUsers] = useState<AvailableUser[]>([]);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -40,11 +57,20 @@ export function FormAddDriver({
       phone: '',
       licenseNumber: '',
       licenseExpiry: '',
+      userId: '',
     },
   });
 
   const router = useRouter();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!isOpen) return;
+    axios
+      .get<AvailableUser[]>('/api/people/drivers/available-users')
+      .then(r => setAvailableUsers(r.data))
+      .catch(() => setAvailableUsers([]));
+  }, [isOpen]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
@@ -54,6 +80,7 @@ export function FormAddDriver({
         phone: values.phone || null,
         licenseNumber: values.licenseNumber || null,
         licenseExpiry: values.licenseExpiry || null,
+        userId: values.userId || null,
       });
 
       onAddDriver(response.data);
@@ -176,6 +203,42 @@ export function FormAddDriver({
                 </FormItem>
               )}
             />
+
+            {availableUsers.length > 0 && (
+              <FormField
+                control={form.control}
+                name="userId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cuenta de acceso PWA (opcional)</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sin cuenta vinculada" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {availableUsers.map(u => {
+                          const fullName = [u.firstName, u.lastName]
+                            .filter(Boolean)
+                            .join(' ');
+                          return (
+                            <SelectItem key={u.id} value={u.id}>
+                              {fullName || u.email}
+                              {fullName ? ` · ${u.email}` : ''}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <div className="flex justify-end space-x-2 pt-4">
               <Button
