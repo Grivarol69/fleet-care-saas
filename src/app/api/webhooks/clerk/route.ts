@@ -185,6 +185,26 @@ export async function POST(req: Request) {
           },
         });
         console.log(`[WEBHOOK] User upserted via membership: ${user.id}`);
+
+        // Auto-crear perfil Driver cuando el rol es DRIVER
+        if (dbRole === 'DRIVER') {
+          const fullName =
+            `${public_user_data.first_name || ''} ${public_user_data.last_name || ''}`.trim() ||
+            email;
+          await prisma.driver.upsert({
+            where: { userId: user.id },
+            create: {
+              tenantId: organization.id,
+              name: fullName,
+              email: email,
+              userId: user.id,
+            },
+            update: {},
+          });
+          console.log(
+            `[WEBHOOK] Driver profile auto-created for user: ${user.id}`
+          );
+        }
         break;
       }
 
