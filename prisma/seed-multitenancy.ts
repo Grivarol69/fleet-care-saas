@@ -155,6 +155,10 @@ async function main() {
   await prisma.vehicleProgramItem.deleteMany({});
   await prisma.vehicleProgramPackage.deleteMany({});
   await prisma.vehicleMantProgram.deleteMany({});
+  await prisma.checklistItem.deleteMany({});
+  await prisma.dailyChecklist.deleteMany({});
+  await prisma.checklistTemplateItem.deleteMany({});
+  await prisma.checklistTemplate.deleteMany({});
   await prisma.vehicleDriver.deleteMany({});
   await prisma.odometerLog.deleteMany({});
   await prisma.fuelVoucher.deleteMany({});
@@ -290,6 +294,150 @@ async function main() {
   const docTypeRegistration = await prisma.documentTypeConfig.findFirstOrThrow({
     where: { code: 'REGISTRATION', isGlobal: true },
   });
+
+  // ========================================
+  // STEP 2b: GLOBAL CHECKLIST TEMPLATES
+  // ========================================
+  console.log('2b. CHECKLIST TEMPLATES GLOBALES...\n');
+
+  const tplChecklist4x4 = await prisma.checklistTemplate.create({
+    data: {
+      tenantId: null,
+      isGlobal: true,
+      name: 'Inspección Diaria Camioneta 4x4',
+      vehicleTypeId: type4x4.id,
+      countryCode: null,
+      isActive: true,
+      items: {
+        create: [
+          {
+            category: 'Luces',
+            label: 'Luces delanteras (altas y bajas)',
+            isRequired: true,
+            order: 1,
+          },
+          {
+            category: 'Luces',
+            label: 'Luces traseras y stop',
+            isRequired: true,
+            order: 2,
+          },
+          {
+            category: 'Luces',
+            label: 'Luces de reversa y direccionales',
+            isRequired: true,
+            order: 3,
+          },
+          {
+            category: 'Frenos',
+            label: 'Freno de servicio',
+            isRequired: true,
+            order: 4,
+          },
+          {
+            category: 'Frenos',
+            label: 'Freno de parqueo',
+            isRequired: true,
+            order: 5,
+          },
+          {
+            category: 'Llantas',
+            label: 'Presión y estado de llantas delanteras',
+            isRequired: true,
+            order: 6,
+          },
+          {
+            category: 'Llantas',
+            label: 'Presión y estado de llantas traseras',
+            isRequired: true,
+            order: 7,
+          },
+          {
+            category: 'Llantas',
+            label: 'Llanta de repuesto',
+            isRequired: false,
+            order: 8,
+          },
+          {
+            category: 'Motor',
+            label: 'Nivel de aceite motor',
+            isRequired: true,
+            order: 9,
+          },
+          {
+            category: 'Motor',
+            label: 'Nivel de refrigerante',
+            isRequired: true,
+            order: 10,
+          },
+          {
+            category: 'Motor',
+            label: 'Sin fugas visibles (aceite, refrigerante, combustible)',
+            isRequired: true,
+            order: 11,
+          },
+          {
+            category: 'Seguridad',
+            label: 'Cinturón de seguridad conductor',
+            isRequired: true,
+            order: 12,
+          },
+          {
+            category: 'Seguridad',
+            label: 'Extintor vigente y accesible',
+            isRequired: true,
+            order: 13,
+          },
+          {
+            category: 'Seguridad',
+            label: 'Botiquín de primeros auxilios',
+            isRequired: false,
+            order: 14,
+          },
+          {
+            category: 'Documentos',
+            label: 'SOAT vigente',
+            isRequired: true,
+            order: 15,
+          },
+          {
+            category: 'Documentos',
+            label: 'Revisión técnico-mecánica vigente',
+            isRequired: true,
+            order: 16,
+          },
+          {
+            category: 'Documentos',
+            label: 'Tarjeta de propiedad / licencia de tránsito',
+            isRequired: true,
+            order: 17,
+          },
+          {
+            category: 'Carrocería',
+            label: 'Espejos laterales y retrovisor en buen estado',
+            isRequired: true,
+            order: 18,
+          },
+          {
+            category: 'Carrocería',
+            label: 'Limpiaparabrisas funcional',
+            isRequired: false,
+            order: 19,
+          },
+          {
+            category: 'Carga',
+            label: 'Carga asegurada correctamente',
+            isRequired: false,
+            order: 20,
+          },
+        ],
+      },
+    },
+  });
+  void tplChecklist4x4;
+  console.log(
+    '   1 ChecklistTemplate global creado (Camioneta 4x4, 20 ítems)\n'
+  );
 
   // ========================================
   // STEP 3: PLATFORM TENANT + SUPER_ADMIN
@@ -613,6 +761,47 @@ async function main() {
     }),
   ]);
   console.log('   3 asignaciones vehiculo-conductor creadas');
+
+  // DRIVER user para pruebas PWA (grivarol1975@gmail.com)
+  const pwaDriverEmail = 'grivarol1975@gmail.com';
+  await prisma.user.upsert({
+    where: {
+      tenantId_email: { tenantId: DEMO_TENANT_ID, email: pwaDriverEmail },
+    },
+    update: { role: 'DRIVER', isActive: true },
+    create: {
+      tenantId: DEMO_TENANT_ID,
+      email: pwaDriverEmail,
+      firstName: 'Guillermo',
+      lastName: 'Rivarola',
+      role: 'DRIVER',
+      isActive: true,
+    },
+  });
+
+  // Driver profile vinculado por email (userId se asigna via webhook al primer login)
+  const pwaDriver = await prisma.driver.create({
+    data: {
+      tenantId: DEMO_TENANT_ID,
+      name: 'Guillermo Rivarola',
+      email: pwaDriverEmail,
+      licenseNumber: 'LIC-PWA-001',
+      status: 'ACTIVE',
+    },
+  });
+
+  // Asignar FIN-001 (Toyota Hilux) al driver PWA
+  await prisma.vehicleDriver.create({
+    data: {
+      tenantId: DEMO_TENANT_ID,
+      vehicleId: t1Vehicles[0].id,
+      driverId: pwaDriver.id,
+      isPrimary: false,
+      assignedBy: t1Owner.id,
+      status: 'ACTIVE',
+    },
+  });
+  console.log('   1 DRIVER PWA + asignación FIN-001 creada');
 
   // Maintenance Programs (from templates)
   console.log('   Creando programas de mantenimiento...');
