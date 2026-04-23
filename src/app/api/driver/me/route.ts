@@ -12,9 +12,21 @@ export async function GET() {
 
     const tp = getTenantPrisma(user.tenantId);
 
-    const driver = await tp.driver.findUnique({
-      where: { userId: user.id },
-    });
+    let driver = await tp.driver.findUnique({ where: { userId: user.id } });
+
+    // Fallback: buscar por email y linkear userId (resuelve race condition
+    // entre webhook y seed — webhook puede disparar antes de que exista el Driver)
+    if (!driver && user.email) {
+      const byEmail = await tp.driver.findFirst({
+        where: { email: user.email, userId: null },
+      });
+      if (byEmail) {
+        driver = await tp.driver.update({
+          where: { id: byEmail.id },
+          data: { userId: user.id },
+        });
+      }
+    }
 
     if (!driver) {
       return NextResponse.json(
