@@ -225,7 +225,10 @@ export default async function HomeScreen() {
         )}
 
         <div className="pt-6 border-t border-gray-200 mt-8">
-          <form action={endDriverShift}>
+          <form action={async () => {
+            'use server';
+            await endDriverShift();
+          }}>
             <button
               type="submit"
               className="w-full flex items-center justify-center py-4 bg-red-50 text-red-600 font-bold rounded-xl border border-red-100 active:bg-red-100 transition-colors"
