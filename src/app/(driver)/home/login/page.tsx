@@ -21,6 +21,7 @@ export default function PWALoginPage() {
 
     try {
       const result = await signIn.create({
+        strategy: 'password',
         identifier: email,
         password,
       });
@@ -32,7 +33,7 @@ export default function PWALoginPage() {
       } else {
         // En caso de que se requiera MFA o paso extra
         console.log(result);
-        setError('Paso adicional de seguridad requerido. Contacta a soporte.');
+        setError(`Paso adicional requerido: ${result.status}. Contacta a soporte.`);
       }
     } catch (err: any) {
       console.error(err);
