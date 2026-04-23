@@ -154,17 +154,6 @@ const nextConfig: NextConfig = {
         CUSTOM_KEY: process.env.CUSTOM_KEY || '',
     },
 
-    // Configuración para redirects si es necesario
-    async redirects() {
-        return [
-            {
-                source: '/',
-                destination: '/home',
-                permanent: false,
-            },
-        ];
-    },
-
     // Rewrites para API routes si es necesario
     async rewrites() {
         return [
