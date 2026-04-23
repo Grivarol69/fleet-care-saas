@@ -8,7 +8,10 @@ export default async function Home() {
   // Detección de dispositivo
   const headersList = await headers();
   const userAgent = headersList.get('user-agent') || '';
-  const isMobile = /mobile|android|iphone|ipad/i.test(userAgent);
+  const isMobile =
+    /mobile|android|iphone|ipad|ipod|blackberry|windows phone|opera mini/i.test(
+      userAgent
+    );
 
   if (isMobile) {
     if (userId) {

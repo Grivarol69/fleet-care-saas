@@ -225,10 +225,31 @@ export default async function HomeScreen() {
         )}
 
         <div className="pt-6 border-t border-gray-200 mt-8">
-          <form action={async () => {
-            'use server';
-            await endDriverShift();
-          }}>
+          <form
+            action={async (formData: FormData) => {
+              'use server';
+              await endDriverShift(formData);
+            }}
+          >
+            <div className="mb-3">
+              <label className="block text-sm font-semibold text-slate-600 mb-1">
+                Odómetro al cierre (km)
+                <span className="ml-1 font-normal text-slate-400">
+                  · opcional
+                </span>
+              </label>
+              <input
+                type="number"
+                name="endMileage"
+                min={vehicle.odometerLogs[0]?.kilometers ?? 0}
+                placeholder={
+                  vehicle.odometerLogs[0]?.kilometers
+                    ? `Último: ${vehicle.odometerLogs[0].kilometers} km`
+                    : 'Ej: 45200'
+                }
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200 transition-all"
+              />
+            </div>
             <button
               type="submit"
               className="w-full flex items-center justify-center py-4 bg-red-50 text-red-600 font-bold rounded-xl border border-red-100 active:bg-red-100 transition-colors"

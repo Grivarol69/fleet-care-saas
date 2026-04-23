@@ -14,17 +14,22 @@ export async function GET() {
 
     let driver = await tp.driver.findUnique({ where: { userId: user.id } });
 
-    // Fallback: buscar por email y linkear userId (resuelve race condition
-    // entre webhook y seed — webhook puede disparar antes de que exista el Driver)
+    // Fallback: linkear driver por email (JIT — webhook puede llegar tarde).
+    // updateMany con userId:null en where garantiza atomicidad: solo el primer
+    // request concurrente gana; el resto ve count=0 y reintenta por userId.
     if (!driver && user.email) {
       const byEmail = await tp.driver.findFirst({
         where: { email: user.email, userId: null },
       });
       if (byEmail) {
-        driver = await tp.driver.update({
-          where: { id: byEmail.id },
+        const { count } = await tp.driver.updateMany({
+          where: { id: byEmail.id, userId: null },
           data: { userId: user.id },
         });
+        driver =
+          count > 0
+            ? { ...byEmail, userId: user.id }
+            : await tp.driver.findUnique({ where: { userId: user.id } });
       }
     }
 
