@@ -238,6 +238,7 @@ model VehicleBrand {
   lines                VehicleLine[]
   vehicles             Vehicle[]
   maintenanceTemplates MaintenanceTemplate[] // ✅ CURRENT
+  checklistTemplates   ChecklistTemplate[]
   mantItemVehicleParts MantItemVehiclePart[] // KB: repuestos por marca
   mantItemProcedures   MantItemProcedure[] // KB: procedimientos de labor
 
@@ -260,6 +261,7 @@ model VehicleLine {
   brand                VehicleBrand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
   vehicles             Vehicle[]
   maintenanceTemplates MaintenanceTemplate[] // ✅ CURRENT
+  checklistTemplates   ChecklistTemplate[]
   mantItemVehicleParts MantItemVehiclePart[] // KB: repuestos por línea
   mantItemProcedures   MantItemProcedure[] // KB: procedimientos de labor
 
@@ -2682,19 +2684,23 @@ model DriverTraining {
 }
 
 model ChecklistTemplate {
-  id            String   @id @default(uuid())
-  tenantId      String? // NULL = global (SUPER_ADMIN), populated = copia tenant
-  isGlobal      Boolean  @default(false)
-  name          String
-  vehicleTypeId String // FK a VehicleType (debe ser isGlobal=true para globales)
-  countryCode   String? // NULL = todos los países
-  isActive      Boolean  @default(true)
-  clonedFromId  String? // referencia al global del que se clonó
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id             String   @id @default(uuid())
+  tenantId       String? // NULL = global (SUPER_ADMIN), populated = copia tenant
+  isGlobal       Boolean  @default(false)
+  name           String
+  vehicleTypeId  String // FK a VehicleType (debe ser isGlobal=true para globales)
+  vehicleBrandId String? // FK a VehicleBrand (opcional para tenants, nulo para globales)
+  vehicleLineId  String? // FK a VehicleLine (opcional para tenants, nulo para globales)
+  countryCode    String? // NULL = todos los países
+  isActive       Boolean  @default(true)
+  clonedFromId   String? // referencia al global del que se clonó
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   tenant      Tenant?                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   vehicleType VehicleType             @relation(fields: [vehicleTypeId], references: [id])
+  brand       VehicleBrand?           @relation(fields: [vehicleBrandId], references: [id])
+  line        VehicleLine?            @relation(fields: [vehicleLineId], references: [id])
   clonedFrom  ChecklistTemplate?      @relation("TemplateClones", fields: [clonedFromId], references: [id])
   clones      ChecklistTemplate[]     @relation("TemplateClones")
   items       ChecklistTemplateItem[]
@@ -2702,6 +2708,8 @@ model ChecklistTemplate {
 
   @@index([tenantId])
   @@index([vehicleTypeId])
+  @@index([vehicleBrandId])
+  @@index([vehicleLineId])
   @@index([isGlobal])
   @@index([isActive])
 }

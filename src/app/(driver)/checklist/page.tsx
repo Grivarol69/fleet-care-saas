@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { ClipboardCheck, ChevronRight, Loader2 } from 'lucide-react';
+import { ClipboardCheck, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
 import {
   saveChecklistDraft,
   type ChecklistItemDraft,
@@ -223,89 +223,111 @@ export default function ChecklistEntryScreen() {
           </div>
         )}
 
-        {info && (
-          <div>
-            <p className="text-xl font-bold font-mono tracking-wider text-slate-900">
-              {info.licensePlate}
+        {error && !info ? (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-6 flex flex-col items-center text-center gap-3">
+            <AlertCircle className="w-12 h-12 text-red-500 mb-2" />
+            <p className="text-red-700 font-bold text-lg">
+              {error === 'Sin vehículo asignado' ? 'No tienes un vehículo asignado' : error}
             </p>
-            {[info.brandName, info.lineName].filter(Boolean).join(' ') && (
-              <p className="text-sm text-slate-500">
-                {[info.brandName, info.lineName].filter(Boolean).join(' ')}
-              </p>
+            <p className="text-red-600 text-sm mb-4">
+              {error === 'Sin vehículo asignado' 
+                ? 'Para realizar el checklist necesitas tener un turno activo con un vehículo. Por favor, haz check-in primero.'
+                : 'Ocurrió un error al cargar la información. Intenta nuevamente.'}
+            </p>
+            <button
+              onClick={() => router.push('/home')}
+              className="px-6 py-3 bg-red-600 text-white rounded-xl font-semibold shadow-sm w-full active:scale-95 transition-transform"
+            >
+              Ir al Inicio
+            </button>
+          </div>
+        ) : (
+          <>
+            {info && (
+              <div>
+                <p className="text-xl font-bold font-mono tracking-wider text-slate-900">
+                  {info.licensePlate}
+                </p>
+                {[info.brandName, info.lineName].filter(Boolean).join(' ') && (
+                  <p className="text-sm text-slate-500">
+                    {[info.brandName, info.lineName].filter(Boolean).join(' ')}
+                  </p>
+                )}
+              </div>
             )}
-          </div>
-        )}
 
-        {/* Odometer input */}
-        <div className="bg-white rounded-xl shadow-sm p-4">
-          <label className="block text-sm font-semibold text-slate-700 mb-2">
-            Odómetro actual <span className="text-red-500">*</span>
-          </label>
-          <div className="flex items-center gap-2">
-            <input
-              type="number"
-              inputMode="numeric"
-              placeholder="Ej: 142830"
-              value={odometer}
-              onChange={e => {
-                setOdometer(e.target.value);
-                setError(null);
-              }}
-              className={`flex-1 h-12 px-3 rounded-lg border-2 text-slate-900 font-mono text-lg outline-none transition-colors ${
-                error
-                  ? 'border-red-500'
-                  : 'border-slate-200 focus:border-primary'
-              }`}
-            />
-            <span className="text-slate-500 font-medium">km</span>
-          </div>
-          {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
-        </div>
-
-        {/* Preview */}
-        {items.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <ClipboardCheck className="w-5 h-5 text-primary" />
-              <span className="font-semibold text-slate-800">
-                {items.length} ítems a inspeccionar
-              </span>
+            {/* Odometer input */}
+            <div className="bg-white rounded-xl shadow-sm p-4">
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Odómetro actual <span className="text-red-500">*</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  placeholder="Ej: 142830"
+                  value={odometer}
+                  onChange={e => {
+                    setOdometer(e.target.value);
+                    setError(null);
+                  }}
+                  className={`flex-1 h-12 px-3 rounded-lg border-2 text-slate-900 font-mono text-lg outline-none transition-colors ${
+                    error
+                      ? 'border-red-500'
+                      : 'border-slate-200 focus:border-primary'
+                  }`}
+                />
+                <span className="text-slate-500 font-medium">km</span>
+              </div>
+              {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
             </div>
-            <p className="text-xs text-slate-400 mb-2">
-              Tiempo estimado: 2-3 minutos
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {categoryKeys.map(cat => (
-                <span
-                  key={cat}
-                  className="bg-slate-100 text-slate-600 text-xs font-medium px-2 py-1 rounded-full"
-                >
-                  {CATEGORY_LABELS[cat] ?? cat}
-                </span>
-              ))}
-              {Object.keys(categoryGroups).length > 3 && (
-                <span className="bg-slate-100 text-slate-400 text-xs font-medium px-2 py-1 rounded-full">
-                  +{Object.keys(categoryGroups).length - 3} más
-                </span>
+
+            {/* Preview */}
+            {items.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <ClipboardCheck className="w-5 h-5 text-primary" />
+                  <span className="font-semibold text-slate-800">
+                    {items.length} ítems a inspeccionar
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mb-2">
+                  Tiempo estimado: 2-3 minutos
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {categoryKeys.map(cat => (
+                    <span
+                      key={cat}
+                      className="bg-slate-100 text-slate-600 text-xs font-medium px-2 py-1 rounded-full"
+                    >
+                      {CATEGORY_LABELS[cat] ?? cat}
+                    </span>
+                  ))}
+                  {Object.keys(categoryGroups).length > 3 && (
+                    <span className="bg-slate-100 text-slate-400 text-xs font-medium px-2 py-1 rounded-full">
+                      +{Object.keys(categoryGroups).length - 3} más
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={handleStart}
+              disabled={isPending || !info || items.length === 0}
+              className="w-full h-14 bg-primary text-white rounded-xl font-semibold text-base flex items-center justify-center gap-2 disabled:opacity-40 disabled:pointer-events-none active:scale-95 transition-transform"
+            >
+              {isPending ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  Comenzar inspección
+                  <ChevronRight className="w-5 h-5" />
+                </>
               )}
-            </div>
-          </div>
+            </button>
+          </>
         )}
-
-        <button
-          onClick={handleStart}
-          disabled={isPending || !info || items.length === 0}
-          className="w-full h-14 bg-primary text-white rounded-xl font-semibold text-base flex items-center justify-center gap-2 disabled:opacity-40 disabled:pointer-events-none active:scale-95 transition-transform"
-        >
-          {isPending ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            <>
-              Comenzar inspección
-              <ChevronRight className="w-5 h-5" />
-            </>
-          )}
-        </button>
       </div>
     </div>
   );

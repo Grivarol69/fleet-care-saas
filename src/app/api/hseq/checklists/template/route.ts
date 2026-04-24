@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     // Validar que el vehículo esté asignado al driver (si el usuario es driver)
     const vehicle = await tenantPrisma.vehicle.findUnique({
       where: { id: vehicleId },
-      select: { id: true, typeId: true, licensePlate: true },
+      select: { id: true, typeId: true, brandId: true, lineId: true, licensePlate: true },
     });
 
     if (!vehicle) {
@@ -99,11 +99,13 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // 1. Buscar template tenant-específico activo para este vehicleType
-    const tenantTemplate = await tenantPrisma.checklistTemplate.findFirst({
+    // 1. Prioridad 1: Plantilla específica del Tenant para este Vehículo (Tipo + Marca + Línea)
+    const exactTemplate = await tenantPrisma.checklistTemplate.findFirst({
       where: {
         tenantId: user.tenantId,
         vehicleTypeId: vehicle.typeId,
+        vehicleBrandId: vehicle.brandId,
+        vehicleLineId: vehicle.lineId,
         isActive: true,
       },
       include: {
@@ -112,11 +114,11 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    if (tenantTemplate) {
-      return NextResponse.json({ template: tenantTemplate, source: 'tenant' });
+    if (exactTemplate) {
+      return NextResponse.json({ template: exactTemplate, source: 'tenant_exact' });
     }
 
-    // 2. Fallback: template global para este vehicleType
+    // 2. Respaldo (Fallback): Plantilla Global Genérica para este Tipo de Vehículo
     const globalTemplate = await tenantPrisma.checklistTemplate.findFirst({
       where: {
         tenantId: null,
