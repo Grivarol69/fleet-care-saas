@@ -2,11 +2,18 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, AlertCircle, ClipboardList, ClipboardCheck } from 'lucide-react';
+import {
+  Home,
+  AlertCircle,
+  ClipboardList,
+  ClipboardCheck,
+  Fuel,
+} from 'lucide-react';
 
 const TABS = [
   { href: '/home', label: 'Inicio', icon: Home },
   { href: '/checklist', label: 'Checklist', icon: ClipboardCheck },
+  { href: '/fuel/new', label: 'Combustible', icon: Fuel },
   { href: '/incidents/new', label: 'Novedad', icon: AlertCircle },
   { href: '/history', label: 'Historial', icon: ClipboardList },
 ] as const;
