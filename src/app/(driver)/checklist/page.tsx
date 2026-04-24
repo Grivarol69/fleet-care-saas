@@ -53,6 +53,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export default function ChecklistEntryScreen() {
   const router = useRouter();
+  const [fromGate, setFromGate] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [info, setInfo] = useState<DriverInfo | null>(null);
   const [items, setItems] = useState<TemplateItem[]>([]);
@@ -60,6 +61,11 @@ export default function ChecklistEntryScreen() {
   const [odometer, setOdometer] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setFromGate(params.get('from') === 'gate');
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -161,6 +167,16 @@ export default function ChecklistEntryScreen() {
       </header>
 
       <div className="px-4 py-5 space-y-5">
+        {fromGate && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2">
+            <span className="text-amber-600 font-bold text-sm">⚠</span>
+            <p className="text-sm text-amber-700 font-medium">
+              Completá el preoperatorio para continuar usando la app. Tiempo
+              estimado: 2-3 min.
+            </p>
+          </div>
+        )}
+
         {info && (
           <div>
             <p className="text-xl font-bold font-mono tracking-wider text-slate-900">

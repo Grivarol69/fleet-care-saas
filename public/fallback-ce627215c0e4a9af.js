@@ -171,7 +171,7 @@
       self.fallback = async t => {
         let { destination: r, url: n } = t,
           o = {
-            document: '/driver/home',
+            document: '/home',
             image: e.env.__PWA_FALLBACK_IMAGE__,
             audio: e.env.__PWA_FALLBACK_AUDIO__,
             video: e.env.__PWA_FALLBACK_VIDEO__,

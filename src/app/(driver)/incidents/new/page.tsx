@@ -56,6 +56,7 @@ export default function IncidentFormScreen() {
 
   const [vehicleId, setVehicleId] = useState('');
   const [driverId, setDriverId] = useState('');
+  const [vehicleError, setVehicleError] = useState<string | null>(null);
   const [severity, setSeverity] = useState<Severity | null>(null);
   const [description, setDescription] = useState('');
   const [photoBlob, setPhotoBlob] = useState<Blob | null>(null);
@@ -75,9 +76,15 @@ export default function IncidentFormScreen() {
       .then(r => r.json())
       .then(data => {
         if (data.vehicle) setVehicleId(data.vehicle.id);
+        else
+          setVehicleError(
+            'Sin vehículo asignado. Volvé al inicio e iniciá un turno.'
+          );
         if (data.driver) setDriverId(data.driver.id);
       })
-      .catch(() => {});
+      .catch(() =>
+        setVehicleError('No se pudo verificar el vehículo asignado.')
+      );
 
     navigator.geolocation?.getCurrentPosition(
       pos => {
@@ -188,7 +195,8 @@ export default function IncidentFormScreen() {
     }
   };
 
-  const isValid = severity !== null && description.trim().length >= 10;
+  const isValid =
+    severity !== null && description.trim().length >= 10 && !!vehicleId;
 
   return (
     <div>
@@ -206,6 +214,13 @@ export default function IncidentFormScreen() {
       </header>
 
       <div className="px-4 py-5 space-y-5">
+        {vehicleError && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+            <AlertOctagon className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-red-700 font-medium">{vehicleError}</p>
+          </div>
+        )}
+
         {/* Severity */}
         <div>
           <p

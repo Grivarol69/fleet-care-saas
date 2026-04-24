@@ -2,9 +2,15 @@ import { requireCurrentUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { VehicleSelector } from './VehicleSelector';
 
-export default async function CheckinPage() {
+export default async function CheckinPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ qr?: string }>;
+}) {
   const { user, tenantPrisma } = await requireCurrentUser();
   if (!user) redirect('/home/login');
+
+  const { qr: qrVehicleId } = await searchParams;
 
   const driver = await tenantPrisma.driver.findUnique({
     where: { userId: user.id },
@@ -74,7 +80,10 @@ export default async function CheckinPage() {
       </div>
 
       <div className="p-4 mt-2">
-        <VehicleSelector vehicles={vehicles} />
+        <VehicleSelector
+          vehicles={vehicles}
+          preselectedId={qrVehicleId ?? null}
+        />
       </div>
     </div>
   );

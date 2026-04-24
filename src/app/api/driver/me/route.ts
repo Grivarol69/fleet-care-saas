@@ -61,6 +61,20 @@ export async function GET() {
     const vehicle = assignment?.vehicle ?? null;
     const lastOdometer = vehicle?.odometerLogs[0] ?? null;
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const checklistToday = vehicle
+      ? await tp.dailyChecklist.findFirst({
+          where: {
+            driverId: driver.id,
+            vehicleId: vehicle.id,
+            createdAt: { gte: today },
+          },
+          select: { id: true, status: true },
+          orderBy: { createdAt: 'desc' },
+        })
+      : null;
+
     return NextResponse.json({
       driver: {
         id: driver.id,
@@ -83,6 +97,9 @@ export async function GET() {
             lastOdometerKm: lastOdometer?.kilometers ?? null,
             lastOdometerDate: lastOdometer?.recordedAt ?? null,
           }
+        : null,
+      checklistToday: checklistToday
+        ? { id: checklistToday.id, status: checklistToday.status }
         : null,
     });
   } catch (error) {
