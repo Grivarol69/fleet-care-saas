@@ -4,6 +4,8 @@ import { z } from 'zod';
 
 const cloneSchema = z.object({
   name: z.string().min(1, 'Name is required').optional(),
+  vehicleBrandId: z.string().optional(),
+  vehicleLineId: z.string().optional(),
 });
 
 // POST /api/hseq/checklists/templates/[id]/clone
@@ -48,19 +50,21 @@ export async function POST(
 
     const cloneName = body.name?.trim() ?? `${source.name} (copia)`;
 
-    // Check name collision in tenant scope
+    // Guard por clave única (tenantId + typeId + brandId + lineId)
     const collision = await tenantPrisma.checklistTemplate.findFirst({
       where: {
         tenantId: user.tenantId,
         vehicleTypeId: source.vehicleTypeId,
-        name: cloneName,
+        vehicleBrandId: body.vehicleBrandId ?? null,
+        vehicleLineId: body.vehicleLineId ?? null,
         isActive: true,
       },
     });
     if (collision) {
       return NextResponse.json(
         {
-          error: `Ya existe un template activo con el nombre "${cloneName}" para este tipo de vehículo`,
+          error:
+            'Ya existe un template activo para esta combinación de tipo/marca/línea',
         },
         { status: 409 }
       );
@@ -70,6 +74,8 @@ export async function POST(
       data: {
         name: cloneName,
         vehicleTypeId: source.vehicleTypeId,
+        vehicleBrandId: body.vehicleBrandId ?? null,
+        vehicleLineId: body.vehicleLineId ?? null,
         tenantId: user.tenantId,
         isGlobal: false,
         countryCode: source.countryCode,

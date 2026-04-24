@@ -21,7 +21,13 @@ export async function GET(request: NextRequest) {
     // Validar que el vehículo esté asignado al driver (si el usuario es driver)
     const vehicle = await tenantPrisma.vehicle.findUnique({
       where: { id: vehicleId },
-      select: { id: true, typeId: true, brandId: true, lineId: true, licensePlate: true },
+      select: {
+        id: true,
+        typeId: true,
+        brandId: true,
+        lineId: true,
+        licensePlate: true,
+      },
     });
 
     if (!vehicle) {
@@ -115,10 +121,35 @@ export async function GET(request: NextRequest) {
     });
 
     if (exactTemplate) {
-      return NextResponse.json({ template: exactTemplate, source: 'tenant_exact' });
+      return NextResponse.json({
+        template: exactTemplate,
+        source: 'tenant_exact',
+      });
     }
 
-    // 2. Respaldo (Fallback): Plantilla Global Genérica para este Tipo de Vehículo
+    // 2. Nivel 2: Plantilla genérica del Tenant para este Tipo (sin marca/línea)
+    const tenantTypeTemplate = await tenantPrisma.checklistTemplate.findFirst({
+      where: {
+        tenantId: user.tenantId,
+        vehicleTypeId: vehicle.typeId,
+        vehicleBrandId: null,
+        vehicleLineId: null,
+        isActive: true,
+      },
+      include: {
+        items: { orderBy: { order: 'asc' } },
+        vehicleType: { select: { id: true, name: true } },
+      },
+    });
+
+    if (tenantTypeTemplate) {
+      return NextResponse.json({
+        template: tenantTypeTemplate,
+        source: 'tenant_type',
+      });
+    }
+
+    // 3. Respaldo (Fallback): Plantilla Global Genérica para este Tipo de Vehículo
     const globalTemplate = await tenantPrisma.checklistTemplate.findFirst({
       where: {
         tenantId: null,
@@ -136,7 +167,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ template: globalTemplate, source: 'global' });
     }
 
-    // 3. Sin template: devolver items por defecto hardcodeados como fallback
+    // 4. Sin template: devolver items por defecto hardcodeados como fallback
     return NextResponse.json({
       template: null,
       source: 'default',

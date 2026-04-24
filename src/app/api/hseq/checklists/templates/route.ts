@@ -5,6 +5,8 @@ import { z } from 'zod';
 const createSchema = z.object({
   name: z.string().min(1),
   vehicleTypeId: z.string().min(1),
+  vehicleBrandId: z.string().optional(),
+  vehicleLineId: z.string().optional(),
   countryCode: z.string().optional(),
   isGlobal: z.boolean().optional().default(false),
   items: z
@@ -121,6 +123,8 @@ export async function POST(request: NextRequest) {
       data: {
         name: body.name.trim(),
         vehicleTypeId: body.vehicleTypeId,
+        vehicleBrandId: body.vehicleBrandId ?? null,
+        vehicleLineId: body.vehicleLineId ?? null,
         tenantId: targetTenantId,
         isGlobal,
         countryCode: body.countryCode ?? null,

@@ -2,7 +2,12 @@
 
 import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { ClipboardCheck, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
+import {
+  ClipboardCheck,
+  ChevronRight,
+  Loader2,
+  AlertCircle,
+} from 'lucide-react';
 import {
   saveChecklistDraft,
   type ChecklistItemDraft,
@@ -18,7 +23,7 @@ type TemplateItem = {
 
 type TemplateResponse = {
   template: { id: string; name: string; items: TemplateItem[] } | null;
-  source: 'tenant' | 'global' | 'default';
+  source: 'tenant_exact' | 'tenant_type' | 'global' | 'default';
   items?: TemplateItem[];
 };
 
@@ -227,10 +232,12 @@ export default function ChecklistEntryScreen() {
           <div className="bg-red-50 border border-red-200 rounded-xl p-6 flex flex-col items-center text-center gap-3">
             <AlertCircle className="w-12 h-12 text-red-500 mb-2" />
             <p className="text-red-700 font-bold text-lg">
-              {error === 'Sin vehículo asignado' ? 'No tienes un vehículo asignado' : error}
+              {error === 'Sin vehículo asignado'
+                ? 'No tienes un vehículo asignado'
+                : error}
             </p>
             <p className="text-red-600 text-sm mb-4">
-              {error === 'Sin vehículo asignado' 
+              {error === 'Sin vehículo asignado'
                 ? 'Para realizar el checklist necesitas tener un turno activo con un vehículo. Por favor, haz check-in primero.'
                 : 'Ocurrió un error al cargar la información. Intenta nuevamente.'}
             </p>
