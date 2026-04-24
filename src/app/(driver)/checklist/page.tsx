@@ -87,15 +87,61 @@ export default function ChecklistEntryScreen() {
         const tplRes = await fetch(
           `/api/hseq/checklists/template?vehicleId=${me.vehicle.id}`
         );
-        const tplData: TemplateResponse = await tplRes.json();
 
-        const resolvedItems: TemplateItem[] = tplData.template
-          ? tplData.template.items
-          : (tplData.items ?? []);
+        const DEFAULT_ITEMS: TemplateItem[] = [
+          {
+            category: 'lights',
+            label: 'Luces (delanteras, traseras, emergencia)',
+            isRequired: true,
+            order: 1,
+          },
+          {
+            category: 'brakes',
+            label: 'Frenos (pedal y freno de mano)',
+            isRequired: true,
+            order: 2,
+          },
+          {
+            category: 'tires',
+            label: 'Neumáticos (presión y desgaste visible)',
+            isRequired: true,
+            order: 3,
+          },
+          {
+            category: 'leaks',
+            label: 'Fugas (aceite, combustible)',
+            isRequired: true,
+            order: 4,
+          },
+          {
+            category: 'seatbelt',
+            label: 'Cinturón de seguridad',
+            isRequired: true,
+            order: 5,
+          },
+          {
+            category: 'extinguisher',
+            label: 'Extintor (cargado y accesible)',
+            isRequired: true,
+            order: 6,
+          },
+        ];
+
+        let resolvedItems: TemplateItem[];
+        let resolvedTemplateId: string | null = null;
+        if (!tplRes.ok) {
+          resolvedItems = DEFAULT_ITEMS;
+        } else {
+          const tplData: TemplateResponse = await tplRes.json();
+          resolvedItems = tplData.template
+            ? tplData.template.items
+            : (tplData.items ?? DEFAULT_ITEMS);
+          resolvedTemplateId = tplData.template?.id ?? null;
+        }
 
         const sorted = [...resolvedItems].sort((a, b) => a.order - b.order);
         setItems(sorted);
-        setTemplateId(tplData.template?.id ?? null);
+        setTemplateId(resolvedTemplateId);
       } catch (e: any) {
         setError(e.message ?? 'Error al cargar');
       } finally {

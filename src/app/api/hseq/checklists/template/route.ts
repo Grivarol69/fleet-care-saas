@@ -55,10 +55,48 @@ export async function GET(request: NextRequest) {
     }
 
     if (!vehicle.typeId) {
-      return NextResponse.json(
-        { error: 'El vehículo no tiene tipo asignado' },
-        { status: 422 }
-      );
+      return NextResponse.json({
+        template: null,
+        source: 'default',
+        items: [
+          {
+            category: 'lights',
+            label: 'Luces (delanteras, traseras, emergencia)',
+            isRequired: true,
+            order: 1,
+          },
+          {
+            category: 'brakes',
+            label: 'Frenos (pedal y freno de mano)',
+            isRequired: true,
+            order: 2,
+          },
+          {
+            category: 'tires',
+            label: 'Neumáticos (presión y desgaste visible)',
+            isRequired: true,
+            order: 3,
+          },
+          {
+            category: 'leaks',
+            label: 'Fugas (aceite, combustible)',
+            isRequired: true,
+            order: 4,
+          },
+          {
+            category: 'seatbelt',
+            label: 'Cinturón de seguridad',
+            isRequired: true,
+            order: 5,
+          },
+          {
+            category: 'extinguisher',
+            label: 'Extintor (cargado y accesible)',
+            isRequired: true,
+            order: 6,
+          },
+        ],
+      });
     }
 
     // 1. Buscar template tenant-específico activo para este vehicleType
