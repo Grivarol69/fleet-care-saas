@@ -2,4 +2,4 @@
 npx lint-staged
 
 # Ejecutar type checking
-npm run type-check
+pnpm type-check
