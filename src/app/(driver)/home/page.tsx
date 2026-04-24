@@ -7,6 +7,7 @@ import {
   History,
   CheckCircle2,
   ChevronRight,
+  Fuel,
 } from 'lucide-react';
 import { getTenantPrisma } from '@/lib/tenant-prisma';
 import { VehicleCard } from '../_components/VehicleCard';
@@ -182,6 +183,15 @@ export default async function HomeScreen() {
             <AlertCircle className="w-7 h-7 text-amber-500" />
             <span className="text-sm font-medium text-slate-700 text-center">
               Reportar novedad
+            </span>
+          </Link>
+          <Link
+            href="/fuel/new"
+            className="bg-white rounded-xl shadow-sm p-4 flex flex-col items-center gap-2 active:bg-slate-50"
+          >
+            <Fuel className="w-7 h-7 text-green-600" />
+            <span className="text-sm font-medium text-slate-700 text-center">
+              Cargar combustible
             </span>
           </Link>
           <Link

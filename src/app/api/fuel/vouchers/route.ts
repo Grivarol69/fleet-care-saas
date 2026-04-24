@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
       odometer,
       pricePerUnit,
       notes,
+      receiptUrl,
     } = body;
 
     // Validate required fields
@@ -225,6 +226,7 @@ export async function POST(request: NextRequest) {
                 : null,
             totalAmount,
             notes: notes ?? null,
+            receiptUrl: receiptUrl ?? null,
             createdBy: user.id,
           },
         });

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { BottomTabBar } from './_components/BottomTabBar';
 import { OfflineIndicator } from './_components/OfflineIndicator';
+import { SessionGuard } from './_components/SessionGuard';
 
 export const metadata: Metadata = {
   title: 'Fleet Care · Conductor',
@@ -28,13 +29,15 @@ export default function DriverLayout({
   return (
     <div className="driver-pwa min-h-screen bg-[#F1F5F9]">
       <OfflineIndicator />
-      <main
-        className="relative"
-        style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}
-      >
-        {children}
-      </main>
-      <BottomTabBar />
+      <SessionGuard>
+        <main
+          className="relative"
+          style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}
+        >
+          {children}
+        </main>
+        <BottomTabBar />
+      </SessionGuard>
     </div>
   );
 }

@@ -151,6 +151,21 @@ export const ourFileRouter = {
         ocrServiceType: ocr.serviceType ?? null,
       };
     }),
+  // Fuel receipt uploader (PWA conductor)
+  fuelReceiptUploader: f({
+    image: {
+      maxFileSize: '4MB',
+      maxFileCount: 1,
+    },
+  })
+    .middleware(async () => {
+      const user = await currentUser();
+      if (!user) throw new Error('Unauthorized');
+      return { userId: user.id };
+    })
+    .onUploadComplete(async ({ file }) => {
+      return { url: file.url };
+    }),
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter;

@@ -2428,6 +2428,7 @@ model FuelVoucher {
   pricePerUnit  Decimal?            @db.Decimal(10, 4)
   totalAmount   Decimal?            @db.Decimal(12, 2)
   notes         String?
+  receiptUrl    String? // URL foto del comprobante (cargado desde PWA conductor)
   createdBy     String // Clerk userId of admin who entered the record
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
