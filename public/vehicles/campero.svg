@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" fill="none">
+  <!-- SUV/Campero: tall boxy body -->
+  <rect x="22" y="40" width="156" height="37" rx="6" fill="#2563eb"/>
+  <!-- Roof (tall, SUV profile) -->
+  <rect x="40" y="22" width="120" height="20" rx="4" fill="#3b82f6"/>
+  <!-- Wheels (4x4 style, larger) -->
+  <circle cx="60" cy="80" r="13" fill="#1e3a8a"/>
+  <circle cx="60" cy="80" r="6" fill="#93c5fd"/>
+  <circle cx="140" cy="80" r="13" fill="#1e3a8a"/>
+  <circle cx="140" cy="80" r="6" fill="#93c5fd"/>
+  <!-- Windows -->
+  <rect x="45" y="26" width="30" height="13" rx="2" fill="#bfdbfe"/>
+  <rect x="80" y="26" width="30" height="13" rx="2" fill="#bfdbfe"/>
+  <rect x="115" y="26" width="30" height="13" rx="2" fill="#bfdbfe"/>
+  <rect x="22" y="50" width="9" height="6" rx="2" fill="#fbbf24"/>
+  <rect x="169" y="50" width="9" height="6" rx="2" fill="#ef4444"/>
+</svg>

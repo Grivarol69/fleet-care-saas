@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" fill="none">
+  <!-- Buseta: slightly larger than microbus -->
+  <rect x="12" y="28" width="176" height="49" rx="5" fill="#1d4ed8"/>
+  <rect x="12" y="18" width="176" height="12" rx="4" fill="#2563eb"/>
+  <!-- Windows -->
+  <rect x="18" y="32" width="20" height="14" rx="2" fill="#bfdbfe"/>
+  <rect x="42" y="32" width="20" height="14" rx="2" fill="#bfdbfe"/>
+  <rect x="66" y="32" width="20" height="14" rx="2" fill="#bfdbfe"/>
+  <rect x="90" y="32" width="20" height="14" rx="2" fill="#bfdbfe"/>
+  <rect x="114" y="32" width="20" height="14" rx="2" fill="#bfdbfe"/>
+  <rect x="138" y="32" width="20" height="14" rx="2" fill="#bfdbfe"/>
+  <rect x="162" y="32" width="22" height="14" rx="2" fill="#bfdbfe"/>
+  <!-- Wheels -->
+  <circle cx="48" cy="80" r="12" fill="#1e3a8a"/>
+  <circle cx="48" cy="80" r="5" fill="#93c5fd"/>
+  <circle cx="152" cy="80" r="12" fill="#1e3a8a"/>
+  <circle cx="152" cy="80" r="5" fill="#93c5fd"/>
+  <rect x="12" y="48" width="8" height="5" rx="1" fill="#fbbf24"/>
+</svg>

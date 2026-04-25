@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" fill="none">
+  <!-- Semi with trailer: long cargo -->
+  <rect x="5" y="28" width="130" height="49" rx="3" fill="#3b82f6"/>
+  <rect x="5" y="22" width="130" height="8" rx="2" fill="#2563eb"/>
+  <!-- Cab shorter -->
+  <rect x="140" y="34" width="55" height="43" rx="4" fill="#1d4ed8"/>
+  <path d="M140 34 L150 18 L188 18 L195 34Z" fill="#2563eb"/>
+  <rect x="152" y="22" width="20" height="10" rx="2" fill="#bfdbfe"/>
+  <rect x="174" y="22" width="16" height="10" rx="2" fill="#bfdbfe"/>
+  <!-- Trailer wheels (bogie) -->
+  <circle cx="70" cy="80" r="11" fill="#1e3a8a"/>
+  <circle cx="70" cy="80" r="5" fill="#93c5fd"/>
+  <circle cx="95" cy="80" r="11" fill="#1e3a8a"/>
+  <circle cx="95" cy="80" r="5" fill="#93c5fd"/>
+  <circle cx="118" cy="80" r="11" fill="#1e3a8a"/>
+  <circle cx="118" cy="80" r="5" fill="#93c5fd"/>
+  <!-- Cab wheels -->
+  <circle cx="153" cy="80" r="11" fill="#1e3a8a"/>
+  <circle cx="153" cy="80" r="5" fill="#93c5fd"/>
+  <circle cx="177" cy="80" r="11" fill="#1e3a8a"/>
+  <circle cx="177" cy="80" r="5" fill="#93c5fd"/>
+  <!-- King pin -->
+  <rect x="135" y="68" width="8" height="6" rx="1" fill="#64748b"/>
+  <rect x="195" y="50" width="5" height="4" rx="1" fill="#ef4444"/>
+</svg>

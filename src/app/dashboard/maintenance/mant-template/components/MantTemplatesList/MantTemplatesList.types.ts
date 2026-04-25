@@ -1,8 +1,9 @@
 export type MantTemplatesListProps = {
   id: string;
-  tenantId: string;
+  tenantId: string | null;
   name: string;
   description?: string | null;
+  imageUrl?: string | null;
   vehicleTypeId: string;
   vehicleBrandId: string | null;
   vehicleLineId: string | null;
