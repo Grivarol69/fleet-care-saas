@@ -154,26 +154,24 @@ export class NotificationService {
 
       // 2. Obtener conductores principales de los vehículos (si se especifican)
       if (vehicleIds && vehicleIds.length > 0) {
-        const vehicleDrivers = await prisma.vehicleDriver.findMany({
+        const driverShifts = await prisma.driverShift.findMany({
           where: {
             tenantId: tenantId,
             vehicleId: { in: vehicleIds },
             status: 'ACTIVE',
-            isPrimary: true,
           },
           include: {
-            driver: true,
-            vehicle: true,
+            driver: { select: { phone: true, name: true } },
           },
         });
 
-        vehicleDrivers.forEach(vd => {
-          if (vd.driver.phone) {
+        driverShifts.forEach(ds => {
+          if (ds.driver.phone) {
             recipients.push({
-              phone: vd.driver.phone,
-              name: vd.driver.name,
+              phone: ds.driver.phone,
+              name: ds.driver.name,
               type: 'DRIVER',
-              vehicleId: vd.vehicleId,
+              vehicleId: ds.vehicleId,
             });
           }
         });

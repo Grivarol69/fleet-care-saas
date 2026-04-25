@@ -41,6 +41,7 @@ import {
   Mail,
   MessageCircle,
   History,
+  QrCode,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -349,6 +350,18 @@ export function FleetVehiclesList() {
 
                   <DropdownMenuSeparator />
 
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const a = document.createElement('a');
+                      a.href = `/api/vehicles/vehicles/${vehicle.id}/qr`;
+                      a.download = `qr-${vehicle.licensePlate}.png`;
+                      a.click();
+                    }}
+                  >
+                    <QrCode className="mr-2 h-4 w-4" />
+                    Imprimir QR
+                  </DropdownMenuItem>
+
                   <DropdownMenuItem onClick={() => handleViewCV(vehicle)}>
                     <FileText className="mr-2 h-4 w-4" />
                     Ver CV
@@ -419,9 +432,7 @@ export function FleetVehiclesList() {
       {/* Header con botones */}
       <div className="flex justify-between items-center">
         <Button asChild>
-          <Link href="/dashboard/vehicles/fleet/new">
-            Agregar Vehículo
-          </Link>
+          <Link href="/dashboard/vehicles/fleet/new">Agregar Vehículo</Link>
         </Button>
         <DownloadBtn data={data} fileName="vehiculos" />
       </div>

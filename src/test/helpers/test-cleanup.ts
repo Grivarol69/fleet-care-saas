@@ -77,10 +77,7 @@ export async function cleanupTenant(tenantId: string) {
   await prisma.document.deleteMany({ where: { tenantId } });
   await prisma.odometerLog.deleteMany({ where: { vehicle: { tenantId } } });
 
-  // 14. Vehicle Drivers
-  await prisma.vehicleDriver.deleteMany({ where: { tenantId } });
-
-  // 15. Vehicles
+  // 14. Vehicles
   await prisma.vehicle.deleteMany({ where: { tenantId } });
 
   // 16. Vehicle Catalog

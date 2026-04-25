@@ -14,4 +14,5 @@ export const formSchema = z.object({
   phone: z.string().optional(),
   licenseNumber: z.string().optional(),
   licenseExpiry: z.string().optional(),
+  userId: z.string().optional(),
 });

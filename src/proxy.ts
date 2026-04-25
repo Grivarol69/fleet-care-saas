@@ -1,10 +1,10 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
-// Rutas públicas que NO requieren autenticación
 const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
   '/sign-up(.*)',
+  '/home/login(.*)',
   '/api/webhooks/clerk(.*)',
   '/api/uploadthing(.*)',
   '/',

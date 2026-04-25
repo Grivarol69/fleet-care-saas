@@ -413,11 +413,13 @@ export const FUEL_VOUCHER_CREATE_ROLES = [
   'OWNER',
   'MANAGER',
   'PURCHASER',
+  'DRIVER',
 ] as const;
 export const FUEL_VOUCHER_VIEW_ROLES = [
   'OWNER',
   'MANAGER',
   'PURCHASER',
+  'DRIVER',
 ] as const;
 
 export function canManageFuelVouchers(role: string): boolean {

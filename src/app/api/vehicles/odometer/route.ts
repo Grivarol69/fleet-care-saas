@@ -74,6 +74,45 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Nivel 1: block if vehicle has a CRITICAL checklist today
+    // Nivel 2: block if vehicle has an active CRITICAL incident
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const [criticalChecklist, criticalIncident] = await Promise.all([
+      tenantPrisma.dailyChecklist.findFirst({
+        where: { vehicleId, status: 'CRITICAL', createdAt: { gte: today } },
+        select: { id: true },
+      }),
+      tenantPrisma.incidentAlert.findFirst({
+        where: {
+          vehicleId,
+          severity: 'CRITICAL',
+          status: { in: ['REPORTED', 'REVIEWED'] },
+        },
+        select: { id: true },
+      }),
+    ]);
+    if (criticalChecklist) {
+      return NextResponse.json(
+        {
+          error: 'VEHICLE_BLOCKED_CHECKLIST',
+          message:
+            'El vehículo tiene un checklist CRÍTICO hoy. Resuelva las observaciones antes de registrar el odómetro.',
+        },
+        { status: 409 }
+      );
+    }
+    if (criticalIncident) {
+      return NextResponse.json(
+        {
+          error: 'VEHICLE_BLOCKED_INCIDENT',
+          message:
+            'El vehículo tiene una novedad CRÍTICA activa. Resuelva el incidente antes de registrar el odómetro.',
+        },
+        { status: 409 }
+      );
+    }
+
     // Validate measure value based on type
     if (measureType === 'KILOMETERS' && !kilometers) {
       return new NextResponse('Kilometers value is required', { status: 400 });

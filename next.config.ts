@@ -1,8 +1,20 @@
 import type { NextConfig } from 'next';
+import withPWAInit from '@ducanh2912/next-pwa';
 
 // Bundle analyzer
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
     enabled: process.env.ANALYZE === 'true',
+});
+
+const withPWA = withPWAInit({
+    dest: 'public',
+    disable: process.env.NODE_ENV === 'development',
+    cacheOnFrontEndNav: true,
+    aggressiveFrontEndNavCaching: true,
+    reloadOnOnline: true,
+    fallbacks: {
+        document: '/home',
+    },
 });
 
 const nextConfig: NextConfig = {
@@ -142,18 +154,6 @@ const nextConfig: NextConfig = {
         CUSTOM_KEY: process.env.CUSTOM_KEY || '',
     },
 
-    // Configuración para redirects si es necesario
-    async redirects() {
-        return [
-            // Ejemplo: redirigir rutas antiguas si las tienes
-            // {
-            //   source: '/old-dashboard',
-            //   destination: '/dashboard',
-            //   permanent: true,
-            // },
-        ];
-    },
-
     // Rewrites para API routes si es necesario
     async rewrites() {
         return [
@@ -180,4 +180,4 @@ const nextConfig: NextConfig = {
     output: 'standalone', // Para optimizar deployments en contenedores
 };
 
-export default withBundleAnalyzer(nextConfig);
+export default withBundleAnalyzer(withPWA(nextConfig));
