@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" fill="none">
+  <!-- Dump truck: cab + tilted bed -->
+  <!-- Cab -->
+  <rect x="120" y="38" width="68" height="39" rx="4" fill="#2563eb"/>
+  <path d="M120 38 L132 20 L182 20 L188 38Z" fill="#3b82f6"/>
+  <rect x="135" y="24" width="20" height="11" rx="2" fill="#bfdbfe"/>
+  <rect x="158" y="24" width="18" height="11" rx="2" fill="#bfdbfe"/>
+  <!-- Dump bed (slightly angled) -->
+  <polygon points="15,30 118,30 118,77 15,65" fill="#1d4ed8"/>
+  <polygon points="15,24 118,24 118,30 15,30" fill="#1e40af"/>
+  <!-- Wheels -->
+  <circle cx="45" cy="80" r="12" fill="#1e3a8a"/>
+  <circle cx="45" cy="80" r="5" fill="#93c5fd"/>
+  <circle cx="88" cy="80" r="12" fill="#1e3a8a"/>
+  <circle cx="88" cy="80" r="5" fill="#93c5fd"/>
+  <circle cx="143" cy="80" r="12" fill="#1e3a8a"/>
+  <circle cx="143" cy="80" r="5" fill="#93c5fd"/>
+  <circle cx="170" cy="80" r="12" fill="#1e3a8a"/>
+  <circle cx="170" cy="80" r="5" fill="#93c5fd"/>
+  <rect x="188" y="52" width="8" height="5" rx="1" fill="#ef4444"/>
+</svg>

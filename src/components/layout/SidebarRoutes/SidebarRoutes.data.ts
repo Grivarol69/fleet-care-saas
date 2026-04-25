@@ -252,11 +252,6 @@ export const dataAdminSidebar: SidebarItem[] = [
       {
         label: 'Planes de Mantenimiento',
         href: '/dashboard/maintenance/mant-template',
-        roles: [UserRole.SUPER_ADMIN],
-      },
-      {
-        label: 'Planes Globales',
-        href: '/dashboard/maintenance/planes-globales',
         roles: [
           UserRole.SUPER_ADMIN,
           UserRole.OWNER,

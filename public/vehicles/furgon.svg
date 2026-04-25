@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" fill="none">
+  <!-- Van/Furgon: box body -->
+  <rect x="20" y="35" width="160" height="42" rx="4" fill="#2563eb"/>
+  <!-- Cab windshield area -->
+  <path d="M140 35 L152 20 L175 20 L178 35Z" fill="#3b82f6"/>
+  <!-- Side windows -->
+  <rect x="30" y="40" width="100" height="15" rx="2" fill="#bfdbfe"/>
+  <rect x="145" y="24" width="20" height="8" rx="2" fill="#bfdbfe"/>
+  <!-- Wheels -->
+  <circle cx="55" cy="80" r="12" fill="#1e3a8a"/>
+  <circle cx="55" cy="80" r="5" fill="#93c5fd"/>
+  <circle cx="155" cy="80" r="12" fill="#1e3a8a"/>
+  <circle cx="155" cy="80" r="5" fill="#93c5fd"/>
+  <rect x="20" y="50" width="8" height="5" rx="1" fill="#fbbf24"/>
+  <rect x="172" y="50" width="8" height="5" rx="1" fill="#ef4444"/>
+</svg>
