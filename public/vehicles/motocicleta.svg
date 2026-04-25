@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" fill="none">
+  <!-- Motorcycle side view -->
+  <!-- Frame/body -->
+  <path d="M55 60 L80 35 L120 35 L140 60Z" fill="#2563eb"/>
+  <!-- Tank -->
+  <ellipse cx="95" cy="42" rx="25" ry="12" fill="#1d4ed8"/>
+  <!-- Seat -->
+  <rect x="95" y="34" width="35" height="8" rx="4" fill="#1e3a8a"/>
+  <!-- Engine block -->
+  <rect x="78" y="55" width="44" height="18" rx="4" fill="#1e40af"/>
+  <!-- Front fork -->
+  <line x1="130" y1="40" x2="148" y2="68" stroke="#1d4ed8" stroke-width="5" stroke-linecap="round"/>
+  <!-- Rear swing arm -->
+  <line x1="68" y1="58" x2="52" y2="68" stroke="#1d4ed8" stroke-width="5" stroke-linecap="round"/>
+  <!-- Wheels -->
+  <circle cx="50" cy="72" r="18" fill="none" stroke="#1e3a8a" stroke-width="7"/>
+  <circle cx="50" cy="72" r="7" fill="#93c5fd"/>
+  <circle cx="150" cy="72" r="18" fill="none" stroke="#1e3a8a" stroke-width="7"/>
+  <circle cx="150" cy="72" r="7" fill="#93c5fd"/>
+  <!-- Handlebars -->
+  <path d="M128 35 L138 28 M128 35 L138 38" stroke="#64748b" stroke-width="3" stroke-linecap="round"/>
+</svg>

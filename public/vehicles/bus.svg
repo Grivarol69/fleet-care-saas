@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" fill="none">
+  <!-- Full bus: tall double-deck look -->
+  <rect x="8" y="20" width="184" height="57" rx="5" fill="#1d4ed8"/>
+  <rect x="8" y="14" width="184" height="8" rx="3" fill="#2563eb"/>
+  <!-- Upper windows row -->
+  <rect x="14" y="22" width="20" height="12" rx="2" fill="#bfdbfe"/>
+  <rect x="38" y="22" width="20" height="12" rx="2" fill="#bfdbfe"/>
+  <rect x="62" y="22" width="20" height="12" rx="2" fill="#bfdbfe"/>
+  <rect x="86" y="22" width="20" height="12" rx="2" fill="#bfdbfe"/>
+  <rect x="110" y="22" width="20" height="12" rx="2" fill="#bfdbfe"/>
+  <rect x="134" y="22" width="20" height="12" rx="2" fill="#bfdbfe"/>
+  <rect x="158" y="22" width="26" height="12" rx="2" fill="#bfdbfe"/>
+  <!-- Lower windows row -->
+  <rect x="14" y="38" width="20" height="12" rx="2" fill="#93c5fd"/>
+  <rect x="38" y="38" width="20" height="12" rx="2" fill="#93c5fd"/>
+  <rect x="62" y="38" width="20" height="12" rx="2" fill="#93c5fd"/>
+  <rect x="86" y="38" width="20" height="12" rx="2" fill="#93c5fd"/>
+  <rect x="110" y="38" width="20" height="12" rx="2" fill="#93c5fd"/>
+  <rect x="134" y="38" width="20" height="12" rx="2" fill="#93c5fd"/>
+  <rect x="158" y="38" width="26" height="12" rx="2" fill="#93c5fd"/>
+  <!-- Wheels (4) -->
+  <circle cx="40" cy="80" r="12" fill="#1e3a8a"/>
+  <circle cx="40" cy="80" r="5" fill="#93c5fd"/>
+  <circle cx="68" cy="80" r="12" fill="#1e3a8a"/>
+  <circle cx="68" cy="80" r="5" fill="#93c5fd"/>
+  <circle cx="132" cy="80" r="12" fill="#1e3a8a"/>
+  <circle cx="132" cy="80" r="5" fill="#93c5fd"/>
+  <circle cx="160" cy="80" r="12" fill="#1e3a8a"/>
+  <circle cx="160" cy="80" r="5" fill="#93c5fd"/>
+  <rect x="8" y="48" width="10" height="6" rx="1" fill="#fbbf24"/>
+</svg>

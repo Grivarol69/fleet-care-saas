@@ -1,9 +1,5 @@
-import { PlanesGlobalesList } from './components/PlanesGlobalesList';
+import { redirect } from 'next/navigation';
 
 export default function PlanesGlobalesPage() {
-  return (
-    <div className="container mx-auto py-10">
-      <PlanesGlobalesList />
-    </div>
-  );
+  redirect('/dashboard/maintenance/mant-template');
 }
