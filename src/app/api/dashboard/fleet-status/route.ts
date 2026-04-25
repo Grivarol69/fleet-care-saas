@@ -66,8 +66,8 @@ export async function GET() {
         brand: { select: { name: true } },
         line: { select: { name: true } },
         type: { select: { name: true } },
-        vehicleDrivers: {
-          where: { status: 'ACTIVE', isPrimary: true },
+        driverShifts: {
+          where: { status: 'ACTIVE' },
           include: { driver: { select: { name: true } } },
           take: 1,
         },
@@ -187,7 +187,7 @@ export async function GET() {
       }
 
       // Obtener conductor primario
-      const primaryDriver = vehicle.vehicleDrivers[0]?.driver?.name || null;
+      const primaryDriver = vehicle.driverShifts[0]?.driver?.name || null;
 
       return {
         id: vehicle.id,

@@ -152,7 +152,7 @@ export function VehicleSelector({
       <button
         onClick={handleStartShift}
         disabled={!selectedId || loading}
-        className="w-full fixed bottom-6 left-0 right-0 mx-4 md:static md:mx-0 bg-[#1E3A5F] text-white py-4 rounded-xl font-bold text-lg shadow-xl shadow-[#1E3A5F]/20 hover:bg-[#152a45] transition-all disabled:opacity-50 disabled:cursor-not-allowed z-50 max-w-[calc(100%-2rem)] md:max-w-none"
+        className="w-full bg-[#1E3A5F] text-white py-4 rounded-xl font-bold text-lg shadow-xl shadow-[#1E3A5F]/20 hover:bg-[#152a45] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? 'Iniciando turno...' : 'Tomar Vehículo'}
       </button>
