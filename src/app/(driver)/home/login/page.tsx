@@ -2,12 +2,12 @@
 
 import { useSignIn } from '@clerk/nextjs';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { Truck } from 'lucide-react';
 
 type Step = 'credentials' | 'second_factor';
 
-export default function PWALoginPage() {
+function PWALoginPageInner() {
   const { isLoaded, signIn, setActive } = useSignIn();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -211,5 +211,13 @@ export default function PWALoginPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function PWALoginPage() {
+  return (
+    <Suspense>
+      <PWALoginPageInner />
+    </Suspense>
   );
 }
