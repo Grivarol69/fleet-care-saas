@@ -1,7 +1,7 @@
 'use client';
 
 import { useSignIn } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { Truck } from 'lucide-react';
 
@@ -16,6 +16,9 @@ export default function PWALoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawReturnUrl = searchParams.get('returnUrl');
+  const returnUrl = rawReturnUrl?.startsWith('/home') ? rawReturnUrl : '/home';
 
   const handleCredentials = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +35,7 @@ export default function PWALoginPage() {
 
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId });
-        router.push('/home');
+        router.push(returnUrl);
       } else if (result.status === 'needs_second_factor') {
         setStep('second_factor');
       } else {
@@ -60,7 +63,7 @@ export default function PWALoginPage() {
 
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId });
-        router.push('/home');
+        router.push(returnUrl);
       } else {
         setError('Código incorrecto. Intenta de nuevo.');
       }

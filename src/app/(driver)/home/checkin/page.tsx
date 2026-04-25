@@ -7,10 +7,14 @@ export default async function CheckinPage({
 }: {
   searchParams: Promise<{ qr?: string }>;
 }) {
-  const { user, tenantPrisma } = await requireCurrentUser();
-  if (!user) redirect('/home/login');
-
   const { qr: qrVehicleId } = await searchParams;
+  const { user, tenantPrisma } = await requireCurrentUser();
+  if (!user) {
+    const dest = qrVehicleId
+      ? `/home/login?returnUrl=${encodeURIComponent(`/home/checkin?qr=${qrVehicleId}`)}`
+      : '/home/login';
+    redirect(dest);
+  }
 
   const driver = await tenantPrisma.driver.findUnique({
     where: { userId: user.id },

@@ -53,7 +53,6 @@ model Tenant {
   documents              Document[]
   subscriptions          Subscription[]
   drivers                Driver[]
-  vehicleDrivers         VehicleDriver[]
   maintenanceAlerts      MaintenanceAlert[]
   financialAlerts        FinancialAlert[] // ✅ Nueva relación
   invoices               Invoice[]
@@ -333,7 +332,6 @@ model Vehicle {
   workOrders         WorkOrder[]
   odometerLogs       OdometerLog[]
   maintenanceAlerts  MaintenanceAlert[]
-  vehicleDrivers     VehicleDriver[]
   vehicleMantProgram VehicleMantProgram? // ✅ CURRENT ARCHITECTURE
   fuelVouchers       FuelVoucher[]
   itemAssignments    VehicleItemAssignment[]
@@ -1356,7 +1354,6 @@ model Driver {
 
   tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   odometerLogs    OdometerLog[]
-  vehicleDrivers  VehicleDriver[]
   driverShifts    DriverShift[]
   fuelVouchers    FuelVoucher[]
   incidentAlerts  IncidentAlert[]
@@ -1368,32 +1365,6 @@ model Driver {
 
   @@unique([tenantId, licenseNumber])
   @@index([tenantId])
-}
-
-model VehicleDriver {
-  id         String    @id @default(uuid())
-  tenantId   String // Multi-tenant support
-  vehicleId  String
-  driverId   String
-  status     Status    @default(ACTIVE) // ACTIVE/INACTIVE
-  isPrimary  Boolean   @default(false) // Conductor principal del vehículo
-  startDate  DateTime  @default(now()) // Fecha inicio de asignación
-  endDate    DateTime? // Fecha fin de asignación (opcional)
-  notes      String? // Notas sobre la asignación
-  assignedBy String? // ID del usuario que asignó
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-
-  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-  driver  Driver  @relation(fields: [driverId], references: [id], onDelete: Cascade)
-
-  @@unique([tenantId, vehicleId, driverId]) // No duplicados por tenant
-  @@index([tenantId])
-  @@index([vehicleId])
-  @@index([driverId])
-  @@index([status])
-  @@index([startDate])
 }
 
 model DriverShift {
