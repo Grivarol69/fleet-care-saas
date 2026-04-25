@@ -6,14 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Image from 'next/image';
 import axios from 'axios';
-import {
-  Car,
-  ChevronLeft,
-  FileText,
-  Loader2,
-  Sparkles,
-  X,
-} from 'lucide-react';
+import { Car, ChevronLeft, FileText, Loader2, Sparkles, X } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -50,7 +43,10 @@ import { FormAddType } from '@/app/dashboard/vehicles/types/components/FormAddTy
 import { FormEditType } from '@/app/dashboard/vehicles/types/components/FormEditType';
 import { cn } from '@/lib/utils';
 
-import { vehicleFormSchema, VehicleFormValues } from './VehicleCreateWizard.form';
+import {
+  vehicleFormSchema,
+  VehicleFormValues,
+} from './VehicleCreateWizard.form';
 import type {
   WizardStep,
   PropertyCardOCRData,
@@ -98,7 +94,9 @@ export function VehicleCreateWizard() {
   const [step, setStep] = useState<WizardStep>(1);
   const [isLoadingContinue, setIsLoadingContinue] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitMode, setSubmitMode] = useState<'finish' | 'continue'>('continue');
+  const [submitMode, setSubmitMode] = useState<'finish' | 'continue'>(
+    'continue'
+  );
 
   // Step 1 state
   const [propertyCardUrl, setPropertyCardUrl] = useState<string | null>(null);
@@ -117,7 +115,9 @@ export function VehicleCreateWizard() {
   const [unmatchedType, setUnmatchedType] = useState<string | null>(null);
 
   // Step 3 state
-  const [createdLicensePlate, setCreatedLicensePlate] = useState<string | null>(null);
+  const [createdLicensePlate, setCreatedLicensePlate] = useState<string | null>(
+    null
+  );
   const [documentTypes, setDocumentTypes] = useState<DocumentTypeConfig[]>([]);
 
   const form = useForm<VehicleFormValues>({
@@ -229,6 +229,7 @@ export function VehicleCreateWizard() {
         licensePlate: values.licensePlate.toUpperCase(),
         color: values.color.toUpperCase(),
         photo: values.photo || undefined,
+        bodyWork: values.bodyWork || undefined,
         fuelType: values.fuelType || undefined,
         serviceType: values.serviceType || undefined,
         costCenterId: values.costCenterId || undefined,
@@ -237,7 +238,9 @@ export function VehicleCreateWizard() {
       setCreatedLicensePlate(response.data.licensePlate);
 
       // Fetch document types for step 3
-      const dtRes = await axios.get<DocumentTypeConfig[]>('/api/vehicles/document-types');
+      const dtRes = await axios.get<DocumentTypeConfig[]>(
+        '/api/vehicles/document-types'
+      );
       setDocumentTypes(dtRes.data);
 
       toast({
@@ -255,7 +258,8 @@ export function VehicleCreateWizard() {
       console.error('Error creating vehicle:', error);
       let description = 'No se pudo crear el vehículo';
       if (axios.isAxiosError(error) && error.response?.data) {
-        description = error.response.data;
+        description =
+          error.response.data?.error ?? JSON.stringify(error.response.data);
       }
       toast({ title: 'Error', description, variant: 'destructive' });
     } finally {
@@ -292,7 +296,8 @@ export function VehicleCreateWizard() {
         </Button>
         <h1 className="text-2xl font-bold mb-2">Registrar Nuevo Vehículo</h1>
         <p className="text-muted-foreground">
-          Sube la tarjeta de propiedad para pre-llenar el formulario automáticamente.
+          Sube la tarjeta de propiedad para pre-llenar el formulario
+          automáticamente.
         </p>
       </div>
 
@@ -306,8 +311,8 @@ export function VehicleCreateWizard() {
                 step === s
                   ? 'border-primary bg-primary text-primary-foreground'
                   : step > s
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-muted-foreground/30 text-muted-foreground'
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-muted-foreground/30 text-muted-foreground'
               )}
             >
               {s}
@@ -358,7 +363,9 @@ export function VehicleCreateWizard() {
                   setPropertyCardUrl(sd?.fileUrl ?? uploaded.url);
 
                   const confidence =
-                    typeof sd?.ocrConfidence === 'number' ? sd.ocrConfidence : 0;
+                    typeof sd?.ocrConfidence === 'number'
+                      ? sd.ocrConfidence
+                      : 0;
 
                   setOcr({
                     confidence,
@@ -367,13 +374,18 @@ export function VehicleCreateWizard() {
                         ? sd.ocrLicensePlate
                         : null,
                     brandName:
-                      typeof sd?.ocrBrandName === 'string' ? sd.ocrBrandName : null,
+                      typeof sd?.ocrBrandName === 'string'
+                        ? sd.ocrBrandName
+                        : null,
                     lineName:
-                      typeof sd?.ocrLineName === 'string' ? sd.ocrLineName : null,
+                      typeof sd?.ocrLineName === 'string'
+                        ? sd.ocrLineName
+                        : null,
                     typeName:
-                      typeof sd?.ocrTypeName === 'string' ? sd.ocrTypeName : null,
-                    year:
-                      typeof sd?.ocrYear === 'number' ? sd.ocrYear : null,
+                      typeof sd?.ocrTypeName === 'string'
+                        ? sd.ocrTypeName
+                        : null,
+                    year: typeof sd?.ocrYear === 'number' ? sd.ocrYear : null,
                     color:
                       typeof sd?.ocrColor === 'string' ? sd.ocrColor : null,
                     engineNumber:
@@ -385,9 +397,13 @@ export function VehicleCreateWizard() {
                         ? sd.ocrChasisNumber
                         : null,
                     ownerCard:
-                      typeof sd?.ocrOwnerCard === 'string' ? sd.ocrOwnerCard : null,
+                      typeof sd?.ocrOwnerCard === 'string'
+                        ? sd.ocrOwnerCard
+                        : null,
                     cylinder:
-                      typeof sd?.ocrCylinder === 'number' ? sd.ocrCylinder : null,
+                      typeof sd?.ocrCylinder === 'number'
+                        ? sd.ocrCylinder
+                        : null,
                     fuelType:
                       typeof sd?.ocrFuelType === 'string'
                         ? (sd.ocrFuelType as PropertyCardOCRData['fuelType'])
@@ -399,7 +415,8 @@ export function VehicleCreateWizard() {
                   });
 
                   toast({
-                    title: confidence >= 40 ? 'Datos detectados' : 'Archivo subido',
+                    title:
+                      confidence >= 40 ? 'Datos detectados' : 'Archivo subido',
                     description:
                       confidence >= 40
                         ? `OCR completado con ${confidence}% de confianza`
@@ -445,61 +462,82 @@ export function VehicleCreateWizard() {
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm text-blue-600">
                       {ocr.licensePlate && (
                         <div>
-                          <span className="text-xs text-blue-500 block">Placa</span>
+                          <span className="text-xs text-blue-500 block">
+                            Placa
+                          </span>
                           <span className="font-bold">{ocr.licensePlate}</span>
                         </div>
                       )}
                       {ocr.brandName && (
                         <div>
-                          <span className="text-xs text-blue-500 block">Marca</span>
+                          <span className="text-xs text-blue-500 block">
+                            Marca
+                          </span>
                           <span>{ocr.brandName}</span>
                         </div>
                       )}
                       {ocr.lineName && (
                         <div>
-                          <span className="text-xs text-blue-500 block">Línea</span>
+                          <span className="text-xs text-blue-500 block">
+                            Línea
+                          </span>
                           <span>{ocr.lineName}</span>
                         </div>
                       )}
                       {ocr.typeName && (
                         <div>
-                          <span className="text-xs text-blue-500 block">Tipo</span>
+                          <span className="text-xs text-blue-500 block">
+                            Tipo
+                          </span>
                           <span>{ocr.typeName}</span>
                         </div>
                       )}
                       {ocr.year && (
                         <div>
-                          <span className="text-xs text-blue-500 block">Año</span>
+                          <span className="text-xs text-blue-500 block">
+                            Año
+                          </span>
                           <span>{ocr.year}</span>
                         </div>
                       )}
                       {ocr.color && (
                         <div>
-                          <span className="text-xs text-blue-500 block">Color</span>
+                          <span className="text-xs text-blue-500 block">
+                            Color
+                          </span>
                           <span>{ocr.color}</span>
                         </div>
                       )}
                       {ocr.fuelType && (
                         <div>
-                          <span className="text-xs text-blue-500 block">Combustible</span>
+                          <span className="text-xs text-blue-500 block">
+                            Combustible
+                          </span>
                           <span>{ocr.fuelType}</span>
                         </div>
                       )}
                       {ocr.serviceType && (
                         <div>
-                          <span className="text-xs text-blue-500 block">Servicio</span>
+                          <span className="text-xs text-blue-500 block">
+                            Servicio
+                          </span>
                           <span>{ocr.serviceType}</span>
                         </div>
                       )}
                       {ocr.chasisNumber && (
                         <div>
-                          <span className="text-xs text-blue-500 block">Chasis</span>
-                          <span className="font-mono text-xs">{ocr.chasisNumber}</span>
+                          <span className="text-xs text-blue-500 block">
+                            Chasis
+                          </span>
+                          <span className="font-mono text-xs">
+                            {ocr.chasisNumber}
+                          </span>
                         </div>
                       )}
                     </div>
                     <p className="mt-3 text-xs text-blue-500">
-                      Los campos serán pre-llenados en el formulario — revisá y aprobá antes de continuar
+                      Los campos serán pre-llenados en el formulario — revisá y
+                      aprobá antes de continuar
                     </p>
                   </div>
                 )}
@@ -548,7 +586,8 @@ export function VehicleCreateWizard() {
                 {ocr && ocr.confidence >= 40 && (
                   <div className="flex items-center gap-2 text-sm text-blue-600">
                     <Sparkles className="h-4 w-4" />
-                    Campos pre-llenados con {ocr.confidence}% de confianza — revisá antes de crear
+                    Campos pre-llenados con {ocr.confidence}% de confianza —
+                    revisá antes de crear
                   </div>
                 )}
               </CardHeader>
@@ -557,17 +596,20 @@ export function VehicleCreateWizard() {
                 {/* Unmatched banners */}
                 {unmatchedBrand && (
                   <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
-                    <strong>Marca no encontrada:</strong> &quot;{unmatchedBrand}&quot; — Créala con el botón + en el campo Marca
+                    <strong>Marca no encontrada:</strong> &quot;{unmatchedBrand}
+                    &quot; — Créala con el botón + en el campo Marca
                   </div>
                 )}
                 {unmatchedLine && (
                   <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
-                    <strong>Línea no encontrada:</strong> &quot;{unmatchedLine}&quot; — Créala con el botón + en el campo Línea
+                    <strong>Línea no encontrada:</strong> &quot;{unmatchedLine}
+                    &quot; — Créala con el botón + en el campo Línea
                   </div>
                 )}
                 {unmatchedType && (
                   <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
-                    <strong>Tipo no encontrado:</strong> &quot;{unmatchedType}&quot; — Créalo con el botón + en el campo Tipo
+                    <strong>Tipo no encontrado:</strong> &quot;{unmatchedType}
+                    &quot; — Créalo con el botón + en el campo Tipo
                   </div>
                 )}
 
@@ -602,14 +644,19 @@ export function VehicleCreateWizard() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Tipo de Placa *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Seleccione tipo" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="PARTICULAR">Particular</SelectItem>
+                              <SelectItem value="PARTICULAR">
+                                Particular
+                              </SelectItem>
                               <SelectItem value="PUBLICO">Público</SelectItem>
                             </SelectContent>
                           </Select>
@@ -636,7 +683,11 @@ export function VehicleCreateWizard() {
                             items={vehicleBrands}
                             onItemsChange={setVehicleBrands}
                             deleteEndpoint={id => `/api/vehicles/brands/${id}`}
-                            renderCreateDialog={({ isOpen, setIsOpen, onSuccess }) => (
+                            renderCreateDialog={({
+                              isOpen,
+                              setIsOpen,
+                              onSuccess,
+                            }) => (
                               <FormAddBrand
                                 isOpen={isOpen}
                                 setIsOpen={setIsOpen}
@@ -647,13 +698,21 @@ export function VehicleCreateWizard() {
                                 }}
                               />
                             )}
-                            renderEditDialog={({ item, isOpen, setIsOpen, onSuccess }) => (
+                            renderEditDialog={({
+                              item,
+                              isOpen,
+                              setIsOpen,
+                              onSuccess,
+                            }) => (
                               <FormEditBrand
                                 isOpen={isOpen}
                                 setIsOpen={setIsOpen}
                                 brand={item}
                                 onEditBrand={brand =>
-                                  onSuccess({ ...brand, isGlobal: item.isGlobal })
+                                  onSuccess({
+                                    ...brand,
+                                    isGlobal: item.isGlobal,
+                                  })
                                 }
                               />
                             )}
@@ -690,7 +749,11 @@ export function VehicleCreateWizard() {
                             }}
                             disabled={!watchedBrandId}
                             deleteEndpoint={id => `/api/vehicles/lines/${id}`}
-                            renderCreateDialog={({ isOpen, setIsOpen, onSuccess }) => (
+                            renderCreateDialog={({
+                              isOpen,
+                              setIsOpen,
+                              onSuccess,
+                            }) => (
                               <FormAddLine
                                 isOpen={isOpen}
                                 setIsOpen={setIsOpen}
@@ -706,7 +769,12 @@ export function VehicleCreateWizard() {
                                 }}
                               />
                             )}
-                            renderEditDialog={({ item, isOpen, setIsOpen, onSuccess }) => (
+                            renderEditDialog={({
+                              item,
+                              isOpen,
+                              setIsOpen,
+                              onSuccess,
+                            }) => (
                               <FormEditLine
                                 isOpen={isOpen}
                                 setIsOpen={setIsOpen}
@@ -742,7 +810,11 @@ export function VehicleCreateWizard() {
                             items={vehicleTypes}
                             onItemsChange={setVehicleTypes}
                             deleteEndpoint={id => `/api/vehicles/types/${id}`}
-                            renderCreateDialog={({ isOpen, setIsOpen, onSuccess }) => (
+                            renderCreateDialog={({
+                              isOpen,
+                              setIsOpen,
+                              onSuccess,
+                            }) => (
                               <FormAddType
                                 isOpen={isOpen}
                                 setIsOpen={setIsOpen}
@@ -753,13 +825,21 @@ export function VehicleCreateWizard() {
                                 }}
                               />
                             )}
-                            renderEditDialog={({ item, isOpen, setIsOpen, onSuccess }) => (
+                            renderEditDialog={({
+                              item,
+                              isOpen,
+                              setIsOpen,
+                              onSuccess,
+                            }) => (
                               <FormEditType
                                 isOpen={isOpen}
                                 setIsOpen={setIsOpen}
                                 type={item}
                                 onEditType={type =>
-                                  onSuccess({ ...type, isGlobal: item.isGlobal })
+                                  onSuccess({
+                                    ...type,
+                                    isGlobal: item.isGlobal,
+                                  })
                                 }
                               />
                             )}
@@ -777,7 +857,11 @@ export function VehicleCreateWizard() {
                         <FormItem>
                           <FormLabel>Año *</FormLabel>
                           <FormControl>
-                            <Input type="number" placeholder="2024" {...field} />
+                            <Input
+                              type="number"
+                              placeholder="2024"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -839,7 +923,9 @@ export function VehicleCreateWizard() {
                               <SelectItem value="OWN">Propio</SelectItem>
                               <SelectItem value="LEASED">Arrendado</SelectItem>
                               <SelectItem value="RENTED">Rentado</SelectItem>
-                              <SelectItem value="THIRD_PARTY">Tercero (administrado)</SelectItem>
+                              <SelectItem value="THIRD_PARTY">
+                                Tercero (administrado)
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -885,16 +971,23 @@ export function VehicleCreateWizard() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Estado *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Seleccione estado" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="AVAILABLE">Disponible</SelectItem>
+                              <SelectItem value="AVAILABLE">
+                                Disponible
+                              </SelectItem>
                               <SelectItem value="IN_USE">En uso</SelectItem>
-                              <SelectItem value="MAINTENANCE">Mantenimiento</SelectItem>
+                              <SelectItem value="MAINTENANCE">
+                                Mantenimiento
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -921,11 +1014,15 @@ export function VehicleCreateWizard() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="NONE">Sin especificar</SelectItem>
+                              <SelectItem value="NONE">
+                                Sin especificar
+                              </SelectItem>
                               <SelectItem value="DIESEL">Diesel</SelectItem>
                               <SelectItem value="GASOLINA">Gasolina</SelectItem>
                               <SelectItem value="GAS">Gas</SelectItem>
-                              <SelectItem value="ELECTRICO">Eléctrico</SelectItem>
+                              <SelectItem value="ELECTRICO">
+                                Eléctrico
+                              </SelectItem>
                               <SelectItem value="HIBRIDO">Híbrido</SelectItem>
                             </SelectContent>
                           </Select>
@@ -1010,9 +1107,62 @@ export function VehicleCreateWizard() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Carrocería</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Sedán" {...field} />
-                          </FormControl>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value || ''}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar carrocería" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="SEDAN">Sedán</SelectItem>
+                              <SelectItem value="COUPE">Coupé</SelectItem>
+                              <SelectItem value="HATCHBACK">
+                                Hatchback
+                              </SelectItem>
+                              <SelectItem value="FAMILIAR">Familiar</SelectItem>
+                              <SelectItem value="CONVERTIBLE">
+                                Convertible
+                              </SelectItem>
+                              <SelectItem value="PICK_UP">Pick-up</SelectItem>
+                              <SelectItem value="CAMPERO">Campero</SelectItem>
+                              <SelectItem value="VAN">Van</SelectItem>
+                              <SelectItem value="FURGON">Furgón</SelectItem>
+                              <SelectItem value="MICROBUS">Microbús</SelectItem>
+                              <SelectItem value="BUSETA">Buseta</SelectItem>
+                              <SelectItem value="BUS">Bus</SelectItem>
+                              <SelectItem value="CAMION">Camión</SelectItem>
+                              <SelectItem value="VOLQUETA">Volqueta</SelectItem>
+                              <SelectItem value="TRACTOCAMION">
+                                Tractocamión
+                              </SelectItem>
+                              <SelectItem value="CISTERNA">Cisterna</SelectItem>
+                              <SelectItem value="PLANCHON">Planchón</SelectItem>
+                              <SelectItem value="GRUA">Grúa</SelectItem>
+                              <SelectItem value="SEMIRREMOLQUE">
+                                Semirremolque
+                              </SelectItem>
+                              <SelectItem value="REMOLQUE">Remolque</SelectItem>
+                              <SelectItem value="MOTOCICLETA">
+                                Motocicleta
+                              </SelectItem>
+                              <SelectItem value="MOTOCAR">Motocar</SelectItem>
+                              <SelectItem value="TRICIMOTO">
+                                Tricimoto
+                              </SelectItem>
+                              <SelectItem value="CUATRIMOTO">
+                                Cuatrimoto
+                              </SelectItem>
+                              <SelectItem value="MAQUINARIA_AGRICOLA">
+                                Maquinaria Agrícola
+                              </SelectItem>
+                              <SelectItem value="MAQUINARIA_INDUSTRIAL">
+                                Maquinaria Industrial
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -1038,7 +1188,8 @@ export function VehicleCreateWizard() {
                                       field.onChange(res[0].url);
                                       toast({
                                         title: 'Imagen subida',
-                                        description: 'La imagen se cargó correctamente',
+                                        description:
+                                          'La imagen se cargó correctamente',
                                       });
                                     }
                                   }}
@@ -1141,7 +1292,8 @@ export function VehicleCreateWizard() {
                   {createdLicensePlate}
                 </Badge>
                 <span className="text-sm text-muted-foreground">
-                  Sube los documentos del vehículo (opcional — podés hacerlo después)
+                  Sube los documentos del vehículo (opcional — podés hacerlo
+                  después)
                 </span>
               </div>
             </CardHeader>
@@ -1157,7 +1309,9 @@ export function VehicleCreateWizard() {
                     vehiclePlate={createdLicensePlate}
                     documentType={dt}
                     preloadedUrl={
-                      isPropertyCard ? (propertyCardUrl ?? undefined) : undefined
+                      isPropertyCard
+                        ? (propertyCardUrl ?? undefined)
+                        : undefined
                     }
                     preloadedOcr={
                       isPropertyCard ? preloadedOcrForPropertyCard : undefined
@@ -1178,9 +1332,7 @@ export function VehicleCreateWizard() {
           )}
 
           <div className="flex justify-end">
-            <Button
-              onClick={() => router.push('/dashboard/vehicles/fleet')}
-            >
+            <Button onClick={() => router.push('/dashboard/vehicles/fleet')}>
               Finalizar
             </Button>
           </div>
