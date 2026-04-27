@@ -45,47 +45,31 @@ import {
 } from './MantTemplatesList.types';
 
 const VEHICLE_UNSPLASH: Record<string, string> = {
-  Automóvil:
-    'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=400&fit=crop&auto=format',
-  Camioneta:
-    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=400&fit=crop&auto=format',
-  Campero:
-    'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=800&h=400&fit=crop&auto=format',
-  SUV: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=800&h=400&fit=crop&auto=format',
-  Furgón:
-    'https://images.unsplash.com/photo-1543071220-6ee5d5b5b4e2?w=800&h=400&fit=crop&auto=format',
-  Microbús:
-    'https://images.unsplash.com/photo-1570125909517-53cb21c89ff2?w=800&h=400&fit=crop&auto=format',
-  Buseta:
-    'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&h=400&fit=crop&auto=format',
-  Bus: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&h=400&fit=crop&auto=format',
-  'Camión Mediano':
-    'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=800&h=400&fit=crop&auto=format',
-  'Camión Pesado':
-    'https://images.unsplash.com/photo-1586191582056-dc4c8dc2acda?w=800&h=400&fit=crop&auto=format',
-  Volqueta:
-    'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=800&h=400&fit=crop&auto=format',
-  Tractocamión:
-    'https://images.unsplash.com/photo-1519003722824-194d4455a60c?w=800&h=400&fit=crop&auto=format',
-  Semirremolque:
-    'https://images.unsplash.com/photo-1519003722824-194d4455a60c?w=800&h=400&fit=crop&auto=format',
-  Motocicleta:
-    'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800&h=400&fit=crop&auto=format',
-  Cuatrimoto:
-    'https://images.unsplash.com/photo-1558981359-219d6364c9c8?w=800&h=400&fit=crop&auto=format',
-  'Maquinaria Agrícola':
-    'https://images.unsplash.com/photo-1592878904946-b3cd8ae243d0?w=800&h=400&fit=crop&auto=format',
-  'Maquinaria Industrial':
-    'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&h=400&fit=crop&auto=format',
-  'Vehículo de Emergencia':
-    'https://images.unsplash.com/photo-1587745416684-47953f16f02f?w=800&h=400&fit=crop&auto=format',
+  Automóvil: '/images/Tipos/automovil.jpeg',
+  Camioneta: '/images/Tipos/camioneta.jpg',
+  Campero: '/images/Tipos/campero.jpg',
+  SUV: '/images/Tipos/campero.jpg',
+  Furgón: '/images/Tipos/furgon.jpg',
+  Microbús: '/images/Tipos/minibus.jpg',
+  Buseta: '/images/Tipos/minibus.jpg',
+  Bus: '/images/Tipos/bus_grande.jpg',
+  'Camión Mediano': '/images/Tipos/camion_liviano.jpg',
+  'Camión Pesado': '/images/Tipos/camion_pesado.jpg',
+  Volqueta: '/images/volqueta_10.jpg',
+  Tractocamión: '/images/Tipos/camion_tanque.jpg',
+  Semirremolque: '/images/Tipos/semirremolque.jpg',
+  Motocicleta: '/images/Tipos/motocicleta.jpg',
+  Cuatrimoto: '/images/Tipos/cuatrimoto.jpg',
+  'Maquinaria Agrícola': '/images/Tipos/maquina_agricola.jpg',
+  'Maquinaria Industrial': '/images/Tipos/maquina_industrial.jpg',
+  'Vehículo de Emergencia': '/images/Tipos/ambulancia.jpg',
 };
 
 function getVehicleImage(template: MantTemplatesListProps): string {
   if (template.imageUrl) return template.imageUrl;
   return (
     VEHICLE_UNSPLASH[template.vehicleType?.name ?? ''] ??
-    'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=400&fit=crop&auto=format'
+    '/images/Tipos/automovil.jpeg'
   );
 }
 
@@ -110,7 +94,7 @@ function GlobalTemplateCard({
           className="h-full w-full object-cover rounded-t-lg"
           onError={e => {
             (e.currentTarget as HTMLImageElement).src =
-              'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=400&fit=crop&auto=format';
+              '/images/Tipos/automovil.jpeg';
           }}
         />
       </div>
@@ -702,7 +686,7 @@ export function MantTemplatesList() {
                         className="h-10 w-16 object-cover rounded"
                         onError={e => {
                           (e.currentTarget as HTMLImageElement).src =
-                            'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=400&fit=crop&auto=format';
+                            '/images/Tipos/automovil.jpeg';
                         }}
                       />
                       <div>
