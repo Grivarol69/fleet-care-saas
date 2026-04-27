@@ -18,27 +18,31 @@ export type { UserWithSuperAdmin };
  *
  * @returns User de Prisma con información completa (incluido role, tenantId, isSuperAdmin)
  */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error('DATABASE_TIMEOUT')), ms)
+    ),
+  ]);
+}
+
 export async function getCurrentUser(): Promise<UserWithSuperAdmin | null> {
   try {
-    // Timeout de 15s para evitar que la página se cuelgue si Neon tiene cold start
-    const result = await Promise.race([
-      getCurrentUserInternal(),
-      new Promise<null>((_, reject) => {
-        setTimeout(() => {
-          console.error(
-            '[AUTH] getCurrentUser() timeout after 15s - possible DB cold start'
-          );
-          reject(new Error('DATABASE_TIMEOUT'));
-        }, 15000);
-      }),
-    ]);
-    return result;
+    return await withTimeout(getCurrentUserInternal(), 20000);
   } catch (error: any) {
-    if (error.message === 'DATABASE_TIMEOUT') {
-      throw error;
+    if (error.message !== 'DATABASE_TIMEOUT') {
+      console.error('[AUTH ERROR]', error);
+      return null;
     }
-    console.error('[AUTH ERROR] Error obteniendo usuario:', error);
-    return null;
+    // Neon cold start: retry once — compute suele estar listo en <5s adicionales
+    console.warn('[AUTH] DB timeout (cold start probable). Retrying once...');
+    try {
+      return await withTimeout(getCurrentUserInternal(), 25000);
+    } catch (retryError: any) {
+      console.error('[AUTH] Retry also timed out — DB unresponsive.');
+      return null;
+    }
   }
 }
 
