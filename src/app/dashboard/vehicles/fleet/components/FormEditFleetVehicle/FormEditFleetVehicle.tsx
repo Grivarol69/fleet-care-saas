@@ -47,7 +47,7 @@ import { useCostCenters } from '@/lib/hooks/usePeople';
 // Schema corregido
 const formSchema = z.object({
   id: z.string().min(1),
-  photo: z.string().min(1, 'La imagen es requerida'),
+  photo: z.string().optional(),
   licensePlate: z.string().min(3, 'La placa debe tener al menos 3 caracteres'),
   typePlate: z.enum(['PARTICULAR', 'PUBLICO']),
   brandId: z.string().min(1).min(1, 'Seleccione una marca'),
@@ -698,7 +698,7 @@ export function FormEditFleetVehicle({
                       name="photo"
                       render={() => (
                         <FormItem>
-                          <FormLabel>Imagen del Vehículo *</FormLabel>
+                          <FormLabel>Imagen del Vehículo</FormLabel>
                           <FormControl>
                             <div className="space-y-4">
                               {!previewImage ? (
