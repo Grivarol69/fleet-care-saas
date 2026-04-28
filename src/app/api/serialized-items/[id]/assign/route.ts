@@ -14,7 +14,7 @@ export async function POST(
 
   const { id } = await params;
   const body = await request.json();
-  const { vehicleId, position, installedAt } = body;
+  const { vehicleId, position, installedAt, installedAtKm } = body;
 
   // Verify item exists, belongs to tenant, and is IN_STOCK
   const item = await tenantPrisma.serializedItem.findFirst({
@@ -57,6 +57,7 @@ export async function POST(
         serializedItemId: id,
         position: position ?? null,
         installedAt: installedAtDate,
+        installedAtKm: installedAtKm ?? null,
       },
     }),
     tenantPrisma.serializedItem.update({
