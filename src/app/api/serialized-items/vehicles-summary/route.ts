@@ -41,6 +41,11 @@ export async function GET(request: NextRequest) {
                   },
                 },
               },
+              events: {
+                orderBy: { performedAt: 'desc' },
+                take: 1,
+                select: { vehicleKm: true },
+              },
               alerts: { where: { status: 'ACTIVE' }, select: { id: true } },
             },
           },
@@ -54,19 +59,31 @@ export async function GET(request: NextRequest) {
   const result = vehicles.map(v => {
     const assignments = v.itemAssignments
       .filter(a => !type || a.serializedItem.type === type)
-      .map(a => ({
-        assignmentId: a.id,
-        position: a.position,
-        serializedItemId: a.serializedItem.id,
-        serialNumber: a.serializedItem.serialNumber,
-        description:
-          a.serializedItem.invoiceItem?.masterPart?.description ||
-          a.serializedItem.invoiceItem?.description ||
-          '',
-        type: a.serializedItem.type,
-        specs: a.serializedItem.specs,
-        activeAlertCount: a.serializedItem.alerts.length,
-      }));
+      .map(a => {
+        const lastEvent = a.serializedItem.events[0];
+        const accumulatedKm =
+          lastEvent?.vehicleKm !== null &&
+          lastEvent?.vehicleKm !== undefined &&
+          a.installedAtKm !== null &&
+          a.installedAtKm !== undefined
+            ? lastEvent.vehicleKm - a.installedAtKm
+            : null;
+
+        return {
+          assignmentId: a.id,
+          position: a.position,
+          serializedItemId: a.serializedItem.id,
+          serialNumber: a.serializedItem.serialNumber,
+          description:
+            a.serializedItem.invoiceItem?.masterPart?.description ||
+            a.serializedItem.invoiceItem?.description ||
+            '',
+          type: a.serializedItem.type,
+          specs: a.serializedItem.specs,
+          accumulatedKm,
+          activeAlertCount: a.serializedItem.alerts.length,
+        };
+      });
 
     return {
       vehicleId: v.id,
@@ -74,6 +91,7 @@ export async function GET(request: NextRequest) {
       brandName: v.brand.name,
       lineName: v.line.name,
       axleConfig: v.axleConfig ?? 'STANDARD_4',
+      mileage: v.mileage,
       totalSlots: (
         AXLE_CONFIG_POSITIONS[v.axleConfig ?? 'STANDARD_4'] ??
         AXLE_CONFIG_POSITIONS['STANDARD_4']

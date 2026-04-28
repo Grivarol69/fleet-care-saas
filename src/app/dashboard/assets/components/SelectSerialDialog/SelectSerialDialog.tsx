@@ -27,6 +27,7 @@ export function SelectSerialDialog({
   vehicleLicensePlate,
   position,
   itemType,
+  installedAtKm,
   open,
   onOpenChange,
   onSuccess,
@@ -78,6 +79,7 @@ export function SelectSerialDialog({
           vehicleId,
           position,
           installedAt: new Date().toISOString(),
+          installedAtKm,
         }),
       });
       if (!res.ok) {

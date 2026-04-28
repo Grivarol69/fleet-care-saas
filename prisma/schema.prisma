@@ -2514,8 +2514,9 @@ model VehicleItemAssignment {
 
   position String?
 
-  installedAt DateTime  @default(now())
-  removedAt   DateTime?
+  installedAt   DateTime  @default(now())
+  installedAtKm Int?
+  removedAt     DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

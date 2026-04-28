@@ -61,6 +61,13 @@ export async function POST(
         data: { status: 'RETIRED', retiredAt: performedAtDate },
       });
     }
+
+    if (eventType === 'REVISION' && specs) {
+      await tx.serializedItem.update({
+        where: { id },
+        data: { specs },
+      });
+    }
   });
 
   // After transaction: evaluate alerts if REVISION with specs
