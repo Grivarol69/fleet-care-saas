@@ -704,6 +704,8 @@ model WorkOrder {
   endDate           DateTime?
   completionMileage Float? // Kilometraje al momento de cierre de la OT
   notes             String?   @db.Text // Notas de contexto a nivel OT (ej: incidentes, demoras)
+  source            WorkOrderSource @default(OPERATIONAL)
+  importBatchId     String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
@@ -1023,6 +1025,9 @@ model Invoice {
   siigoError       String?          @db.Text
   paymentMeanSiigo Int?
   siigoSyncedBy    String?
+
+  // Importación histórica
+  importBatchId String?
 
   // Metadata
   createdAt DateTime @default(now())
@@ -2722,4 +2727,9 @@ enum ChecklistItemStatus {
 enum ShiftStatus {
   ACTIVE
   COMPLETED
+}
+
+enum WorkOrderSource {
+  OPERATIONAL
+  HISTORICAL_IMPORT
 }
