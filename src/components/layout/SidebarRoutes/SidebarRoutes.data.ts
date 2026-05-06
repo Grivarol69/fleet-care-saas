@@ -19,6 +19,7 @@ import {
   Droplets,
   Disc3,
   PlusCircle,
+  Upload,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -303,6 +304,12 @@ export const dataAdminSidebar: SidebarItem[] = [
           UserRole.PURCHASER,
         ],
       }, // PURCHASER gestiona facturas
+      {
+        label: 'Importación Histórica',
+        icon: Upload,
+        href: '/dashboard/historical-import',
+        roles: [UserRole.OWNER, UserRole.MANAGER],
+      },
       {
         label: 'Órdenes Compra',
         icon: ShoppingCart,
