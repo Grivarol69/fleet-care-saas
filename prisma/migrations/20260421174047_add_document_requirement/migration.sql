@@ -26,9 +26,25 @@ ALTER TABLE "MaintenanceTemplate" DROP CONSTRAINT "MaintenanceTemplate_vehicleLi
 
 -- AlterTable
 ALTER TABLE "MaintenanceTemplate" ADD COLUMN     "clonedFromId" TEXT,
-ADD COLUMN     "vehicleTypeId" TEXT NOT NULL,
+ADD COLUMN     "vehicleTypeId" TEXT,
 ALTER COLUMN "vehicleBrandId" DROP NOT NULL,
 ALTER COLUMN "vehicleLineId" DROP NOT NULL;
+
+-- Backfill: assign first global VehicleType to existing templates
+UPDATE "MaintenanceTemplate"
+SET "vehicleTypeId" = (
+  SELECT id FROM "VehicleType"
+  WHERE "isGlobal" = true
+  ORDER BY "createdAt"
+  LIMIT 1
+)
+WHERE "vehicleTypeId" IS NULL;
+
+-- Remove rows that have no VehicleType to assign (orphaned demo data)
+DELETE FROM "MaintenanceTemplate" WHERE "vehicleTypeId" IS NULL;
+
+-- Enforce NOT NULL now that all rows have a value
+ALTER TABLE "MaintenanceTemplate" ALTER COLUMN "vehicleTypeId" SET NOT NULL;
 
 -- AlterTable
 ALTER TABLE "Vehicle" DROP COLUMN "bodyWork",
