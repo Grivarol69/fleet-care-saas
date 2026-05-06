@@ -85,9 +85,9 @@ function GlobalTemplateCard({
   onCloneSuccess,
 }: GlobalTemplateCardProps) {
   return (
-    <Card className="hover:shadow-lg transition-all duration-200 hover:scale-[1.02] flex flex-col overflow-hidden">
+    <Card className="hover:shadow-xl transition-all duration-200 hover:scale-[1.02] flex flex-col overflow-hidden border-t-4 border-t-blue-500">
       {/* Vehicle image header */}
-      <div className="h-40 overflow-hidden">
+      <div className="h-40 overflow-hidden relative">
         <img
           src={getVehicleImage(template)}
           alt={template.vehicleType?.name ?? 'Vehículo'}
@@ -97,17 +97,13 @@ function GlobalTemplateCard({
               '/images/Tipos/automovil.jpeg';
           }}
         />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent rounded-t-lg" />
+        <Badge className="absolute bottom-2 left-2 bg-blue-600 text-white text-xs border-0 shadow">
+          {template.vehicleType?.name}
+        </Badge>
       </div>
 
       <CardContent className="p-4 flex flex-col flex-1">
-        {/* Vehicle type badge */}
-        <Badge
-          variant="outline"
-          className="self-start mb-2 bg-blue-50 text-blue-700 text-xs"
-        >
-          {template.vehicleType?.name}
-        </Badge>
-
         {/* Name + description */}
         <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2 text-sm leading-snug">
           {template.name}
@@ -118,7 +114,7 @@ function GlobalTemplateCard({
 
         {/* Packages count */}
         <div className="flex items-center gap-1 text-xs text-gray-600 mb-3">
-          <Package className="h-3 w-3" />
+          <Package className="h-3 w-3 text-blue-500" />
           <span>
             {template.packages?.length || 0} paquetes de mantenimiento
           </span>
@@ -127,10 +123,9 @@ function GlobalTemplateCard({
         {/* Actions */}
         <div className="flex gap-2">
           <Button
-            variant="outline"
             size="sm"
             onClick={() => onSelect(template)}
-            className="flex-1 h-8 text-xs"
+            className="flex-1 h-8 text-xs bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white shadow-sm"
           >
             <ChevronRight className="h-3 w-3 mr-1" />
             Ver detalles
@@ -422,10 +417,9 @@ export function MantTemplatesList() {
       cell: ({ row }) => (
         <div className="flex gap-2">
           <Button
-            variant="outline"
             size="sm"
             onClick={() => handleSelectPackage(row.original)}
-            className="text-blue-600 hover:text-blue-700"
+            className="bg-blue-600 hover:bg-blue-700 text-white"
           >
             <ChevronRight className="h-4 w-4 mr-1" /> Ver Items
           </Button>
@@ -433,6 +427,7 @@ export function MantTemplatesList() {
             variant="outline"
             size="sm"
             onClick={() => handleEditPackage(row.original)}
+            className="border-amber-300 text-amber-600 hover:bg-amber-50 hover:border-amber-400"
           >
             <Edit className="h-4 w-4" />
           </Button>
@@ -513,6 +508,7 @@ export function MantTemplatesList() {
             variant="outline"
             size="sm"
             onClick={() => handleEditPackageItem(row.original)}
+            className="border-amber-300 text-amber-600 hover:bg-amber-50 hover:border-amber-400"
           >
             <Edit className="h-4 w-4" />
           </Button>

@@ -64,6 +64,7 @@ export function SerializedItemTable({
           <TableHead>Tipo</TableHead>
           <TableHead>Estado</TableHead>
           <TableHead>Vehículo / Posición</TableHead>
+          <TableHead>Km acum.</TableHead>
           <TableHead>Alertas</TableHead>
           <TableHead>Origen compra</TableHead>
           <TableHead>Recepción</TableHead>
@@ -112,6 +113,11 @@ export function SerializedItemTable({
                 ) : (
                   '—'
                 )}
+              </TableCell>
+              <TableCell className="text-sm">
+                {item.accumulatedKm !== null
+                  ? `${item.accumulatedKm.toLocaleString()} km`
+                  : '—'}
               </TableCell>
               <TableCell>
                 {item.activeAlertCount > 0 ? (

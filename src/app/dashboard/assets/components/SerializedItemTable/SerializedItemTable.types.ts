@@ -12,6 +12,7 @@ export interface SerializedItemRow {
     position: string | null;
   } | null;
   activeAlertCount: number;
+  accumulatedKm: number | null;
 }
 
 export interface SerializedItemTableProps {

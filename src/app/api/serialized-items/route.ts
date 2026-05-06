@@ -49,6 +49,11 @@ export async function GET(request: NextRequest) {
             take: 1,
             include: { vehicle: { select: { licensePlate: true } } },
           },
+          events: {
+            orderBy: { performedAt: 'desc' },
+            take: 1,
+            select: { vehicleKm: true },
+          },
           alerts: { where: { status: 'ACTIVE' }, select: { id: true } },
         },
         skip,
@@ -59,6 +64,15 @@ export async function GET(request: NextRequest) {
 
     const items = rawItems.map(item => {
       const assignment = item.vehicleAssignments[0] ?? null;
+      const lastEvent = item.events[0];
+      const accumulatedKm =
+        lastEvent?.vehicleKm !== null &&
+        lastEvent?.vehicleKm !== undefined &&
+        assignment?.installedAtKm !== null &&
+        assignment?.installedAtKm !== undefined
+          ? lastEvent.vehicleKm - assignment.installedAtKm
+          : null;
+
       return {
         id: item.id,
         serialNumber: item.serialNumber,
@@ -80,6 +94,7 @@ export async function GET(request: NextRequest) {
             }
           : null,
         activeAlertCount: item.alerts.length,
+        accumulatedKm,
       };
     });
 

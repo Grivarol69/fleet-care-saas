@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 import { AxleDiagram } from './components/AxleDiagram';
 import { SerializedItemTable } from './components/SerializedItemTable';
@@ -25,6 +26,7 @@ import {
   SERIALIZED_ITEM_STATUS_LABELS,
   AXLE_CONFIG_LABELS,
 } from '@/lib/serialized-asset-constants';
+import { RotationModal } from './components/RotationModal';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -34,6 +36,7 @@ interface VehicleSummary {
   brandName: string;
   lineName: string;
   axleConfig: string;
+  mileage: number;
   totalSlots: number;
   activeAlertCount: number;
   assignments: Array<{
@@ -90,6 +93,7 @@ export default function AssetsPage() {
     position: string;
   } | null>(null);
   const [selectSerialOpen, setSelectSerialOpen] = useState(false);
+  const [rotationOpen, setRotationOpen] = useState(false);
 
   // Alerts tab
   const [alerts, setAlerts] = useState<SerializedItemAlertRow[]>([]);
@@ -300,6 +304,15 @@ export default function AssetsPage() {
                     }
                   }}
                 />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full mt-4"
+                  onClick={() => setRotationOpen(true)}
+                  disabled={selectedVehicle.assignments.length < 2}
+                >
+                  Rotar Activos
+                </Button>
               </div>
             </div>
           )}
@@ -391,6 +404,7 @@ export default function AssetsPage() {
           vehicleId={slotDialogData.vehicleId}
           vehicleLicensePlate={slotDialogData.vehicleLicensePlate}
           position={slotDialogData.position}
+          installedAtKm={selectedVehicle?.mileage}
           itemType="TIRE"
           open={selectSerialOpen}
           onOpenChange={setSelectSerialOpen}
@@ -398,6 +412,20 @@ export default function AssetsPage() {
             setSelectSerialOpen(false);
             setSlotDialogData(null);
             fetchVehicles();
+          }}
+        />
+      )}
+
+      {/* Rotation modal */}
+      {selectedVehicle && (
+        <RotationModal
+          vehicleId={selectedVehicle.vehicleId}
+          occupiedSlots={axleSlots}
+          isOpen={rotationOpen}
+          onClose={() => setRotationOpen(false)}
+          onSuccess={() => {
+            fetchVehicles();
+            fetchItems();
           }}
         />
       )}

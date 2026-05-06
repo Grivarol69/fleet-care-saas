@@ -5,6 +5,12 @@ import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -54,6 +60,7 @@ type WorkOrderForHeader = {
   };
   technician: { id: string; name: string } | null;
   workOrderItems?: Array<any>;
+  invoices: Array<{ id: string }>;
 };
 
 type WorkOrderHeaderProps = {
@@ -65,14 +72,17 @@ type WorkOrderHeaderProps = {
 
 const statusConfig: Record<
   string,
-  { label: string; variant: 'secondary' | 'default' | 'outline' | 'destructive' }
+  {
+    label: string;
+    variant: 'secondary' | 'default' | 'outline' | 'destructive';
+  }
 > = {
-  PENDING:    { label: 'Planificación', variant: 'secondary' },
-  APPROVED:   { label: 'Aprobada',      variant: 'default' },
-  COMPLETED:  { label: 'Completada',    variant: 'outline' },
-  CLOSED:     { label: 'Cerrada',       variant: 'default' },
-  REJECTED:   { label: 'Rechazada',     variant: 'destructive' },
-  CANCELLED:  { label: 'Cancelada',     variant: 'outline' },
+  PENDING: { label: 'Planificación', variant: 'secondary' },
+  APPROVED: { label: 'Aprobada', variant: 'default' },
+  COMPLETED: { label: 'Completada', variant: 'outline' },
+  CLOSED: { label: 'Cerrada', variant: 'default' },
+  REJECTED: { label: 'Rechazada', variant: 'destructive' },
+  CANCELLED: { label: 'Cancelada', variant: 'outline' },
 };
 
 function isManagerOrAbove(user: CurrentUser): boolean {
@@ -99,7 +109,8 @@ export function WorkOrderHeader({
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showMileageDialog, setShowMileageDialog] = useState(false);
   const [closureKm, setClosureKm] = useState(
-    workOrder.completionMileage?.toString() || workOrder.vehicle.mileage.toString()
+    workOrder.completionMileage?.toString() ||
+      workOrder.vehicle.mileage.toString()
   );
   const [showTicketDialog, setShowTicketDialog] = useState(false);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
@@ -120,7 +131,9 @@ export function WorkOrderHeader({
     variant: 'outline' as const,
   };
 
-  const canDelete = !['COMPLETED', 'CLOSED', 'CANCELLED'].includes(workOrder.status);
+  const canDelete = !['COMPLETED', 'CLOSED', 'CANCELLED'].includes(
+    workOrder.status
+  );
 
   // ── Transition handlers ──────────────────────────────────────────
 
@@ -149,7 +162,11 @@ export function WorkOrderHeader({
         axios.isAxiosError(err) && err.response?.data?.error
           ? err.response.data.error
           : 'No se pudo aprobar la orden de trabajo.';
-      toast({ title: 'Error al aprobar OT', description: msg, variant: 'destructive' });
+      toast({
+        title: 'Error al aprobar OT',
+        description: msg,
+        variant: 'destructive',
+      });
     } finally {
       setIsTransitioning(false);
       setShowApproveDialog(false);
@@ -178,7 +195,9 @@ export function WorkOrderHeader({
     setIsTransitioning(true);
     try {
       const body: Record<string, unknown> = { status: 'COMPLETED' };
-      const finalKm = closureKm ? parseInt(closureKm, 10) : workOrder.vehicle.mileage;
+      const finalKm = closureKm
+        ? parseInt(closureKm, 10)
+        : workOrder.vehicle.mileage;
       body.completionMileage = finalKm;
 
       await axios.patch(`/api/maintenance/work-orders/${workOrder.id}`, body);
@@ -209,7 +228,11 @@ export function WorkOrderHeader({
         axios.isAxiosError(err) && err.response?.data?.error
           ? err.response.data.error
           : 'No se pudo cerrar la orden de trabajo.';
-      toast({ title: 'Error al cerrar OT', description: msg, variant: 'destructive' });
+      toast({
+        title: 'Error al cerrar OT',
+        description: msg,
+        variant: 'destructive',
+      });
     } finally {
       setIsTransitioning(false);
     }
@@ -247,7 +270,11 @@ export function WorkOrderHeader({
     if (status === 'PENDING' && isManagerOrAbove(currentUser)) {
       return (
         <>
-          <Button size="sm" disabled={isTransitioning} onClick={() => setShowApproveDialog(true)}>
+          <Button
+            size="sm"
+            disabled={isTransitioning}
+            onClick={() => setShowApproveDialog(true)}
+          >
             Aprobar OT
           </Button>
           <Button
@@ -265,17 +292,39 @@ export function WorkOrderHeader({
 
     if (status === 'APPROVED' && canExecute(currentUser)) {
       return (
-        <Button size="sm" disabled={isTransitioning} onClick={() => setShowMileageDialog(true)}>
+        <Button
+          size="sm"
+          disabled={isTransitioning}
+          onClick={() => setShowMileageDialog(true)}
+        >
           {isTransitioning ? 'Procesando...' : 'Completar OT'}
         </Button>
       );
     }
 
     if (status === 'COMPLETED' && isManagerOrAbove(currentUser)) {
+      const hasInvoices = workOrder.invoices.length > 0;
       return (
-        <Button size="sm" disabled={isTransitioning} onClick={handleClose}>
-          {isTransitioning ? 'Cerrando...' : 'Cerrar OT'}
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>
+                <Button
+                  size="sm"
+                  disabled={isTransitioning || !hasInvoices}
+                  onClick={handleClose}
+                >
+                  {isTransitioning ? 'Cerrando...' : 'Cerrar OT'}
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {!hasInvoices && (
+              <TooltipContent>
+                <p>Debe vincular al menos una factura antes de cerrar la OT</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
       );
     }
 
@@ -295,7 +344,9 @@ export function WorkOrderHeader({
       brand: { name: workOrder.vehicle.brand.name },
       line: { name: workOrder.vehicle.line.name },
     },
-    technician: workOrder.technician ? { name: workOrder.technician.name } : null,
+    technician: workOrder.technician
+      ? { name: workOrder.technician.name }
+      : null,
   };
 
   return (
@@ -324,7 +375,9 @@ export function WorkOrderHeader({
             <p className="text-sm text-muted-foreground">
               {workOrder.vehicle.licensePlate} · {workOrder.vehicle.brand.name}{' '}
               {workOrder.vehicle.line.name} ·{' '}
-              {workOrder.technician ? workOrder.technician.name : 'Sin técnico asignado'}
+              {workOrder.technician
+                ? workOrder.technician.name
+                : 'Sin técnico asignado'}
             </p>
           </div>
         </div>
@@ -333,7 +386,11 @@ export function WorkOrderHeader({
         <div className="flex items-center gap-2 shrink-0">
           {internalItems.length > 0 &&
             ['APPROVED', 'COMPLETED', 'CLOSED'].includes(workOrder.status) && (
-              <Button variant="outline" size="sm" onClick={() => setShowTicketDialog(true)}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowTicketDialog(true)}
+              >
                 <Ticket className="w-4 h-4 mr-2" /> Ticket de Taller
               </Button>
             )}
@@ -443,12 +500,16 @@ export function WorkOrderHeader({
                 placeholder={workOrder.vehicle.mileage.toString()}
               />
               <p className="text-xs text-muted-foreground">
-                Km actual del vehículo: {workOrder.vehicle.mileage.toLocaleString()} km
+                Km actual del vehículo:{' '}
+                {workOrder.vehicle.mileage.toLocaleString()} km
               </p>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowMileageDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowMileageDialog(false)}
+            >
               Cancelar
             </Button>
             <Button disabled={isTransitioning} onClick={handleComplete}>
@@ -481,12 +542,16 @@ export function WorkOrderHeader({
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                La OT no tiene técnico asignado — no se generará Ticket de Taller.
+                La OT no tiene técnico asignado — no se generará Ticket de
+                Taller.
               </AlertDescription>
             </Alert>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowApproveDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowApproveDialog(false)}
+            >
               Cancelar
             </Button>
             <Button disabled={isTransitioning} onClick={handleApprove}>
@@ -507,10 +572,17 @@ export function WorkOrderHeader({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRejectDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowRejectDialog(false)}
+            >
               Cancelar
             </Button>
-            <Button variant="destructive" disabled={isTransitioning} onClick={handleReject}>
+            <Button
+              variant="destructive"
+              disabled={isTransitioning}
+              onClick={handleReject}
+            >
               {isTransitioning ? 'Rechazando...' : 'Confirmar Rechazo'}
             </Button>
           </DialogFooter>
