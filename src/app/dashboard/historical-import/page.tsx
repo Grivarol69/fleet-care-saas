@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ManualInvoiceForm } from '@/components/historical-import/ManualInvoiceForm';
 import { UploadStep } from '@/components/historical-import/UploadStep';
 import { PreviewStep } from '@/components/historical-import/PreviewStep';
 import { ConfirmStep } from '@/components/historical-import/ConfirmStep';
@@ -107,25 +109,42 @@ export default function HistoricalImportPage() {
         <h1 className="text-2xl font-bold">
           Importación Histórica de Facturas
         </h1>
-        <p className="text-sm text-muted-foreground">
-          Paso {state.step} de 3 — {STEP_LABELS[state.step]}
-        </p>
       </div>
 
-      {state.step === 1 && <UploadStep onParsed={handleParsed} />}
+      <Tabs defaultValue="manual" className="w-full">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="manual">Carga Manual</TabsTrigger>
+          <TabsTrigger value="csv">Importación CSV</TabsTrigger>
+        </TabsList>
 
-      {state.step === 2 && state.vehicleLookup && (
-        <PreviewStep
-          parsedRows={state.parsedRows}
-          vehicleLookup={state.vehicleLookup}
-          onConfirmed={handleConfirmed}
-          onBack={handleBack}
-        />
-      )}
+        <TabsContent value="manual" className="mt-6">
+          <ManualInvoiceForm />
+        </TabsContent>
 
-      {state.step === 3 && state.importResult && (
-        <ConfirmStep result={state.importResult} onRestart={handleRestart} />
-      )}
+        <TabsContent value="csv" className="mt-6">
+          <p className="text-sm text-muted-foreground mb-4">
+            Paso {state.step} de 3 — {STEP_LABELS[state.step]}
+          </p>
+
+          {state.step === 1 && <UploadStep onParsed={handleParsed} />}
+
+          {state.step === 2 && state.vehicleLookup && (
+            <PreviewStep
+              parsedRows={state.parsedRows}
+              vehicleLookup={state.vehicleLookup}
+              onConfirmed={handleConfirmed}
+              onBack={handleBack}
+            />
+          )}
+
+          {state.step === 3 && state.importResult && (
+            <ConfirmStep
+              result={state.importResult}
+              onRestart={handleRestart}
+            />
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
