@@ -25,7 +25,14 @@ export type VehicleOption = {
   label: string;
 };
 
-export type ManualInvoiceFormProps = Record<string, never>; // self-contained, no props
+export type ManualInvoiceFormProps = {
+  /**
+   * Called after a successful POST to /api/historical-import,
+   * after the form has been reset and before focus restoration.
+   * Use it to close the host Sheet/Dialog and refetch parent lists.
+   */
+  onSuccess?: () => void;
+};
 
 // Discriminated union for fetch/load failures (per project rules — NO error class hierarchy)
 export type LoadError =

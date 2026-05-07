@@ -27,6 +27,7 @@ import type { MantItemOption } from './InvoiceItemRow';
 import type {
   HeaderFields,
   InvoiceItemDraft,
+  ManualInvoiceFormProps,
   OcrItem,
   VehicleOption,
 } from './ManualInvoiceForm.types';
@@ -114,7 +115,7 @@ function computeGrandTotal(items: InvoiceItemDraft[]): number {
 // Component
 // ---------------------------------------------------------------------------
 
-export function ManualInvoiceForm() {
+export function ManualInvoiceForm({ onSuccess }: ManualInvoiceFormProps = {}) {
   // Sticky state — persists across form resets
   const [vehicleId, setVehicleId] = useState<string>('');
   const [vehicleLabel, setVehicleLabel] = useState<string>('');
@@ -441,6 +442,7 @@ export function ManualInvoiceForm() {
         title: `Factura ${header.invoiceNumber} registrada`,
       });
       resetForm();
+      onSuccess?.();
       requestAnimationFrame(() => {
         invoiceNumberRef.current?.focus();
       });
