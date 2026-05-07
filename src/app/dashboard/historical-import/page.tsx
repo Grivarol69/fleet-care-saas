@@ -179,7 +179,6 @@ export default function HistoricalImportPage() {
   }
 
   function handleManualSuccess() {
-    setSheetOpen(false);
     setRefreshKey(k => k + 1);
   }
 
