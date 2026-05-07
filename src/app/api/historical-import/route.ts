@@ -6,6 +6,7 @@ import { canImportHistoricalInvoices } from '@/lib/permissions';
 import {
   historicalImportPayloadSchema,
   type HistoricalImportRow,
+  type HistoricalImportItem,
   type ImportRowError,
   type HistoricalImportResponse,
 } from '@/lib/validations/historical-import';
@@ -188,16 +189,36 @@ export async function POST(request: Request): Promise<Response> {
           });
 
           for (const row of group.rows) {
-            await tx.invoice.create({
+            // Determine InvoiceItem rows to create
+            const rowItems: HistoricalImportItem[] =
+              row.items && row.items.length > 0
+                ? row.items
+                : [
+                    {
+                      description: row.description ?? row.invoiceNumber,
+                      quantity: 1,
+                      unitPrice: row.subtotal,
+                      total: row.subtotal,
+                      mantItemId: null,
+                      categoryId: null,
+                    },
+                  ];
+
+            // Derive notes for Invoice
+            const derivedNotes = row.notes
+              ? row.notes
+              : rowItems
+                  .slice(0, 3)
+                  .map(i => i.description)
+                  .join('; ');
+
+            const invoice = await tx.invoice.create({
               data: {
                 tenantId: user.tenantId,
                 status: 'PAID',
                 invoiceNumber: row.invoiceNumber,
                 invoiceDate: new Date(`${row.invoiceDate}T00:00:00Z`),
-                // Invoice model has no description field — store in notes
-                notes: row.notes
-                  ? `${row.description}\n\n${row.notes}`
-                  : row.description,
+                notes: derivedNotes,
                 subtotal: row.subtotal,
                 taxAmount: row.taxAmount,
                 totalAmount: row.totalAmount,
@@ -207,6 +228,25 @@ export async function POST(request: Request): Promise<Response> {
                 importBatchId,
               },
             });
+
+            // Create one InvoiceItem per item (atomic — same tx)
+            for (const item of rowItems) {
+              await tx.invoiceItem.create({
+                data: {
+                  tenantId: user.tenantId,
+                  invoiceId: invoice.id,
+                  description: item.description,
+                  quantity: item.quantity,
+                  unitPrice: item.unitPrice,
+                  subtotal: item.unitPrice * item.quantity,
+                  taxRate: 0,
+                  taxAmount: 0,
+                  total: item.total,
+                  mantItemId: item.mantItemId ?? null,
+                  categoryId: item.categoryId ?? null,
+                },
+              });
+            }
           }
         }
       },

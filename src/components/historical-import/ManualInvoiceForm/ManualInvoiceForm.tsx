@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ChevronsUpDown, Truck } from 'lucide-react';
+import { ChevronsUpDown, Loader2, Plus, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,7 +22,14 @@ import {
 } from '@/components/ui/command';
 import { useToast } from '@/components/hooks/use-toast';
 import { UploadButton } from '@/lib/uploadthing';
-import type { FormFields, VehicleOption } from './ManualInvoiceForm.types';
+import { InvoiceItemRow } from './InvoiceItemRow';
+import type { MantItemOption } from './InvoiceItemRow';
+import type {
+  HeaderFields,
+  InvoiceItemDraft,
+  OcrItem,
+  VehicleOption,
+} from './ManualInvoiceForm.types';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -32,17 +39,75 @@ function todayIso(): string {
   return new Date().toISOString().split('T')[0];
 }
 
-function initialFields(): FormFields {
+function initialHeader(): HeaderFields {
   return {
     invoiceNumber: '',
     invoiceDate: todayIso(),
     supplierName: '',
-    description: '',
-    subtotal: '',
-    taxAmount: '',
-    totalAmount: '',
     notes: '',
   };
+}
+
+function emptyDraft(): InvoiceItemDraft {
+  return {
+    id: crypto.randomUUID(),
+    description: '',
+    quantity: '1',
+    unitPrice: '',
+    total: '',
+    mantItemId: null,
+    mantItemName: null,
+    categoryId: null,
+    confidence: 0,
+  };
+}
+
+function parseOcrItems(ocrItemsJson: unknown): OcrItem[] {
+  if (!ocrItemsJson || typeof ocrItemsJson !== 'string') return [];
+  try {
+    const parsed = JSON.parse(ocrItemsJson) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter(
+        (item): item is Record<string, unknown> =>
+          typeof item === 'object' && item !== null
+      )
+      .map(item => ({
+        description:
+          typeof item.description === 'string' ? item.description : '',
+        quantity: typeof item.quantity === 'number' ? item.quantity : undefined,
+        unitPrice:
+          typeof item.unitPrice === 'number' ? item.unitPrice : undefined,
+        total: typeof item.total === 'number' ? item.total : undefined,
+      }))
+      .filter(item => item.description.length > 0);
+  } catch {
+    return [];
+  }
+}
+
+function ocrItemToDraft(item: OcrItem): InvoiceItemDraft {
+  const qty = item.quantity ?? 1;
+  const price = item.unitPrice ?? 0;
+  const total = item.total ?? qty * price;
+  return {
+    id: crypto.randomUUID(),
+    description: item.description,
+    quantity: String(qty),
+    unitPrice: price > 0 ? String(price) : '',
+    total: total > 0 ? total.toFixed(2) : '',
+    mantItemId: null,
+    mantItemName: null,
+    categoryId: null,
+    confidence: 0,
+  };
+}
+
+function computeGrandTotal(items: InvoiceItemDraft[]): number {
+  return items.reduce((sum, item) => {
+    const val = parseFloat(item.total);
+    return sum + (isNaN(val) ? 0 : val);
+  }, 0);
 }
 
 // ---------------------------------------------------------------------------
@@ -58,21 +123,28 @@ export function ManualInvoiceForm() {
   const [comboOpen, setComboOpen] = useState(false);
   const [comboQuery, setComboQuery] = useState('');
 
-  // Resettable state — cleared on successful submit
-  const [fields, setFields] = useState<FormFields>(initialFields());
-  const [taxTouched, setTaxTouched] = useState(false);
-  const [totalTouched, setTotalTouched] = useState(false);
+  // Header fields — cleared on successful submit
+  const [header, setHeader] = useState<HeaderFields>(initialHeader());
+
+  // Items state
+  const [items, setItems] = useState<InvoiceItemDraft[]>([emptyDraft()]);
+  const [mapperLoading, setMapperLoading] = useState(false);
+
+  // MantItem candidates (loaded once)
+  const [mantCandidates, setMantCandidates] = useState<MantItemOption[]>([]);
+
+  // Upload state
   const [attachmentUrl, setAttachmentUrl] = useState('');
   const [ocrNotice, setOcrNotice] = useState<string | null>(null);
 
-  // Transient state
+  // Transient
   const [submitting, setSubmitting] = useState(false);
 
   const invoiceNumberRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   // ---------------------------------------------------------------------------
-  // Vehicle load
+  // Load vehicles
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
@@ -131,31 +203,99 @@ export function ManualInvoiceForm() {
     setVehicleLabel('');
   }
 
-  function handleSubtotalChange(val: string) {
-    const sub = parseFloat(val) || 0;
-    setFields(prev => {
-      const tax = taxTouched ? prev.taxAmount : (sub * 0.19).toFixed(2);
-      const taxNum = parseFloat(tax) || 0;
-      const total = totalTouched ? prev.totalAmount : (sub + taxNum).toFixed(2);
-      return { ...prev, subtotal: val, taxAmount: tax, totalAmount: total };
+  function handleItemChange(index: number, updated: InvoiceItemDraft) {
+    setItems(prev => prev.map((item, i) => (i === index ? updated : item)));
+  }
+
+  function handleItemRemove(index: number) {
+    setItems(prev => {
+      if (prev.length <= 1) return prev; // keep at least one row
+      return prev.filter((_, i) => i !== index);
     });
   }
 
-  function handleTaxChange(val: string) {
-    setTaxTouched(true);
-    setFields(prev => {
-      const taxNum = parseFloat(val) || 0;
-      const subNum = parseFloat(prev.subtotal) || 0;
-      const total = totalTouched
-        ? prev.totalAmount
-        : (subNum + taxNum).toFixed(2);
-      return { ...prev, taxAmount: val, totalAmount: total };
-    });
+  function handleAddItem() {
+    setItems(prev => [...prev, emptyDraft()]);
   }
 
-  function handleTotalChange(val: string) {
-    setTotalTouched(true);
-    setFields(prev => ({ ...prev, totalAmount: val }));
+  async function callMapper(ocrItems: OcrItem[], candidates: MantItemOption[]) {
+    if (ocrItems.length === 0) return;
+    setMapperLoading(true);
+    try {
+      const res = await fetch('/api/ai/mant-mapper', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: ocrItems.map(item => ({
+            description: item.description,
+            quantity: item.quantity ?? 1,
+            unitPrice: item.unitPrice ?? 0,
+            total: item.total ?? 0,
+          })),
+        }),
+      });
+
+      if (!res.ok) return;
+
+      const data = (await res.json()) as {
+        mappings?: Array<{
+          ocrDescription: string;
+          mantItemId: string | null;
+          confidence: number;
+        }>;
+      };
+
+      const mappings = data.mappings ?? [];
+
+      setItems(prev =>
+        prev.map((draft, i) => {
+          const mapping = mappings[i];
+          if (!mapping) return draft;
+          const shouldPreSelect =
+            mapping.confidence >= 70 && mapping.mantItemId;
+          const candidate = shouldPreSelect
+            ? candidates.find(c => c.id === mapping.mantItemId)
+            : undefined;
+          return {
+            ...draft,
+            mantItemId: shouldPreSelect ? mapping.mantItemId : null,
+            mantItemName: shouldPreSelect ? (candidate?.name ?? null) : null,
+            categoryId: shouldPreSelect
+              ? (candidate?.categoryId ?? null)
+              : null,
+            confidence: mapping.confidence,
+          };
+        })
+      );
+    } catch {
+      // Mapper errors are non-blocking
+    } finally {
+      setMapperLoading(false);
+    }
+  }
+
+  async function loadMantCandidates(): Promise<MantItemOption[]> {
+    try {
+      const res = await fetch('/api/maintenance/mant-items');
+      if (!res.ok) return [];
+      const data = (await res.json()) as Array<{
+        id: string;
+        name: string;
+        category?: { id?: string; name?: string };
+      }>;
+      const candidates: MantItemOption[] = Array.isArray(data)
+        ? data.map(item => ({
+            id: item.id,
+            name: item.name,
+            categoryName: item.category?.name ?? '',
+            categoryId: item.category?.id ?? null,
+          }))
+        : [];
+      setMantCandidates(candidates);
+      return candidates;
+    } catch {
+      return [];
+    }
   }
 
   function handleUploadComplete(
@@ -170,8 +310,9 @@ export function ManualInvoiceForm() {
     const confidence =
       typeof sd?.ocrConfidence === 'number' ? (sd.ocrConfidence as number) : 0;
 
+    // Update header fields from OCR
     if (confidence >= 40) {
-      setFields(prev => ({
+      setHeader(prev => ({
         ...prev,
         ...(typeof sd?.ocrInvoiceNumber === 'string' && sd.ocrInvoiceNumber
           ? { invoiceNumber: sd.ocrInvoiceNumber as string }
@@ -182,18 +323,26 @@ export function ManualInvoiceForm() {
         ...(typeof sd?.ocrSupplierName === 'string' && sd.ocrSupplierName
           ? { supplierName: sd.ocrSupplierName as string }
           : {}),
-        ...(typeof sd?.ocrSubtotal === 'number'
-          ? { subtotal: String(sd.ocrSubtotal) }
-          : {}),
-        ...(typeof sd?.ocrTaxAmount === 'number'
-          ? { taxAmount: String(sd.ocrTaxAmount) }
-          : {}),
-        ...(typeof sd?.ocrTotal === 'number'
-          ? { totalAmount: String(sd.ocrTotal) }
-          : {}),
       }));
+    }
+
+    // Parse OCR items
+    const ocrItems = parseOcrItems(sd?.ocrItemsJson);
+
+    if (ocrItems.length > 0) {
+      const drafts = ocrItems.map(ocrItemToDraft);
+      setItems(drafts);
       setOcrNotice(
-        `Datos extraídos por IA (${Math.round(confidence)}%) — revisá antes de confirmar`
+        `${ocrItems.length} ítem(s) extraído(s) por IA (${Math.round(confidence)}%) — revisá antes de confirmar`
+      );
+      // Load candidates first, pass directly to mapper to avoid stale state closure
+      void loadMantCandidates().then(candidates =>
+        callMapper(ocrItems, candidates)
+      );
+    } else if (confidence >= 40) {
+      // Fallback: OCR extracted header but no items — keep single empty draft
+      setOcrNotice(
+        `Datos de cabecera extraídos por IA (${Math.round(confidence)}%) — agregá los ítems manualmente`
       );
     } else {
       setOcrNotice(
@@ -203,9 +352,8 @@ export function ManualInvoiceForm() {
   }
 
   function resetForm() {
-    setFields(initialFields());
-    setTaxTouched(false);
-    setTotalTouched(false);
+    setHeader(initialHeader());
+    setItems([emptyDraft()]);
     setAttachmentUrl('');
     setOcrNotice(null);
     // vehicleId and vehicleLabel are intentionally NOT reset
@@ -216,21 +364,45 @@ export function ManualInvoiceForm() {
 
     if (!vehicleId) return;
 
+    const grandTotal = computeGrandTotal(items);
+    const subtotal = grandTotal; // For historical import we treat total as subtotal
+    const taxAmount = 0;
+    const totalAmount = grandTotal;
+
     const payload = {
       rows: [
         {
           vehicleId,
-          supplierName: fields.supplierName,
-          invoiceNumber: fields.invoiceNumber,
-          invoiceDate: fields.invoiceDate,
-          description: fields.description || fields.invoiceNumber,
-          subtotal: parseFloat(fields.subtotal) || 0,
-          taxAmount: parseFloat(fields.taxAmount) || 0,
-          totalAmount: parseFloat(fields.totalAmount) || 0,
-          notes: fields.notes || undefined,
+          supplierName: header.supplierName,
+          invoiceNumber: header.invoiceNumber,
+          invoiceDate: header.invoiceDate,
+          subtotal,
+          taxAmount,
+          totalAmount,
+          notes: header.notes || undefined,
+          items: items
+            .filter(item => item.description.trim())
+            .map(item => ({
+              description: item.description,
+              quantity: parseFloat(item.quantity) || 1,
+              unitPrice: parseFloat(item.unitPrice) || 0,
+              total: parseFloat(item.total) || 0,
+              mantItemId: item.mantItemId ?? null,
+              categoryId: item.categoryId ?? null,
+            })),
         },
       ],
     };
+
+    // Ensure at least one valid item
+    if (payload.rows[0].items.length === 0) {
+      toast({
+        title: 'Sin ítems',
+        description: 'Agregá al menos un ítem con descripción',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -266,14 +438,12 @@ export function ManualInvoiceForm() {
       }
 
       toast({
-        title: `Factura ${fields.invoiceNumber} registrada`,
+        title: `Factura ${header.invoiceNumber} registrada`,
       });
-      const savedInvoiceNumber = fields.invoiceNumber;
       resetForm();
       requestAnimationFrame(() => {
         invoiceNumberRef.current?.focus();
       });
-      void savedInvoiceNumber; // used in toast above
     } catch {
       toast({
         title: 'Error de conexión',
@@ -293,11 +463,15 @@ export function ManualInvoiceForm() {
     v.licensePlate.toUpperCase().includes(comboQuery.toUpperCase())
   );
 
+  const grandTotal = computeGrandTotal(items);
+  const hasValidItems = items.some(item => item.description.trim().length > 0);
+
   const submitDisabled =
     !vehicleId ||
-    !fields.invoiceNumber.trim() ||
-    !fields.supplierName.trim() ||
-    (parseFloat(fields.subtotal) || 0) <= 0 ||
+    !header.invoiceNumber.trim() ||
+    !header.supplierName.trim() ||
+    !hasValidItems ||
+    grandTotal <= 0 ||
     submitting;
 
   // ---------------------------------------------------------------------------
@@ -313,7 +487,6 @@ export function ManualInvoiceForm() {
         </CardHeader>
         <CardContent>
           {vehicleId ? (
-            // Sticky vehicle banner
             <div className="flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
               <div className="flex items-center gap-2">
                 <Truck className="h-4 w-4 text-blue-600" />
@@ -331,7 +504,6 @@ export function ManualInvoiceForm() {
               </Button>
             </div>
           ) : (
-            // Vehicle combobox (inline — NOT a separate component)
             <div className="space-y-2">
               <Label>Buscar vehículo</Label>
               <Popover open={comboOpen} onOpenChange={setComboOpen}>
@@ -377,7 +549,7 @@ export function ManualInvoiceForm() {
         </CardContent>
       </Card>
 
-      {/* OCR upload — visible even without vehicle */}
+      {/* OCR upload */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
@@ -424,7 +596,7 @@ export function ManualInvoiceForm() {
         </CardContent>
       </Card>
 
-      {/* Invoice fields */}
+      {/* Header fields */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Datos de la factura</CardTitle>
@@ -438,9 +610,9 @@ export function ManualInvoiceForm() {
                 <Input
                   id="invoiceNumber"
                   ref={invoiceNumberRef}
-                  value={fields.invoiceNumber}
+                  value={header.invoiceNumber}
                   onChange={e =>
-                    setFields(prev => ({
+                    setHeader(prev => ({
                       ...prev,
                       invoiceNumber: e.target.value,
                     }))
@@ -456,9 +628,9 @@ export function ManualInvoiceForm() {
                 <Input
                   id="invoiceDate"
                   type="date"
-                  value={fields.invoiceDate}
+                  value={header.invoiceDate}
                   onChange={e =>
-                    setFields(prev => ({
+                    setHeader(prev => ({
                       ...prev,
                       invoiceDate: e.target.value,
                     }))
@@ -472,9 +644,9 @@ export function ManualInvoiceForm() {
                 <Label htmlFor="supplierName">Proveedor *</Label>
                 <Input
                   id="supplierName"
-                  value={fields.supplierName}
+                  value={header.supplierName}
                   onChange={e =>
-                    setFields(prev => ({
+                    setHeader(prev => ({
                       ...prev,
                       supplierName: e.target.value,
                     }))
@@ -484,75 +656,82 @@ export function ManualInvoiceForm() {
                 />
               </div>
 
-              {/* description — col-span-2 */}
-              <div className="col-span-2 space-y-1">
-                <Label htmlFor="description">Descripción</Label>
-                <Input
-                  id="description"
-                  value={fields.description}
-                  onChange={e =>
-                    setFields(prev => ({
-                      ...prev,
-                      description: e.target.value,
-                    }))
-                  }
-                  placeholder="Descripción del servicio o producto (opcional)"
-                />
-              </div>
-
-              {/* subtotal */}
-              <div className="space-y-1">
-                <Label htmlFor="subtotal">Subtotal *</Label>
-                <Input
-                  id="subtotal"
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  value={fields.subtotal}
-                  onChange={e => handleSubtotalChange(e.target.value)}
-                  placeholder="0.00"
-                />
-              </div>
-
-              {/* taxAmount */}
-              <div className="space-y-1">
-                <Label htmlFor="taxAmount">IVA (19%)</Label>
-                <Input
-                  id="taxAmount"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={fields.taxAmount}
-                  onChange={e => handleTaxChange(e.target.value)}
-                  placeholder="0.00"
-                />
-              </div>
-
-              {/* totalAmount — col-span-2 */}
-              <div className="col-span-2 space-y-1">
-                <Label htmlFor="totalAmount">Total</Label>
-                <Input
-                  id="totalAmount"
-                  type="number"
-                  step="0.01"
-                  value={fields.totalAmount}
-                  onChange={e => handleTotalChange(e.target.value)}
-                  placeholder="0.00"
-                />
-              </div>
-
               {/* notes — col-span-2 */}
               <div className="col-span-2 space-y-1">
                 <Label htmlFor="notes">Notas</Label>
                 <Textarea
                   id="notes"
-                  value={fields.notes}
+                  value={header.notes}
                   onChange={e =>
-                    setFields(prev => ({ ...prev, notes: e.target.value }))
+                    setHeader(prev => ({ ...prev, notes: e.target.value }))
                   }
                   placeholder="Observaciones adicionales (opcional)"
-                  rows={3}
+                  rows={2}
                 />
+              </div>
+            </div>
+          </fieldset>
+        </CardContent>
+      </Card>
+
+      {/* Items section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">Ítems de factura</CardTitle>
+            {mapperLoading && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Clasificando con IA...</span>
+              </div>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <fieldset disabled={!vehicleId} className="space-y-1">
+            {/* Column headers */}
+            <div className="grid grid-cols-[4fr_1fr_1.5fr_1.5fr_3fr_40px] gap-2 pb-1 border-b text-xs font-medium text-muted-foreground">
+              <div>Descripción</div>
+              <div>Cant.</div>
+              <div>P. Unit.</div>
+              <div>Total</div>
+              <div>Categoría</div>
+              <div></div>
+            </div>
+
+            {/* Item rows */}
+            {items.map((draft, index) => (
+              <InvoiceItemRow
+                key={draft.id}
+                draft={draft}
+                candidates={mantCandidates}
+                onChange={updated => handleItemChange(index, updated)}
+                onRemove={() => handleItemRemove(index)}
+              />
+            ))}
+
+            {/* Add item button */}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-2 w-full"
+              onClick={handleAddItem}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Agregar ítem
+            </Button>
+
+            {/* Grand total */}
+            <div className="flex justify-end pt-3 border-t">
+              <div className="text-sm font-semibold">
+                Total:{' '}
+                <span className="text-base">
+                  {grandTotal.toLocaleString('es-CO', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </span>
               </div>
             </div>
           </fieldset>

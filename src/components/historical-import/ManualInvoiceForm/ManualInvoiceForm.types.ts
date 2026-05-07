@@ -1,11 +1,19 @@
-export type FormFields = {
+export type InvoiceItemDraft = {
+  id: string; // crypto.randomUUID() for React key — NOT sent to API
+  description: string;
+  quantity: string; // controlled string while editing → parsed at submit
+  unitPrice: string; // controlled string while editing → parsed at submit
+  total: string; // auto = qty × unitPrice; operator can override
+  mantItemId: string | null;
+  mantItemName: string | null;
+  categoryId: string | null;
+  confidence: number; // 0-100, transient — NOT persisted
+};
+
+export type HeaderFields = {
   invoiceNumber: string;
   invoiceDate: string; // YYYY-MM-DD, default today
   supplierName: string;
-  description: string;
-  subtotal: string; // controlled input — string until submit
-  taxAmount: string;
-  totalAmount: string;
   notes: string;
 };
 
@@ -24,3 +32,11 @@ export type LoadError =
   | { kind: 'network'; message: string }
   | { kind: 'unauthorized'; message: string }
   | { kind: 'unknown'; message: string };
+
+// OCR item shape returned by uploadthing server action
+export type OcrItem = {
+  description: string;
+  quantity?: number;
+  unitPrice?: number;
+  total?: number;
+};

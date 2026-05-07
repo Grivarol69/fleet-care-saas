@@ -1,6 +1,20 @@
 import { z } from 'zod';
 
+// Schema for a single InvoiceItem within a manual import row
+export const historicalImportItemSchema = z.object({
+  description: z.string().min(1, 'Descripción requerida').max(500),
+  quantity: z.number().positive('Cantidad debe ser > 0'),
+  unitPrice: z.number().nonnegative('Precio unitario debe ser ≥ 0'),
+  total: z.number().nonnegative('Total debe ser ≥ 0'),
+  mantItemId: z.string().uuid().nullable().optional(),
+  categoryId: z.string().uuid().nullable().optional(),
+});
+
+export type HistoricalImportItem = z.infer<typeof historicalImportItemSchema>;
+
 // One CSV row, after column-mapping (so keys are system-canonical, not raw CSV headers).
+// - CSV path: uses flat description/subtotal/taxAmount/totalAmount
+// - Manual form path: uses items[] (when provided, overrides flat fields for InvoiceItem creation)
 export const historicalImportRowSchema = z.object({
   vehicleId: z.string().min(1, 'vehicleId requerido'),
   supplierName: z.string().min(1, 'Proveedor requerido').max(200),
@@ -8,11 +22,13 @@ export const historicalImportRowSchema = z.object({
   invoiceDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha ISO YYYY-MM-DD requerida'),
-  description: z.string().min(1, 'Descripción requerida').max(500),
+  description: z.string().max(500).optional(),
   subtotal: z.number().positive('Subtotal debe ser > 0'),
   taxAmount: z.number().min(0, 'Impuestos deben ser ≥ 0'),
   totalAmount: z.number().positive('Total debe ser > 0'),
   notes: z.string().max(1000).optional(),
+  // Optional items array — when present, used for InvoiceItem creation
+  items: z.array(historicalImportItemSchema).min(1).optional(),
 });
 
 export const historicalImportPayloadSchema = z
