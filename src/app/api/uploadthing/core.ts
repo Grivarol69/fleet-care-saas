@@ -27,7 +27,7 @@ export const ourFileRouter = {
     })
     .onUploadComplete(async ({ metadata, file }) => {
       console.log('Upload complete for userId:', metadata.userId);
-      console.log('File URL:', file.url);
+      console.log('File URL:', file.ufsUrl);
       return { uploadedBy: metadata.userId };
     }),
 
@@ -52,8 +52,8 @@ export const ourFileRouter = {
       };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      console.log('Document upload complete:', file.url);
-      const ocr = await extractDocumentData(file.url);
+      console.log('Document upload complete:', file.ufsUrl);
+      const ocr = await extractDocumentData(file.ufsUrl);
       console.log('[OCR_DOCUMENT] confidence:', ocr.confidence);
       // Return flat primitive fields (string | number | null) to satisfy
       // UploadThing's JsonObject constraint
@@ -90,8 +90,8 @@ export const ourFileRouter = {
       };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      console.log('Invoice upload complete:', file.url);
-      const ocr = await extractInvoiceData(file.url);
+      console.log('Invoice upload complete:', file.ufsUrl);
+      const ocr = await extractInvoiceData(file.ufsUrl);
       console.log('[OCR_INVOICE] confidence:', ocr.confidence);
       // Return flat primitive fields + items serialized as JSON string to
       // satisfy UploadThing's JsonObject constraint
@@ -130,12 +130,12 @@ export const ourFileRouter = {
       };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      console.log('Property card upload complete:', file.url);
-      const ocr = await extractPropertyCardData(file.url);
+      console.log('Property card upload complete:', file.ufsUrl);
+      const ocr = await extractPropertyCardData(file.ufsUrl);
       console.log('[OCR_PROPERTY_CARD] confidence:', ocr.confidence);
       return {
         uploadedBy: metadata.userId,
-        fileUrl: file.url,
+        fileUrl: file.ufsUrl,
         ocrConfidence: ocr.confidence,
         ocrLicensePlate: ocr.licensePlate ?? null,
         ocrBrandName: ocr.brandName ?? null,
@@ -164,7 +164,7 @@ export const ourFileRouter = {
       return { userId: user.id };
     })
     .onUploadComplete(async ({ file }) => {
-      return { url: file.url };
+      return { url: file.ufsUrl };
     }),
 } satisfies FileRouter;
 
