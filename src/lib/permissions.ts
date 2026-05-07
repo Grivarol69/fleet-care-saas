@@ -1,4 +1,4 @@
-import type { User } from '@prisma/client';
+import type { User, UserRole } from '@prisma/client';
 import { PLATFORM_TENANT_ID, type UserWithSuperAdmin } from './auth-constants';
 
 // ========================================
@@ -473,6 +473,14 @@ export function canManageSerializedAssets(role: string): boolean {
 
 export function canOperateSerializedAssets(role: string): boolean {
   return (SERIALIZED_ASSET_OPERATE_ROLES as readonly string[]).includes(role);
+}
+
+// ========================================
+// IMPORTACIÓN HISTÓRICA
+// ========================================
+
+export function canImportHistoricalInvoices(role: UserRole): boolean {
+  return role === 'OWNER' || role === 'MANAGER';
 }
 
 // ========================================

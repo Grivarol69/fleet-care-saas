@@ -14,6 +14,8 @@ interface InvoiceItemInput {
   total: number;
   workOrderItemId?: string | null;
   masterPartId?: string | null;
+  mantItemId?: string | null;
+  categoryId?: string | null;
 }
 
 export async function GET(request: NextRequest) {
@@ -264,6 +266,8 @@ export async function POST(request: NextRequest) {
               total: item.total,
               workOrderItemId: item.workOrderItemId || null,
               masterPartId: item.masterPartId || null,
+              mantItemId: item.mantItemId ?? null,
+              categoryId: item.categoryId ?? null,
             },
           })
         )
