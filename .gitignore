@@ -103,3 +103,6 @@ prisma/seed-multitenancy.ts
 prisma/seed-staging-demo.ts
 prisma/seed-stress.ts
 prisma/seeds/
+
+# Database backups
+backups/db/

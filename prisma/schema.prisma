@@ -367,6 +367,7 @@ model MantCategory {
   tenant           Tenant?           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   mantItems        MantItem[]
   mantItemRequests MantItemRequest[]
+  invoiceItems     InvoiceItem[]
 
   @@unique([tenantId, name])
   @@index([isGlobal])
@@ -400,6 +401,7 @@ model MantItem {
   vehicleParts        MantItemVehiclePart[] // KB: repuestos por marca/línea/año
   purchaseOrderItems  PurchaseOrderItem[]
   procedures          MantItemProcedure[] // KB: procedimientos de labor
+  invoiceItems        InvoiceItem[] // Facturas que referencian este ítem
 
   @@unique([tenantId, name])
   @@index([categoryId])
@@ -704,6 +706,8 @@ model WorkOrder {
   endDate           DateTime?
   completionMileage Float? // Kilometraje al momento de cierre de la OT
   notes             String?   @db.Text // Notas de contexto a nivel OT (ej: incidentes, demoras)
+  source            WorkOrderSource @default(OPERATIONAL)
+  importBatchId     String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
@@ -1024,6 +1028,9 @@ model Invoice {
   paymentMeanSiigo Int?
   siigoSyncedBy    String?
 
+  // Importación histórica
+  importBatchId String?
+
   // Metadata
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1053,6 +1060,14 @@ model InvoiceItem {
   masterPartId String? // Nullable: permite registrar sin catálogo inicialmente
   masterPart   MasterPart? @relation(fields: [masterPartId], references: [id], onDelete: SetNull)
 
+  // Vinculación con MantItem (servicio/repuesto del catálogo de mantenimiento)
+  mantItemId String?
+  mantItem   MantItem? @relation(fields: [mantItemId], references: [id], onDelete: SetNull)
+
+  // Categoría snapshot — denormalizada al momento de escritura (ADR-3)
+  categoryId String?
+  category   MantCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
   // Vinculación con trabajo realizado (traza: alerta → WO → factura)
   workOrderItemId String?
   workOrderItem   WorkOrderItem? @relation(fields: [workOrderItemId], references: [id], onDelete: SetNull)
@@ -1075,6 +1090,8 @@ model InvoiceItem {
 
   @@index([invoiceId])
   @@index([masterPartId])
+  @@index([mantItemId])
+  @@index([categoryId])
   @@index([workOrderItemId])
   @@index([tenantId])
 }
@@ -2722,4 +2739,9 @@ enum ChecklistItemStatus {
 enum ShiftStatus {
   ACTIVE
   COMPLETED
+}
+
+enum WorkOrderSource {
+  OPERATIONAL
+  HISTORICAL_IMPORT
 }
