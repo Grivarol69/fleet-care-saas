@@ -88,8 +88,9 @@ Requiere `pg_dump` instalado: `sudo apt install postgresql-client`
 
 Endpoints conocidos:
 
+- Develop: `ep-bitter-bonus-ai6r3tr5`
+- Staging: `ep-plain-forest-ai0b8002`
 - Producción: `ep-morning-glitter-an8fh8tp`
-- Staging: `ep-bitter-bonus-ai6r3tr5`
 
 ---
 
