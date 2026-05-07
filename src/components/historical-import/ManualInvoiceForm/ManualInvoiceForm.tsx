@@ -410,7 +410,7 @@ export function ManualInvoiceForm({ onSuccess }: ManualInvoiceFormProps = {}) {
       const res = await fetch('/api/historical-import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload.rows),
       });
 
       if (!res.ok) {
