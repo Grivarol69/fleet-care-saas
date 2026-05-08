@@ -509,6 +509,17 @@ export const dataAdminSidebar: SidebarItem[] = [
         ],
       }, // TECHNICIAN no ve costos
       {
+        label: 'Gastos de Flota',
+        href: '/dashboard/reports/expense-report',
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
+          UserRole.PURCHASER,
+        ],
+      },
+      {
         label: 'Estado Flota',
         href: '/dashboard/reports/fleet-status',
         roles: [

@@ -709,6 +709,9 @@ export function ManualInvoiceForm({ onSuccess }: ManualInvoiceFormProps = {}) {
                 candidates={mantCandidates}
                 onChange={updated => handleItemChange(index, updated)}
                 onRemove={() => handleItemRemove(index)}
+                onNewMantItem={item =>
+                  setMantCandidates(prev => [...prev, item])
+                }
               />
             ))}
 
