@@ -108,48 +108,56 @@ export async function GET(request: Request): Promise<Response> {
       : {}),
   };
 
-  // 4. Query
-  const [rows, total] = await Promise.all([
-    tenantPrisma.invoice.findMany({
-      where,
-      orderBy: { invoiceDate: 'desc' },
-      take: limit,
-      skip: offset,
-      select: {
-        id: true,
-        invoiceNumber: true,
-        invoiceDate: true,
-        totalAmount: true,
-        createdAt: true,
-        supplier: { select: { name: true } },
-        workOrder: {
-          select: {
-            id: true,
-            vehicle: { select: { id: true, licensePlate: true } },
+  try {
+    // 4. Query
+    const [rows, total] = await Promise.all([
+      tenantPrisma.invoice.findMany({
+        where,
+        orderBy: { invoiceDate: 'desc' },
+        take: limit,
+        skip: offset,
+        select: {
+          id: true,
+          invoiceNumber: true,
+          invoiceDate: true,
+          totalAmount: true,
+          createdAt: true,
+          supplier: { select: { name: true } },
+          workOrder: {
+            select: {
+              id: true,
+              vehicle: { select: { id: true, licensePlate: true } },
+            },
           },
+          _count: { select: { items: true } },
         },
-        _count: { select: { items: true } },
-      },
-    }),
-    tenantPrisma.invoice.count({ where }),
-  ]);
+      }),
+      tenantPrisma.invoice.count({ where }),
+    ]);
 
-  // 5. Map to DTO
-  const dto: HistoricalInvoiceDTO[] = rows.map(r => ({
-    id: r.id,
-    invoiceNumber: r.invoiceNumber,
-    invoiceDate: r.invoiceDate.toISOString(),
-    totalAmount: Number(r.totalAmount),
-    supplierName: r.supplier?.name ?? null,
-    vehicleId: r.workOrder?.vehicle?.id ?? null,
-    vehicleLicensePlate: r.workOrder?.vehicle?.licensePlate ?? null,
-    workOrderId: r.workOrder?.id ?? null,
-    itemCount: r._count.items,
-    createdAt: r.createdAt.toISOString(),
-  }));
+    // 5. Map to DTO
+    const dto: HistoricalInvoiceDTO[] = rows.map(r => ({
+      id: r.id,
+      invoiceNumber: r.invoiceNumber,
+      invoiceDate: r.invoiceDate.toISOString(),
+      totalAmount: Number(r.totalAmount),
+      supplierName: r.supplier?.name ?? null,
+      vehicleId: r.workOrder?.vehicle?.id ?? null,
+      vehicleLicensePlate: r.workOrder?.vehicle?.licensePlate ?? null,
+      workOrderId: r.workOrder?.id ?? null,
+      itemCount: r._count.items,
+      createdAt: r.createdAt.toISOString(),
+    }));
 
-  return NextResponse.json({
-    rows: dto,
-    pagination: { total, limit, offset },
-  });
+    return NextResponse.json({
+      rows: dto,
+      pagination: { total, limit, offset },
+    });
+  } catch (error) {
+    console.error('[HISTORICAL_INVOICES] GET error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
 }

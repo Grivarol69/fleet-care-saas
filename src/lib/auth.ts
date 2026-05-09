@@ -200,10 +200,13 @@ export async function requireCurrentUser() {
     return { user: null, tenantPrisma: prisma as any };
   }
 
-  // Si es SUPER_ADMIN (operando globalmente en Platform Tenant) usa el prisma base
-  // De lo contrario usa el prisma con extensión de asilamiento por tenant
+  // SUPER_ADMIN operando en Platform Tenant → prisma global sin filtro (admin ops)
+  // SUPER_ADMIN operando en un tenant regular → prisma filtrado por ese tenant
+  // Usuarios normales → prisma filtrado por su tenant
   const tenantPrisma = (
-    user.isSuperAdmin ? prisma : getTenantPrisma(user.tenantId)
+    user.isSuperAdmin && user.tenantId === PLATFORM_TENANT_ID
+      ? prisma
+      : getTenantPrisma(user.tenantId)
   ) as ReturnType<typeof getTenantPrisma>;
 
   return { user, tenantPrisma };

@@ -16,67 +16,72 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'MISSING_FIELDS' }, { status: 400 });
   }
 
-  // Validate that both items have active assignment with that vehicleId
-  const assignments = await tenantPrisma.vehicleItemAssignment.findMany({
-    where: {
-      serializedItemId: { in: [itemAId, itemBId] },
-      vehicleId,
-      removedAt: null,
-    },
-  });
+  try {
+    const assignments = await tenantPrisma.vehicleItemAssignment.findMany({
+      where: {
+        serializedItemId: { in: [itemAId, itemBId] },
+        vehicleId,
+        removedAt: null,
+      },
+    });
 
-  if (assignments.length !== 2) {
+    if (assignments.length !== 2) {
+      return NextResponse.json(
+        { error: 'BOTH_ITEMS_MUST_BE_ASSIGNED_TO_VEHICLE' },
+        { status: 400 }
+      );
+    }
+
+    const assignmentA = assignments.find(a => a.serializedItemId === itemAId)!;
+    const assignmentB = assignments.find(a => a.serializedItemId === itemBId)!;
+
+    const posA = assignmentA.position;
+    const posB = assignmentB.position;
+
+    await tenantPrisma.$transaction(async tx => {
+      await tx.vehicleItemAssignment.update({
+        where: { id: assignmentA.id },
+        data: { position: posB },
+      });
+
+      await tx.vehicleItemAssignment.update({
+        where: { id: assignmentB.id },
+        data: { position: posA },
+      });
+
+      await tx.serializedItemEvent.create({
+        data: {
+          tenantId: user.tenantId,
+          serializedItemId: itemAId,
+          eventType: 'ROTACION',
+          performedAt: new Date(),
+          performedById: user.id,
+          notes: `Rotado de posición ${posA} a ${posB}`,
+        },
+      });
+
+      await tx.serializedItemEvent.create({
+        data: {
+          tenantId: user.tenantId,
+          serializedItemId: itemBId,
+          eventType: 'ROTACION',
+          performedAt: new Date(),
+          performedById: user.id,
+          notes: `Rotado de posición ${posB} a ${posA}`,
+        },
+      });
+    });
+
+    return NextResponse.json({
+      success: true,
+      itemANewPosition: posB,
+      itemBNewPosition: posA,
+    });
+  } catch (error) {
+    console.error('[SERIALIZED_ROTATE] POST error:', error);
     return NextResponse.json(
-      { error: 'BOTH_ITEMS_MUST_BE_ASSIGNED_TO_VEHICLE' },
-      { status: 400 }
+      { error: 'Internal server error' },
+      { status: 500 }
     );
   }
-
-  const assignmentA = assignments.find(a => a.serializedItemId === itemAId)!;
-  const assignmentB = assignments.find(a => a.serializedItemId === itemBId)!;
-
-  const posA = assignmentA.position;
-  const posB = assignmentB.position;
-
-  await tenantPrisma.$transaction(async tx => {
-    // Swap positions
-    await tx.vehicleItemAssignment.update({
-      where: { id: assignmentA.id },
-      data: { position: posB },
-    });
-
-    await tx.vehicleItemAssignment.update({
-      where: { id: assignmentB.id },
-      data: { position: posA },
-    });
-
-    // Create ROTACION event for each one
-    await tx.serializedItemEvent.create({
-      data: {
-        tenantId: user.tenantId,
-        serializedItemId: itemAId,
-        eventType: 'ROTACION',
-        performedAt: new Date(),
-        performedById: user.id,
-        notes: `Rotado de posición ${posA} a ${posB}`,
-      },
-    });
-
-    await tx.serializedItemEvent.create({
-      data: {
-        tenantId: user.tenantId,
-        serializedItemId: itemBId,
-        eventType: 'ROTACION',
-        performedAt: new Date(),
-        performedById: user.id,
-        notes: `Rotado de posición ${posB} a ${posA}`,
-      },
-    });
-  });
-
-  return NextResponse.json({
-    success: true,
-    itemANewPosition: posB,
-    itemBNewPosition: posA,
-  });
 }
