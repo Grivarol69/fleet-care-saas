@@ -2,12 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getNotificationService } from '@/lib/notifications/notification-service';
 import { getWhatsAppService } from '@/lib/notifications/whatsapp';
 import { getCurrentUser } from '@/lib/auth';
+import { canManageUsers } from '@/lib/permissions';
+
+const PHONE_REGEX = /^\+[1-9]\d{7,14}$/;
 
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (!canManageUsers(user)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const searchParams = request.nextUrl.searchParams;
@@ -45,6 +51,16 @@ export async function GET(request: NextRequest) {
               success: false,
               error:
                 'Phone number is required for test message. Use ?action=test-message&phone=+573001234567',
+            },
+            { status: 400 }
+          );
+        }
+        if (!PHONE_REGEX.test(phone)) {
+          return NextResponse.json(
+            {
+              success: false,
+              error:
+                'Formato de teléfono inválido. Use formato E.164: +573001234567',
             },
             { status: 400 }
           );
@@ -161,6 +177,9 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    if (!canManageUsers(user)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     const body = await request.json();
     const { phone, message } = body;
@@ -170,6 +189,16 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: 'Phone number is required',
+        },
+        { status: 400 }
+      );
+    }
+    if (!PHONE_REGEX.test(phone)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Formato de teléfono inválido. Use formato E.164: +573001234567',
         },
         { status: 400 }
       );

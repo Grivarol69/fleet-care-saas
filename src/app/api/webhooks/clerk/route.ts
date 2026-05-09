@@ -77,6 +77,19 @@ export async function POST(req: Request) {
     return new Response('', { status: 200 });
   }
 
+  // Cleanup stale idempotency records (fire-and-forget, no await)
+  prisma.processedWebhookEvent
+    .deleteMany({
+      where: {
+        processedAt: {
+          lt: new Date(
+            Date.now() - IDEMPOTENCY_CLEANUP_DAYS * 24 * 60 * 60 * 1000
+          ),
+        },
+      },
+    })
+    .catch(err => console.error('[WEBHOOK] Cleanup error:', err));
+
   // Handle the event
   const eventType = evt.type;
   console.log(`[WEBHOOK] Processing ${eventType} (svix-id: ${svix_id})`);
