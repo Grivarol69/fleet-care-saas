@@ -488,3 +488,32 @@ export function canImportHistoricalInvoices(role: UserRole): boolean {
 // ========================================
 
 export { PLATFORM_TENANT_ID };
+
+// ========================================
+// PLATFORM SUPER_ADMIN GUARDS
+// ========================================
+
+/**
+ * True only when the user is operating as the platform-level SUPER_ADMIN
+ * (has the isSuperAdmin flag AND is currently scoped to PLATFORM_TENANT_ID).
+ *
+ * Use this — NOT `isSuperAdmin(user)` — for any endpoint that performs
+ * platform-global writes or cross-tenant reads.
+ */
+export function isPlatformSuperAdmin(user: UserWithSuperAdmin | null): boolean {
+  return !!user?.isSuperAdmin && user.tenantId === PLATFORM_TENANT_ID;
+}
+
+/**
+ * Throws when the user is not a platform-level SUPER_ADMIN.
+ * Routes should catch and return 403.
+ */
+export function requirePlatformSuperAdmin(
+  user: UserWithSuperAdmin | null
+): void {
+  if (!isPlatformSuperAdmin(user)) {
+    throw new Error(
+      'Acceso denegado: se requiere SUPER_ADMIN del tenant de plataforma'
+    );
+  }
+}
