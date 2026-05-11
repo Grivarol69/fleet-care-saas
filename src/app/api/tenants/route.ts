@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { tenantService } from '@/lib/tenant';
 import { requireCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -55,6 +56,11 @@ export async function POST(request: NextRequest) {
   try {
     // Note: This endpoint is for tenant creation during onboarding
     // It relies on Clerk auth but user may not have a tenant yet
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { name, industryPreset } = body;
 
