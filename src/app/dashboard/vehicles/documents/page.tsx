@@ -73,55 +73,49 @@ export default function DocumentsPage() {
     fetchVehicles();
   }, [toast]);
 
-  // Load documents for selected vehicle
+  // Load compliance for selected vehicle
   useEffect(() => {
     if (!selectedVehicle) return;
 
-    // Simulating a specialized endpoint logic here for now
-    // Ideally this should be an endpoint like /api/vehicles/{id}/compliance
     const fetchCompliance = async () => {
       setIsLoading(true);
       try {
-        // 1. Get ALL document types
-        const typesRes = await axios.get('/api/vehicles/document-types');
-        const allTypes = typesRes.data;
-
-        // 2. Get vehicle documents
-        // We might need a specific endpoint for this or filter from a larger list
-        // reusing the vehicle details endpoint which usually includes documents
-        const vehicleRes = await axios.get(
-          `/api/vehicles/vehicles/${selectedVehicle.id}`
+        const res = await axios.get(
+          `/api/vehicles/${selectedVehicle.id}/compliance`
         );
-        const vehicleDocs = vehicleRes.data.documents || [];
 
-        // 3. Match them up
-        const statusList = allTypes.map((type: any) => {
-          const doc = vehicleDocs.find(
-            (d: any) => d.documentTypeId === type.id
+        const STATUS_ORDER: Record<string, number> = {
+          MISSING: 0,
+          EXPIRING: 1,
+          EXPIRED: 2,
+          VALID: 3,
+        };
+
+        const statusList: DocumentStatus[] = res.data.items
+          .map(
+            (item: {
+              documentTypeId: string;
+              name: string;
+              isMandatory: boolean;
+              status: 'MISSING' | 'VALID' | 'EXPIRING' | 'EXPIRED';
+              document?: {
+                id: string;
+                fileUrl: string;
+                expiryDate: string | null;
+                documentNumber: string | null;
+              };
+            }) => ({
+              id: item.documentTypeId,
+              name: item.name,
+              isMandatory: item.isMandatory,
+              status: item.status,
+              document: item.document,
+            })
+          )
+          .sort(
+            (a: DocumentStatus, b: DocumentStatus) =>
+              (STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99)
           );
-
-          let status: 'MISSING' | 'VALID' | 'EXPIRING' | 'EXPIRED' = 'MISSING';
-
-          if (doc) {
-            status = 'VALID';
-            if (doc.expiryDate) {
-              const daysLeft = Math.ceil(
-                (new Date(doc.expiryDate).getTime() - new Date().getTime()) /
-                  (1000 * 60 * 60 * 24)
-              );
-              if (daysLeft < 0) status = 'EXPIRED';
-              else if (daysLeft <= type.expiryWarningDays) status = 'EXPIRING';
-            }
-          }
-
-          return {
-            id: type.id,
-            name: type.name,
-            isMandatory: type.isMandatory,
-            status,
-            document: doc,
-          };
-        });
 
         setDocumentStatuses(statusList);
       } catch (error) {
@@ -137,7 +131,7 @@ export default function DocumentsPage() {
     };
 
     fetchCompliance();
-  }, [selectedVehicle, toast, isAddDialogOpen]); // Reload when dialog closes (succesful add)
+  }, [selectedVehicle, toast, isAddDialogOpen]); // Reload when dialog closes (successful add)
 
   const filteredVehicles = vehicles.filter(
     v =>
@@ -214,15 +208,16 @@ export default function DocumentsPage() {
                       <div className="text-center p-8 border-2 border-dashed rounded-lg">
                         <FileText className="h-10 w-10 mx-auto text-slate-400 mb-2" />
                         <h3 className="font-semibold text-lg">
-                          No hay tipos de documentos configurados
+                          Sin requisitos configurados
                         </h3>
                         <p className="text-slate-500 mb-4">
-                          Debes configurar los tipos de documentos requeridos
-                          (Ej: SOAT, Tecno) para tu país o empresa.
+                          Este tipo de vehículo no tiene requisitos de
+                          documentos definidos. Ve a Tipos de Vehículo para
+                          configurarlos.
                         </p>
                         <Button variant="outline" asChild>
-                          <a href="/dashboard/admin/document-types">
-                            Ir a Configuración
+                          <a href="/dashboard/vehicles/types">
+                            Ir a Tipos de Vehículos
                           </a>
                         </Button>
                       </div>

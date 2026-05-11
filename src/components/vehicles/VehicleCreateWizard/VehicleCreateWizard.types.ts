@@ -59,3 +59,20 @@ export interface DocumentTypeConfig {
   isGlobal: boolean;
   countryCode: string;
 }
+
+export interface ComplianceItem {
+  requirementId: string;
+  documentTypeId: string;
+  name: string;
+  code: string;
+  isMandatory: true;
+  status: 'MISSING' | 'VALID' | 'EXPIRING' | 'EXPIRED';
+  document?: {
+    id: string;
+    fileUrl: string;
+    expiryDate: string | null;
+    documentNumber: string | null;
+  };
+  /** Mapped to DocumentTypeConfig shape for DocumentUploadCard */
+  documentType: DocumentTypeConfig;
+}

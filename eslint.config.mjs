@@ -98,6 +98,10 @@ const eslintConfig = [
       'src/app/api/vehicles/__tests__/vehicles-crud.test.ts',
       'src/app/api/vehicles/types/\\[id\\]/route.ts',
       'src/app/api/webhooks/clerk/route.ts',
+      // DocumentRequirement has no tenantId — raw prisma required
+      'src/app/api/vehicles/document-requirements/route.ts',
+      'src/app/api/vehicles/document-requirements/\\[id\\]/route.ts',
+      'src/app/api/vehicles/\\[vehicleId\\]/compliance/route.ts',
     ],
     rules: {
       'no-restricted-imports': 'off',
