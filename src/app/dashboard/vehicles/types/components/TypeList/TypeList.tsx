@@ -18,6 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { FormAddType } from '../FormAddType';
 import { FormEditType } from '../FormEditType';
+import { RequirementsDialog } from '../RequirementsDialog';
 import axios from 'axios';
 import { useToast } from '@/components/hooks/use-toast';
 import { TypeListProps } from './TypeList.types';
@@ -29,6 +30,8 @@ export function TypeList() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingType, setEditingType] = useState<TypeListProps | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [requirementsType, setRequirementsType] =
+    useState<TypeListProps | null>(null);
 
   const { toast } = useToast();
 
@@ -38,7 +41,7 @@ export function TypeList() {
       .then(data => {
         if (data.isSuperAdmin) setIsSuperAdmin(true);
       })
-      .catch(() => { });
+      .catch(() => {});
   }, []);
 
   const fetchTypes = useCallback(async () => {
@@ -113,10 +116,11 @@ export function TypeList() {
       header: 'Origen',
       cell: ({ row }) => (
         <span
-          className={`px-2 py-1 rounded-full text-xs ${row.original.isGlobal
+          className={`px-2 py-1 rounded-full text-xs ${
+            row.original.isGlobal
               ? 'bg-purple-100 text-purple-800'
               : 'bg-slate-100 text-slate-700'
-            }`}
+          }`}
         >
           {row.original.isGlobal ? 'Global' : 'Empresa'}
         </span>
@@ -124,24 +128,35 @@ export function TypeList() {
     },
     {
       id: 'actions',
-      cell: ({ row }) =>
-        canMutate(row.original) ? (
-          <div>
-            <Button
-              variant="outline"
-              className="mr-2"
-              onClick={() => handleEdit(row.original)}
-            >
-              Editar
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => handleDelete(row.original.id)}
-            >
-              Eliminar
-            </Button>
-          </div>
-        ) : null,
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setRequirementsType(row.original)}
+          >
+            Configurar documentos
+          </Button>
+          {canMutate(row.original) && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleEdit(row.original)}
+              >
+                Editar
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => handleDelete(row.original.id)}
+              >
+                Eliminar
+              </Button>
+            </>
+          )}
+        </div>
+      ),
     },
   ];
 
@@ -218,6 +233,21 @@ export function TypeList() {
               data.map(type => (type.id === editedType.id ? editedType : type))
             );
           }}
+        />
+      )}
+
+      {requirementsType && (
+        <RequirementsDialog
+          vehicleType={{
+            id: requirementsType.id,
+            name: requirementsType.name,
+            isGlobal: requirementsType.isGlobal ?? false,
+          }}
+          open={!!requirementsType}
+          onOpenChange={open => {
+            if (!open) setRequirementsType(null);
+          }}
+          isSuperAdmin={isSuperAdmin}
         />
       )}
     </div>
