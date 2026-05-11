@@ -1,11 +1,21 @@
 import { NextResponse } from 'next/server';
 import { requireCurrentUser } from '@/lib/auth';
+import { isPlatformSuperAdmin } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   const { user } = await requireCurrentUser();
   if (!user)
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  if (isPlatformSuperAdmin(user)) {
+    return NextResponse.json(
+      {
+        error: 'Use /api/admin/tenants/[tenantId] for platform admin access',
+      },
+      { status: 403 }
+    );
+  }
 
   try {
     const tenant = await prisma.tenant.findUnique({
