@@ -108,6 +108,29 @@ Endpoints conocidos:
 - `src/app/api/webhooks/clerk/route.ts` — sincroniza orgs y memberships de Clerk → BD
 - JIT fallback en `getCurrentUser()`: si el webhook tardó, crea User/Tenant en el momento
 
+### Platform admin guard
+
+Cualquier endpoint bajo `/api/admin/` que realice escrituras globales de plataforma
+(muta datos con `isGlobal: true`, O muta filas en un tenant distinto al del llamante)
+DEBE llamar `requirePlatformSuperAdmin(user)` de `src/lib/permissions.ts`.
+**NO confiar en `user.role === 'SUPER_ADMIN'` sólo** — eso no valida el contexto del tenant de plataforma.
+
+Las mutaciones cross-tenant por un admin de plataforma (ej. SUPER_ADMIN cambia el rol de un usuario de un tenant) DEBEN escribir una fila `AuditLog` donde:
+
+- `tenantId` = tenant TARGET (el del usuario afectado, no el del actor)
+- `changes.performedBy = 'PLATFORM_ADMIN'`
+
+Las filas de usuario del tenant de plataforma (`tenantId = PLATFORM_TENANT_ID`) se gestionan manualmente. Los webhooks de Clerk (`user.updated`) las excluyen explícitamente del auto-sync para prevenir mutaciones accidentales de la identidad de plataforma.
+
+Helpers disponibles en `src/lib/permissions.ts`:
+
+- `isPlatformSuperAdmin(user)` — retorna `true` sólo si `isSuperAdmin === true` Y `tenantId === PLATFORM_TENANT_ID`
+- `requirePlatformSuperAdmin(user)` — lanza si no es platform admin; capturar en la ruta y retornar 403
+
+Helper de auditoría en `src/lib/audit.ts`:
+
+- `logPlatformAdminAccess(params)` — escribe una fila `AuditLog` en el tenant TARGET para accesos cross-tenant
+
 ### API routes pattern (`src/app/api/`)
 
 ```ts
