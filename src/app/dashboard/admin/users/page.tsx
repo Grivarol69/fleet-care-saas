@@ -1,6 +1,3 @@
-'use client';
-
-import { OrganizationProfile } from '@clerk/nextjs';
 import {
   Card,
   CardContent,
@@ -10,9 +7,15 @@ import {
 } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
+import { requireCurrentUser } from '@/lib/auth';
+import { isPlatformSuperAdmin } from '@/lib/permissions';
 import { FleetCareRolesTable } from './FleetCareRolesTable';
+import { OrganizationProfileSection } from './OrganizationProfileSection';
 
-export default function UserManagementPage() {
+export default async function UserManagementPage() {
+  const { user } = await requireCurrentUser();
+  const isPlatformAdmin = isPlatformSuperAdmin(user);
+
   return (
     <div className="flex-1 space-y-6 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
@@ -27,22 +30,7 @@ export default function UserManagementPage() {
       </div>
 
       {/* Sección 1: Clerk — invitaciones y miembros de la organización */}
-      <Card className="border-none shadow-none bg-transparent">
-        <CardContent className="p-0">
-          <OrganizationProfile
-            routing="hash"
-            appearance={{
-              elements: {
-                rootBox: 'w-full mx-auto',
-                card: 'shadow-md border border-slate-200',
-                navbar: 'hidden md:flex',
-                headerTitle: 'text-slate-900',
-                headerSubtitle: 'text-slate-500',
-              },
-            }}
-          />
-        </CardContent>
-      </Card>
+      <OrganizationProfileSection />
 
       <Alert>
         <Info className="h-4 w-4" />
@@ -64,7 +52,7 @@ export default function UserManagementPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <FleetCareRolesTable />
+          <FleetCareRolesTable isPlatformAdmin={isPlatformAdmin} />
         </CardContent>
       </Card>
     </div>

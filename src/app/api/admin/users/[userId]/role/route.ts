@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireCurrentUser } from '@/lib/auth';
-import { canManageUsers } from '@/lib/permissions';
+import { isPlatformSuperAdmin } from '@/lib/permissions';
 import { UserRole } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
@@ -17,11 +17,16 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ userId: string }> }
 ) {
-  const { user, tenantPrisma } = await requireCurrentUser();
-  if (!user)
+  const { user } = await requireCurrentUser();
+  if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (!canManageUsers(user))
-    return NextResponse.json({ error: 'No tienes permisos' }, { status: 403 });
+  }
+  if (!isPlatformSuperAdmin(user)) {
+    return NextResponse.json(
+      { error: 'Forbidden: platform SUPER_ADMIN required' },
+      { status: 403 }
+    );
+  }
 
   const { userId } = await params;
 
@@ -40,7 +45,8 @@ export async function PATCH(
   }
 
   try {
-    const target = await tenantPrisma.user.findFirst({
+    // Read target's tenantId FIRST — that's the scoping key for the update
+    const target = await prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, role: true, tenantId: true },
     });
@@ -52,21 +58,40 @@ export async function PATCH(
       );
     }
 
+    // Defensive: prevent platform admin from accidentally modifying
+    // a row in the platform tenant from this endpoint
+    if (target.tenantId === user.tenantId) {
+      return NextResponse.json(
+        {
+          error:
+            'Use otra ruta para cambiar roles dentro del tenant de plataforma',
+        },
+        { status: 400 }
+      );
+    }
+
     const oldRole = target.role;
 
     const [updatedUser] = await prisma.$transaction([
       prisma.user.update({
-        where: { id: userId, tenantId: user.tenantId },
+        where: { id: userId, tenantId: target.tenantId },
         data: { role },
       }),
+      // Inline create — keeps the mutation atomic.
+      // logPlatformAdminAccess is for non-transactional callers; here
+      // we co-mutate inside $transaction so the audit row is durable.
       prisma.auditLog.create({
         data: {
-          tenantId: user.tenantId,
+          tenantId: target.tenantId, // log lives in TARGET tenant
           actorId: user.id,
           action: 'USER_ROLE_CHANGED',
           resource: 'User',
           resourceId: userId,
-          changes: { before: oldRole, after: role },
+          changes: {
+            before: oldRole,
+            after: role,
+            performedBy: 'PLATFORM_ADMIN',
+          },
         },
       }),
     ]);
