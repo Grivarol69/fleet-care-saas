@@ -490,6 +490,40 @@ export function canImportHistoricalInvoices(role: UserRole): boolean {
 export { PLATFORM_TENANT_ID };
 
 // ========================================
+// DOCUMENT REQUIREMENT WRITE PERMISSION
+// ========================================
+
+/**
+ * Validates write permission for DocumentRequirement operations.
+ * DocumentRequirement has no tenantId so we check parent entities.
+ *
+ * Rules:
+ * - Any global parent (VehicleType or DocumentTypeConfig) → platform SUPER_ADMIN only
+ * - Both tenant-scoped → both must match caller's tenant AND caller must canManageMasterData
+ */
+export function requireDocumentRequirementWritePermission(
+  user: UserWithSuperAdmin,
+  vehicleType: { isGlobal: boolean; tenantId: string | null },
+  documentType: { isGlobal: boolean; tenantId: string | null }
+): void {
+  if (vehicleType.isGlobal || documentType.isGlobal) {
+    requirePlatformSuperAdmin(user);
+    return;
+  }
+  if (
+    vehicleType.tenantId !== user.tenantId ||
+    documentType.tenantId !== user.tenantId
+  ) {
+    throw new Error(
+      'El tipo de vehículo o tipo de documento pertenece a otro tenant'
+    );
+  }
+  if (!canManageMasterData(user)) {
+    throw new Error('Se requiere rol OWNER, MANAGER o COORDINATOR');
+  }
+}
+
+// ========================================
 // PLATFORM SUPER_ADMIN GUARDS
 // ========================================
 
