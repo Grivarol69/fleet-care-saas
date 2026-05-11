@@ -233,76 +233,81 @@ export async function GET(request: NextRequest) {
     dateTo,
   };
 
-  const where = buildInvoiceItemWhere(filters);
-  const items = await tenantPrisma.invoiceItem.findMany({
-    where,
-    select: ITEM_SELECT,
-    orderBy: [{ invoice: { invoiceDate: 'desc' } }, { id: 'asc' }],
-  });
+  try {
+    const where = buildInvoiceItemWhere(filters);
+    const items = await tenantPrisma.invoiceItem.findMany({
+      where,
+      select: ITEM_SELECT,
+      orderBy: [{ invoice: { invoiceDate: 'desc' } }, { id: 'asc' }],
+    });
 
-  const summary = summarize(items);
-  const lines = buildLines(items);
+    const summary = summarize(items);
+    const lines = buildLines(items);
 
-  // Resolve vehicle label for filters response
-  let vehicleFilter: ExpenseReportResponse['filters']['vehicle'] = null;
-  if (filters.vehicleId) {
-    const vehicle = await tenantPrisma.vehicle.findUnique({
-      where: { id: filters.vehicleId },
-      select: {
-        id: true,
-        licensePlate: true,
-        brand: { select: { name: true } },
-        line: { select: { name: true } },
+    let vehicleFilter: ExpenseReportResponse['filters']['vehicle'] = null;
+    if (filters.vehicleId) {
+      const vehicle = await tenantPrisma.vehicle.findUnique({
+        where: { id: filters.vehicleId },
+        select: {
+          id: true,
+          licensePlate: true,
+          brand: { select: { name: true } },
+          line: { select: { name: true } },
+        },
+      });
+      if (vehicle) {
+        vehicleFilter = {
+          id: vehicle.id,
+          label: `${vehicle.licensePlate} — ${vehicle.brand.name} ${vehicle.line.name}`,
+        };
+      }
+    }
+
+    let categoryFilter: ExpenseReportResponse['filters']['category'] = null;
+    if (categoryFilterMode === 'none') {
+      categoryFilter = { id: null, label: 'Sin categoría' };
+    } else if (categoryFilterMode === 'specific' && categoryId) {
+      const cat = await tenantPrisma.mantCategory.findUnique({
+        where: { id: categoryId },
+        select: { id: true, name: true },
+      });
+      if (cat) {
+        categoryFilter = { id: cat.id, label: cat.name };
+      }
+    }
+
+    const payload: ExpenseReportResponse = {
+      filters: {
+        from: fromParam!,
+        to: toParam!,
+        vehicle: vehicleFilter,
+        category: categoryFilter,
       },
-    });
-    if (vehicle) {
-      vehicleFilter = {
-        id: vehicle.id,
-        label: `${vehicle.licensePlate} — ${vehicle.brand.name} ${vehicle.line.name}`,
-      };
+      summary,
+      lines,
+    };
+
+    if (format === 'pdf') {
+      const buffer = await renderToBuffer(
+        React.createElement(ExpenseReportPDF, payload) as any
+      );
+      const plateSlug = vehicleFilter
+        ? `-${vehicleFilter.label.split(' ')[0].replace(/[^A-Z0-9]/gi, '')}`
+        : '';
+      return new NextResponse(new Uint8Array(buffer), {
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="expense-report${plateSlug}-${fromParam}-${toParam}.pdf"`,
+        },
+      });
     }
-  }
 
-  // Resolve category label for filters response
-  let categoryFilter: ExpenseReportResponse['filters']['category'] = null;
-  if (categoryFilterMode === 'none') {
-    categoryFilter = { id: null, label: 'Sin categoría' };
-  } else if (categoryFilterMode === 'specific' && categoryId) {
-    const cat = await tenantPrisma.mantCategory.findUnique({
-      where: { id: categoryId },
-      select: { id: true, name: true },
-    });
-    if (cat) {
-      categoryFilter = { id: cat.id, label: cat.name };
-    }
-  }
-
-  const payload: ExpenseReportResponse = {
-    filters: {
-      from: fromParam!,
-      to: toParam!,
-      vehicle: vehicleFilter,
-      category: categoryFilter,
-    },
-    summary,
-    lines,
-  };
-
-  if (format === 'pdf') {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const buffer = await renderToBuffer(
-      React.createElement(ExpenseReportPDF, payload) as any
+    return NextResponse.json(payload);
+  } catch (error) {
+    console.error('[EXPENSE_REPORT] GET error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
     );
-    const plateSlug = vehicleFilter
-      ? `-${vehicleFilter.label.split(' ')[0].replace(/[^A-Z0-9]/gi, '')}`
-      : '';
-    return new NextResponse(new Uint8Array(buffer), {
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="expense-report${plateSlug}-${fromParam}-${toParam}.pdf"`,
-      },
-    });
   }
-
-  return NextResponse.json(payload);
 }

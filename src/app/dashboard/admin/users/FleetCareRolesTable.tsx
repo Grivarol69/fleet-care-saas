@@ -62,7 +62,13 @@ const ASSIGNABLE_ROLES: UserRole[] = [
   'DRIVER',
 ];
 
-export function FleetCareRolesTable() {
+type FleetCareRolesTableProps = {
+  isPlatformAdmin: boolean;
+};
+
+export function FleetCareRolesTable({
+  isPlatformAdmin,
+}: FleetCareRolesTableProps) {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
@@ -82,7 +88,10 @@ export function FleetCareRolesTable() {
 
   async function handleRoleChange(userId: string, newRole: UserRole) {
     setUpdating(userId);
-    const res = await fetch(`/api/admin/users/${userId}/role`, {
+    const endpoint = isPlatformAdmin
+      ? `/api/admin/users/${userId}/role`
+      : `/api/users/${userId}/role`;
+    const res = await fetch(endpoint, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ role: newRole }),
@@ -105,7 +114,9 @@ export function FleetCareRolesTable() {
   }
 
   if (!users.length) {
-    return <p className="text-sm text-slate-500">No hay usuarios en este tenant.</p>;
+    return (
+      <p className="text-sm text-slate-500">No hay usuarios en este tenant.</p>
+    );
   }
 
   return (
@@ -139,7 +150,9 @@ export function FleetCareRolesTable() {
                 ) : (
                   <Select
                     value={u.role}
-                    onValueChange={val => handleRoleChange(u.id, val as UserRole)}
+                    onValueChange={val =>
+                      handleRoleChange(u.id, val as UserRole)
+                    }
                     disabled={updating === u.id}
                   >
                     <SelectTrigger className="w-40">

@@ -1960,7 +1960,9 @@ enum AuditAction {
   COMPLETED
   FLAGGED // Para alertas
   ACKNOWLEDGED // Para alertas
-  USER_ROLE_CHANGED // Admin: cambio de rol de usuario
+  USER_ROLE_CHANGED // Tenant OWNER: cambio de rol de usuario en su propio tenant
+  PLATFORM_ADMIN_ROLE_CHANGE // SUPER_ADMIN: cambio de rol cross-tenant desde plataforma
+  PLATFORM_ADMIN_READ // SUPER_ADMIN: lectura de datos de un tenant desde plataforma
 }
 
 enum AlertLevel {

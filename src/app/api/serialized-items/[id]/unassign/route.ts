@@ -24,49 +24,56 @@ export async function POST(
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  // Verify active assignment exists
-  const assignment = await tenantPrisma.vehicleItemAssignment.findFirst({
-    where: { serializedItemId: id, removedAt: null },
-  });
-  if (!assignment)
-    return NextResponse.json(
-      { error: 'NO_ACTIVE_ASSIGNMENT' },
-      { status: 400 }
-    );
+  try {
+    const assignment = await tenantPrisma.vehicleItemAssignment.findFirst({
+      where: { serializedItemId: id, removedAt: null },
+    });
+    if (!assignment)
+      return NextResponse.json(
+        { error: 'NO_ACTIVE_ASSIGNMENT' },
+        { status: 400 }
+      );
 
-  const closedAt = removedAt ? new Date(removedAt) : new Date();
+    const closedAt = removedAt ? new Date(removedAt) : new Date();
 
-  await tenantPrisma.$transaction(async tx => {
-    await tx.vehicleItemAssignment.update({
-      where: { id: assignment.id },
-      data: { removedAt: closedAt },
+    await tenantPrisma.$transaction(async tx => {
+      await tx.vehicleItemAssignment.update({
+        where: { id: assignment.id },
+        data: { removedAt: closedAt },
+      });
+
+      if (retire) {
+        await tx.serializedItem.update({
+          where: { id },
+          data: { status: 'RETIRED', retiredAt: closedAt },
+        });
+        await tx.serializedItemEvent.create({
+          data: {
+            tenantId: user.tenantId,
+            serializedItemId: id,
+            eventType: 'BAJA',
+            performedAt: closedAt,
+            performedById: user.id,
+            notes: 'Dado de baja al desinstalar',
+          },
+        });
+      } else {
+        await tx.serializedItem.update({
+          where: { id },
+          data: { status: 'IN_STOCK' },
+        });
+      }
     });
 
-    if (retire) {
-      await tx.serializedItem.update({
-        where: { id },
-        data: { status: 'RETIRED', retiredAt: closedAt },
-      });
-      await tx.serializedItemEvent.create({
-        data: {
-          tenantId: user.tenantId,
-          serializedItemId: id,
-          eventType: 'BAJA',
-          performedAt: closedAt,
-          performedById: user.id,
-          notes: 'Dado de baja al desinstalar',
-        },
-      });
-    } else {
-      await tx.serializedItem.update({
-        where: { id },
-        data: { status: 'IN_STOCK' },
-      });
-    }
-  });
-
-  return NextResponse.json({
-    status: retire ? 'RETIRED' : 'IN_STOCK',
-    removedAt: closedAt,
-  });
+    return NextResponse.json({
+      status: retire ? 'RETIRED' : 'IN_STOCK',
+      removedAt: closedAt,
+    });
+  } catch (error) {
+    console.error('[SERIALIZED_UNASSIGN] POST error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
 }

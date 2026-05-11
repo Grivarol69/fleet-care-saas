@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireCurrentUser } from '@/lib/auth';
+import { isPlatformSuperAdmin } from '@/lib/permissions';
 import { AIKBProposalSchema } from '@/lib/validations/kb-ai';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
@@ -8,9 +9,9 @@ export async function POST(req: NextRequest) {
   try {
     // 1. Validar autorización
     const authRecord = await requireCurrentUser();
-    if (!authRecord?.user || authRecord.user.role !== 'SUPER_ADMIN') {
+    if (!authRecord?.user || !isPlatformSuperAdmin(authRecord.user)) {
       return NextResponse.json(
-        { error: 'Forbidden: SUPER_ADMIN role required.' },
+        { error: 'Forbidden: platform SUPER_ADMIN required.' },
         { status: 403 }
       );
     }
