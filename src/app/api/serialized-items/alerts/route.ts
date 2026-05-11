@@ -14,14 +14,24 @@ export async function GET(request: NextRequest) {
   const status = (searchParams.get('status') ??
     'ACTIVE') as SerializedItemAlertStatus;
 
-  const alerts = await tenantPrisma.serializedItemAlert.findMany({
-    where: { tenantId: user.tenantId, status },
-    include: {
-      serializedItem: { select: { id: true, serialNumber: true, type: true } },
-      vehicle: { select: { id: true, licensePlate: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+  try {
+    const alerts = await tenantPrisma.serializedItemAlert.findMany({
+      where: { tenantId: user.tenantId, status },
+      include: {
+        serializedItem: {
+          select: { id: true, serialNumber: true, type: true },
+        },
+        vehicle: { select: { id: true, licensePlate: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
 
-  return NextResponse.json({ alerts });
+    return NextResponse.json({ alerts });
+  } catch (error) {
+    console.error('[SERIALIZED_ALERTS] GET error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
 }

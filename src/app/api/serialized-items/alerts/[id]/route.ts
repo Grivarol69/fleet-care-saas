@@ -14,15 +14,28 @@ export async function PATCH(
 
   const { id } = await params;
 
-  const alert = await tenantPrisma.serializedItemAlert.findFirst({
-    where: { id, tenantId: user.tenantId },
-  });
-  if (!alert) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  try {
+    const alert = await tenantPrisma.serializedItemAlert.findFirst({
+      where: { id, tenantId: user.tenantId },
+    });
+    if (!alert)
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const updated = await tenantPrisma.serializedItemAlert.update({
-    where: { id },
-    data: { status: 'RESOLVED', resolvedAt: new Date(), resolvedById: user.id },
-  });
+    const updated = await tenantPrisma.serializedItemAlert.update({
+      where: { id },
+      data: {
+        status: 'RESOLVED',
+        resolvedAt: new Date(),
+        resolvedById: user.id,
+      },
+    });
 
-  return NextResponse.json({ id: updated.id, status: updated.status });
+    return NextResponse.json({ id: updated.id, status: updated.status });
+  } catch (error) {
+    console.error('[SERIALIZED_ALERTS_ID] PATCH error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
 }

@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { WebhookEvent } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 import { UserRole } from '@prisma/client';
+import { PLATFORM_TENANT_ID } from '@/lib/auth-constants';
 
 // Limpia registros de idempotencia con más de 7 días (Svix no reintenta después de 3 días)
 const IDEMPOTENCY_CLEANUP_DAYS = 7;
@@ -77,6 +78,19 @@ export async function POST(req: Request) {
     return new Response('', { status: 200 });
   }
 
+  // Cleanup stale idempotency records (fire-and-forget, no await)
+  prisma.processedWebhookEvent
+    .deleteMany({
+      where: {
+        processedAt: {
+          lt: new Date(
+            Date.now() - IDEMPOTENCY_CLEANUP_DAYS * 24 * 60 * 60 * 1000
+          ),
+        },
+      },
+    })
+    .catch(err => console.error('[WEBHOOK] Cleanup error:', err));
+
   // Handle the event
   const eventType = evt.type;
   console.log(`[WEBHOOK] Processing ${eventType} (svix-id: ${svix_id})`);
@@ -95,7 +109,7 @@ export async function POST(req: Request) {
         }
 
         const updatedCount = await prisma.user.updateMany({
-          where: { email },
+          where: { email, tenantId: { not: PLATFORM_TENANT_ID } },
           data: {
             firstName: first_name,
             lastName: last_name,

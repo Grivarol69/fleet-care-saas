@@ -4,15 +4,14 @@ import { VehicleCVEmail } from '@/emails/VehicleCVEmail';
 import { renderAsync } from '@react-email/components';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { VehicleCV } from '@/app/dashboard/vehicles/fleet/components/VehicleCV/VehicleCV';
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { mergePdfWithAttachments } from '@/lib/pdf-merge';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const { user, tenantPrisma } = await requireCurrentUser();
 
     if (!user) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
@@ -29,7 +28,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Obtener datos del vehículo con documentos
-    const vehicle = await prisma.vehicle.findFirst({
+    const vehicle = await tenantPrisma.vehicle.findFirst({
       where: {
         id: vehicleId,
         tenantId: user.tenantId,
@@ -63,7 +62,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Obtener datos del tenant
-    const tenant = await prisma.tenant.findUnique({
+    const tenant = await tenantPrisma.tenant.findUnique({
       where: { id: user.tenantId },
       select: {
         name: true,
