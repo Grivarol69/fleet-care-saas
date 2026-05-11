@@ -84,7 +84,7 @@ export async function PATCH(
         data: {
           tenantId: target.tenantId, // log lives in TARGET tenant
           actorId: user.id,
-          action: 'USER_ROLE_CHANGED',
+          action: 'PLATFORM_ADMIN_ROLE_CHANGE',
           resource: 'User',
           resourceId: userId,
           changes: {
