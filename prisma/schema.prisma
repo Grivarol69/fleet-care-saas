@@ -1641,10 +1641,9 @@ model DocumentTypeConfig {
 }
 
 model DocumentRequirement {
-  id             String  @id @default(uuid())
+  id             String @id @default(uuid())
   documentTypeId String
   vehicleTypeId  String
-  isMandatory    Boolean @default(true)
 
   documentType DocumentTypeConfig @relation(fields: [documentTypeId], references: [id], onDelete: Cascade)
   vehicleType  VehicleType        @relation(fields: [vehicleTypeId], references: [id], onDelete: Cascade)

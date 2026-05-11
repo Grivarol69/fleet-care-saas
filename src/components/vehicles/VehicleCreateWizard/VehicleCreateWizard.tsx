@@ -54,7 +54,7 @@ import type {
   VehicleLine,
   VehicleType,
   CostCenter,
-  DocumentTypeConfig,
+  ComplianceItem,
 } from './VehicleCreateWizard.types';
 import { DocumentUploadCard } from './DocumentUploadCard';
 import type { DocumentOCRResult } from '@/lib/ocr/claude-vision';
@@ -118,7 +118,7 @@ export function VehicleCreateWizard() {
   const [createdLicensePlate, setCreatedLicensePlate] = useState<string | null>(
     null
   );
-  const [documentTypes, setDocumentTypes] = useState<DocumentTypeConfig[]>([]);
+  const [complianceItems, setComplianceItems] = useState<ComplianceItem[]>([]);
 
   const form = useForm<VehicleFormValues>({
     resolver: zodResolver(vehicleFormSchema),
@@ -237,11 +237,42 @@ export function VehicleCreateWizard() {
       const response = await axios.post('/api/vehicles/vehicles', payload);
       setCreatedLicensePlate(response.data.licensePlate);
 
-      // Fetch document types for step 3
-      const dtRes = await axios.get<DocumentTypeConfig[]>(
-        '/api/vehicles/document-types'
-      );
-      setDocumentTypes(dtRes.data);
+      // Fetch compliance requirements for step 3
+      const complianceRes = await axios.get<{
+        vehicleId: string;
+        vehicleTypeId: string;
+        items: Array<{
+          requirementId: string;
+          documentTypeId: string;
+          name: string;
+          code: string;
+          isMandatory: true;
+          status: 'MISSING' | 'VALID' | 'EXPIRING' | 'EXPIRED';
+          document?: {
+            id: string;
+            fileUrl: string;
+            expiryDate: string | null;
+            documentNumber: string | null;
+          };
+        }>;
+      }>(`/api/vehicles/${response.data.id}/compliance`);
+
+      // Map to ComplianceItem with documentType shape for DocumentUploadCard
+      const mapped: ComplianceItem[] = complianceRes.data.items.map(item => ({
+        ...item,
+        isMandatory: true as const,
+        documentType: {
+          id: item.documentTypeId,
+          code: item.code,
+          name: item.name,
+          description: null,
+          requiresExpiry: true, // conservative default; card will handle expiry date
+          isMandatory: true,
+          isGlobal: false,
+          countryCode: '',
+        },
+      }));
+      setComplianceItems(mapped);
 
       toast({
         title: 'Vehículo creado',
@@ -1299,15 +1330,15 @@ export function VehicleCreateWizard() {
             </CardHeader>
           </Card>
 
-          {documentTypes.length > 0 && (
+          {complianceItems.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {documentTypes.map(dt => {
-                const isPropertyCard = isPropertyCardType(dt.code);
+              {complianceItems.map(item => {
+                const isPropertyCard = isPropertyCardType(item.code);
                 return (
                   <DocumentUploadCard
-                    key={dt.id}
+                    key={item.documentTypeId}
                     vehiclePlate={createdLicensePlate}
-                    documentType={dt}
+                    documentType={item.documentType}
                     preloadedUrl={
                       isPropertyCard
                         ? (propertyCardUrl ?? undefined)
@@ -1322,11 +1353,18 @@ export function VehicleCreateWizard() {
             </div>
           )}
 
-          {documentTypes.length === 0 && (
+          {complianceItems.length === 0 && (
             <Card>
               <CardContent className="py-8 text-center text-muted-foreground text-sm">
-                No hay tipos de documentos configurados para tu organización.
-                Puedes configurarlos en Configuración → Tipos de Documentos.
+                No hay documentos obligatorios configurados para este tipo de
+                vehículo. Podés configurarlos en{' '}
+                <a
+                  href="/dashboard/vehicles/types"
+                  className="underline text-primary"
+                >
+                  Tipos de Vehículos
+                </a>
+                .
               </CardContent>
             </Card>
           )}
