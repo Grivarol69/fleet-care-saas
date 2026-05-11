@@ -83,6 +83,7 @@ function fuzzyMatch<T extends { id: string; name: string }>(
 }
 
 const PROPERTY_CARD_CODES = [
+  'REGISTRATION',
   'TARJETA_PROPIEDAD',
   'LICENCIA_TRANSITO',
   'TARJETA_DE_PROPIEDAD',
