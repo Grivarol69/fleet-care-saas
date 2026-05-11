@@ -4,9 +4,11 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
+  getFilteredRowModel,
   flexRender,
   ColumnDef,
 } from '@tanstack/react-table';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -29,6 +31,7 @@ export function BrandList() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingBrand, setEditingBrand] = useState<BrandListProps | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [search, setSearch] = useState('');
 
   const { toast } = useToast();
 
@@ -38,7 +41,7 @@ export function BrandList() {
       .then(data => {
         if (data.isSuperAdmin) setIsSuperAdmin(true);
       })
-      .catch(() => { });
+      .catch(() => {});
   }, []);
 
   const fetchBrands = useCallback(async () => {
@@ -117,10 +120,11 @@ export function BrandList() {
       header: 'Origen',
       cell: ({ row }) => (
         <span
-          className={`px-2 py-1 rounded-full text-xs ${row.original.isGlobal
+          className={`px-2 py-1 rounded-full text-xs ${
+            row.original.isGlobal
               ? 'bg-purple-100 text-purple-800'
               : 'bg-slate-100 text-slate-700'
-            }`}
+          }`}
         >
           {row.original.isGlobal ? 'Global' : 'Empresa'}
         </span>
@@ -153,6 +157,10 @@ export function BrandList() {
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    state: { globalFilter: search },
+    onGlobalFilterChange: setSearch,
+    globalFilterFn: 'includesString',
   });
 
   // Loading state
@@ -166,9 +174,15 @@ export function BrandList() {
 
   return (
     <div>
-      <Button onClick={() => setIsAddDialogOpen(true)} className="mb-4">
-        Agregar Marca
-      </Button>
+      <div className="flex items-center gap-4 mb-4">
+        <Button onClick={() => setIsAddDialogOpen(true)}>Agregar Marca</Button>
+        <Input
+          placeholder="Buscar marca..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+      </div>
 
       <Table>
         <TableHeader>
