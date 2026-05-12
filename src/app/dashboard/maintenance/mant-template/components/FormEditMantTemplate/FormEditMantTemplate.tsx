@@ -93,8 +93,24 @@ export function FormEditMantTemplate({
         axios.get('/api/vehicles/lines'),
       ]);
 
+      const allLines: VehicleLine[] = linesRes.data;
       setVehicleBrands(brandsRes.data);
-      setVehicleLines(linesRes.data);
+      setVehicleLines(allLines);
+
+      const brandId = template.vehicleBrandId ?? undefined;
+      form.reset({
+        id: template.id,
+        name: template.name,
+        description: template.description || '',
+        vehicleBrandId: brandId,
+        vehicleLineId: template.vehicleLineId ?? undefined,
+      });
+
+      if (brandId) {
+        setFilteredLines(
+          allLines.filter((l: VehicleLine) => l.brandId === brandId)
+        );
+      }
     } catch (error) {
       console.error('Error cargando datos:', error);
       toast({
@@ -103,21 +119,14 @@ export function FormEditMantTemplate({
         variant: 'destructive',
       });
     }
-  }, [toast]);
+  }, [toast, template, form]);
 
   // Cargar datos cuando se abre el dialog
   useEffect(() => {
     if (isOpen) {
       fetchData();
-      form.reset({
-        id: template.id,
-        name: template.name,
-        description: template.description || '',
-        vehicleBrandId: template.vehicleBrandId ?? undefined,
-        vehicleLineId: template.vehicleLineId ?? undefined,
-      });
     }
-  }, [isOpen, template, form, fetchData]);
+  }, [isOpen, fetchData]);
 
   // Filter lines by selected brand
   useEffect(() => {
