@@ -66,9 +66,11 @@ const VEHICLE_UNSPLASH: Record<string, string> = {
 };
 
 function getVehicleImage(template: MantTemplatesListProps): string {
-  if (template.imageUrl) return template.imageUrl;
   return (
     VEHICLE_UNSPLASH[template.vehicleType?.name ?? ''] ??
+    (template.imageUrl && !template.imageUrl.endsWith('.svg')
+      ? template.imageUrl
+      : null) ??
     '/images/Tipos/automovil.jpeg'
   );
 }
