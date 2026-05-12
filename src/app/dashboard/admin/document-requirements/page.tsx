@@ -2,41 +2,43 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { FileText, Plus, Trash2, FileCheck } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/components/hooks/use-toast';
-import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
 
-type VehicleType = {
-  id: string;
-  name: string;
-};
-
+type VehicleType = { id: string; name: string };
 type DocumentType = {
   id: string;
   name: string;
   code: string;
+  requiresExpiry: boolean;
 };
-
 type Requirement = {
   id: string;
   vehicleTypeId: string;
   documentTypeId: string;
 };
 
-function buildKey(vehicleTypeId: string, documentTypeId: string): string {
-  return `${vehicleTypeId}:${documentTypeId}`;
-}
-
 export default function DocumentRequirementsPage() {
+  const { toast } = useToast();
   const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
   const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
-  const [requirements, setRequirements] = useState<Set<string>>(new Set());
-  const [requirementIds, setRequirementIds] = useState<Map<string, string>>(
-    new Map()
-  );
-  const [loadingCell, setLoadingCell] = useState<string | null>(null);
+  const [requirements, setRequirements] = useState<Requirement[]>([]);
+  const [selectedTypeId, setSelectedTypeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const { toast } = useToast();
+  const [adding, setAdding] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [selectedDocToAdd, setSelectedDocToAdd] = useState<string>('');
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -46,172 +48,241 @@ export default function DocumentRequirementsPage() {
         axios.get<DocumentType[]>('/api/vehicles/document-types'),
         axios.get<Requirement[]>('/api/vehicles/document-requirements'),
       ]);
-
       setVehicleTypes(vtRes.data);
       setDocumentTypes(dtRes.data);
-
-      const reqSet = new Set<string>();
-      const reqMap = new Map<string, string>();
-      for (const r of reqRes.data) {
-        const key = buildKey(r.vehicleTypeId, r.documentTypeId);
-        reqSet.add(key);
-        reqMap.set(key, r.id);
+      setRequirements(reqRes.data);
+      if (vtRes.data.length > 0 && !selectedTypeId) {
+        setSelectedTypeId(vtRes.data[0].id);
       }
-      setRequirements(reqSet);
-      setRequirementIds(reqMap);
     } catch {
       toast({
         variant: 'destructive',
         title: 'Error al cargar la plantilla documental',
-        description: 'Por favor recargá la página e intentá de nuevo.',
       });
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, selectedTypeId]);
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleToggle = useCallback(
-    async (vehicleTypeId: string, documentTypeId: string) => {
-      const key = buildKey(vehicleTypeId, documentTypeId);
-      const wasChecked = requirements.has(key);
+  const selectedType = vehicleTypes.find(vt => vt.id === selectedTypeId);
 
-      // Optimistic update
-      setRequirements(prev => {
-        const next = new Set(prev);
-        if (wasChecked) {
-          next.delete(key);
-        } else {
-          next.add(key);
-        }
-        return next;
-      });
-      setLoadingCell(key);
-
-      try {
-        if (wasChecked) {
-          const reqId = requirementIds.get(key);
-          if (!reqId) throw new Error('Requirement ID not found');
-          await axios.delete(`/api/vehicles/document-requirements/${reqId}`);
-          setRequirementIds(prev => {
-            const next = new Map(prev);
-            next.delete(key);
-            return next;
-          });
-        } else {
-          const res = await axios.post<Requirement>(
-            '/api/vehicles/document-requirements',
-            {
-              vehicleTypeId,
-              documentTypeId,
-            }
-          );
-          setRequirementIds(prev => new Map(prev).set(key, res.data.id));
-        }
-      } catch {
-        // Rollback optimistic update
-        setRequirements(prev => {
-          const next = new Set(prev);
-          if (wasChecked) {
-            next.add(key);
-          } else {
-            next.delete(key);
-          }
-          return next;
-        });
-        toast({
-          variant: 'destructive',
-          title: 'No se pudo actualizar',
-          description: 'Revisá tu conexión e intentá de nuevo.',
-        });
-      } finally {
-        setLoadingCell(null);
-      }
-    },
-    [requirements, requirementIds, toast]
+  const selectedRequirements = requirements.filter(
+    r => r.vehicleTypeId === selectedTypeId
   );
 
+  const assignedDocIds = new Set(
+    selectedRequirements.map(r => r.documentTypeId)
+  );
+
+  const availableToAdd = documentTypes.filter(dt => !assignedDocIds.has(dt.id));
+
+  const handleAdd = async () => {
+    if (!selectedTypeId || !selectedDocToAdd) return;
+    setAdding(true);
+    const optimistic: Requirement = {
+      id: `temp-${Date.now()}`,
+      vehicleTypeId: selectedTypeId,
+      documentTypeId: selectedDocToAdd,
+    };
+    setRequirements(prev => [...prev, optimistic]);
+    setSelectedDocToAdd('');
+    try {
+      const res = await axios.post<Requirement>(
+        '/api/vehicles/document-requirements',
+        {
+          vehicleTypeId: selectedTypeId,
+          documentTypeId: selectedDocToAdd,
+        }
+      );
+      setRequirements(prev =>
+        prev.map(r => (r.id === optimistic.id ? res.data : r))
+      );
+    } catch {
+      setRequirements(prev => prev.filter(r => r.id !== optimistic.id));
+      toast({
+        variant: 'destructive',
+        title: 'No se pudo agregar el documento',
+      });
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const handleRemove = async (req: Requirement) => {
+    setRemovingId(req.id);
+    setRequirements(prev => prev.filter(r => r.id !== req.id));
+    try {
+      await axios.delete(`/api/vehicles/document-requirements/${req.id}`);
+    } catch {
+      setRequirements(prev => [...prev, req]);
+      toast({
+        variant: 'destructive',
+        title: 'No se pudo eliminar el documento',
+      });
+    } finally {
+      setRemovingId(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Plantilla Documental por Tipo de Vehículo
+    <div className="p-6 space-y-4">
+      <div>
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <FileCheck className="h-6 w-6" />
+          Plantilla Documental
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Configurá qué documentos son obligatorios para cada tipo de vehículo
-          en tu flota.
+        <p className="text-sm text-muted-foreground mt-1">
+          Configurá qué documentos son requeridos para cada tipo de vehículo en
+          tu flota.
         </p>
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center p-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-gray-900" />
-        </div>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border border-gray-200">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th
-                  scope="col"
-                  className="sticky left-0 z-10 bg-gray-50 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-                >
-                  Tipo de Vehículo
-                </th>
-                {documentTypes.map(dt => (
-                  <th
-                    key={dt.id}
-                    scope="col"
-                    className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500"
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+        {/* Left panel — vehicle type list */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+              Tipos de Vehículo
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <ul className="divide-y">
+              {vehicleTypes.map(vt => (
+                <li key={vt.id}>
+                  <button
+                    onClick={() => setSelectedTypeId(vt.id)}
+                    className={cn(
+                      'w-full text-left px-4 py-3 text-sm transition-colors hover:bg-muted/50',
+                      selectedTypeId === vt.id
+                        ? 'bg-primary/10 text-primary font-medium border-l-2 border-primary'
+                        : 'text-foreground'
+                    )}
                   >
-                    {dt.name}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
-              {vehicleTypes.map((vt, idx) => (
-                <tr
-                  key={vt.id}
-                  className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
-                >
-                  <td className="sticky left-0 z-10 bg-inherit px-4 py-3 text-sm font-medium text-gray-900 whitespace-nowrap">
                     {vt.name}
-                  </td>
-                  {documentTypes.map(dt => {
-                    const key = buildKey(vt.id, dt.id);
-                    const isChecked = requirements.has(key);
-                    const isCellLoading = loadingCell === key;
-                    return (
-                      <td key={dt.id} className="px-4 py-3 text-center">
-                        <Checkbox
-                          checked={isChecked}
-                          disabled={isCellLoading}
-                          onCheckedChange={() => handleToggle(vt.id, dt.id)}
-                          aria-label={`${vt.name} requiere ${dt.name}`}
-                        />
-                      </td>
-                    );
-                  })}
-                </tr>
+                  </button>
+                </li>
               ))}
-              {vehicleTypes.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={documentTypes.length + 1}
-                    className="px-4 py-8 text-center text-sm text-gray-400"
-                  >
-                    No hay tipos de vehículo configurados.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+            </ul>
+          </CardContent>
+        </Card>
+
+        {/* Right panel — documents for selected type */}
+        <Card className="md:col-span-2">
+          {!selectedType ? (
+            <CardContent className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-2">
+              <FileText className="h-8 w-8 opacity-40" />
+              <p className="text-sm">Seleccioná un tipo de vehículo</p>
+            </CardContent>
+          ) : (
+            <>
+              <CardHeader className="pb-3 border-b">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">
+                    {selectedType.name}
+                  </CardTitle>
+                  <Badge variant="secondary">
+                    {selectedRequirements.length} documento
+                    {selectedRequirements.length !== 1 ? 's' : ''}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-3">
+                {/* Assigned documents */}
+                {selectedRequirements.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-6">
+                    No hay documentos configurados para este tipo.
+                  </p>
+                ) : (
+                  <ul className="space-y-2">
+                    {selectedRequirements.map(req => {
+                      const dt = documentTypes.find(
+                        d => d.id === req.documentTypeId
+                      );
+                      if (!dt) return null;
+                      return (
+                        <li
+                          key={req.id}
+                          className="flex items-center justify-between rounded-lg border px-4 py-3 bg-background"
+                        >
+                          <div className="flex items-center gap-3">
+                            <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <div>
+                              <p className="text-sm font-medium">{dt.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {dt.requiresExpiry
+                                  ? 'Requiere vencimiento'
+                                  : 'Sin vencimiento'}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-muted-foreground hover:text-destructive"
+                            disabled={removingId === req.id}
+                            onClick={() => handleRemove(req)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+
+                {/* Add document */}
+                {availableToAdd.length > 0 && (
+                  <div className="flex items-center gap-2 pt-2 border-t">
+                    <Select
+                      value={selectedDocToAdd}
+                      onValueChange={setSelectedDocToAdd}
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Agregar documento..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableToAdd.map(dt => (
+                          <SelectItem key={dt.id} value={dt.id}>
+                            {dt.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      size="sm"
+                      disabled={!selectedDocToAdd || adding}
+                      onClick={handleAdd}
+                      className="gap-1 shrink-0"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Agregar
+                    </Button>
+                  </div>
+                )}
+
+                {availableToAdd.length === 0 &&
+                  selectedRequirements.length > 0 && (
+                    <p className="text-xs text-muted-foreground text-center pt-2 border-t">
+                      Todos los tipos de documento están asignados.
+                    </p>
+                  )}
+              </CardContent>
+            </>
+          )}
+        </Card>
+      </div>
     </div>
   );
 }
