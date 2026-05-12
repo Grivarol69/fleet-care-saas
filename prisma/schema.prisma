@@ -59,8 +59,9 @@ model Tenant {
   inventoryItems         InventoryItem[]
   inventoryMovements     InventoryMovement[]
   internalWorkTickets    InternalWorkTicket[]
-  documentTypeConfigs    DocumentTypeConfig[]
-  purchaseOrders         PurchaseOrder[]
+  documentTypeConfigs        DocumentTypeConfig[]
+  documentRequirements       DocumentRequirement[]
+  purchaseOrders             PurchaseOrder[]
   mantItemRequests       MantItemRequest[]
   mantItemVehicleParts   MantItemVehiclePart[]
   odometerLogs           OdometerLog[]
@@ -1641,14 +1642,17 @@ model DocumentTypeConfig {
 }
 
 model DocumentRequirement {
-  id             String @id @default(uuid())
+  id             String  @id @default(uuid())
+  tenantId       String?
   documentTypeId String
   vehicleTypeId  String
 
+  tenant       Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   documentType DocumentTypeConfig @relation(fields: [documentTypeId], references: [id], onDelete: Cascade)
   vehicleType  VehicleType        @relation(fields: [vehicleTypeId], references: [id], onDelete: Cascade)
 
-  @@unique([documentTypeId, vehicleTypeId])
+  @@unique([tenantId, documentTypeId, vehicleTypeId])
+  @@index([tenantId])
 }
 
 // ========================================

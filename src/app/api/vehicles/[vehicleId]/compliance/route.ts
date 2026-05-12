@@ -33,9 +33,9 @@ export async function GET(
 
     // Fetch requirements and documents in parallel
     const [requirements, documents] = await Promise.all([
-      // Raw prisma: DocumentRequirement has no tenantId
+      // Raw prisma with explicit tenantId filter — DocumentRequirement is mixed-scope
       prisma.documentRequirement.findMany({
-        where: { vehicleTypeId: vehicle.typeId },
+        where: { vehicleTypeId: vehicle.typeId, tenantId: user.tenantId },
         include: {
           documentType: {
             select: {

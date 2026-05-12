@@ -555,7 +555,12 @@ export const dataAdminSidebar: SidebarItem[] = [
   {
     icon: Settings,
     label: 'Configuración',
-    roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.COORDINATOR], // Solo SUPER_ADMIN, OWNER y COORDINATOR gestionan usuarios y docs
+    roles: [
+      UserRole.SUPER_ADMIN,
+      UserRole.OWNER,
+      UserRole.MANAGER,
+      UserRole.COORDINATOR,
+    ], // MANAGER added for Plantilla Documental access
     subItems: [
       {
         label: 'Tenant',
@@ -582,6 +587,17 @@ export const dataAdminSidebar: SidebarItem[] = [
         icon: FileCheck,
         href: '/dashboard/admin/document-types',
         roles: [UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.COORDINATOR],
+      },
+      {
+        label: 'Plantilla Documental',
+        icon: FileText,
+        href: '/dashboard/admin/document-requirements',
+        roles: [
+          UserRole.SUPER_ADMIN,
+          UserRole.OWNER,
+          UserRole.MANAGER,
+          UserRole.COORDINATOR,
+        ],
       },
       {
         label: 'Roles',

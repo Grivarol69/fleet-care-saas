@@ -1,10 +1,10 @@
 import { prisma } from '@/lib/prisma';
 import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
-import { requireDocumentRequirementWritePermission } from '@/lib/permissions';
+import { requireDocumentRequirementTenantWrite } from '@/lib/permissions';
 
 // DELETE /api/vehicles/document-requirements/[id]
-// Removes a DocumentRequirement. Existing Document rows are NOT deleted.
+// Removes a tenant-scoped DocumentRequirement. Verifies ownership before deletion.
 export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -19,14 +19,7 @@ export async function DELETE(
 
     const requirement = await prisma.documentRequirement.findUnique({
       where: { id },
-      include: {
-        vehicleType: {
-          select: { id: true, isGlobal: true, tenantId: true },
-        },
-        documentType: {
-          select: { id: true, isGlobal: true, tenantId: true },
-        },
-      },
+      select: { id: true, tenantId: true },
     });
 
     if (!requirement) {
@@ -37,11 +30,7 @@ export async function DELETE(
     }
 
     try {
-      requireDocumentRequirementWritePermission(
-        user,
-        requirement.vehicleType,
-        requirement.documentType
-      );
+      requireDocumentRequirementTenantWrite(user, requirement.tenantId);
     } catch (permError) {
       return NextResponse.json(
         { error: (permError as Error).message },

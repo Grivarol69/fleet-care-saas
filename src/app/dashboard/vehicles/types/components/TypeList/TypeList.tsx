@@ -18,7 +18,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { FormAddType } from '../FormAddType';
 import { FormEditType } from '../FormEditType';
-import { RequirementsDialog } from '../RequirementsDialog';
 import axios from 'axios';
 import { useToast } from '@/components/hooks/use-toast';
 import { TypeListProps } from './TypeList.types';
@@ -30,8 +29,6 @@ export function TypeList() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingType, setEditingType] = useState<TypeListProps | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const [requirementsType, setRequirementsType] =
-    useState<TypeListProps | null>(null);
 
   const { toast } = useToast();
 
@@ -130,13 +127,6 @@ export function TypeList() {
       id: 'actions',
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setRequirementsType(row.original)}
-          >
-            Configurar documentos
-          </Button>
           {canMutate(row.original) && (
             <>
               <Button
@@ -233,21 +223,6 @@ export function TypeList() {
               data.map(type => (type.id === editedType.id ? editedType : type))
             );
           }}
-        />
-      )}
-
-      {requirementsType && (
-        <RequirementsDialog
-          vehicleType={{
-            id: requirementsType.id,
-            name: requirementsType.name,
-            isGlobal: requirementsType.isGlobal ?? false,
-          }}
-          open={!!requirementsType}
-          onOpenChange={open => {
-            if (!open) setRequirementsType(null);
-          }}
-          isSuperAdmin={isSuperAdmin}
         />
       )}
     </div>

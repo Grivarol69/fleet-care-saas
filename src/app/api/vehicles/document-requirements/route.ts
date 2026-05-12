@@ -2,10 +2,11 @@ import { prisma } from '@/lib/prisma';
 import { requireCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireDocumentRequirementWritePermission } from '@/lib/permissions';
+import { requireDocumentRequirementTenantWrite } from '@/lib/permissions';
 
-// GET /api/vehicles/document-requirements?vehicleTypeId=<id>
-// Returns all DocumentRequirement rows for the given VehicleType, including documentType
+// GET /api/vehicles/document-requirements?vehicleTypeId=<id> (optional)
+// Returns all DocumentRequirement rows for the calling tenant.
+// If vehicleTypeId is provided, filters by that type.
 export async function GET(req: Request) {
   try {
     const { user } = await requireCurrentUser();
@@ -16,35 +17,33 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const vehicleTypeId = searchParams.get('vehicleTypeId');
 
-    if (!vehicleTypeId) {
-      return NextResponse.json(
-        { error: 'vehicleTypeId es requerido' },
-        { status: 400 }
-      );
-    }
+    // If vehicleTypeId provided, verify it is accessible to the caller
+    if (vehicleTypeId) {
+      const vehicleType = await prisma.vehicleType.findUnique({
+        where: { id: vehicleTypeId },
+        select: { id: true, isGlobal: true, tenantId: true },
+      });
 
-    // Verify VehicleType is accessible to the caller
-    const vehicleType = await prisma.vehicleType.findUnique({
-      where: { id: vehicleTypeId },
-      select: { id: true, isGlobal: true, tenantId: true },
-    });
+      if (!vehicleType) {
+        return NextResponse.json(
+          { error: 'Tipo de vehículo no encontrado' },
+          { status: 404 }
+        );
+      }
 
-    if (!vehicleType) {
-      return NextResponse.json(
-        { error: 'Tipo de vehículo no encontrado' },
-        { status: 404 }
-      );
-    }
-
-    if (!vehicleType.isGlobal && vehicleType.tenantId !== user.tenantId) {
-      return NextResponse.json(
-        { error: 'No tienes acceso a este tipo de vehículo' },
-        { status: 403 }
-      );
+      if (!vehicleType.isGlobal && vehicleType.tenantId !== user.tenantId) {
+        return NextResponse.json(
+          { error: 'No tienes acceso a este tipo de vehículo' },
+          { status: 403 }
+        );
+      }
     }
 
     const requirements = await prisma.documentRequirement.findMany({
-      where: { vehicleTypeId },
+      where: {
+        tenantId: user.tenantId,
+        ...(vehicleTypeId ? { vehicleTypeId } : {}),
+      },
       include: {
         documentType: {
           select: {
@@ -52,6 +51,12 @@ export async function GET(req: Request) {
             name: true,
             code: true,
             requiresExpiry: true,
+          },
+        },
+        vehicleType: {
+          select: {
+            id: true,
+            name: true,
           },
         },
       },
@@ -73,7 +78,8 @@ const createRequirementSchema = z.object({
 });
 
 // POST /api/vehicles/document-requirements
-// Creates a DocumentRequirement linking a vehicleTypeId and documentTypeId
+// Creates a tenant-scoped DocumentRequirement row.
+// tenantId is always set server-side from user.tenantId — body tenantId is ignored.
 export async function POST(req: Request) {
   try {
     const { user } = await requireCurrentUser();
@@ -91,6 +97,16 @@ export async function POST(req: Request) {
     }
 
     const { vehicleTypeId, documentTypeId } = validation.data;
+
+    // Check permission: caller must be OWNER/MANAGER/COORDINATOR for their own tenant
+    try {
+      requireDocumentRequirementTenantWrite(user, user.tenantId);
+    } catch (permError) {
+      return NextResponse.json(
+        { error: (permError as Error).message },
+        { status: 403 }
+      );
+    }
 
     // Fetch both parents, verify they exist and are ACTIVE
     const [vehicleType, documentType] = await Promise.all([
@@ -118,24 +134,34 @@ export async function POST(req: Request) {
       );
     }
 
-    try {
-      requireDocumentRequirementWritePermission(
-        user,
-        vehicleType,
-        documentType
-      );
-    } catch (permError) {
+    // Verify vehicleType is accessible: must be global OR belong to caller's tenant
+    if (!vehicleType.isGlobal && vehicleType.tenantId !== user.tenantId) {
       return NextResponse.json(
-        { error: (permError as Error).message },
+        { error: 'No tienes acceso a este tipo de vehículo' },
+        { status: 403 }
+      );
+    }
+
+    // Verify documentType is accessible: must be global OR belong to caller's tenant
+    if (!documentType.isGlobal && documentType.tenantId !== user.tenantId) {
+      return NextResponse.json(
+        { error: 'No tienes acceso a este tipo de documento' },
         { status: 403 }
       );
     }
 
     const requirement = await prisma.documentRequirement.create({
-      data: { vehicleTypeId, documentTypeId },
+      data: {
+        tenantId: user.tenantId, // always server-side; body tenantId is ignored
+        vehicleTypeId,
+        documentTypeId,
+      },
       include: {
         documentType: {
           select: { id: true, name: true, code: true, requiresExpiry: true },
+        },
+        vehicleType: {
+          select: { id: true, name: true },
         },
       },
     });
