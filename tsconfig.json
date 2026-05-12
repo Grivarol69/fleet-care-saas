@@ -64,6 +64,7 @@
     "fix-*.ts",
     "seed-temp.ts",
     "prisma/seeds/**",
+    "prisma/scripts/**",
     "scripts/**",
     "src/app/api/__tests__/**",
     "src/lib/services/siigo/__tests__/**",
