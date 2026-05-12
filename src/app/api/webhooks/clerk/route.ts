@@ -4,6 +4,7 @@ import { WebhookEvent } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 import { UserRole } from '@prisma/client';
 import { PLATFORM_TENANT_ID } from '@/lib/auth-constants';
+import { seedTenantDocumentRequirements } from '../../../../../prisma/seeds/document-templates';
 
 // Limpia registros de idempotencia con más de 7 días (Svix no reintenta después de 3 días)
 const IDEMPOTENCY_CLEANUP_DAYS = 7;
@@ -121,10 +122,9 @@ export async function POST(req: Request) {
         break;
       }
 
-      case 'organization.created':
-      case 'organization.updated': {
+      case 'organization.created': {
         const { id, name, slug } = evt.data;
-        console.log(`[WEBHOOK] Organization event for ${name} (ID: ${id})`);
+        console.log(`[WEBHOOK] Organization created for ${name} (ID: ${id})`);
 
         const tenant = await prisma.tenant.upsert({
           where: { id },
@@ -142,6 +142,46 @@ export async function POST(req: Request) {
           },
         });
         console.log(`[WEBHOOK] Tenant upserted: ${tenant.id}`);
+
+        // Seed document requirements from global country templates (idempotent)
+        try {
+          const { created } = await seedTenantDocumentRequirements(
+            prisma,
+            tenant.id,
+            tenant.country ?? 'CO'
+          );
+          console.log(
+            `[WEBHOOK] Seeded ${created} document requirements for tenant ${tenant.id}`
+          );
+        } catch (seedErr) {
+          console.error(
+            '[WEBHOOK] Failed to seed document requirements (non-fatal):',
+            seedErr
+          );
+        }
+        break;
+      }
+
+      case 'organization.updated': {
+        const { id, name, slug } = evt.data;
+        console.log(`[WEBHOOK] Organization updated for ${name} (ID: ${id})`);
+
+        await prisma.tenant.upsert({
+          where: { id },
+          create: {
+            id,
+            name,
+            slug: slug || id.toLowerCase(),
+            domain: slug ? `${slug}.localhost` : null,
+            subscriptionStatus: 'TRIAL',
+            onboardingStatus: 'PENDING',
+          },
+          update: {
+            name,
+            slug: slug || id.toLowerCase(),
+          },
+        });
+        console.log(`[WEBHOOK] Tenant updated: ${id}`);
         break;
       }
 

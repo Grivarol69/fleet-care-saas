@@ -28,6 +28,7 @@ export async function GET() {
     const documentTypes = await prisma.documentTypeConfig.findMany({
       where: {
         status: 'ACTIVE',
+        code: { not: 'MANIFIESTO' },
         OR: [
           { isGlobal: true, countryCode: tenant.country },
           { isGlobal: false, tenantId: user.tenantId },
@@ -95,7 +96,10 @@ export async function POST(req: Request) {
     }
 
     // OWNER/MANAGER can create tenant-specific types
-    if (!isGlobal && !['SUPER_ADMIN', 'OWNER', 'MANAGER', 'COORDINATOR'].includes(user.role)) {
+    if (
+      !isGlobal &&
+      !['SUPER_ADMIN', 'OWNER', 'MANAGER', 'COORDINATOR'].includes(user.role)
+    ) {
       return NextResponse.json(
         { error: 'No tienes permisos para crear tipos de documento' },
         { status: 403 }

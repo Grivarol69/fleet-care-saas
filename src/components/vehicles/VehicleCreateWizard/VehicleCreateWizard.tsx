@@ -6,7 +6,15 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Image from 'next/image';
 import axios from 'axios';
-import { Car, ChevronLeft, FileText, Loader2, Sparkles, X } from 'lucide-react';
+import {
+  Car,
+  CheckCircle2,
+  ChevronLeft,
+  FileText,
+  Loader2,
+  Sparkles,
+  X,
+} from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -75,6 +83,7 @@ function fuzzyMatch<T extends { id: string; name: string }>(
 }
 
 const PROPERTY_CARD_CODES = [
+  'REGISTRATION',
   'TARJETA_PROPIEDAD',
   'LICENCIA_TRANSITO',
   'TARJETA_DE_PROPIEDAD',
@@ -235,27 +244,56 @@ export function VehicleCreateWizard() {
         costCenterId: values.costCenterId || undefined,
       };
       const response = await axios.post('/api/vehicles/vehicles', payload);
-      setCreatedLicensePlate(response.data.licensePlate);
+      const vehicleId: string = response.data.id;
+      const vehiclePlate: string = response.data.licensePlate;
+      setCreatedLicensePlate(vehiclePlate);
 
-      // Fetch compliance requirements for step 3
-      const complianceRes = await axios.get<{
-        vehicleId: string;
-        vehicleTypeId: string;
-        items: Array<{
-          requirementId: string;
-          documentTypeId: string;
-          name: string;
-          code: string;
-          isMandatory: true;
-          status: 'MISSING' | 'VALID' | 'EXPIRING' | 'EXPIRED';
-          document?: {
-            id: string;
-            fileUrl: string;
-            expiryDate: string | null;
-            documentNumber: string | null;
-          };
-        }>;
-      }>(`/api/vehicles/${response.data.id}/compliance`);
+      type ComplianceApiItem = {
+        requirementId: string;
+        documentTypeId: string;
+        name: string;
+        code: string;
+        isMandatory: true;
+        status: 'MISSING' | 'VALID' | 'EXPIRING' | 'EXPIRED';
+        document?: {
+          id: string;
+          fileUrl: string;
+          expiryDate: string | null;
+          documentNumber: string | null;
+        };
+      };
+
+      const fetchCompliance = () =>
+        axios.get<{
+          vehicleId: string;
+          vehicleTypeId: string;
+          items: ComplianceApiItem[];
+        }>(`/api/vehicles/${vehicleId}/compliance`);
+
+      let complianceRes = await fetchCompliance();
+
+      // Auto-save property card if it was uploaded in step 1
+      if (propertyCardUrl && ocr?.ownerCard) {
+        const propertyCardItem = complianceRes.data.items.find(i =>
+          isPropertyCardType(i.code)
+        );
+        if (propertyCardItem) {
+          try {
+            await axios.post('/api/vehicles/documents', {
+              vehiclePlate,
+              documentTypeId: propertyCardItem.documentTypeId,
+              documentNumber: ocr.ownerCard,
+              entity: null,
+              fileUrl: propertyCardUrl,
+              fileName: propertyCardItem.name,
+              expiryDate: null,
+            });
+            complianceRes = await fetchCompliance();
+          } catch (err) {
+            console.error('Auto-save property card failed:', err);
+          }
+        }
+      }
 
       // Map to ComplianceItem with documentType shape for DocumentUploadCard
       const mapped: ComplianceItem[] = complianceRes.data.items.map(item => ({
@@ -266,7 +304,7 @@ export function VehicleCreateWizard() {
           code: item.code,
           name: item.name,
           description: null,
-          requiresExpiry: true, // conservative default; card will handle expiry date
+          requiresExpiry: true,
           isMandatory: true,
           isGlobal: false,
           countryCode: '',
@@ -1333,6 +1371,27 @@ export function VehicleCreateWizard() {
           {complianceItems.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {complianceItems.map(item => {
+                if (item.document) {
+                  return (
+                    <Card
+                      key={item.documentTypeId}
+                      className="border-green-200 bg-green-50"
+                    >
+                      <CardContent className="flex items-center gap-2 py-4">
+                        <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+                        <span className="font-medium text-green-800">
+                          {item.name}
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className="ml-auto text-green-700 border-green-300"
+                        >
+                          Cargado
+                        </Badge>
+                      </CardContent>
+                    </Card>
+                  );
+                }
                 const isPropertyCard = isPropertyCardType(item.code);
                 return (
                   <DocumentUploadCard
