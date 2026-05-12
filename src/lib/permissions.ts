@@ -494,29 +494,23 @@ export { PLATFORM_TENANT_ID };
 // ========================================
 
 /**
- * Validates write permission for DocumentRequirement operations.
- * DocumentRequirement has no tenantId so we check parent entities.
+ * Validates write permission for a DocumentRequirement row based on the target tenantId.
  *
  * Rules:
- * - Any global parent (VehicleType or DocumentTypeConfig) → platform SUPER_ADMIN only
- * - Both tenant-scoped → both must match caller's tenant AND caller must canManageMasterData
+ * - targetTenantId === null  → global template, platform SUPER_ADMIN only
+ * - targetTenantId === user.tenantId → tenant-owned row, OWNER/MANAGER/COORDINATOR allowed
+ * - Any other value → cross-tenant write, denied
  */
-export function requireDocumentRequirementWritePermission(
+export function requireDocumentRequirementTenantWrite(
   user: UserWithSuperAdmin,
-  vehicleType: { isGlobal: boolean; tenantId: string | null },
-  documentType: { isGlobal: boolean; tenantId: string | null }
+  targetTenantId: string | null
 ): void {
-  if (vehicleType.isGlobal || documentType.isGlobal) {
+  if (targetTenantId === null) {
     requirePlatformSuperAdmin(user);
     return;
   }
-  if (
-    vehicleType.tenantId !== user.tenantId ||
-    documentType.tenantId !== user.tenantId
-  ) {
-    throw new Error(
-      'El tipo de vehículo o tipo de documento pertenece a otro tenant'
-    );
+  if (targetTenantId !== user.tenantId) {
+    throw new Error('No puedes modificar requisitos de otro tenant');
   }
   if (!canManageMasterData(user)) {
     throw new Error('Se requiere rol OWNER, MANAGER o COORDINATOR');
