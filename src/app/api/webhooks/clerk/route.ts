@@ -4,7 +4,7 @@ import { WebhookEvent } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 import { UserRole } from '@prisma/client';
 import { PLATFORM_TENANT_ID } from '@/lib/auth-constants';
-import { seedTenantDocumentRequirements } from '../../../../../prisma/seeds/document-templates';
+import { seedTenantDocumentRequirements } from '@/lib/tenant-document-requirements';
 
 // Limpia registros de idempotencia con más de 7 días (Svix no reintenta después de 3 días)
 const IDEMPOTENCY_CLEANUP_DAYS = 7;
