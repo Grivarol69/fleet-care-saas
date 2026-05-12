@@ -1,7 +1,7 @@
 import { prisma } from './prisma';
 import { Prisma, UserRole } from '@prisma/client';
 import type { InputJsonValue } from '@prisma/client/runtime/library';
-import { seedTenantDocumentRequirements } from '../../prisma/seeds/document-templates';
+import { seedTenantDocumentRequirements } from './tenant-document-requirements';
 
 export interface CreateTenantData {
   name: string;
