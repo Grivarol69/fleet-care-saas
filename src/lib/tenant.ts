@@ -1,6 +1,7 @@
 import { prisma } from './prisma';
 import { Prisma, UserRole } from '@prisma/client';
 import type { InputJsonValue } from '@prisma/client/runtime/library';
+import { seedTenantDocumentRequirements } from '../../prisma/seeds/document-templates';
 
 export interface CreateTenantData {
   name: string;
@@ -206,6 +207,17 @@ export const tenantService = {
         specialty: 'GENERAL',
       },
     });
+
+    // Seed document requirements from global country templates
+    const tenantRow = await tx.tenant.findUnique({
+      where: { id: tenantId },
+      select: { country: true },
+    });
+    await seedTenantDocumentRequirements(
+      tx,
+      tenantId,
+      tenantRow?.country ?? 'CO'
+    );
   },
 
   /**
