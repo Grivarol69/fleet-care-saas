@@ -89,6 +89,8 @@ model Tenant {
   driverTrainings        DriverTraining[]
   checklistTemplates     ChecklistTemplate[]
   driverShifts           DriverShift[]
+  workOrderInspections     WorkOrderInspection[]
+  woNotificationRecipients WONotificationRecipient[]
 
   @@index([slug])
   @@index([subscriptionStatus])
@@ -165,6 +167,7 @@ model User {
   serializedItemEvents SerializedItemEvent[]
   alertsResolved       SerializedItemAlert[] @relation("AlertResolver")
   auditLogsActed       AuditLog[]            @relation("AuditLogActor")
+  woNotificationRecipients WONotificationRecipient[]
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -707,6 +710,15 @@ model WorkOrder {
   endDate           DateTime?
   completionMileage Float? // Kilometraje al momento de cierre de la OT
   notes             String?   @db.Text // Notas de contexto a nivel OT (ej: incidentes, demoras)
+
+  // Wizard fields
+  openingDescription  String?   @db.Text
+  openingDate         DateTime?
+  openingBy           String?
+  actualDeliveryDate  DateTime?
+  closingSummary      String?   @db.Text
+  authorizedAt        DateTime?
+
   source            WorkOrderSource @default(OPERATIONAL)
   importBatchId     String?
   createdAt         DateTime  @default(now())
@@ -727,6 +739,7 @@ model WorkOrder {
   internalWorkTickets    InternalWorkTicket[]
   purchaseOrders         PurchaseOrder[]
   incidentAlerts         IncidentAlert[]
+  inspection             WorkOrderInspection?
   costCenterId           String?
   costCenterRef          CostCenter?             @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
 
@@ -737,6 +750,41 @@ model WorkOrder {
   @@index([requestedBy])
   @@index([authorizedBy])
   @@index([isPackageWork]) // Para separar WorkOrders de paquetes vs individuales
+}
+
+model WorkOrderInspection {
+  id                   String   @id @default(uuid())
+  workOrderId          String
+  tenantId             String
+  date                 DateTime
+  description          String   @db.Text
+  inspectedBy          String
+  vehicleGrounded      Boolean  @default(false)
+  estimatedRepairHours Int?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([workOrderId])
+  @@index([tenantId])
+}
+
+model WONotificationRecipient {
+  id        String   @id @default(uuid())
+  tenantId  String
+  userId    String
+  phone     String
+  events    String[]
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+  @@index([tenantId])
 }
 
 model WorkOrderItem {
@@ -1928,12 +1976,15 @@ enum Priority {
 }
 
 enum WorkOrderStatus {
-  PENDING // Creada, sin asignar
-  APPROVED // Aprobada por Manager/Owner, lista para ejecución
-  COMPLETED // Trabajo terminado
-  CLOSED // Cierre financiero confirmado (requiere ≥1 factura)
-  REJECTED // Rechazada por Manager/Owner
-  CANCELLED // Cancelada manualmente
+  OPENING    // Apertura inicial del wizard (Paso 1)
+  INSPECTING // Inspección técnica registrada (Paso 2)
+  DRAFTING   // Confeccionando items, esperando autorización (Paso 3)
+  PENDING    // Creada, sin asignar
+  APPROVED   // Aprobada por Manager/Owner, lista para ejecución
+  COMPLETED  // Trabajo terminado
+  CLOSED     // Cierre financiero confirmado (requiere ≥1 factura)
+  REJECTED   // Rechazada por Manager/Owner
+  CANCELLED  // Cancelada manualmente
 }
 
 enum ExpenseType {
