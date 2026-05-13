@@ -69,7 +69,7 @@ export async function POST(
         {
           error: `La OT debe estar en estado DRAFTING o PENDING para ser autorizada (estado actual: ${workOrder.status})`,
         },
-        { status: 409 }
+        { status: 422 }
       );
     }
 

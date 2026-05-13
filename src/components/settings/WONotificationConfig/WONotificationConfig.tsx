@@ -172,7 +172,7 @@ export function WONotificationConfig() {
     setAddForm({ userId: '', phone: '', events: [] });
     setLoadingUsers(true);
     try {
-      const res = await axios.get<TenantUser[]>('/api/admin/users');
+      const res = await axios.get<TenantUser[]>('/api/users');
       // Filter out users already configured as recipients
       const existingUserIds = new Set(recipients.map(r => r.userId));
       setTenantUsers(res.data.filter(u => !existingUserIds.has(u.id)));
