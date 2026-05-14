@@ -2,7 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireCurrentUser } from '@/lib/auth';
 import { Prisma, WorkOrderStatus } from '@prisma/client';
 import { canCreateWorkOrders } from '@/lib/permissions';
-import { workOrderPayloadSchema } from '@/lib/validations/work-order';
+import {
+  workOrderPayloadSchema,
+  workOrderOpeningSchema,
+} from '@/lib/validations/work-order';
+import {
+  notifyWOEvent,
+  WO_NOTIFICATION_EVENTS,
+} from '@/lib/notifications/wo-events';
 
 /**
  * GET - Listar WorkOrders con filtros
@@ -161,6 +168,88 @@ export async function POST(request: NextRequest) {
     }
 
     const json = await request.json();
+
+    // ──────────────────────────────────────────────────────────────
+    // WIZARD FLOW — Step 1 (opening). Detected when:
+    //   - body contains `openingDescription`
+    //   - OR body.status === 'OPENING'
+    // Creates WO in OPENING status with minimal fields.
+    // ──────────────────────────────────────────────────────────────
+    const isWizardOpening =
+      'openingDescription' in json || json.status === 'OPENING';
+
+    if (isWizardOpening) {
+      const openingResult = workOrderOpeningSchema.safeParse(json);
+      if (!openingResult.success) {
+        return NextResponse.json(
+          { error: 'Invalid payload', details: openingResult.error.errors },
+          { status: 400 }
+        );
+      }
+
+      const data = openingResult.data;
+
+      const vehicle = await tenantPrisma.vehicle.findUnique({
+        where: { id: data.vehicleId },
+        select: { licensePlate: true, costCenterId: true },
+      });
+
+      if (!vehicle) {
+        return NextResponse.json(
+          { error: 'Vehículo no encontrado' },
+          { status: 404 }
+        );
+      }
+
+      const newWo = await tenantPrisma.$transaction(async tx => {
+        return tx.workOrder.create({
+          data: {
+            tenantId: user.tenantId,
+            code: null,
+            vehicleId: data.vehicleId,
+            title: data.title,
+            mantType: data.mantType,
+            priority: data.priority,
+            status: 'OPENING',
+            workType: 'EXTERNAL',
+            technicianId: data.technicianId || null,
+            creationMileage: data.creationMileage,
+            requestedBy: user.id,
+            openingDescription: data.openingDescription,
+            openingDate: new Date(data.openingDate),
+            openingBy: user.id,
+            startDate: data.startDate ? new Date(data.startDate) : null,
+            endDate: data.endDate ? new Date(data.endDate) : null,
+            costCenterId: vehicle.costCenterId || null,
+          },
+        });
+      });
+
+      // Fire-and-forget WhatsApp notification
+      notifyWOEvent(user.tenantId, WO_NOTIFICATION_EVENTS.OPENING, {
+        workOrderId: newWo.id,
+        vehiclePlate: vehicle.licensePlate,
+        openingDate: new Date(data.openingDate),
+        description: data.openingDescription,
+      }).catch(err =>
+        console.error('[WO_NOTIFY] OPENING failed:', {
+          workOrderId: newWo.id,
+          error: err,
+        })
+      );
+
+      const serialized = JSON.parse(
+        JSON.stringify(newWo, (_key, value) =>
+          typeof value === 'bigint' ? value.toString() : value
+        )
+      );
+
+      return NextResponse.json(serialized, { status: 201 });
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // LEGACY FLOW — full payload with items
+    // ──────────────────────────────────────────────────────────────
     const result = workOrderPayloadSchema.safeParse(json);
 
     if (!result.success) {
