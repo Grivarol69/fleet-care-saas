@@ -50,11 +50,13 @@ type Step2FormValues = z.infer<typeof step2Schema>;
 interface Step2InspectionProps {
   workOrderId: string;
   currentUserId: string;
+  onSuccess?: () => void;
 }
 
 export function Step2Inspection({
   workOrderId,
   currentUserId,
+  onSuccess,
 }: Step2InspectionProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -91,9 +93,13 @@ export function Step2Inspection({
         description: 'Continuá con la confección de ítems.',
       });
 
-      router.push(
-        `/dashboard/maintenance/work-orders/${workOrderId}/wizard?step=3`
-      );
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push(
+          `/dashboard/maintenance/work-orders/${workOrderId}/wizard?step=3`
+        );
+      }
     } catch (error: unknown) {
       const axiosError = error as { response?: { data?: { error?: string } } };
       toast({
@@ -116,20 +122,51 @@ export function Step2Inspection({
             <CardTitle>Paso 2: Inspección técnica</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
-            {/* Inspection date */}
-            <FormField
-              control={form.control}
-              name="date"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Fecha y hora de inspección *</FormLabel>
-                  <FormControl>
-                    <Input type="datetime-local" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Inspection date + Estimated hours (2 col) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Fecha y hora de inspección *</FormLabel>
+                    <FormControl>
+                      <Input type="datetime-local" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="estimatedRepairHours"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Horas estimadas de reparación (opcional)
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="Ej: 4"
+                        {...field}
+                        value={field.value ?? ''}
+                        onChange={e =>
+                          field.onChange(
+                            e.target.value === ''
+                              ? undefined
+                              : Number(e.target.value)
+                          )
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             {/* Description */}
             <FormField
@@ -144,36 +181,6 @@ export function Step2Inspection({
                       className="resize-none"
                       rows={4}
                       {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Estimated repair hours */}
-            <FormField
-              control={form.control}
-              name="estimatedRepairHours"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Horas estimadas de reparación (opcional)
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min={0}
-                      placeholder="Ej: 4"
-                      {...field}
-                      value={field.value ?? ''}
-                      onChange={e =>
-                        field.onChange(
-                          e.target.value === ''
-                            ? undefined
-                            : Number(e.target.value)
-                        )
-                      }
                     />
                   </FormControl>
                   <FormMessage />
@@ -219,7 +226,19 @@ export function Step2Inspection({
               </Alert>
             )}
           </CardContent>
-          <CardFooter className="flex justify-end">
+          <CardFooter className="flex justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() =>
+                router.push(
+                  `/dashboard/maintenance/work-orders/${workOrderId}/wizard?step=1`
+                )
+              }
+              disabled={isLoading}
+            >
+              Regresar
+            </Button>
             <Button type="submit" disabled={isLoading} className="gap-2">
               {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
               Guardar inspección y continuar

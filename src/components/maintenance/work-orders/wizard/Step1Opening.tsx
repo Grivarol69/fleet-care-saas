@@ -95,7 +95,24 @@ type Technician = {
   name: string;
 };
 
-export function Step1Opening() {
+interface Step1OpeningProps {
+  workOrderId?: string;
+  initialData?: {
+    vehicleId?: string;
+    technicianId?: string | null;
+    openingDate?: string | null;
+    creationMileage?: number | null;
+    openingDescription?: string | null;
+    mantType?: string | null;
+    priority?: string | null;
+    title?: string | null;
+  };
+}
+
+export function Step1Opening({
+  workOrderId,
+  initialData,
+}: Step1OpeningProps = {}) {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -106,14 +123,18 @@ export function Step1Opening() {
   const form = useForm<Step1FormValues>({
     resolver: zodResolver(step1Schema),
     defaultValues: {
-      vehicleId: '',
-      technicianId: '',
-      openingDate: new Date().toISOString().slice(0, 16),
-      creationMileage: 0,
-      openingDescription: '',
-      mantType: 'CORRECTIVE',
-      priority: 'MEDIUM',
-      title: '',
+      vehicleId: initialData?.vehicleId ?? '',
+      technicianId: initialData?.technicianId ?? '',
+      openingDate: initialData?.openingDate
+        ? new Date(initialData.openingDate).toISOString().slice(0, 16)
+        : new Date().toISOString().slice(0, 16),
+      creationMileage: initialData?.creationMileage ?? 0,
+      openingDescription: initialData?.openingDescription ?? '',
+      mantType:
+        (initialData?.mantType as Step1FormValues['mantType']) ?? 'CORRECTIVE',
+      priority:
+        (initialData?.priority as Step1FormValues['priority']) ?? 'MEDIUM',
+      title: initialData?.title ?? '',
     },
   });
 
@@ -136,28 +157,29 @@ export function Step1Opening() {
   const onSubmit = async (values: Step1FormValues) => {
     setIsLoading(true);
     try {
-      const payload = {
-        vehicleId: values.vehicleId,
-        technicianId: values.technicianId || undefined,
-        openingDate: new Date(values.openingDate).toISOString(),
-        creationMileage: values.creationMileage,
-        openingDescription: values.openingDescription,
-        mantType: values.mantType,
-        priority: values.priority,
-        title: values.title,
-      };
+      let woId = workOrderId;
 
-      const res = await axios.post('/api/maintenance/work-orders', payload);
-      const workOrderId: string = res.data.id;
+      if (!woId) {
+        const payload = {
+          vehicleId: values.vehicleId,
+          technicianId: values.technicianId || undefined,
+          openingDate: new Date(values.openingDate).toISOString(),
+          creationMileage: values.creationMileage,
+          openingDescription: values.openingDescription,
+          mantType: values.mantType,
+          priority: values.priority,
+          title: values.title,
+        };
+        const res = await axios.post('/api/maintenance/work-orders', payload);
+        woId = res.data.id as string;
+      }
 
       toast({
-        title: 'OT creada',
-        description: 'Continuá con la inspección.',
+        title: 'Apertura confirmada',
+        description: 'Continuá con la inspección del vehículo.',
       });
 
-      router.push(
-        `/dashboard/maintenance/work-orders/${workOrderId}/wizard?step=2`
-      );
+      router.push(`/dashboard/maintenance/work-orders/${woId}/wizard?step=2`);
     } catch (error: unknown) {
       const axiosError = error as { response?: { data?: { error?: string } } };
       toast({
@@ -271,94 +293,67 @@ export function Step1Opening() {
               </div>
             )}
 
-            {/* Technician select */}
-            <FormField
-              control={form.control}
-              name="technicianId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Técnico</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value ?? ''}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccioná un técnico (opcional)" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {technicians.map(tech => (
-                        <SelectItem key={tech.id} value={tech.id}>
-                          {tech.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Opening date */}
-            <FormField
-              control={form.control}
-              name="openingDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Fecha y hora de apertura *</FormLabel>
-                  <FormControl>
-                    <Input type="datetime-local" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Mileage */}
-            <FormField
-              control={form.control}
-              name="creationMileage"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Kilometraje actual *</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min={0}
-                      placeholder="Ej: 45000"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Type and priority */}
+            {/* Opening date + Technician (2 col) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="mantType"
+                name="openingDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tipo de mantenimiento *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <FormLabel>Fecha y hora de apertura *</FormLabel>
+                    <FormControl>
+                      <Input type="datetime-local" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="technicianId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Técnico</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value ?? ''}
+                    >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Seleccioná el tipo" />
+                          <SelectValue placeholder="Seleccioná un técnico (opcional)" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {Object.entries(MANT_TYPE_LABELS).map(
-                          ([value, label]) => (
-                            <SelectItem key={value} value={value}>
-                              {label}
-                            </SelectItem>
-                          )
-                        )}
+                        {technicians.map(tech => (
+                          <SelectItem key={tech.id} value={tech.id}>
+                            {tech.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Mileage + Type (2 col) — replaces the separate mileage field */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="creationMileage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Odómetro actual (km) *</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="Ej: 45000"
+                        {...field}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -392,23 +387,52 @@ export function Step1Opening() {
               />
             </div>
 
-            {/* Title */}
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Título / Falla reportada *</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Ej: Cambio de aceite, Ruido en frenos..."
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Type + Title (2 col) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="mantType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo de mantenimiento *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccioná el tipo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.entries(MANT_TYPE_LABELS).map(
+                          ([value, label]) => (
+                            <SelectItem key={value} value={value}>
+                              {label}
+                            </SelectItem>
+                          )
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Título / Falla reportada *</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Ej: Cambio de aceite, Ruido en frenos..."
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             {/* Opening description */}
             <FormField
@@ -433,7 +457,7 @@ export function Step1Opening() {
           <CardFooter className="flex justify-end">
             <Button type="submit" disabled={isLoading} className="gap-2">
               {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-              Crear OT y continuar
+              Confirmar y continuar a Inspección
             </Button>
           </CardFooter>
         </Card>

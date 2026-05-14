@@ -21,7 +21,7 @@ export function WizardLayout({
   const router = useRouter();
 
   return (
-    <div className="max-w-3xl mx-auto py-8 px-4">
+    <div className="max-w-5xl mx-auto py-8 px-4">
       <div className="mb-6">
         <Button
           variant="ghost"

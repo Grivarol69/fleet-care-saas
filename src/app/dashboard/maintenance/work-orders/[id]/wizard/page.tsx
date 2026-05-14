@@ -5,15 +5,18 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 
 import { WizardLayout } from '@/components/maintenance/work-orders/wizard/WizardLayout';
+import { Step1Opening } from '@/components/maintenance/work-orders/wizard/Step1Opening';
 import { Step2Inspection } from '@/components/maintenance/work-orders/wizard/Step2Inspection';
 import { Step3Items } from '@/components/maintenance/work-orders/wizard/Step3Items';
 import { Step4PurchaseOrders } from '@/components/maintenance/work-orders/wizard/Step4PurchaseOrders';
 import { useToast } from '@/components/hooks/use-toast';
 import type { WizardStep } from '@/components/maintenance/work-orders/wizard/WizardStepper';
 
+// Maps WO status → the step the user should be working on next
+// OPENING = step 1 done → go to step 2, etc.
 const STATUS_TO_STEP = {
-  OPENING: 1,
-  INSPECTING: 2,
+  OPENING: 2,
+  INSPECTING: 3,
   DRAFTING: 3,
   PENDING: 3,
   APPROVED: 4,
@@ -35,12 +38,19 @@ type WorkOrder = {
   id: string;
   status: string;
   openingBy?: string | null;
+  openingDate?: string | null;
+  openingDescription?: string | null;
+  creationMileage?: number | null;
+  title?: string | null;
+  mantType?: string | null;
+  priority?: string | null;
   vehicle: {
     id: string;
     licensePlate: string;
     brand: { name: string };
     line: { name: string };
   };
+  technician?: { id: string; name: string } | null;
   workOrderItems: Array<{
     id: string;
     unitPrice: number;
@@ -139,21 +149,32 @@ export default function WorkOrderWizardPage() {
   const renderStep = () => {
     switch (currentStep) {
       case 1:
-        // Step 1 in wizard context is read-only (WO already exists)
-        // Redirect back to the new wizard page would not make sense; show a summary instead
         return (
-          <div className="bg-muted/30 border rounded-lg p-6 text-sm space-y-2">
-            <p className="font-semibold">Apertura completada</p>
-            <p className="text-muted-foreground">
-              Esta OT ya fue creada. Podés continuar desde el paso siguiente.
-            </p>
-          </div>
+          <Step1Opening
+            workOrderId={workOrderId}
+            initialData={{
+              vehicleId: workOrder.vehicle.id,
+              technicianId: workOrder.technician?.id,
+              openingDate: workOrder.openingDate,
+              creationMileage: workOrder.creationMileage,
+              openingDescription: workOrder.openingDescription,
+              mantType: workOrder.mantType,
+              priority: workOrder.priority,
+              title: workOrder.title,
+            }}
+          />
         );
       case 2:
         return (
           <Step2Inspection
             workOrderId={workOrderId}
             currentUserId={currentUser?.id ?? ''}
+            onSuccess={async () => {
+              await fetchWorkOrder();
+              router.push(
+                `/dashboard/maintenance/work-orders/${workOrderId}/wizard?step=3`
+              );
+            }}
           />
         );
       case 3:

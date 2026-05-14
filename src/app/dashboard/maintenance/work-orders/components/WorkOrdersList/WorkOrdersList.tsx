@@ -96,7 +96,16 @@ function getAvailableTransitions(
     isDestructive?: boolean;
   }> = [];
 
-  if (status === 'PENDING') {
+  // Wizard-flow states: only OWNER/MANAGER can cancel
+  if (['OPENING', 'INSPECTING', 'DRAFTING'].includes(status)) {
+    if (canApproveWorkOrder)
+      transitions.push({
+        toStatus: 'CANCELLED',
+        label: 'Anular OT',
+        description: 'La OT quedará Anulada. Esta acción no se puede deshacer.',
+        isDestructive: true,
+      });
+  } else if (status === 'PENDING') {
     if (canExecuteWorkOrders)
       transitions.push({
         toStatus: 'IN_PROGRESS',

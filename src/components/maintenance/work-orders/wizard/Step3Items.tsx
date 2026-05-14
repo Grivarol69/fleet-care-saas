@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import { ArrowLeft } from 'lucide-react';
 import { ShieldCheck, AlertTriangle, Clock, Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -70,6 +71,9 @@ export function Step3Items({
 
   const authorizeBlocked =
     itemsWithoutPrice.length > 0 || !hasItems || isSelfAuthBlocked;
+
+  const LOCKED_STATUSES = ['APPROVED', 'COMPLETED', 'CLOSED'];
+  const canGoBack = !LOCKED_STATUSES.includes(workOrder.status);
 
   const handleAuthorize = async () => {
     setIsAuthorizing(true);
@@ -234,6 +238,23 @@ export function Step3Items({
         initialData={workOrder}
         currentUser={currentUser}
         onRefresh={onRefresh}
+        submitLabel="Aprobar OT"
+        leftAction={
+          canGoBack ? (
+            <Button
+              variant="outline"
+              onClick={() =>
+                router.push(
+                  `/dashboard/maintenance/work-orders/${workOrder.id}/wizard?step=2`
+                )
+              }
+              className="gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Regresar a Inspección
+            </Button>
+          ) : undefined
+        }
       />
     </div>
   );
