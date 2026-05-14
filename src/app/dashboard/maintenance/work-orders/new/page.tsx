@@ -1,12 +1,6 @@
-import { UnifiedWorkOrderForm } from '@/components/maintenance/work-orders/UnifiedWorkOrderForm';
+import { redirect } from 'next/navigation';
 
-export default function NewWorkOrderPage() {
-  return (
-    <div className="container py-8">
-      <h1 className="text-3xl font-bold tracking-tight mb-8">
-        Nueva Orden de Trabajo (Unificada)
-      </h1>
-      <UnifiedWorkOrderForm />
-    </div>
-  );
+// Legacy route — redirects to the new 4-step wizard
+export default function NewWorkOrderLegacyPage() {
+  redirect('/dashboard/maintenance/work-orders/nueva');
 }

@@ -198,6 +198,22 @@ export default function WorkOrderDetailPage() {
     fetchWorkOrder();
   }, [workOrderId]);
 
+  // Redirect wizard-flow OTs to the wizard instead of the old edit page
+  const WIZARD_STATUS_TO_STEP: Record<string, number> = {
+    OPENING: 2,
+    INSPECTING: 3,
+    DRAFTING: 3,
+  };
+  useEffect(() => {
+    if (!workOrder) return;
+    const step = WIZARD_STATUS_TO_STEP[workOrder.status];
+    if (step) {
+      router.replace(
+        `/dashboard/maintenance/work-orders/${workOrderId}/wizard?step=${step}`
+      );
+    }
+  }, [workOrder, workOrderId, router]);
+
   const fetchWorkOrder = async () => {
     try {
       if (!workOrder) {
@@ -244,7 +260,10 @@ export default function WorkOrderDetailPage() {
   const handleUpdate = async (updates: Partial<WorkOrder>) => {
     try {
       if (Object.keys(updates).length > 0) {
-        await axios.patch(`/api/maintenance/work-orders/${workOrderId}`, updates);
+        await axios.patch(
+          `/api/maintenance/work-orders/${workOrderId}`,
+          updates
+        );
         toast({
           title: 'Actualizado',
           description: 'La orden de trabajo ha sido actualizada',

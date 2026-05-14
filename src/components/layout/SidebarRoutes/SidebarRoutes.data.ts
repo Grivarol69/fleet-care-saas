@@ -20,6 +20,7 @@ import {
   Disc3,
   PlusCircle,
   Upload,
+  BellRing,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -608,6 +609,12 @@ export const dataAdminSidebar: SidebarItem[] = [
         label: 'Permisos',
         href: '/dashboard/admin/permissions',
         roles: [UserRole.SUPER_ADMIN],
+      },
+      {
+        label: 'Notificaciones OT',
+        icon: BellRing,
+        href: '/dashboard/configuracion/notificaciones-ot',
+        roles: [UserRole.OWNER, UserRole.MANAGER],
       },
     ],
   },

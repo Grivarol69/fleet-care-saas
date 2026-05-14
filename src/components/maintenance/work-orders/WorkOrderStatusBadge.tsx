@@ -1,6 +1,15 @@
 import { Badge } from '@/components/ui/badge';
 import { WorkOrderStatus } from '@prisma/client';
-import { AlertTriangle, CheckCircle2, Clock, Archive, ShieldCheck } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  Archive,
+  ShieldCheck,
+  Wrench,
+  Search,
+  ClipboardList,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function WorkOrderStatusBadge({
@@ -15,14 +24,30 @@ export function WorkOrderStatusBadge({
   let Icon = Clock;
 
   switch (status) {
+    case 'OPENING':
+      label = 'Apertura';
+      colorClass = 'bg-violet-100 text-violet-700 border-violet-300';
+      Icon = Wrench;
+      break;
+    case 'INSPECTING':
+      label = 'Inspección';
+      colorClass = 'bg-cyan-100 text-cyan-700 border-cyan-300';
+      Icon = Search;
+      break;
+    case 'DRAFTING':
+      label = 'Confección';
+      colorClass = 'bg-amber-100 text-amber-700 border-amber-300';
+      Icon = ClipboardList;
+      break;
     case 'PENDING':
-      label = 'Planificando';
+      label = 'Pendiente autorización';
       colorClass = 'bg-slate-100 text-slate-700 border-slate-300';
       Icon = Clock;
       break;
     case 'APPROVED':
       label = 'Aprobada';
-      colorClass = 'bg-blue-100 text-blue-700 border-blue-300 shadow-sm shadow-blue-500/20';
+      colorClass =
+        'bg-blue-100 text-blue-700 border-blue-300 shadow-sm shadow-blue-500/20';
       Icon = ShieldCheck;
       break;
     case 'COMPLETED':
