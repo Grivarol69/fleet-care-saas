@@ -194,7 +194,7 @@ export function FormAssignProgramImproved({
     try {
       const [vehiclesRes, templatesRes] = await Promise.all([
         axios.get('/api/vehicles/vehicles'),
-        axios.get('/api/maintenance/mant-template'),
+        axios.get('/api/maintenance/mant-template?source=custom'),
       ]);
 
       setVehicles(vehiclesRes.data);
