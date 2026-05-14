@@ -93,8 +93,8 @@ interface MaintenanceTemplate {
   name: string;
   description: string | null;
   version: string;
-  brand: { id: string; name: string };
-  line: { id: string; name: string };
+  brand: { id: string; name: string } | null;
+  line: { id: string; name: string } | null;
   packages: TemplatePackage[];
   updatedAt: string;
 }
@@ -231,12 +231,15 @@ export function FormAssignProgramImproved({
   }, [watchTemplateId, templates]);
 
   // Filter templates compatible with selected vehicle
+  // Templates with null brand/line are universal (compatible with any vehicle)
   const compatibleTemplates = selectedVehicle
-    ? templates.filter(
-      t =>
-        t.brand.id === selectedVehicle.brand.id &&
-        t.line.id === selectedVehicle.line.id
-    )
+    ? templates.filter(t => {
+        if (!t.brand || !t.line) return true;
+        return (
+          t.brand.id === selectedVehicle.brand.id &&
+          t.line.id === selectedVehicle.line.id
+        );
+      })
     : [];
 
   // Watch form values for preview
@@ -567,7 +570,7 @@ export function FormAssignProgramImproved({
                                           Diferencia: ±
                                           {Math.abs(
                                             inferred.triggerKm -
-                                            lastMaintenanceExecutedKm
+                                              lastMaintenanceExecutedKm
                                           )}{' '}
                                           km
                                         </p>

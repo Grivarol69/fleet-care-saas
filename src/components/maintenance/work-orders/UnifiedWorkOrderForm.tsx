@@ -73,10 +73,14 @@ export function UnifiedWorkOrderForm({
   initialData,
   currentUser,
   onRefresh,
+  submitLabel,
+  leftAction,
 }: {
   initialData?: any;
   currentUser?: { id: string; role: string; isSuperAdmin: boolean } | null;
   onRefresh?: () => void;
+  submitLabel?: string;
+  leftAction?: React.ReactNode;
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -184,7 +188,10 @@ export function UnifiedWorkOrderForm({
   useEffect(() => {
     if (!initialData?.id) return;
     const services = (initialData?.workOrderItems || [])
-      .filter((i: any) => i.mantItem?.type === 'SERVICE' || i.mantItem?.type === 'ACTION')
+      .filter(
+        (i: any) =>
+          i.mantItem?.type === 'SERVICE' || i.mantItem?.type === 'ACTION'
+      )
       .map(mapItem);
     const parts = (initialData?.workOrderItems || [])
       .filter((i: any) => i.mantItem?.type === 'PART')
@@ -203,7 +210,7 @@ export function UnifiedWorkOrderForm({
       services,
       parts,
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialData?.id, (initialData?.workOrderItems ?? []).length]);
 
   const onSubmit = async (data: any) => {
@@ -349,8 +356,7 @@ export function UnifiedWorkOrderForm({
                             {mantItems
                               .filter(
                                 (mi: any) =>
-                                  mi.type === 'SERVICE' ||
-                                  mi.type === 'ACTION'
+                                  mi.type === 'SERVICE' || mi.type === 'ACTION'
                               )
                               .map((mi: any) => (
                                 <CommandItem
@@ -488,15 +494,10 @@ export function UnifiedWorkOrderForm({
             <Button
               type="button"
               size="sm"
-              variant={
-                itemSource === 'INTERNAL_STOCK' ? 'default' : 'outline'
-              }
+              variant={itemSource === 'INTERNAL_STOCK' ? 'default' : 'outline'}
               className="h-7 px-2 text-xs"
               onClick={() =>
-                form.setValue(
-                  `services.${index}.itemSource`,
-                  'INTERNAL_STOCK'
-                )
+                form.setValue(`services.${index}.itemSource`, 'INTERNAL_STOCK')
               }
             >
               Propio
@@ -691,9 +692,7 @@ export function UnifiedWorkOrderForm({
               )}
             />
           ) : (
-            <span className="text-xs text-muted-foreground italic px-2">
-              —
-            </span>
+            <span className="text-xs text-muted-foreground italic px-2">—</span>
           )}
         </div>
 
@@ -1010,7 +1009,8 @@ export function UnifiedWorkOrderForm({
             workOrderId={initialData?.id ?? ''}
           />
 
-          <div className="flex justify-end sticky bottom-4 bg-background/80 backdrop-blur border-t p-4 rounded-xl shadow-lg">
+          <div className="flex justify-between items-center sticky bottom-4 bg-background/80 backdrop-blur border-t p-4 rounded-xl shadow-lg">
+            <div>{leftAction}</div>
             <Button
               type="submit"
               size="lg"
@@ -1018,7 +1018,10 @@ export function UnifiedWorkOrderForm({
               className="w-full sm:w-auto"
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? 'Sincronizar Cambios' : 'Confirmar y Guardar Orden'}
+              {submitLabel ??
+                (isEditing
+                  ? 'Sincronizar Cambios'
+                  : 'Confirmar y Guardar Orden')}
             </Button>
           </div>
         </form>

@@ -96,7 +96,16 @@ function getAvailableTransitions(
     isDestructive?: boolean;
   }> = [];
 
-  if (status === 'PENDING') {
+  // Wizard-flow states: only OWNER/MANAGER can cancel
+  if (['OPENING', 'INSPECTING', 'DRAFTING'].includes(status)) {
+    if (canApproveWorkOrder)
+      transitions.push({
+        toStatus: 'CANCELLED',
+        label: 'Anular OT',
+        description: 'La OT quedará Anulada. Esta acción no se puede deshacer.',
+        isDestructive: true,
+      });
+  } else if (status === 'PENDING') {
     if (canExecuteWorkOrders)
       transitions.push({
         toStatus: 'IN_PROGRESS',
@@ -142,37 +151,31 @@ function getAvailableTransitions(
 }
 
 export const statusConfig = {
-  // Estados activos del flujo simplificado
+  // Wizard states
+  OPENING: {
+    label: 'Apertura',
+    variant: 'outline' as const,
+    color: 'bg-violet-100 text-violet-700 border-violet-200',
+    rowBg: 'bg-violet-50',
+  },
+  INSPECTING: {
+    label: 'Inspección',
+    variant: 'outline' as const,
+    color: 'bg-cyan-100 text-cyan-700 border-cyan-200',
+    rowBg: 'bg-cyan-50',
+  },
+  DRAFTING: {
+    label: 'Confección',
+    variant: 'outline' as const,
+    color: 'bg-amber-100 text-amber-700 border-amber-200',
+    rowBg: 'bg-amber-50',
+  },
+  // Estados activos del flujo
   PENDING: {
-    label: 'Abierta',
+    label: 'Pendiente autorización',
     variant: 'secondary' as const,
     color: 'bg-blue-100 text-blue-700 border-blue-200',
     rowBg: 'bg-blue-50',
-  },
-  IN_PROGRESS: {
-    label: 'En Trabajo',
-    variant: 'default' as const,
-    color: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-    rowBg: 'bg-yellow-50',
-  },
-  COMPLETED: {
-    label: 'Cerrada',
-    variant: 'default' as const,
-    color: 'bg-green-100 text-green-700 border-green-200',
-    rowBg: 'bg-green-50',
-  },
-  CANCELLED: {
-    label: 'Cancelada',
-    variant: 'outline' as const,
-    color: 'bg-gray-100 text-gray-500 border-gray-200',
-    rowBg: 'bg-gray-100',
-  },
-  // Legacy — para datos históricos existentes (no aparecen en leyenda ni filtros)
-  PENDING_APPROVAL: {
-    label: 'En Aprobación',
-    variant: 'outline' as const,
-    color: 'bg-purple-100 text-purple-700 border-purple-200',
-    rowBg: 'bg-purple-50',
   },
   APPROVED: {
     label: 'Aprobada',
@@ -180,11 +183,23 @@ export const statusConfig = {
     color: 'bg-teal-100 text-teal-700 border-teal-200',
     rowBg: 'bg-teal-50',
   },
-  PENDING_INVOICE: {
-    label: 'Por Cerrar',
+  COMPLETED: {
+    label: 'Completada',
+    variant: 'default' as const,
+    color: 'bg-green-100 text-green-700 border-green-200',
+    rowBg: 'bg-green-50',
+  },
+  CLOSED: {
+    label: 'Cerrada',
     variant: 'outline' as const,
-    color: 'bg-orange-100 text-orange-700 border-orange-200',
-    rowBg: 'bg-orange-50',
+    color: 'bg-gray-100 text-gray-600 border-gray-300',
+    rowBg: 'bg-gray-50',
+  },
+  CANCELLED: {
+    label: 'Cancelada',
+    variant: 'outline' as const,
+    color: 'bg-gray-100 text-gray-500 border-gray-200',
+    rowBg: 'bg-gray-100',
   },
   REJECTED: {
     label: 'Rechazada',

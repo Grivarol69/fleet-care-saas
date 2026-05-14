@@ -13,7 +13,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -112,12 +111,16 @@ export function FormAddProvider({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Agregar Nuevo Proveedor</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-4 overflow-y-auto flex-1 pr-1"
+          >
+            {/* Nombre full-width */}
             <FormField
               control={form.control}
               name="name"
@@ -132,92 +135,100 @@ export function FormAddProvider({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="Ingrese el email (opcional)"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Teléfono</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Ingrese el teléfono (opcional)"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Dirección</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Ingrese la dirección (opcional)"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="specialty"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Especialidad</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value || ''}
-                  >
+            {/* Email + Teléfono (2 col) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccione una especialidad (opcional)" />
-                      </SelectTrigger>
+                      <Input
+                        type="email"
+                        placeholder="Ingrese el email (opcional)"
+                        {...field}
+                      />
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="none">Sin especialidad</SelectItem>
-                      {PROVIDER_SPECIALTIES.map(specialty => (
-                        <SelectItem
-                          key={specialty.value}
-                          value={specialty.value}
-                        >
-                          {specialty.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Teléfono</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Ingrese el teléfono (opcional)"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Dirección + Especialidad (2 col) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Dirección</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Ingrese la dirección (opcional)"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="specialty"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Especialidad</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value || ''}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccione una especialidad (opcional)" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">Sin especialidad</SelectItem>
+                        {PROVIDER_SPECIALTIES.map(specialty => (
+                          <SelectItem
+                            key={specialty.value}
+                            value={specialty.value}
+                          >
+                            {specialty.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <div className="space-y-4 rounded-md border p-4 bg-muted/20">
-              <h4 className="text-sm font-semibold">Datos DIAN (requeridos para Siigo)</h4>
+              <h4 className="text-sm font-semibold">
+                Datos DIAN (requeridos para Siigo)
+              </h4>
 
               <div className="grid grid-cols-2 gap-4">
                 <FormField
@@ -240,7 +251,10 @@ export function FormAddProvider({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tipo de Documento</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value || ''}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Seleccionar" />
@@ -266,7 +280,10 @@ export function FormAddProvider({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tipo de Persona</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value || ''}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Seleccionar" />
@@ -292,7 +309,10 @@ export function FormAddProvider({
                       </div>
                       <FormControl>
                         {/* @ts-ignore */}
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
                       </FormControl>
                     </FormItem>
                   )}
@@ -334,36 +354,46 @@ export function FormAddProvider({
                 name="fiscalResponsibilities"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Responsabilidades Fiscales (Ej: R-99-PN)</FormLabel>
+                    <FormLabel>
+                      Responsabilidades Fiscales (Ej: R-99-PN)
+                    </FormLabel>
                     <FormControl>
                       <Input
                         placeholder="R-99-PN, O-13..."
                         value={field.value?.join(', ') || ''}
-                        onChange={(e) => {
+                        onChange={e => {
                           const val = e.target.value;
-                          field.onChange(val.split(',').map(s => s.trim()).filter(Boolean));
+                          field.onChange(
+                            val
+                              .split(',')
+                              .map(s => s.trim())
+                              .filter(Boolean)
+                          );
                         }}
                       />
                     </FormControl>
-                    <p className="text-xs text-muted-foreground">Separadas por coma</p>
+                    <p className="text-xs text-muted-foreground">
+                      Separadas por coma
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsOpen(false)}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit">Crear Proveedor</Button>
-            </div>
           </form>
         </Form>
+
+        {/* Sticky footer — always visible regardless of scroll */}
+        <div className="flex justify-end space-x-2 pt-4 border-t mt-2 shrink-0">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsOpen(false)}
+          >
+            Cancelar
+          </Button>
+          <Button onClick={form.handleSubmit(onSubmit)}>Crear Proveedor</Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

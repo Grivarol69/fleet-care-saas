@@ -171,7 +171,9 @@ export default function WorkOrdersPage() {
           </p>
         </div>
         <Button
-          onClick={() => router.push('/dashboard/maintenance/work-orders/new')}
+          onClick={() =>
+            router.push('/dashboard/maintenance/work-orders/nueva')
+          }
         >
           <Plus className="mr-2 h-4 w-4" />
           Nueva Orden
@@ -200,14 +202,19 @@ export default function WorkOrdersPage() {
         </button>
         {(
           [
+            'OPENING',
+            'INSPECTING',
+            'DRAFTING',
             'PENDING',
-            'IN_PROGRESS',
-            'PENDING_INVOICE',
+            'APPROVED',
             'COMPLETED',
+            'CLOSED',
             'CANCELLED',
+            'REJECTED',
           ] as const
         ).map(key => {
           const config = statusConfig[key];
+          if (!config) return null;
           const count = workOrders.filter(wo => wo.status === key).length;
           const isActive = activeTab === key;
 

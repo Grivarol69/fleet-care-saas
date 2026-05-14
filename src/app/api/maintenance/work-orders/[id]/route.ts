@@ -21,6 +21,20 @@ type RoleGuard =
   | 'canCloseWorkOrder';
 
 const ALLOWED_TRANSITIONS: Record<string, Record<string, string>> = {
+  // NEW — wizard lifecycle arcs
+  OPENING: {
+    INSPECTING: 'canExecuteWorkOrders',
+    CANCELLED: 'canApproveWorkOrder',
+  },
+  INSPECTING: {
+    DRAFTING: 'canExecuteWorkOrders',
+    CANCELLED: 'canApproveWorkOrder',
+  },
+  DRAFTING: {
+    PENDING: 'canExecuteWorkOrders',
+    CANCELLED: 'canApproveWorkOrder',
+  },
+  // EXISTING — legacy lifecycle arcs (DO NOT MODIFY)
   PENDING: {
     APPROVED: 'canApproveWorkOrder',
     REJECTED: 'canApproveWorkOrder',
@@ -365,8 +379,7 @@ export async function PATCH(
         if (invoiceCount === 0) {
           return NextResponse.json(
             {
-              error:
-                'Se requiere al menos una factura para cerrar la OT',
+              error: 'Se requiere al menos una factura para cerrar la OT',
             },
             { status: 400 }
           );
@@ -435,10 +448,12 @@ export async function PATCH(
           });
 
           // Load WO details
-          const wo = existingWo ?? await tx.workOrder.findUnique({
-            where: { id: workOrderId },
-            select: { providerId: true, technicianId: true },
-          });
+          const wo =
+            existingWo ??
+            (await tx.workOrder.findUnique({
+              where: { id: workOrderId },
+              select: { providerId: true, technicianId: true },
+            }));
 
           // Group EXTERNAL / INTERNAL_PURCHASE items by providerId to create POs
           const purchaseItems = allActiveItems.filter(
@@ -467,7 +482,10 @@ export async function PATCH(
           for (const [provId, provItems] of grouped.entries()) {
             // Find max existing OC number to safely initialize sequence if missing
             const maxPO = await tx.purchaseOrder.findFirst({
-              where: { tenantId: user.tenantId, orderNumber: { startsWith: 'OC-' } },
+              where: {
+                tenantId: user.tenantId,
+                orderNumber: { startsWith: 'OC-' },
+              },
               orderBy: { orderNumber: 'desc' },
               select: { orderNumber: true },
             });
@@ -746,7 +764,6 @@ export async function PATCH(
         // All other valid transitions
         updateData.status = toStatus;
       }
-
     }
 
     if (actualCost !== undefined) {
@@ -925,10 +942,7 @@ export async function PUT(
       return NextResponse.json({ error: 'OT no encontrada' }, { status: 404 });
 
     if (!canOverrideWorkOrderFreeze(user)) {
-      if (
-        existingWO.status !== 'PENDING' &&
-        existingWO.status !== 'APPROVED'
-      ) {
+      if (existingWO.status !== 'PENDING' && existingWO.status !== 'APPROVED') {
         return NextResponse.json(
           { error: 'No editar ítems de OTs cerradas/en revisión financiera' },
           { status: 400 }

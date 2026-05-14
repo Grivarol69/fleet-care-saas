@@ -58,8 +58,16 @@ export const workOrderPayloadSchema = z.object({
   providerId: z.string().optional().nullable(),
   costCenterId: z.string().optional().nullable(),
   scheduledDate: z.string().or(z.date()).optional().nullable(),
-  startTime: z.string().regex(/^\d{2}:\d{2}$/).optional().nullable(),
-  endTime: z.string().regex(/^\d{2}:\d{2}$/).optional().nullable(),
+  startTime: z
+    .string()
+    .regex(/^\d{2}:\d{2}$/)
+    .optional()
+    .nullable(),
+  endTime: z
+    .string()
+    .regex(/^\d{2}:\d{2}$/)
+    .optional()
+    .nullable(),
   vehicleLocation: z.string().optional().nullable(),
   items: z.array(workOrderItemSchema).optional().default([]),
 });
@@ -67,3 +75,29 @@ export const workOrderPayloadSchema = z.object({
 export type WorkOrderPayload = z.infer<typeof workOrderPayloadSchema>;
 export type WorkOrderItemPayload = z.infer<typeof workOrderItemSchema>;
 export type WorkOrderSubTaskPayload = z.infer<typeof workOrderSubTaskSchema>;
+
+// ========================================
+// Wizard Step 1 — Opening schema
+// ========================================
+export const workOrderOpeningSchema = z.object({
+  vehicleId: z.string().min(1, 'Vehicle is required'),
+  technicianId: z.string().optional().nullable(),
+  openingDate: z
+    .string()
+    .datetime({ message: 'openingDate must be a valid ISO datetime' }),
+  creationMileage: z
+    .number()
+    .int()
+    .positive('Mileage must be a positive integer'),
+  openingDescription: z
+    .string()
+    .min(1, 'Opening description is required')
+    .max(2000),
+  startDate: z.string().optional().nullable(),
+  endDate: z.string().optional().nullable(),
+  mantType: z.enum(['PREVENTIVE', 'PREDICTIVE', 'CORRECTIVE', 'EMERGENCY']),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
+  title: z.string().min(1, 'Title is required'),
+});
+
+export type WorkOrderOpeningPayload = z.infer<typeof workOrderOpeningSchema>;
